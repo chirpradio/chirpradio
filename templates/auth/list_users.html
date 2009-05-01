@@ -1,0 +1,25 @@
+{% extends "common/base.html" %}
+
+{% block content %}
+
+<style type="text/css">
+.is_inactive {text-decoration: line-through;}
+</style>
+
+<table border=1 cellpadding=10>
+<tr><th>email</th><th>name</th><th>roles</th><th>last login</th></tr>
+{% for u in all_users %}
+<tr {% if u.is_active %}{% else %}class="is_inactive"{% endif %}>
+<td><a href="edit_user?email={{ u.email }}">{{ u.email }}</a></td>
+<td>{{ u }}</td>
+<td>
+<small>
+{% for r in u.roles %}{% if forloop.counter0 %}<br>{% endif %}
+{{ r }}
+{% endfor %}
+</small>
+</td>
+<td>{{ u.last_login|date:"F j, Y P" }}</td>
+{% endfor %}
+</table>
+{% endblock %}

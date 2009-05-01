@@ -1,0 +1,18 @@
+
+table.claim_tasks div.claimed,
+table.claim_tasks div.claim_this_task {
+    padding: 0.5em;
+} 
+
+table.claim_tasks div.claimed {
+    color: red;
+    border: 1px solid red;
+}
+
+table.claim_tasks div.claim_this_task {
+    color: green;
+    border: 1px solid green;
+}
+table.claim_tasks div.claim_this_task a {
+    color: green;
+}

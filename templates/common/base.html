@@ -1,0 +1,40 @@
+{% comment %}
+The base site template for CHIRP's web apps.
+
+TODO(trow): My HTML skills are extremely rudimentary.  Someone who understands
+CSS, etc. should fix this.
+{% endcomment %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-us" xml:lang="en-us">
+<head>
+<link rel="stylesheet" type="text/css" href="common/css/base.css">
+{% block extrastyle %}{% endblock %}
+{% block extrahead %}{% endblock %}
+<title>CHIRP{% if title %}: {% endif %}{{ title }}</title>
+
+{# Block all robots by default #}
+<meta name="robots" content="NONE,NOARCHIVE" />
+</head>
+
+<body>
+
+<div id="container">
+  <div id="auth">
+    {% if user %}
+    {{ user }} <a href="{{ logout_url }}">Sign Out</a>
+    {% else %}
+    <a href="{{ login_url }}">Sign In</a>
+    {% endif %}
+  </div> {# end of auth #}
+  <div id="header">
+    Placeholder for CHIRP header.  Branding, etc. goes here.
+  </div> {# end of header #}
+  <div class="breadcrumbs">{% block breadcrumbs %}{% endblock %}</div>
+  <div id="content">
+    {% if title %}<h1>{{ title }}</h1>{% endif %}
+    {% block content %}{% endblock %}
+  </div> {# end of content #}
+</div> {# end of container #}
+
+</body>
+</html>

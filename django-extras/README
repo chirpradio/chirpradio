@@ -1,0 +1,5 @@
+Modules in this tree are superimposed into the django module's
+namespace.  For example, the module django-extras/foo/bar.py could be
+imported with:
+
+  from django.foo import bar

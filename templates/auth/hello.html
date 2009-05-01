@@ -1,0 +1,29 @@
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-us" xml:lang="en-us">
+<head>
+  <title>Log in to CHIRP</title>
+</head>
+<body>
+
+{% if user %}
+<p>
+Currently logged in as {{ user }}.
+<a href="{{ logout_url }}">Sign out</a>
+</p>
+{% else %}
+<p>
+Welcome to CHIRP.  Please log in below.
+</p>
+
+<form action="" method="post">
+  <table>
+    {{ form }}
+  </table>
+  <input type="submit" value="Log In">
+</form>
+
+<p>
+<small><a href="/auth/forgot_password">Forgot your password?</a></small>
+</p>
+{% endif %}
+</body>
+</html>

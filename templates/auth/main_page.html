@@ -1,0 +1,32 @@
+{% extends "common/base.html" %}
+
+{% block content %}
+
+<style type="text/css">
+.is_inactive {text-decoration: line-through;}
+</style>
+
+<p>
+There are {{ num_active_users }} active users in the system.
+<a href="/auth/add_user/">Click here to add a new user</a>.
+</p>
+
+To modify an existing user's information, click on their name below.
+<table border=1 cellpadding=4>
+<tr><th>name</th><th>email</th><th>roles</th><th>last login</th></tr>
+{% for u in all_users %}
+<tr {% if u.is_active %}{% else %}class="is_inactive"{% endif %}>
+<td><a href="/auth/edit_user?email={{ u.email }}">
+{{ u.last_name }}, {{ u.first_name }}</a></td>
+<td>{{ u.email }}</td>
+<td>
+<small>
+{% for r in u.roles %}{% if forloop.counter0 %}<br>{% endif %}
+{{ r }}
+{% endfor %}
+</small>
+</td>
+<td>{{ u.last_login|date:"F j, Y P" }}</td>
+{% endfor %}
+</table>
+{% endblock %}

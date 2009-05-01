@@ -1,0 +1,104 @@
+
+This is the code for CHIRP's internal web applications.  The apps are
+hosted on Google's App Engine, under the 'chirpradio' project.
+
+For the chirpradio developer dashboard, go to:
+http://appengine.google.com/dashboard?&app_id=chirpradio
+
+For the end-user landing page, go to:
+http://chirpradio.appspot.com/
+
+Helpful documentation:
+
+* App Engine Python API
+  http://code.google.com/appengine/docs/python/
+
+* Django 1.0: 
+  http://www.djangobook.com/en/2.0/
+  Be sure you are looking at the right version of the book!  We are using
+  version 1.0.
+
+
+CODING CONVENTIONS
+==================
+
+Please follow the conventions outlined in PEP 8.
+
+
+OVERVIEW OF THE TREE
+====================
+
+There are part of the common infrastructure.
+  djzango.zip
+    Django 1.0.2-final, zipped up.  We never want to change this.
+  appengine_django/
+    From google-app-engine-django, AppEngine helper & glue code.
+  common/
+    Code & data shared by all apps.
+  django-extras/   
+    A tree that is merged into the django namespace.  We put our own
+    glue code here.  This should be kept small and simple.
+  __init__.py
+  main.py
+  manage.py
+    Launchers for Django.
+  settings.py
+    Global configuration for Django.
+  urls.py
+    Main URL file.
+  auth/
+    Our own custom authentication & account management system.
+  media/ext_js/[package name]
+    External third-party Javascript packages (like JQuery) live under this
+    directory.
+
+These are places where all applications store data.
+  media/[application name]/{js, css, img}/
+  templates/[application name]/
+
+These are applications that are running in production.
+  (None so far)
+
+These are applications that are under development.
+  landing_page/
+    Where you end up when you go to "/".  Currently a test page.
+  volunteers/
+    Volunteer tracking.
+
+
+ADDING A NEW APPLICATION
+========================
+
+Every application has a name that looks like this: "landing_page".
+Your code lives in a directory with the same name.
+Your templates go under the directory templates/[application name].
+Your media files go under the directory media/[application name].
+
+All of your URLs are automatically mapped to be under
+http://host/volunteers/my/url
+
+To make your URLs visible, you need to:
+(1) Update the top-level urls.py to include your urls.
+(2) Add your application to INSTALLED_APPS in settings.py.
+  
+
+THIRD-PARTY CODE
+================
+
+Some of the files in this directory and all of files under the
+appengine_django/ subdirectory are based on rev 81 of the
+google-app-engine-django Subversion repository.
+
+All files in django.zip are taken from Django 1.0.2-final.  It was
+constructed by running the following commands:
+
+zip -r django.zip django/__init__.py django/bin django/core \
+                  django/db django/dispatch django/forms \
+                  django/http django/middleware django/shortcuts \
+                  django/template django/templatetags \
+                  django/test django/utils django/views
+
+zip -r django.zip django/conf -x 'django/conf/locale/*'
+
+These commands were taken from
+http://code.google.com/appengine/articles/django10_zipimport.html
