@@ -1,3 +1,19 @@
+###
+### Copyright 2009 The Chicago Independent Radio Project
+### All Rights Reserved.
+###
+### Licensed under the Apache License, Version 2.0 (the "License");
+### you may not use this file except in compliance with the License.
+### You may obtain a copy of the License at
+###
+###     http://www.apache.org/licenses/LICENSE-2.0
+###
+### Unless required by applicable law or agreed to in writing, software
+### distributed under the License is distributed on an "AS IS" BASIS,
+### WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+### See the License for the specific language governing permissions and
+### limitations under the License.
+###
 
 """Monkey-patching for Django.
 
@@ -14,7 +30,7 @@ from auth.models import User
 ### support our custom authentication.
 ###
 
-def fake_Client_login(self, **credentials):
+def chirp_Client_login(self, **credentials):
     """If the given credentials are valid, return a User object."""
     user = None
     email = credentials.get('email')
@@ -32,9 +48,9 @@ def fake_Client_login(self, **credentials):
     self.cookies[auth._CHIRP_SECURITY_TOKEN_COOKIE] = token
 
 
-def fake_Client_logout(self):
+def chirp_Client_logout(self):
     del self.cookies[auth._CHIRP_SECURITY_TOKEN_COOKIE]
 
 
-client.Client.login = fake_Client_login
-client.Client.logout = fake_Client_logout
+client.Client.login = chirp_Client_login
+client.Client.logout = chirp_Client_logout
