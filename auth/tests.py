@@ -26,7 +26,7 @@ from google.appengine.api import users as google_users
 import auth
 from auth import forms as auth_forms
 from auth import roles
-from auth.models import User
+from auth.models import User, KeyStorage
 
 
 # These are needed by the App Engine local user service stub.
@@ -230,6 +230,19 @@ class AuthTestCase(unittest.TestCase):
     def test_url_generation(self):
         # This is just a smoke test.
         auth.create_login_url("not actually a path")
+
+    def test_key_storage(self):
+        # Explicitly clear our cache.
+        KeyStorage._cached = (None, None)
+        # Call get method to retrieve our singleton KeyStorage.
+        ks = KeyStorage.get()
+        self.assertTrue(ks is not None)
+        # We should cache this object, so another call will return the
+        # same object.
+        self.assertTrue(ks is KeyStorage.get())
+        # Now advance mock time enough to expire our cache.
+        self.now += 365 * 24 * 60 * 60  # 1 year should be enough time
+        self.assertTrue(ks is not KeyStorage.get())
 
         
 class FormsTestCase(unittest.TestCase):

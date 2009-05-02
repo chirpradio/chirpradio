@@ -24,7 +24,7 @@ import time
 from Crypto.Cipher import AES
 from Crypto.Hash import HMAC
 from django import http
-from auth.models import User
+from auth.models import User, KeyStorage
 from auth import roles
 
 # Our logout URL.
@@ -39,13 +39,6 @@ _CHIRP_SECURITY_TOKEN_COOKIE = 'chirp_security_token'
 # Our security tokens expire after two hours.
 _TOKEN_TIMEOUT_S = 2 * 60 * 60
 
-# Key used to HMAC-sign security tokens.
-# To simplify deployment, this should probably be stashed in the datastore.
-_SECRET_HMAC_KEY = 'testkey'
-
-# Key used to AES-encrypt security tokens.
-# To simplify deployment, this should probably be stashed in the datastore.
-_SECRET_AES_KEY = 'testkey8901234567890123456789012'
 
 
 class UserNotAllowedError(Exception):
@@ -73,8 +66,9 @@ def _create_security_token(user):
     # Pad plaintest with whitespace to make the length a multiple of 16,
     # as this is a requirement of AES encryption.
     plaintext = plaintext.rjust(nearest_mult_of_16, ' ')
-    body = AES.new(_SECRET_AES_KEY, AES.MODE_CBC).encrypt(plaintext)
-    sig = HMAC.HMAC(key=_SECRET_HMAC_KEY, msg=body).hexdigest()
+    key_storage = KeyStorage.get()
+    body = AES.new(key_storage.aes_key, AES.MODE_CBC).encrypt(plaintext)
+    sig = HMAC.HMAC(key=key_storage.hmac_key, msg=body).hexdigest()
     return '%s:%s' % (sig, body)
 
 def _parse_security_token(token):
@@ -91,12 +85,13 @@ def _parse_security_token(token):
         logging.warn('Malformed token: no signature separator')
         return None
     sig, body = token.split(':', 1)
-    computed_sig = HMAC.HMAC(key=_SECRET_HMAC_KEY, msg=body).hexdigest()
+    key_storage = KeyStorage.get()
+    computed_sig = HMAC.HMAC(key=key_storage.hmac_key, msg=body).hexdigest()
     if sig != computed_sig:
         logging.warn('Malformed token: invalid signature')
         return None
     try:
-        plaintext = AES.new(_SECRET_AES_KEY, AES.MODE_CBC).decrypt(body)
+        plaintext = AES.new(key_storage.aes_key, AES.MODE_CBC).decrypt(body)
     except ValueError:
         logging.warn('Malformed token: wrong size')
         return None

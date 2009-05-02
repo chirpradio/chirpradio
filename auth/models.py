@@ -18,6 +18,7 @@
 """Authentication model for CHIRP applications."""
 
 import hashlib
+import logging
 import time
 from google.appengine.ext import db
 from auth import roles
@@ -110,4 +111,45 @@ for role in roles.ALL_ROLES:
             property(lambda self: self.is_superuser or role in self.roles))
 
 
+#############################################################################
+
+# Test key used to HMAC-sign security tokens.
+# To simplify deployment, this should probably be stashed in the datastore.
+_TEST_HMAC_KEY = 'testkey'
+
+# Test key used to AES-encrypt security tokens.
+_TEST_AES_KEY = 'testkey8901234567890123456789012'
+
+_KEY_STORAGE_DATASTORE_KEY = 'KeyStorage'
+
+_KEY_STORAGE_TIMEOUT_S = 5 * 60  # Re-load after 5 minutes.
+
+
+class KeyStorage(db.Model):
+    """Models a single entity that contains crypto keys."""
+    # Used to sign security tokens.
+    hmac_key = db.StringProperty(required=True)
+    
+    # Used to encrypt security tokens.
+    aes_key = db.StringProperty(required=True)
+
+    @classmethod
+    def get(cls):
+        """Returns the one true KeyStorage object."""
+        # We cache a copy of our KeyStorage singleton to avoid having
+        # to do a datastore lookup at the beginning of every single
+        # operation.
+        ks, timestamp = getattr(cls, '_cached', (None, None))
+        if ks is None or time.time() - timestamp > _KEY_STORAGE_TIMEOUT_S:
+            ks = cls.get_by_key_name(_KEY_STORAGE_DATASTORE_KEY)
+            if ks is None:
+                ks = cls(key_name=_KEY_STORAGE_DATASTORE_KEY,
+                         hmac_key=_TEST_HMAC_KEY,
+                         aes_key=_TEST_AES_KEY)
+                ks.save()
+                logging.warn('Created new KeyStorage containing test keys')
+            cls._cached = (ks, time.time())
+        return ks
+            
         
+
