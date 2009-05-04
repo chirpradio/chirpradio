@@ -14,7 +14,7 @@ To pull updates into your local repository:
 % hg pull
 
 To push your changes into the master repository:
-% hg push https://trowbridge.jon@chirpradio.googlecode.com/hg/
+% hg push https://<your username>@chirpradio.googlecode.com/hg/
 
 To get your GoogleCode.com password (needed to push changes):
 http://code.google.com/hosting/settings
