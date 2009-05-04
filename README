@@ -1,6 +1,12 @@
 
-This is the code for CHIRP's internal web applications.  The apps are
-hosted on Google's App Engine, under the 'chirpradio' project.
+This is the code for CHIRP's internal web applications.  The apps run
+on Google App Engine, under the 'chirpradio' project.  The source code is
+hosted on Google Code, also under the 'chirpradio' project.
+
+This code is covered by the Apache License, version 2.0 and is
+copyrighted by the Chicago Indepedent Radio Project.  For the details of
+the Apache License, see:
+http://www.apache.org/licenses/LICENSE-2.0.html
 
 For the chirpradio developer dashboard, go to:
 http://appengine.google.com/dashboard?&app_id=chirpradio
@@ -8,7 +14,10 @@ http://appengine.google.com/dashboard?&app_id=chirpradio
 For the end-user landing page, go to:
 http://chirpradio.appspot.com/
 
-Helpful documentation:
+For the Google Code project:
+http://code.google.com/p/chirpradio
+
+Helpful external documentation:
 
 * App Engine Python API
   http://code.google.com/appengine/docs/python/
@@ -16,20 +25,19 @@ Helpful documentation:
 * Django 1.0: 
   http://www.djangobook.com/en/2.0/
   Be sure you are looking at the right version of the book!  We are using
-  version 1.0.
+  version 1.0 of Django, which is covered by (confusing enough) version 2.0
+  of the Django book.
 
-
-CODING CONVENTIONS
-==================
-
-Please follow the conventions outlined in PEP 8.
-http://www.python.org/dev/peps/pep-0008/
+* Mercurial
+  http://hgbook.red-bean.com/
 
 
 OVERVIEW OF THE TREE
 ====================
 
 There are part of the common infrastructure.
+  docs/
+    Documentation.
   djzango.zip
     Django 1.0.2-final, zipped up.  We never want to change this.
   appengine_django/
@@ -66,47 +74,6 @@ These are applications that are under development.
   volunteers/
     Volunteer tracking.
 
-
-ADDING A NEW APPLICATION
-========================
-
-Every application has a name that looks like this: "landing_page".
-Your code lives in a directory with the same name.
-Your templates go under the directory templates/[application name].
-Your media files go under the directory media/[application name].
-
-All of your URLs are automatically mapped to be under
-http://host/volunteers/my/url
-
-To make your URLs visible, you need to:
-(1) Update the top-level urls.py to include your urls.
-(2) Add your application to INSTALLED_APPS in settings.py.
-
-
-COPYRIGHT & LICENSE NOTICES
-===========================
-
-When you create a new source file, please include this notice at the top:
-
-###
-### Copyright [CURRENT YEAR] The Chicago Independent Radio Project
-### All Rights Reserved.
-###
-### Licensed under the Apache License, Version 2.0 (the "License");
-### you may not use this file except in compliance with the License.
-### You may obtain a copy of the License at
-###
-###     http://www.apache.org/licenses/LICENSE-2.0
-###
-### Unless required by applicable law or agreed to in writing, software
-### distributed under the License is distributed on an "AS IS" BASIS,
-### WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-### See the License for the specific language governing permissions and
-### limitations under the License.
-###
-
-
-  
 
 THIRD-PARTY CODE
 ================

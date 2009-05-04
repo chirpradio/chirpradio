@@ -1,0 +1,41 @@
+
+                          -----------------
+			  auth System Notes
+			  -----------------
+
+
+Passwords
+---------
+
+Passwords must be non-empty strings.  Other than that, no restrictions
+are placed on the length or the nature of passwords.
+
+We never store plaintext passwords.  Instead, we store the value
+
+   [salt] + SHA1( [salt] + [plaintext] )
+
+where [salt] is a nondeterministically-generated value between 0x0000
+and 0xffff (inclusive).  The salt and SHA1 hash are represented as
+sequences of hex digits.
+
+The salt is included in order to increase the cost of mounting a
+dictionary attack against a leaked list of hashed passwords.
+
+
+Security Tokens
+---------------
+
+Security tokens are formed by AES-encrypting and HMAC-signing a string
+that contains two pieces of information:
+ * A user's email address
+ * A timestamp (measured in seconds since the Unix epoch).  The token
+   expires two hours after this time.
+
+When a user successfully logs in, we return a security token in a
+cookie.  We then allow any request that presents a valid and unexpired
+token to access the system with that user's rights.
+
+We periodically reset the user's cookie with a freshly-generated
+security token.  This prevents them from being logged off due to the
+previously-granted token expiring.
+

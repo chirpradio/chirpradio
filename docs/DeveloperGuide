@@ -1,0 +1,113 @@
+
+                      --------------------------
+                      chirpradio Developer Guide
+                      --------------------------
+
+
+Using Mercurial
+---------------
+
+To create a new local repository:
+% hg clone http://chirpradio.googlecode.com/hg/ chirpradio
+
+To pull updates into your local repository:
+% hg pull
+
+To push your changes into the master repository:
+% hg push https://trowbridge.jon@chirpradio.googlecode.com/hg/
+
+To get your GoogleCode.com password (needed to push changes):
+http://code.google.com/hosting/settings
+
+For more information about Mercurial, see "Mercurial: The Definitive
+Guide", by Bryan O'Sullivan.
+http://hgbook.red-bean.com/
+
+
+Running Locally
+---------------
+
+To start up a local server, run
+% python manage.py runserver
+
+You can reach your local server by going to http://localhost:8000/
+in your web browser.
+
+If you are running this server on a different computer, you need to run
+the server with
+% python manage.py [hostname or IP address]
+instead.  This tells Django that it should accept remote connections.
+
+To run all unit tests:
+% python manage.py test
+
+You can also use
+% python manage.py test [application name]
+to only run a single application's tests.
+
+
+
+Adding a New Application
+------------------------
+
+Every application has a name that looks like this: "landing_page".
+Your code lives in a directory with the same name.
+Your templates go under the directory templates/[application name].
+Your media files go under the directory media/[application name].
+
+All of your URLs are automatically mapped to be under
+http://host/volunteers/my/url
+
+To make your URLs visible, you need to:
+(1) Update the top-level urls.py to include your urls.
+(2) Add your application to INSTALLED_APPS in settings.py.
+
+
+Users and Authentication
+------------------------
+
+* Roles
+
+Roles are a light-weight substitute for the standard Django auth module's
+notion of groups.
+
+The list of valid roles is hard-wired into auth/roles.py, so adding a
+new role requires an updated version of the app to be pushed into
+production.
+
+* Access Policy
+
+With only a very few exceptions, all of the URLs that are part of the
+chirpradio applications are only accessible to signed-in users.  If an
+unauthenticated user tries to visit such a URL, they will be
+redirected to a login page, and then redirected back to the
+originally-requested page after they have successfully signed in.
+This behavior is controlled by custom middleware defined in
+auth/middleware.py.
+
+Access can be further restricted based on role using the decorators
+defined in auth/decorators.py.  For example, this is how to define a
+view that is only accessible to a user who has the role "volunteer
+coordinator":
+
+    from auth import roles
+    from auth.decorators import require_role
+
+    @require_role(roles.VOLUNTEER_COORDINATOR)
+    def my_view(request):
+        ... etc ...
+
+* User Information
+
+Our User object is defined in auth/models.py.  It is similar, but not
+identical, to the stock Django User object.
+
+For any incoming HttpRequest, the user attribute is automatically populated
+with the logged-in user's User object.
+
+    def my_hello_world_view(request):
+        return HttpResponse('Hello %s!' % request.user)
+
+Users are keyed on their email addresses:
+    some_user = User.get_by_email(email_addr)
+
