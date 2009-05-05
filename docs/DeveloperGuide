@@ -66,6 +66,10 @@ To make your URLs visible, you need to:
 Users and Authentication
 ------------------------
 
+The chirpradio applications use custom middleware to enforce access
+controls.  It will automatically take care of details like blocking
+inactive users or redirecting unauthenticated users to the login page.
+
 * Roles
 
 Roles are a light-weight substitute for the standard Django auth module's
@@ -111,3 +115,22 @@ with the logged-in user's User object.
 Users are keyed on their email addresses:
     some_user = User.get_by_email(email_addr)
 
+However, users are allowed to change their email address.
+Applications should not put them in the datastore or otherwise assume
+that they are invariant.
+
+* Unit Testing
+
+To simplify unit testing, the CHIRP authentication system is
+integrated with Django's django.test.client module.  You can use the
+login method to test against fake users with various characteristics.
+
+    from django.test.client import Client
+
+    my_client = Client()
+    # You can set any of the User object's attributes here.
+    my_client.login(email="test@test.com", roles=[role1, role2])
+    response = my_client.get("/some/page/to/test")
+
+For more information on unit testing in Django, please see
+http://docs.djangoproject.com/en/1.0/topics/testing/
