@@ -7,7 +7,8 @@ CSS, etc. should fix this.
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-us" xml:lang="en-us">
 <head>
-<link rel="stylesheet" type="text/css" href="common/css/base.css">
+<link rel="stylesheet" type="text/css" href="/media/common/css/base.css">
+<link rel="stylesheet" type="text/css" href="/media/common/css/forms.css">
 {% block extrastyle %}{% endblock %}
 {% block extrahead %}{% endblock %}
 <title>CHIRP{% if title %}: {% endif %}{{ title }}</title>
@@ -27,7 +28,10 @@ CSS, etc. should fix this.
     {% endif %}
   </div> {# end of auth #}
   <div id="header">
-    Placeholder for CHIRP header.  Branding, etc. goes here.
+    <div id="logobox">
+      <a href="/"><img src="/media/common/img/chirp-logo-small.gif"></a>
+    </div>
+      <h1>Placeholder for CHIRP header: Branding, etc. goes here.</h1>
   </div> {# end of header #}
   <div class="breadcrumbs">{% block breadcrumbs %}{% endblock %}</div>
   <div id="content">

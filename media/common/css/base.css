@@ -1,3 +1,18 @@
+/*
+This file is based on a CSS file from Django 1.0.2's admin interface.
 
-/* TODO: Fill this in and make everything pretty. */
+The file's original header was:
 
+    DJANGO Admin
+    by Wilson Miner wilson@lawrence.com
+*/
+
+/* Block IE 5 */
+@import "null.css?\"\{";
+
+/* Import other styles */
+@import url('global.css');
+@import url('layout.css');
+
+/* Import patch for IE 6 Windows */
+/*\*/ @import "patch-iewin.css"; /**/

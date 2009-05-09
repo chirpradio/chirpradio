@@ -132,6 +132,7 @@ def forgot_password(request):
             token = auth.get_password_reset_token(form.user)
             url = 'http://%s/auth/reset_password?token=%s' % (
                 os.environ['HTTP_HOST'], token)
+            logging.warn('Sent password recovery URL: %s', url)
             # Construct and send the email message
             msg_tmpl = loader.get_template('auth/forgot_password_email.txt')
             msg_ctx = Context({'user': form.user, 'url': url})

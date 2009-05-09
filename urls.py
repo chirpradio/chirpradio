@@ -35,6 +35,13 @@ urlpatterns = patterns(
     (r'^media/(?P<path>.*)$', 'django.views.static.serve',
      {'document_root': settings.MEDIA_ROOT }),
 
+    # A hack to serve the favicon, which we store in media/common/img,
+    # from /favicon.ico.
+    (r'^favicon.ico$', 'django.views.static.serve',
+     {'document_root': settings.MEDIA_ROOT,
+      'path': 'common/img/favicon.ico',
+      }),
+
     # The site authentication system.
     ('^auth/', include('auth.urls')),
 

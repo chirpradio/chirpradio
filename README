@@ -100,6 +100,9 @@ constructed by running the following commands:
 These commands were taken from
 http://code.google.com/appengine/articles/django10_zipimport.html
 
+Some of the CSS files media/common/css are based on files that
+were copied from django/contrib/admin/media/css.
+
 * jQuery
 
 The code under media/ext_js/jquery-* is part of the jQuery library
