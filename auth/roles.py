@@ -29,4 +29,5 @@ VOLUNTEER_COORDINATOR = 'volunteer_coordinator'
 # A tuple containing all possible roles.
 ALL_ROLES = (
     VOLUNTEER_COORDINATOR,
+    MUSIC_DIRECTOR,
 )
