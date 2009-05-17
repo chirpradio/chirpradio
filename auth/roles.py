@@ -22,6 +22,7 @@ We use these roles to define a very simple set of permissions.
 
 # A hard-wired list of all possible roles.  Each role is specified by
 # a more-or-less human-readable string.
+MUSIC_DIRECTOR = 'music_director'
 VOLUNTEER_COORDINATOR = 'volunteer_coordinator'
 
 
