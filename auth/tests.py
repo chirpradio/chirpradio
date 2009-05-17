@@ -61,8 +61,13 @@ class AuthTestCase(unittest.TestCase):
     def test_user_model_role_properties(self):
         user = User(email='test')
         self.assertFalse(user.is_volunteer_coordinator)
+        self.assertFalse(user.is_music_director)
         user.roles.append(roles.VOLUNTEER_COORDINATOR)
         self.assertTrue(user.is_volunteer_coordinator)
+        self.assertFalse(user.is_music_director)
+        user.roles.append(roles.MUSIC_DIRECTOR)
+        self.assertTrue(user.is_volunteer_coordinator)
+        self.assertTrue(user.is_music_director)
 
     def test_user_password_checks(self):
         user = User(email='test_pw_checks@test.com')

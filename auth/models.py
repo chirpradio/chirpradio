@@ -107,14 +107,16 @@ class User(db.Model):
 for role in roles.ALL_ROLES:
     property_name = 'is_' + role.lower()
     assert not hasattr(User, property_name)
-    setattr(User, property_name,
-            property(lambda self: self.is_superuser or role in self.roles))
+    # The "role=role" works around Python's insane scoping rules and allows us
+    # to pass in role by value instead of by reference.
+    prop_fn = lambda self, role=role: self.is_superuser or role in self.roles
+    setattr(User, property_name, property(prop_fn))
 
 
 #############################################################################
 
 # Test key used to HMAC-sign security tokens.
-# To simplify deployment, this should probably be stashed in the datastore.
+# The real key is kept in the datastore.
 _TEST_HMAC_KEY = 'testkey'
 
 # Test key used to AES-encrypt security tokens.
