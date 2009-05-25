@@ -45,6 +45,9 @@ urlpatterns = patterns(
     # The site authentication system.
     ('^auth/', include('auth.urls')),
 
+    # The DJ database.
+    ('^djdb/', include('djdb.urls')),
+
     # The volunteer management app.
     ('^volunteers/', include('volunteers.urls')),
 )
