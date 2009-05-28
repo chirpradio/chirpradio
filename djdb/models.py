@@ -90,6 +90,7 @@ class Artist(db.Model):
       image: An image associated with this artist.
     """
 
+
     name = db.StringProperty(required=True)
 
     image = db.ReferenceProperty(DjDbImage)
@@ -139,7 +140,7 @@ class Album(db.Model):
     _KEY_FORMAT = u"djdb/a:%x"
 
     @classmethod
-    def get_key(cls, album_id):
+    def get_key_name(cls, album_id):
         """Generate the datastore key for an Album entity."""
         return cls._KEY_FORMAT % album_id
 
@@ -150,7 +151,7 @@ class Album(db.Model):
         to our standard scheme.
         """
         if 'key_name' not in kwargs:
-            kwargs['key_name'] = self.get_key(kwargs['album_id'])
+            kwargs['key_name'] = self.get_key_name(kwargs['album_id'])
         db.Model.__init__(self, *args, **kwargs)
 
     def __unicode__(self):
@@ -255,3 +256,25 @@ class Track(db.Model):
     def __unicode__(self):
         return self.title
 
+
+class SearchMatches(db.Model):
+    # What generation is this data a part of?  In the future we can use
+    # this for development, schema changes, reindexing, etc.
+    generation = db.IntegerProperty(required=True)
+
+    # The name of the entity type.  In practice, the string returned by
+    # my_obj.key().kind().
+    entity_kind = db.StringProperty(required=True)
+
+    # A normalized search term.
+    term = db.StringProperty(required=True)
+
+    # When this chunk of matches was added.
+    timestamp = db.DateTimeProperty(auto_now=True)
+
+    # A list of datastore keys for objects whose text metadata contains
+    # the term "term".
+    matches = db.ListProperty(db.Key)
+    
+
+    
