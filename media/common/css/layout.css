@@ -18,7 +18,7 @@
 .dashboard #content { width:500px; }
 
 /*  HEADER  */
-#auth { float: right; padding: 5px; }
+#auth { text-align:right; padding: 5px; }
 #header { background:#eef; color:black; overflow:hidden; }
 #header a:link, #header a:visited { color:white; }
 #header a:hover { text-decoration:underline; }
