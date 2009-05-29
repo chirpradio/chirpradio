@@ -89,8 +89,6 @@ class Artist(db.Model):
         This name should follow the music committee's naming style guide.
       image: An image associated with this artist.
     """
-
-
     name = db.StringProperty(required=True)
 
     image = db.ReferenceProperty(DjDbImage)
@@ -120,7 +118,6 @@ class Album(db.Model):
       image: An image associated with this album.  This is typically
         used for the album's cover art.
     """
-
     title = db.StringProperty(required=True)
 
     album_id = db.IntegerProperty(required=True)
