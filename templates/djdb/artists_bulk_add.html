@@ -1,0 +1,34 @@
+{% extends "common/base.html" %}
+
+{% block content %}
+
+{% if data_entry %}
+Enter artist/band names, one per line, and then click "submit."
+<form action="bulk_add.confirm" method="post">
+<input type="submit"><br>
+<textarea name="bulk_input" cols="60" rows="20">
+</textarea>
+</form>
+{% endif %}
+
+{% if confirm %}
+Please carefully check that these names are correct and comply with
+the music department's style guide.  If you see any errors, click on
+your browser's "Back" button and make the necessary corrections.  If
+everything is OK, click on "Submit".
+<form action="bulk_add.do" method="post">
+<input type="submit"><br>
+<ol>
+{% for artist_name in artists_to_add %}
+<li> {{ artist_name }}
+<input type="hidden" name="artist_name" value="{{ artist_name }}">
+{% endfor %}
+</ol>
+<form>
+{% endif %}
+
+{% if do %}
+Successfully added {{ num_artists }} artists to the database.
+{% endif %}
+
+{% endblock %}

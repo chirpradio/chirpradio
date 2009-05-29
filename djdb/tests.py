@@ -499,3 +499,21 @@ class ViewsTestCase(unittest.TestCase):
         # Check that we 404 on a bad SHA1.
         response = client.get(img.url + 'trailing garbage')
         self.assertEqual(404, response.status_code)
+
+    def test_artists_all(self):
+        # Purge any artists left over in the datastore.
+        for art in models.Artist.all().fetch(1000):
+            art.delete()
+
+        for name in ("Foo", "Bar", "Baz"):
+            models.Artist(name=unicode(name)).save()
+
+        client = Client()
+        client.login(email='test@test.com')
+
+        response = client.get("/djdb/artists/all")
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(u'Bar\nBaz\nFoo\n', response.content)
+        self.assertEqual('text/plain; charset="utf-8"',
+                         response['Content-Type'])
+
