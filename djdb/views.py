@@ -93,6 +93,7 @@ def artists_bulk_add(request):
             art.save()
             idx.add_artist(art)
         idx.save()
+        mode = "do"
         ctx_vars["num_artists_added"] = len(artists_to_add)
             
     ctx_vars[mode] = True

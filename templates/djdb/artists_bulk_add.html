@@ -2,10 +2,6 @@
 
 {% block content %}
 
-{% if num_artists_added %}
-<p>Successfully added {{ num_artists_added }} artists to the database.</p>
-{% endif %}
-
 {% if data_entry %}
 Enter artist/band names, one per line, and then click "submit."
 <form action="bulk_add.confirm" method="post">
@@ -31,5 +27,14 @@ everything is OK, click on "Submit".
 <form>
 {% endif %}
 
+{% if do %}
+<p>Successfully added {{ num_artists_added }} artists to the database.
+<ul>
+<li> <a href="bulk_add">Add more artists</a>
+<li> <a href="/djdb">Back to the main DJ Database page</a>
+</ul>
+</p>
+
+{% endif %}
 
 {% endblock %}
