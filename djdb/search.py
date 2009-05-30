@@ -19,6 +19,7 @@
 
 import logging
 import re
+import time
 import unicodedata
 from google.appengine.ext import db
 from djdb import models
@@ -94,6 +95,20 @@ class Indexer(object):
     def __init__(self):
         # A cache of our pending, to-be-written SearchMatches objects.
         self._matches = {}
+        # We use the current time in microseconds as the transaction ID.
+        timestamp = 1000000*int(time.time())
+        self._transaction = db.Key.from_path("IndexerTransaction",
+                                             timestamp)
+
+    @property
+    def transaction(self):
+        """Transaction used for all created SearchMatches objects.
+
+        We expose this so that entities being indexed can be created inside
+        the same transaction, allowing both the objects and the index data
+        to be written into the datastore in an atomic operation.
+        """
+        return self._transaction
 
     def _get_matches(self, entity_kind, term):
         """Returns a cached SearchMatches object for a given kind and term."""
@@ -102,7 +117,8 @@ class Indexer(object):
         if sm is None:
             sm = models.SearchMatches(generation=_GENERATION,
                                       entity_kind=entity_kind,
-                                      term=term)
+                                      term=term,
+                                      parent=self.transaction)
             self._matches[key] = sm
         return sm
 
@@ -156,9 +172,30 @@ class Indexer(object):
 
     def save(self):
         """Write all pending index data into the Datastore."""
-        for sm in self._matches.itervalues():
-            sm.save()
+        db.save(self._matches.values())
         self._matches = {}
+
+
+def create_artists(all_artist_names):
+    """Adds a set of artists to the datastore inside of a transaction.
+
+    Args:
+      all_artist_names: A sequence of unicode strings, which are the
+        names of the artists to be added.
+    """
+    idx = Indexer()
+
+    def transaction_fn():
+        artist_objs = []
+        for name in all_artist_names:
+            art = models.Artist.create(name=name,
+                                       parent=idx.transaction)
+            artist_objs.append(art)
+            idx.add_artist(art)
+        db.save(artist_objs)
+        idx.save()
+
+    db.run_in_transaction(transaction_fn)
 
 
 ###

@@ -17,6 +17,7 @@
 
 """Data model for CHIRP's DJ database."""
 
+import hashlib
 from google.appengine.ext import db
 
 
@@ -94,6 +95,15 @@ class Artist(db.Model):
     image = db.ReferenceProperty(DjDbImage)
 
     # TODO(trow): Add a list of references to related artists?
+
+    @classmethod
+    def create(cls, *args, **kwargs):
+        """Create an Artist object with an automatically-assigned key."""
+        if 'key_name' not in kwargs:
+            encoded_name = kwargs['name'].encode('utf-8')
+            hashed = hashlib.sha1(encoded_name).hexdigest()
+            kwargs['key_name'] = "artist:%s" % hashed
+        return cls(*args, **kwargs)
 
     def __unicode__(self):
         return self.name

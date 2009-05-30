@@ -85,14 +85,7 @@ def artists_bulk_add(request):
         # enter names into.
     elif request.method == "POST" and request.path.endswith(".do"):
         artists_to_add = request.POST.getlist("artist_name")
-        # Add each artist to the datastore, indexing as we go.
-        # TODO(trow): We should do this all in a transaction.
-        idx = search.Indexer()
-        for name in artists_to_add:
-            art = models.Artist(name=name)
-            art.save()
-            idx.add_artist(art)
-        idx.save()
+        search.create_artists(artists_to_add)
         mode = "do"
         ctx_vars["num_artists_added"] = len(artists_to_add)
             
