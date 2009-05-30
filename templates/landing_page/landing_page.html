@@ -1,11 +1,25 @@
 {% extends "common/base.html" %}
 
 {% block content %}
-Hello {{ user }}!
-<br>
-<a href="/auth/change_password">Change Password</a>
-<br><br>
-is_superuser = {{ user.is_superuser }}
-<br><br>
-is_volunteer_coordinator = {{ user.is_volunteer_coordinator }}
+<p>
+Hello {{ user }}!<br>
+{% if user.is_superuser %}
+Congratulations!  You are a superuser.<br>
+{% endif %}
+{% for r in user.roles %}
+You have been granted the role "{{ r }}".<br>
+{% endfor %}
+</p>
+
+<p>
+There isn't much here yet.  Things you can do:
+<ul>
+<li> <a href="/djdb">DJ Database</a>
+{% if user.is_volunteer_coordinator %}
+<li> <a href="/auth">User Management</a>
+{% endif %}
+<li> <a href="/auth/change_password">Change Your Password</a>
+</ul>
+</p>
+
 {% endblock %}
