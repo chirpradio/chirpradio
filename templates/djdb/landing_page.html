@@ -2,4 +2,21 @@
 
 {% block content %}
 Landing page for DJDB app
+
+<h2>Search the Database</h2>
+<form action="" method="post">
+<input type="text" name="query">
+<input type="submit" value="Search">
+</form>
+</p>
+
+{% if query_str %}
+<p>Query was "{{ query_str }}".</p>
+
+<h3>Artist matches</h3>
+{% for artist in query_results.Artist %}
+{{ artist.name }}<br>
+{% endfor %}
+{% endif %}
+
 {% endblock %}

@@ -20,6 +20,7 @@
 import logging
 import re
 import unicodedata
+from google.appengine.ext import db
 from djdb import models
 
 # All search data used by this code is marked with this generation.
@@ -230,6 +231,19 @@ def _parse_query_string(query_str):
 ### Searching
 ###
 
+def _fetch_all(query):
+    all_matches = set()
+    while True:
+        offset = 0
+        saw_one = False
+        for sm in query.fetch(limit=100, offset=offset):
+            all_matches.append(sm.matches)
+            offset += 1
+            saw_one = True
+        if not saw_one:
+            break
+    return all_matches
+
 def fetch_keys_for_one_term(term, entity_kind=None):
     """Find entity keys matching a single search term.
 
@@ -245,11 +259,7 @@ def fetch_keys_for_one_term(term, entity_kind=None):
     if entity_kind:
         query.filter("entity_kind =", entity_kind)
     query.filter("term =", term)
-    all_matches = set()
-    # TODO(trow): This silently truncates our results set.
-    for sm in query.fetch(limit=1000):
-        all_matches.update(sm.matches)
-    return all_matches
+    return _fetch_all(query)
 
 
 def fetch_keys_for_one_prefix(term_prefix, entity_kind=None):
@@ -268,11 +278,7 @@ def fetch_keys_for_one_prefix(term_prefix, entity_kind=None):
         query.filter("entity_kind =", entity_kind)
     query.filter("term >=", term_prefix)
     query.filter("term <", term_prefix + "~")
-    all_matches = set()
-    # TODO(trow): This silently truncates our results set.
-    for sm in query.fetch(limit=1000):
-        all_matches.update(sm.matches)
-    return all_matches
+    return _fetch_all(query)
 
 
 def fetch_keys_for_query_string(query_str, entity_kind=None):
@@ -323,3 +329,23 @@ def fetch_keys_for_query_string(query_str, entity_kind=None):
             return None
         is_first = False
     return all_matches
+
+
+def load_and_segment_keys(fetched_keys):
+    """Convert a series of datastore keys into a dict of lists of entities.
+
+    Args:
+      fetched_keys: A sequence of datastore keys, possibly returned by
+        one of the above fetch_key_*() functions.
+
+    Returns:
+      A dict mapping entity kind names (which are strings) to
+      lists of entities of that type.
+    """
+    segmented = {}
+    for entity in db.get(fetched_keys):
+        by_kind = segmented.get(entity.kind())
+        if by_kind is None:
+            by_kind = segmented[entity.kind()] = []
+        by_kind.append(entity)
+    return segmented

@@ -27,9 +27,15 @@ from djdb import search
 
 def landing_page(request):
     template = loader.get_template('djdb/landing_page.html')
-    ctx = RequestContext(request, {
-            'title': 'DJ Database',
-            })
+    ctx_vars = { 'title': 'DJ Database' }
+    if request.method == "POST":
+        query_str = request.POST.get("query")
+        if query_str:
+            matching_keys = search.fetch_keys_for_query_string(query_str)
+            segmented = search.load_and_segment_keys(matching_keys)
+            ctx_vars["query_str"] = query_str
+            ctx_vars["query_results"] = segmented
+    ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
 
@@ -81,6 +87,7 @@ def artists_bulk_add(request):
         mode = "do"
         artists_to_add = request.POST.getlist("artist_name")
         # Add each artist to the datastore, indexing as we go.
+        # TODO(trow): We should do this all in a transaction.
         idx = search.Indexer()
         for name in artists_to_add:
             art = models.Artist(name=name)
