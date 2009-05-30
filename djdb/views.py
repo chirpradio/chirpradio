@@ -84,7 +84,6 @@ def artists_bulk_add(request):
         # reset the mode, the user will just get another textarea to
         # enter names into.
     elif request.method == "POST" and request.path.endswith(".do"):
-        mode = "do"
         artists_to_add = request.POST.getlist("artist_name")
         # Add each artist to the datastore, indexing as we go.
         # TODO(trow): We should do this all in a transaction.
@@ -94,7 +93,7 @@ def artists_bulk_add(request):
             art.save()
             idx.add_artist(art)
         idx.save()
-        ctx_vars["num_artists"] = len(artists_to_add)
+        ctx_vars["num_artists_added"] = len(artists_to_add)
             
     ctx_vars[mode] = True
     ctx = RequestContext(request, ctx_vars)

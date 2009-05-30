@@ -2,6 +2,10 @@
 
 {% block content %}
 
+{% if num_artists_added %}
+<p>Successfully added {{ num_artists_added }} artists to the database.</p>
+{% endif %}
+
 {% if data_entry %}
 Enter artist/band names, one per line, and then click "submit."
 <form action="bulk_add.confirm" method="post">
@@ -27,8 +31,5 @@ everything is OK, click on "Submit".
 <form>
 {% endif %}
 
-{% if do %}
-Successfully added {{ num_artists }} artists to the database.
-{% endif %}
 
 {% endblock %}
