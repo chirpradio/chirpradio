@@ -21,6 +21,7 @@ To modify an existing user's information, click on their name below.
 <td>{{ u.email }}</td>
 <td>
 <small>
+{% if u.is_superuser %}<b>superuser</b><br>{% endif %}
 {% for r in u.roles %}{% if forloop.counter0 %}<br>{% endif %}
 {{ r }}
 {% endfor %}

@@ -232,17 +232,17 @@ def _parse_query_string(query_str):
 ###
 
 def _fetch_all(query):
+    import sys
     all_matches = set()
+    offset = 0
     while True:
-        offset = 0
         saw_one = False
         for sm in query.fetch(limit=100, offset=offset):
-            all_matches.append(sm.matches)
+            all_matches.update(sm.matches)
             offset += 1
             saw_one = True
         if not saw_one:
-            break
-    return all_matches
+            return all_matches
 
 def fetch_keys_for_one_term(term, entity_kind=None):
     """Find entity keys matching a single search term.
