@@ -19,10 +19,6 @@
 
 import datetime
 import unittest
-
-from django import http
-from django.test.client import Client
-
 from google.appengine.ext import db
 
 from djdb import models
