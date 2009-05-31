@@ -188,7 +188,7 @@ class SearchTestCase(unittest.TestCase):
         self.assertEqual([u"foo"], search.explode(u"the foo"))
         self.assertEqual([u"foo"], search.explode(u"foo, the"))
 
-    def test__parse_query_string(self):
+    def test_parse_query_string(self):
         # Check that we can handle the empty query.
         self.assertEqual([], search._parse_query_string(u""))
         self.assertEqual([], search._parse_query_string(u"   \r  \t\n  "))
