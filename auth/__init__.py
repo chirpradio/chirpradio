@@ -23,11 +23,17 @@ import os
 import time
 
 # TODO(trow): This is a work-around for problems with PyCrypto on the Mac.
+# For more information, see
+# http://code.google.com/p/googleappengine/issues/detail?id=1627
 _DISABLE_CRYPTO = False
 try:
     from Crypto.Cipher import AES
     from Crypto.Hash import HMAC
 except ImportError:
+    # Only allow crypto to be disabled if we are running in a local
+    # development environment.
+    if not os.environ['SERVER_SOFTWARE'].startswith('Dev'):
+        raise
     _DISABLE_CRYPTO = True
     logging.warn("PyCrypto not found!  Operating in insecure mode!")
     
