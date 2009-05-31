@@ -74,6 +74,9 @@ def deleteSpotConstraint(request, spot_constraint_key=None):
     models.SpotConstraint.get(spot_constraint_key).delete()
     return HttpResponseRedirect('/traffic_log/spot_constraint/')
 
+def addSpotToConstraint(request, spot_constraint_key, spot_key=None):
+    pass
+
 def assignSpotConstraint(request, spot_key=None, spot_constraint_key=None):
     pass
 

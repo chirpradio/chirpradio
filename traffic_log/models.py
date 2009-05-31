@@ -1,8 +1,8 @@
-from google.appengine.ext import db
+from google.appengine.ext import db, search
 from traffic_log import constants;
 
 
-class SpotConstraint(db.Model):
+class SpotConstraint(search.SearchableModel):
     dow   = db.IntegerProperty(verbose_name="Day of Week", choices=constants.DOW)
     dow_list = db.StringListProperty()
     hour  = db.IntegerProperty(verbose_name="Hour", choices=constants.HOUR)
@@ -11,10 +11,10 @@ class SpotConstraint(db.Model):
     
     def __init__(self, *args, **kw):
         kw['key_name'] = ":".join([ constants.DOW_DICT[kw['dow']], str(kw['hour']), str(kw['slot']) ])
-        db.Model.__init__(self, *args, **kw)
+        search.SearchableModel.__init__(self, *args, **kw)
 
 
-class Spot(db.Model):
+class Spot(search.SearchableModel):
     title     = db.StringProperty(verbose_name="Spot Title", required=True)
     body      = db.StringProperty(verbose_name="Spot Copy", multiline=True, required=False)
     type      = db.StringProperty(verbose_name="Spot Type", required=True, choices=constants.SPOT_TYPE)
@@ -31,7 +31,7 @@ class Spot(db.Model):
         return '/traffic_log/spot/%s/' % self.key()
 
 
-class TrafficLog(db.Model):
+class TrafficLog(search.SearchableModel):
     log_date       = db.DateProperty()
     spot           = db.ReferenceProperty(Spot)
     readtime       = db.DateTimeProperty()
