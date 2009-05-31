@@ -8,5 +8,6 @@
 <td>{{ dow_dict|hash:constraint.dow}}</td>
 <td>{{constraint.hour|dd}}</td>
 <td>{{constraint.slot|dd}}</td>
+<td><a href="/traffic_log/add_spot_to_constraint/{{constraint.key}}">add to spot</a></td>
 {% endfor %}
 </table>
