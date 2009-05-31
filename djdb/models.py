@@ -209,7 +209,7 @@ class Track(db.Model):
 
     title = db.StringProperty(required=True)
 
-    track_artist = db.ReferenceProperty(required=False)
+    track_artist = db.ReferenceProperty(Artist, required=False)
 
     # TODO(trow): Validate that this is > 0 and <= self.album.num_tracks.
     track_num = db.IntegerProperty(required=True)
