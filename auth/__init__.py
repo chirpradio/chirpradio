@@ -21,8 +21,16 @@ import base64
 import logging
 import os
 import time
-from Crypto.Cipher import AES
-from Crypto.Hash import HMAC
+
+# TODO(trow): This is a work-around for problems with PyCrypto on the Mac.
+_DISABLE_CRYPTO = False
+try:
+    from Crypto.Cipher import AES
+    from Crypto.Hash import HMAC
+except ImportError:
+    _DISABLE_CRYPTO = True
+    logging.warn("PyCrypto not found!  Operating in insecure mode!")
+    
 from django import http
 from auth.models import User, KeyStorage
 from auth import roles
@@ -66,9 +74,13 @@ def _create_security_token(user):
     # Pad plaintest with whitespace to make the length a multiple of 16,
     # as this is a requirement of AES encryption.
     plaintext = plaintext.rjust(nearest_mult_of_16, ' ')
-    key_storage = KeyStorage.get()
-    body = AES.new(key_storage.aes_key, AES.MODE_CBC).encrypt(plaintext)
-    sig = HMAC.HMAC(key=key_storage.hmac_key, msg=body).hexdigest()
+    if _DISABLE_CRYPTO:
+        body = plaintext
+        sig = "sig"
+    else:
+        key_storage = KeyStorage.get()
+        body = AES.new(key_storage.aes_key, AES.MODE_CBC).encrypt(plaintext)
+        sig = HMAC.HMAC(key=key_storage.hmac_key, msg=body).hexdigest()
     return '%s:%s' % (sig, body)
 
 def _parse_security_token(token):
@@ -85,16 +97,21 @@ def _parse_security_token(token):
         logging.warn('Malformed token: no signature separator')
         return None
     sig, body = token.split(':', 1)
-    key_storage = KeyStorage.get()
-    computed_sig = HMAC.HMAC(key=key_storage.hmac_key, msg=body).hexdigest()
-    if sig != computed_sig:
-        logging.warn('Malformed token: invalid signature')
-        return None
-    try:
-        plaintext = AES.new(key_storage.aes_key, AES.MODE_CBC).decrypt(body)
-    except ValueError:
-        logging.warn('Malformed token: wrong size')
-        return None
+    if _DISABLE_CRYPTO:
+        plaintext = body
+    else:
+        key_storage = KeyStorage.get()
+        computed_sig = HMAC.HMAC(key=key_storage.hmac_key,
+                                 msg=body).hexdigest()
+        if sig != computed_sig:
+            logging.warn('Malformed token: invalid signature')
+            return None
+        try:
+            plaintext = AES.new(key_storage.aes_key,
+                                AES.MODE_CBC).decrypt(body)
+        except ValueError:
+            logging.warn('Malformed token: wrong size')
+            return None
     # Remove excess whitespace.
     plaintext = plaintext.strip()
     # The plaintext should contain at least one space.
