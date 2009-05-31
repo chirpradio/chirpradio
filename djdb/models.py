@@ -282,6 +282,3 @@ class SearchMatches(db.Model):
     # A list of datastore keys for objects whose text metadata contains
     # the term "term".
     matches = db.ListProperty(db.Key)
-    
-
-    
