@@ -365,6 +365,10 @@ def fetch_keys_for_query_string(query_str, entity_kind=None):
             logging.error("Query produced unexpected results: %s", query_str)
             return None
         is_first = False
+        # Is our set of matches empty?  If so, there is no point in
+        # processing any more terms.
+        if not all_matches:
+            break
     return all_matches
 
 
