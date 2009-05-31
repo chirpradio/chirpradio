@@ -5,3 +5,5 @@ index.yaml
 *~
 *.pyc
 #*#
+.svn
+
