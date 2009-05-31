@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block contents %}
+<form action="." method="post">
+{{spotform.as_p}}
+
+<input type="submit" name="createspot" value="createspot" />
+
+</form>
+
+{% endblock %}

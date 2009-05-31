@@ -1,0 +1,6 @@
+{% extends 'base_constraints.html' %}
+
+{% block contents %}
+<p/>
+{% include 'constraint_list_table.html' %}
+{% endblock %}

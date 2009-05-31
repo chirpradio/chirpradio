@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}
+Trafficlog::Spots Constraints
+{% endblock %}
+
+{% block topbar %}
+{{ block.super }} . Spots Constraints
+{% endblock %}
+
+{% block contents %}
+{% endblock %}

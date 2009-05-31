@@ -1,0 +1,40 @@
+
+
+{% extends 'spot_list.html' %}
+
+{% block title %}
+Spot detail for: {{ spot.title }}
+{% endblock %}
+
+{% block nav %}
+{{ block.super}}
+<p>
+<table cellpadding="5" cellspacing="0" border="1">
+<td><a href="/trafficlog/spot/edit/{{ spot.key }}">Edit Spot</a></td>
+<td><a href="/trafficlog/spot/delete/{{spot.key}}">Delete Spot</a></td>
+</table>
+{% endblock %}
+
+{% block contents %}
+{% load trafficlog_filters %}
+<p>
+<table border="1" cellspacing="0" cellpadding="5"> 
+<tr><td align="right">Title:</td><td>{{spot.title}}</td></tr>
+<tr><td align="right">Type:</td><td>{{spot.type}}</td></tr>
+<tr><td align="right">Created:</td><td>{{spot.created}}</td></tr>
+<tr><td align="right">Updated:</td><td>{{spot.updated}}</td></tr>
+</table>
+<hr/>
+<blockquote>
+{{spot.body}}
+</blockquote>
+<hr/>
+<p>
+<b>Constraints for scheduling this spot:</b>
+<table cellpadding="5" cellspacing="0" border="1">
+<!--tr align="center"><td align="right">Day</td><td>Slot</td></tr-->
+{% for c in spot.constraints %}
+<tr><td align="right">{{ dow_dict|hash:c.dow }}</td><td align="center">{{ c.hour|dd }}:{{c.slot|dd}}</td></tr>
+{% endfor %}
+</table>
+{% endblock %}

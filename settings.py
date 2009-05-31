@@ -104,6 +104,7 @@ INSTALLED_APPS = (
      'djdb',
      'landing_page',
      'volunteers',
+     'traffic_log'
 #    'django.contrib.auth',
 #    'django.contrib.contenttypes',
 #    'django.contrib.sessions',

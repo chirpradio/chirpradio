@@ -1,0 +1,60 @@
+from google.appengine.ext import db
+
+class SpotConstraint(db.Model):
+    dow = db.StringProperty(
+        choices=("Sunday",
+                 "Monday",
+                 "Tuesday",
+                 "Wednesday",
+                 "Thursday",
+                 "Friday",
+                 "Saturday")
+        )
+
+    # IntegerProperty
+    hour = db.StringProperty(
+        choices=('00','01','02','03','04','05','06',
+                 '07','08','09','10','11','12','13',
+                 '14','15','16','17','18','19','20',
+                 '21','22','23')
+        )
+
+    # IntegerProperty
+    slot = db.StringProperty(
+        choices=('00','12','13','24','25',
+                 '30','36','37','48','49')
+        )
+
+
+class Spot(db.Model):
+    title      = db.StringProperty(required=True)
+    body       = db.StringProperty(multiline=True)
+    type       = db.StringProperty(
+        choices=("Live Read Promo",
+                 "Recorded Promo",
+                 "Live Read PSA", 
+                 "Recorded PSA", 
+                 "Underwriting Spot", 
+                 "Pledge Liner", 
+                 "Other")
+        )
+    expire_on  = db.DateTimeProperty()
+    created    = db.DateTimeProperty(auto_now_add=True)
+    updated    = db.DateTimeProperty(auto_now=True)
+    author     = db.UserProperty()
+
+<<<<<<< .mine
+    def get_absolute_url(self):
+        return '/trafficlog/spot/%s/' % self.key()
+=======
+    constraints = db.ReferenceProperty(SpotConstraint)
+>>>>>>> .r206
+
+
+class TrafficLog(db.Model):
+
+    log_date       = db.DateProperty()
+    spot           = db.ReferenceProperty(Spot)
+    readtime       = db.DateTimeProperty()
+    reader         = db.UserProperty()
+    created        = db.DateTimeProperty(auto_now_add=True)

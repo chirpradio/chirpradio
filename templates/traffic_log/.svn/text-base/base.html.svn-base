@@ -1,0 +1,34 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+<title>
+{% block title %}
+Page title
+{% endblock %}
+</title>
+</head>
+<body>
+
+<h2>{% block topbar %}Traffic Log{% endblock %}</h2>
+<hr/>
+
+{% block nav %}
+<table cellspacing="0" cellpadding="5" border="1">
+<tr align="center" valign="bottom"><td><a href="/trafficlog/">Traffic Log</a></td>
+<td><a href="/trafficlog/spot">Spots</a></td>
+<td><a href="/trafficlog/spot/create">New Spot</a></td>
+<td><a href="/trafficlog/spot_constraint">Spot Constraints</a></td>
+<td><a href="/trafficlog/spot_constraint/create">New Spot Constraint</a></td></tr>
+</table>
+{% endblock %}
+
+</div>
+
+<div class="contents">
+{% block contents %}
+{% endblock %}
+</div>
+
+</body>
+</html>

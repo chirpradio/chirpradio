@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Traffic Log for "DATE"
+{% endblock %}
+
+{% block topbar %}
+C.H.I.R.P. Traffic Log for "DATE"
+{% endblock%}
+
+{% block nav %}
+{{ block.super }}
+<br/>
+<a href="#">Jump to Current Hour</a>
+{% endblock %}
+{% block contents %}
+<p/>
+
+<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
+<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
+<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
+<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
+<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
+<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
+<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
+
+{% endblock %}

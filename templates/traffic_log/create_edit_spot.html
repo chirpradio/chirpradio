@@ -1,0 +1,21 @@
+{% extends 'traffic_log/base_spots.html' %}
+
+
+{% block topbar %}
+{{block.super}} . Create/Edit Spot
+{% endblock %}
+
+{% block contents %}
+<p/>
+
+<table border="1" cellpadding="5" cellspacing="0">
+<form action="{{ formaction }}" method="post">
+{{ spot.as_table }}
+<input type="hidden" name="spot_key" value="{{spot_key}}"/>
+<tr><td colspan="2" align="center"><input type="submit" name="Save Spot" value="Save Spot"/></td></tr>
+</table>
+</form>
+{% endblock %}
+
+
+

@@ -1,0 +1,78 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+
+<script src="http://www.google.com/jsapi" type="text/javascript"></script>
+
+<script language="Javascript" type="text/javascript">
+
+var start_timer = function() {
+    var time = new Date();
+    var hour = time.getHours();
+    var minutes = time.getMinutes();
+    var seconds = time.getSeconds();
+    if ( seconds == 0 && minutes == 0 ) {
+        window.location.replace( unescape( window.location.pathname ) ); 
+    } else {
+		if( minutes < 10 ){
+			minutes = '0' + minutes;
+		} 
+		if ( seconds < 10 ){
+			seconds = '0' + seconds;
+		}
+
+        self.status = hour + ":" + minutes +":" + seconds;
+        self.setTimeout("start_timer()", 60)
+    }
+}
+
+google.load("jquery","1")
+google.load("jqueryui", "1");
+function drag(){
+  $('#content').html('<div id="draggable-handle-div" style="width:100px;border:1px solid #999;">' +
+                     '<div style="background-color:#999">dragme</div>content</div>');
+  $("#draggable-handle-div").draggable({
+    "handle": "div"
+  });
+}
+
+function start(){
+start_timer();
+drag();
+}
+
+
+google.setOnLoadCallback(start);
+</script>
+
+<title>
+{% block title %}
+Page title
+{% endblock %}
+</title>
+</head>
+<body>
+
+<h2>{% block topbar %}Traffic Log{% endblock %}</h2>
+<hr/>
+
+{% block nav %}
+<table cellspacing="0" cellpadding="5" border="1">
+<tr align="center" valign="bottom"><td><a href="/traffic_log/">Traffic Log</a></td>
+<td><a href="/traffic_log/spot">Spots</a></td>
+<td><a href="/traffic_log/spot/create">New Spot</a></td>
+<td><a href="/traffic_log/spot_constraint">Spot Constraints</a></td>
+<td><a href="/traffic_log/spot_constraint/create">New Spot Constraint</a></td></tr>
+</table>
+{% endblock %}
+
+</div>
+<div id="content">Loading...</div>
+<div class="contents">
+{% block contents %}
+{% endblock %}
+</div>
+
+</body>
+</html>

@@ -1,0 +1,16 @@
+
+<table width="100%" border="1" cellpadding="3" cellspacing="0">
+{% for c in constraints %}
+  <tr align="center">
+	<td >{{ c.dow_list }}</td>
+	<td>
+	  {% if edit %}{{ c.hour }}
+	  {% else %} {{ c.hourbucket }} or {{ c.hour }} {% endif %}
+	</td>
+	<td>{{ c.slot }}</td>
+	{% if edit %}
+	<td><input type="checkbox" name="delete" value="delete"/></td>
+	{% endif %}
+  </tr>
+{% endfor %}
+</table>
