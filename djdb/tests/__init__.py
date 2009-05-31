@@ -15,6 +15,7 @@
 ### limitations under the License.
 ###
 
+import logging
 import os
 import unittest
 
@@ -30,5 +31,6 @@ def suite():
     # from our various files.
     my_suite = unittest.TestSuite()
     for module in all_test_modules:
+        logging.info("Loading tests from %s", module)
         my_suite.addTest(unittest.defaultTestLoader.loadTestsFromName(module))
     return my_suite
