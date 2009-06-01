@@ -7,10 +7,7 @@ handlers:
 - url: /static
   static_dir: static
 
-# Always use HTTPS for pages related to authentication & user management
-- url: /auth/.*
-  secure: always
-  script: main.py
-
+# We always want to use HTTPS.
 - url: /.*
+  secure: always
   script: main.py
