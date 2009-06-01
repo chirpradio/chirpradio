@@ -62,10 +62,9 @@ class BulkUploadTestCase(unittest.TestCase):
 
     def test_decoding_album_and_track_lines_for_single_artist_album(self):
         timestamp = int(time.time())
-        test_album_line = "\0".join((
+        test_album_line = u"\t".join((
                 "ALB",
-                # The last bit is the UTF-8 representation of \u1234.
-                "My Album Title \xe1\x88\xb4",
+                u"My Album Title \u1234",
                 "12345",  # Album ID
                 str(timestamp),
                 self.test_artist_name,
@@ -75,7 +74,7 @@ class BulkUploadTestCase(unittest.TestCase):
         cache_dict = {}
         alb = bulk_upload._decode_album_line(test_album_line, txn, cache_dict)
         self.assertEqual(txn, alb.parent_key())
-        # This also checks that we decode UTF-8 correctly.
+        # This also checks that we handle unicode correctly
         self.assertEqual(u"My Album Title \u1234", alb.title)
         self.assertEqual(12345, alb.album_id)
         self.assertEqual(datetime.datetime.utcfromtimestamp(timestamp),
@@ -84,7 +83,7 @@ class BulkUploadTestCase(unittest.TestCase):
         self.assertEqual(self.test_artist.key(), alb.album_artist.key())
         self.assertEqual(6, alb.num_tracks)
         
-        test_track_line = "\0".join((
+        test_track_line = "\t".join((
                 "TRK",
                 "test ufid",
                 "My Track Title",
@@ -108,7 +107,7 @@ class BulkUploadTestCase(unittest.TestCase):
 
     def test_decoding_album_and_track_lines_for_compilation(self):
         timestamp = int(time.time())
-        test_album_line = "\0".join((
+        test_album_line = "\t".join((
                 "ALB",
                 "My Album Title",  
                 "12345",  # Album ID
@@ -122,7 +121,7 @@ class BulkUploadTestCase(unittest.TestCase):
         self.assertTrue(alb.is_compilation)
         self.assertTrue(alb.album_artist is None)
         
-        test_track_line = "\0".join((
+        test_track_line = "\t".join((
                 "TRK",
                 "test ufid",
                 "My Track Title",
@@ -141,7 +140,7 @@ class BulkUploadTestCase(unittest.TestCase):
         data_list = []
         ufid_counter = 0
         for alb_title in (("Test Album One", "Test Album Two")):
-            data_list.append("\0".join((
+            data_list.append("\t".join((
                         "ALB",
                         alb_title,
                         str(abs(hash(alb_title))),  # Album ID
@@ -151,7 +150,7 @@ class BulkUploadTestCase(unittest.TestCase):
                         )))
             for track_num in (1, 2, 3):
                 ufid_counter += 1
-                data_list.append("\0".join((
+                data_list.append("\t".join((
                             "TRK",
                             "ufid %d" % ufid_counter,
                             "Track %d" % track_num,
@@ -163,7 +162,7 @@ class BulkUploadTestCase(unittest.TestCase):
                             "54321",  # Duration
                             )))
 
-        data = "\r\n".join(data_list)
+        data = u"\r\n".join(data_list)
         bulk_upload.decode_and_save(data)
 
         # Now do some searches and make sure that the correct number
