@@ -29,6 +29,7 @@ def respond_with_json(func):
             response_py = func(*args, **kwargs)
             status = 200
         except Exception, err:
+            # @TODO(kumar) really REALLY need to hook into Django's email mailer here
             logging.exception('Error in JSON response')
             response_py = {
                 'success': False,
