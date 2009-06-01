@@ -165,7 +165,7 @@ def reset_password(request):
         token = request.GET.get('token')
         if token is None:
             return http.HttpResponseForbidden('Missing token')
-        email = auth.parse_passord_reset_token(token)
+        email = auth.parse_password_reset_token(token)
         if email is None:
             return http.HttpResponseForbidden('Invalid token')
         ctx_vars['form'] = auth_forms.ResetPasswordForm(
@@ -176,7 +176,7 @@ def reset_password(request):
             ctx_vars['form'] = form
         else:
             token = form.cleaned_data['token']
-            email = token and auth.parse_passord_reset_token(token)
+            email = token and auth.parse_password_reset_token(token)
             if email is None:
                 return http.HttpResponseForbidden('Invalid token')
             user = User.get_by_email(email)
@@ -258,6 +258,15 @@ def add_user(request):
             ctx_vars['form'] = auth_forms.UserForm()
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(tmpl.render(ctx))
+
+
+def token(request):
+    token = request.COOKIES.get(auth._CHIRP_SECURITY_TOKEN_COOKIE)
+    if token:
+        b64_token = base64.urlsafe_b64encode(token)
+    else:
+        b64_token = "no token for you!"
+    return http.HttpResponse(b64_token, mimetype="text/plain")
 
 
 ###

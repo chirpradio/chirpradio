@@ -171,6 +171,17 @@ def get_current_user(request):
     token = request.COOKIES.get(_CHIRP_SECURITY_TOKEN_COOKIE)
     if token:
         cred = _parse_security_token(token)
+    # If this is a POST, look for a base64-encoded security token in
+    # the CHIRP_Auth variable.
+    if cred is None and request.method == 'POST':
+        token = request.POST.get("CHIRP_Auth")
+        if token:
+            try:
+                token = base64.urlsafe_b64decode(token)
+            except TypeError:
+                token = None
+            if token:
+                cred = _parse_security_token(token)
     # No valid token?  This is hopeless!
     if cred is None:
         return None
@@ -208,7 +219,7 @@ def get_password_reset_token(user):
     return base64.urlsafe_b64encode(_create_security_token(user))
 
 
-def parse_passord_reset_token(token):
+def parse_password_reset_token(token):
     """Extracts an email address from a valid password reset token."""
     try:
         token = base64.urlsafe_b64decode(str(token))

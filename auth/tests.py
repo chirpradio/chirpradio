@@ -15,6 +15,7 @@
 ### limitations under the License.
 ###
 
+import base64
 import os
 import time
 import unittest
@@ -104,7 +105,7 @@ class AuthTestCase(unittest.TestCase):
         email = 'password_reset_token@test.com'
         user = User(email=email)
         token = auth.get_password_reset_token(user)
-        observed_email = auth.parse_passord_reset_token(token)
+        observed_email = auth.parse_password_reset_token(token)
         self.assertEqual(email, observed_email)
 
     def test_attach_credentials(self):
@@ -147,6 +148,19 @@ class AuthTestCase(unittest.TestCase):
         user = auth.get_current_user(request)
         self.assertEqual(email, user.email)
         self.assertFalse(user._credentials.security_token_is_stale)
+
+        # Test that a password reset token can be used to authenticate
+        # when POSTed in a variable named CHIRP_Auth.
+        request = http.HttpRequest()
+        request.method = "POST"
+        self.assertEqual(None, auth.get_current_user(request))
+        request.POST["CHIRP_Auth"] = base64.urlsafe_b64encode(expired_token)
+        self.assertEqual(None, auth.get_current_user(request))
+        request.POST["CHIRP_Auth"] = "bogus!!!"
+        self.assertEqual(None, auth.get_current_user(request))
+        request.POST["CHIRP_Auth"] = base64.urlsafe_b64encode(good_token)
+        user = auth.get_current_user(request)
+        self.assertEqual(email, user.email)
 
         # Check that we will reject an inactive user.
         user.is_active = False

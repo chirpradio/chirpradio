@@ -39,6 +39,8 @@ urlpatterns = patterns(
     # Add a user.
     (r'^add_user/?', 'auth.views.add_user'),
 
+    (r'^token', 'auth.views.token'),
+
     # Bootstrap a test account from a Google account.
     (r'^_bootstrap/?', 'auth.views.bootstrap'),
 )
