@@ -15,21 +15,12 @@
 ### limitations under the License.
 ###
 
-"""Constants and definitions related to roles.
+"""URLs for DJ Playlists."""
 
-We use these roles to define a very simple set of permissions.
-"""
+from django.conf import settings
+from django.conf.urls.defaults import patterns
 
-# A hard-wired list of all possible roles.  Each role is specified by
-# a more-or-less human-readable string.
-DJ = 'dj'
-MUSIC_DIRECTOR = 'music_director'
-VOLUNTEER_COORDINATOR = 'volunteer_coordinator'
-
-
-# A tuple containing all possible roles.
-ALL_ROLES = (
-    DJ,
-    MUSIC_DIRECTOR,
-    VOLUNTEER_COORDINATOR,
+urlpatterns = patterns(
+    '',
+    (r'^/?$', 'playlists.views.landing_page'),
 )

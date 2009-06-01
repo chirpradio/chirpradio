@@ -15,21 +15,19 @@
 ### limitations under the License.
 ###
 
-"""Constants and definitions related to roles.
+"""Views for DJ Playlists."""
 
-We use these roles to define a very simple set of permissions.
-"""
-
-# A hard-wired list of all possible roles.  Each role is specified by
-# a more-or-less human-readable string.
-DJ = 'dj'
-MUSIC_DIRECTOR = 'music_director'
-VOLUNTEER_COORDINATOR = 'volunteer_coordinator'
+from django import http
+from django.template import loader, Context, RequestContext
+from auth.decorators import require_role
+from auth import roles
+from djdb import models
+from djdb import search
 
 
-# A tuple containing all possible roles.
-ALL_ROLES = (
-    DJ,
-    MUSIC_DIRECTOR,
-    VOLUNTEER_COORDINATOR,
-)
+@require_role(roles.DJ)
+def landing_page(request):
+    template = loader.get_template('playlists/landing_page.html')
+    ctx_vars = { 'title': 'Playlists' }
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))

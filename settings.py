@@ -103,6 +103,7 @@ INSTALLED_APPS = (
      'auth',
      'djdb',
      'landing_page',
+     'playlists',
      'volunteers',
      'traffic_log'
 #    'django.contrib.auth',

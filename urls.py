@@ -47,6 +47,9 @@ urlpatterns = patterns(
 
     # The DJ database.
     ('^djdb/', include('djdb.urls')),
+    
+    # DJ Playlists.
+    ('^playlists/', include('playlists.urls')),
 
     # The volunteer management app.
     ('^volunteers/', include('volunteers.urls')),
