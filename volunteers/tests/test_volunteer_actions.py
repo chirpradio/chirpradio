@@ -62,6 +62,13 @@ class TestTaskManagement(VolunteerLoginTest):
     
     fixtures = ['users.json', 'event_tasks.json']
     
+    def setUp(self):
+        super(TestTaskManagement, self).setUp()
+        # set all events from fixtures to be current:
+        for event in Event.objects.all():
+            event.start_date = datetime.datetime.now() + timedelta(days=7)
+            event.save()
+    
     def tearDown(self):
         super(TestTaskManagement, self).tearDown()
         for t in TaskAssignment.objects.all():
@@ -82,6 +89,42 @@ class TestTaskManagement(VolunteerLoginTest):
             "You are about to commit to Tabling on Sat Apr 18th "
             "from 9:00 a.m. - 10:00 a.m..")
         eq_(tasks[0].claimed_by, [User.objects.get(username='volunteertest')])
+    
+    def test_hide_expired_events(self):
+        old_event = Event()
+        old_event.name = "Pitchfork 2008"
+        old_event.duration_days = 3
+        # make it just expire by a day:
+        old_event.start_date = datetime.datetime.now() - timedelta(days=4)
+        old_event.save()
+        
+        some_task = Task()
+        some_task.for_event = old_event
+        some_task.for_committee = Committee.objects.filter(
+                                            name="Events Committee").all()[0]
+        some_task.task_type = TaskType.objects.filter(
+                                            short_description="Tabling").all()[0]
+        some_task.start_time = datetime.datetime.now() - timedelta(days=30)
+        some_task.duration_minutes = 60
+        some_task.num_volunteers = 1
+        some_task.save()
+        
+        plainuser = User.objects.filter(username='plainuser').all()[0]
+        temp_volunteer = Volunteer()
+        temp_volunteer.user = plainuser
+        temp_volunteer.save()
+        
+        asn = TaskAssignment()
+        asn.task = some_task
+        asn.points = 1
+        asn.volunteer = temp_volunteer
+        asn.save()
+        
+        resp = self.client.get('/chirp/tasks/claim/')
+        context = resp.context[0]
+        
+        eq_(sorted(e.name for e in context['events']), 
+            ['CHIRP Record Fair & Other Delights'])
         
     def test_claim_task(self):
         event = Event.objects.all()[0]

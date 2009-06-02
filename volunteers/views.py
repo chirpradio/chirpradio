@@ -3,6 +3,7 @@
 
 # Python imports
 import datetime
+from datetime import timedelta
 from decimal import Decimal
 # Django imports
 from django.db import transaction
@@ -85,11 +86,18 @@ def track_meeting(request, mon, day, year):
 # TODO(trow): This is totally broken.
 def show_tasks_for_claiming(request):
     t = loader.get_template('claim_tasks.html')
-    events = Event.objects.all().order_by("-start_date")
+    events = [e for e in Event.objects.all().order_by("-start_date")]
+    current_events = []
+    now_date = datetime.datetime.now().date()
+    for ev in events:
+        # hide old events ...
+        if ev.start_date + timedelta(days=ev.duration_days) >= now_date:
+            current_events.append(ev)
+    
     c = Context({
-        'events': events,
-        'title': 'Claim A Task',
-        'user': request.user,
+        'events': current_events,
+        'title':'Claim A Task',
+        'user': auth.get_user(request),
         'root_path': '/' # just for the admin logout page
     })
     return HttpResponse(t.render(c))
@@ -158,6 +166,7 @@ def search_users(request):
     # ~ is the largest printable 7-bit character.  This is effectively
     # the same as a 'startswith'-style query.
     query.filter('first_name <', user_prefix + '~')
-    # TODO(trow): Should this be JSON?
+    # you can thank the jquery autocomplete plugin for 
+    # the weird format of this list (pipe delimited).
     user_list = ['%s|%s' % (unicode(u), u.email) for u in query]
     return HttpResponse('\n'.join(user_list))
