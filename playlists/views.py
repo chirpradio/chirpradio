@@ -18,16 +18,26 @@
 """Views for DJ Playlists."""
 
 from django import http
+from django.core.urlresolvers import reverse
 from django.template import loader, Context, RequestContext
 from auth.decorators import require_role
 from auth import roles
-from djdb import models
+from playlists.forms import PlaylistForm
 from djdb import search
 
 
 @require_role(roles.DJ)
 def landing_page(request):
-    template = loader.get_template('playlists/landing_page.html')
-    ctx_vars = { 'title': 'Playlists' }
+    if request.method == 'POST':
+        form = PlaylistForm(request.POST)
+        if form.is_valid():
+            form.save()
+    else:
+        form = PlaylistForm()
+    ctx_vars = { 
+        'form': form 
+    }
     ctx = RequestContext(request, ctx_vars)
+    template = loader.get_template('playlists/landing_page.html')
     return http.HttpResponse(template.render(ctx))
+    
