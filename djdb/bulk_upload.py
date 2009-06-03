@@ -36,17 +36,17 @@ def _lookup_artist(name, cache_dict):
 
 
 def _decode_album_line(line, txn, cache_dict):
-    parts = line.split("\0")
+    parts = line.split("\t")
     assert len(parts) == 6
     assert parts[0] == _ALBUM_LINE_PREFIX
     kwargs = {}
     kwargs["parent"] = txn
-    kwargs["title"] = parts[1].decode("utf-8")
+    kwargs["title"] = parts[1]
     kwargs["album_id"] = int(parts[2])
     timestamp = int(parts[3])
     kwargs["import_timestamp"] = datetime.datetime.utcfromtimestamp(timestamp)
     if parts[4]:
-        art =  _lookup_artist(parts[4].decode("utf-8"), cache_dict)
+        art =  _lookup_artist(parts[4], cache_dict)
         assert art is not None
         kwargs["album_artist"] = art
     else:
@@ -56,7 +56,7 @@ def _decode_album_line(line, txn, cache_dict):
 
 
 def _decode_track_line(line, album, cache_dict):
-    parts = line.split("\0")
+    parts = line.split("\t")
     assert len(parts) == 9
     assert parts[0] == _TRACK_LINE_PREFIX
     kwargs = {}
