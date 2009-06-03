@@ -57,9 +57,18 @@ There are part of the common infrastructure.
     Main URL file.
   auth/
     Our own custom authentication & account management system.
-  media/ext_js/[package name]
-    External third-party Javascript packages (like JQuery) live under this
-    directory.
+  media/common/css/
+    Stylesheets common to multiple apps.
+  media/common/img/
+    Images common to multiple apps.
+  media/common/js/
+    JavaScripts common to multiple apps, organized by sub directory.
+  media/common/js/chirp/
+    CHIRP-related JavaScripts that are common to multiple applications.
+  media/common/js/[package_name]
+    Common external JavaScript packages (like JQuery) would go here.
+    Note that since jQuery plugins are generally external to jQuery itself 
+    they should live in their own subdirectory.
 
 These are places where all applications store data.
   media/[application name]/{js, css, img}/
