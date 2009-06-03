@@ -18,9 +18,9 @@
 """URLs for DJ Playlists."""
 
 from django.conf import settings
-from django.conf.urls.defaults import patterns
+from django.conf.urls.defaults import patterns, url
 
 urlpatterns = patterns(
     '',
-    (r'^/?$', 'playlists.views.landing_page'),
+    url(r'^/?$', 'playlists.views.landing_page', name="playlists_landing_page"),
 )

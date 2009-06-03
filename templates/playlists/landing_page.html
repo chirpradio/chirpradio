@@ -20,23 +20,28 @@
 
 <h1>CHIRPradio DJ Playlist Tracking Application</h1>
 
-<form method="" id="playlist-form" action="">
+<form method="post" id="playlist-form" action="">
 <fieldset>
 
+{{ form.artist.errors }}
 <label for="artist">Artist</label>
 <input type="text" id="artist" class="text" name="artist" value="" />
 
-<label for="song-title">Song Title</label>
-<input type="text" id="song-title" class="text" name="song-title" value="" />
+{{ form.song_title.errors }}
+<label for="song_title">Song Title</label>
+<input type="text" id="song_title" class="text" name="song_title" value="" />
 
+{{ form.album.errors }}
 <label for="album">Album</label>
 <input type="text" id="album" class="text" name="album" value="" />
 
+{{ form.label.errors }}
 <label for="label">Label</label>
 <input type="text" id="label" class="text" name="label" value="" />
 
-<label for="song-notes">Song Notes</label>
-<textarea id="song-notes" class="text" name="song-notes" cols="58" rows="8"></textarea>
+{{ form.song_title.errors }}
+<label for="song_notes">Song Notes</label>
+<textarea id="song_notes" class="text" name="song_notes" cols="58" rows="8"></textarea>
 
 <input type="submit" class="button" name="submit" value="Submit" />
 <input type="submit" class="button" name="break" value="Add Break" />
