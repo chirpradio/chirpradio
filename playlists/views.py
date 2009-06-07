@@ -21,6 +21,7 @@ from django import http
 from django.core.urlresolvers import reverse
 from django.template import loader, Context, RequestContext
 from auth.decorators import require_role
+import auth
 from auth import roles
 from playlists.forms import PlaylistForm
 from djdb import search
@@ -29,7 +30,9 @@ from djdb import search
 @require_role(roles.DJ)
 def landing_page(request):
     if request.method == 'POST':
-        form = PlaylistForm(request.POST)
+        form = PlaylistForm(
+                    data=request.POST, 
+                    current_user=auth.get_current_user(request))
         if form.is_valid():
             form.save()
     else:

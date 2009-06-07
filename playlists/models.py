@@ -21,7 +21,9 @@ from google.appengine.ext import db
 class Playlist(db.Model):
     """A DJ playlist.
     """
-    user = db.ReferenceProperty(User)
+    # DJ user
+    user = db.ReferenceProperty(User, required=True)
+    
 
 class PlaylistSong(db.Model):
     """A song in a DJ playlist."""

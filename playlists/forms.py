@@ -33,13 +33,16 @@ class PlaylistForm(forms.Form):
     label = forms.CharField(label=_("Label"))
     song_notes = forms.CharField(label=_("Song Notes"), widget=forms.Textarea)
 
-    def __init__(self, *args, **kwargs):
-        super(PlaylistForm, self).__init__(*args, **kwargs)
+    def __init__(self, data=None, current_user=None):
+        self.current_user = current_user
+        super(PlaylistForm, self).__init__(data=data)
 
     def save(self):
+        if not self.current_user:
+            raise ValueError("Cannot save() without a current_user")
         
         playlist = Playlist()
-        playlist.user = auth.get_current_user()
+        playlist.current_user = self.current_user
         playlist.save()
         
         playlist_song = PlaylistSong()
