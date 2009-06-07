@@ -69,6 +69,9 @@ class AuthTestCase(unittest.TestCase):
         user.roles.append(roles.MUSIC_DIRECTOR)
         self.assertTrue(user.is_volunteer_coordinator)
         self.assertTrue(user.is_music_director)
+        self.assertFalse(user.is_dj)
+        user.roles.append(roles.DJ)
+        self.assertTrue(user.is_dj)
 
     def test_user_password_checks(self):
         user = User(email='test_pw_checks@test.com')
