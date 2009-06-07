@@ -21,7 +21,7 @@ import auth
 from django.utils.translation import ugettext_lazy as _
 from django.template import loader
 from django import forms
-from playlists.models import Playlist, PlaylistSong
+from playlists.models import Playlist, PlaylistTrack
 
 class PlaylistForm(forms.Form):
     """
@@ -45,7 +45,7 @@ class PlaylistForm(forms.Form):
         playlist.current_user = self.current_user
         playlist.save()
         
-        playlist_song = PlaylistSong()
+        playlist_song = PlaylistTrack()
         playlist_song.playlist = playlist
         playlist_song.save()
         return playlist_song
