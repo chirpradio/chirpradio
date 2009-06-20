@@ -32,12 +32,11 @@ def landing_page(request):
         query_str = request.POST.get("query")
         if query_str:
             ctx_vars["query_str"] = query_str
-            matching_keys = search.fetch_keys_for_query_string(query_str)
-            if matching_keys is None:
+            matches = search.simple_music_search(query_str)
+            if matches is None:
                 ctx_vars["invalid_query"] = True
             else:
-                segmented = search.load_and_segment_keys(matching_keys)
-                ctx_vars["query_results"] = segmented
+                ctx_vars["query_results"] = matches
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 

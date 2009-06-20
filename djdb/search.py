@@ -262,7 +262,7 @@ def _fetch_all(query):
     # That should always be enough.
     all_matches = set()
     for sm in query.fetch(limit=999):
-        all_matches.update(sm.matches)
+        all_matches.update((m, sm.field) for m in sm.matches)
     return all_matches
 
 
@@ -277,7 +277,7 @@ def fetch_keys_for_one_term(term, entity_kind=None, field=None):
         to matches for that particular field.
 
     Returns:
-      A set of db.Key objects.
+      A set of (db.Key, matching field) pairs.
     """
     query = models.SearchMatches.all()
     if entity_kind:
@@ -299,7 +299,7 @@ def fetch_keys_for_one_prefix(term_prefix, entity_kind=None, field=None):
         to matches for that particular field.
 
     Returns:
-      A set of db.Key objects.
+      A set of (db.Key, matching field) pairs.
     """
     query = models.SearchMatches.all()
     if entity_kind:
@@ -320,13 +320,13 @@ def fetch_keys_for_query_string(query_str, entity_kind=None):
         restricted to entities of that kind.
 
     Returns:
-      A set of db.Key objects, or None if the query is invalid.
+      A dict mapping db.Key objects to a set of matching fields.
     """
     parsed = set(_parse_query_string(query_str))
     # The empty query is invalid.
     if not parsed:
         return None
-    all_matches = set()
+    all_matches = {}
     is_first = True
     # We sort the parsed query so that all of the terms with
     # logic=IS_REQUIRED will be processed first.
@@ -344,15 +344,23 @@ def fetch_keys_for_query_string(query_str, entity_kind=None):
         # Now use this component's matches to update the complete set.
         if logic == IS_REQUIRED:
             if is_first:
-                all_matches = these_matches
+                for m, f in these_matches:
+                    all_matches[m] = set([f])
             else:
-                all_matches.intersection_update(these_matches)
+                new_all_matches = {}
+                for m, f in these_matches:
+                    existing_fs = all_matches.get(m)
+                    if existing_fs:
+                        new_all_matches[m] = set([f]).union(existing_fs)
+                all_matches = new_all_matches
         elif logic == IS_FORBIDDEN:
             if is_first:
                 # The first thing we see should not be a negative query part.
                 # If so, the query is invalid.
                 return None
-            all_matches.difference_update(these_matches)
+            for m, _ in these_matches:
+                if m in all_matches:
+                    del all_matches[m]
         else:
             # This should never happen.
             logging.error("Query produced unexpected results: %s", query_str)
@@ -384,3 +392,28 @@ def load_and_segment_keys(fetched_keys):
                 by_kind = segmented[entity.kind()] = []
             by_kind.append(entity)
     return segmented
+
+
+def simple_music_search(query_str):
+    """A simple free-form search well-suited for the music library.
+
+    Args:
+      query_str: A unicode query string.
+
+    """
+    # First, find all matching keys.
+    all_matches = fetch_keys_for_query_string(query_str)
+
+    # If we returned None, this is an invalid query.
+    if all_matches is None:
+        return None
+
+    # Next, filter out all tracks that do not have a title match.
+    filtered = []
+    for key, fields in all_matches.iteritems():
+        if key.kind() != "Track" or "title" in fields:
+            filtered.append(key)
+
+    # Finally, return a segmented dict of matches.
+    return load_and_segment_keys(filtered)
+        

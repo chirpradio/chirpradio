@@ -140,27 +140,28 @@ class SearchTestCase(unittest.TestCase):
         idx.add_key(key4, "f2", u"alaska")
         idx.save()
 
-        self.assertEqual(set([key1, key2, key3]), 
+        self.assertEqual(set([(key1, "f1"), (key2, "f2"), (key3, "f1")]), 
                          search.fetch_keys_for_one_term("alpha"))
 
         self.assertEqual(
-            set([key1, key2]),
+            set([(key1, "f1"), (key2, "f2")]),
             search.fetch_keys_for_one_term("alpha", entity_kind="kind_Foo"))
 
         self.assertEqual(
-            set([key1, key3]),
+            set([(key1, "f1"), (key3, "f1")]),
             search.fetch_keys_for_one_term("alpha", field="f1"))
 
-        self.assertEqual(set([key1]),
+        self.assertEqual(set([(key1, "f1")]),
                          search.fetch_keys_for_one_term("beta"))
 
         self.assertEqual(0, len(search.fetch_keys_for_one_term("unknown")))
 
-        self.assertEqual(set([key1, key2, key3]), 
+        self.assertEqual(set([(key1, "f1"), (key2, "f2"), (key3, "f1")]), 
                          search.fetch_keys_for_one_prefix("alpha"))
-        self.assertEqual(set([key1, key2, key3, key4]), 
+        self.assertEqual(set([(key1, "f1"), (key2, "f2"),
+                              (key3, "f1"), (key4, "f2")]), 
                          search.fetch_keys_for_one_prefix("al"))
-        self.assertEqual(set([key2, key4]), 
+        self.assertEqual(set([(key2, "f2"), (key4, "f2")]), 
                          search.fetch_keys_for_one_prefix("al", field="f2"))
 
         self.assertEqual(0, len(search.fetch_keys_for_one_prefix("unknown")))
@@ -184,60 +185,60 @@ class SearchTestCase(unittest.TestCase):
 
         # Check that some simple queries are handled correctly.
         self.assertEqual(
-            set([key1, key2, key5]),
+            {key1: set(["f1"]), key2: set(["f2"]), key5: set(["f1"])},
             search.fetch_keys_for_query_string(u"alpha"))
         self.assertEqual(
-            set([key2, key4, key6]),
+            {key2: set(["f2"]), key4: set(["f2"]), key6: set(["f2"])},
             search.fetch_keys_for_query_string(u"delta"))
         self.assertEqual(
-            set([key1, key2, key3, key5]),
+            {key1: set(["f1"]), key2: set(["f2"]), key3: set(["f1"]),
+             key5: set(["f1"])},
             search.fetch_keys_for_query_string(u"al*"))
         self.assertEqual(
-            set([key1]),
+            {key1: set(["f1"])},
             search.fetch_keys_for_query_string(u"beta alpha"))
         self.assertEqual(
-            set([key1, key3]),
+            {key1: set(["f1"]), key3: set(["f1"])},
             search.fetch_keys_for_query_string(u"al* beta"))
         self.assertEqual(
-            set([key2, key5]),
+            {key2: set(["f2"]), key5: set(["f1"])},
             search.fetch_keys_for_query_string(u"al* -beta"))
         self.assertEqual(
-            set([key4, key6]),
+            {key4: set(["f2"]), key6: set(["f2"])},
             search.fetch_keys_for_query_string(u"delta -al*"))
 
         # Check that entity kind restrictions are respected.
         self.assertEqual(
-            set([key1, key2]),
+            {key1: set(["f1"]), key2: set(["f2"])},
             search.fetch_keys_for_query_string(u"alpha",
                                                entity_kind="kind_Foo"))
         self.assertEqual(
-            set([key5]),
+            {key5: set(["f1"])},
             search.fetch_keys_for_query_string(u"al*", entity_kind="kind_Bar"))
         self.assertEqual(
-            set([key2]),
+            {key2: set(["f2"])},
             search.fetch_keys_for_query_string(u"al* -beta",
                                                entity_kind="kind_Foo"))
 
         # Check that searches against unknown terms are handled properly.
         self.assertEqual(
-            set(),
+            {},
             search.fetch_keys_for_query_string(u"nosuchterm"))
         self.assertEqual(
-            set(),
+            {},
             search.fetch_keys_for_query_string(u"nosuchterm*"))
         self.assertEqual(
-            set(),
+            {},
             search.fetch_keys_for_query_string(u"alpha nosuchterm"))
         self.assertEqual(
-            set(),
+            {},
             search.fetch_keys_for_query_string(u"alpha nosuchterm*"))
         self.assertEqual(
-            set([key1, key2, key5]),
+            {key1: set(["f1"]), key2: set(["f2"]), key5: set(["f1"])},
             search.fetch_keys_for_query_string(u"alpha -nosuchterm"))
         self.assertEqual(
-            set([key1, key2, key5]),
+            {key1: set(["f1"]), key2: set(["f2"]), key5: set(["f1"])},
             search.fetch_keys_for_query_string(u"alpha -nosuchterm*"))
-
 
         # Check that None is returned for various invalid/bogus queries.
         self.assertEqual(None, search.fetch_keys_for_query_string(u""))
@@ -329,20 +330,29 @@ class SearchTestCase(unittest.TestCase):
         idx.save()
 
         # Now do some test searches.
+
+        # This query matches the album and all of the tracks.
+        expected = {alb1.key(): set(["title"])}
         self.assertEqual(
-            # This query matches the album and all of the tracks.
-            set([alb1.key()] + [t.key() for t in trk1]),
-            search.fetch_keys_for_query_string(u"nations"))
-        self.assertEqual(
-            set([alb1.key()]),
+            expected,
             search.fetch_keys_for_query_string(u"nations",
                                                entity_kind="Album"))
-        
+        for t in trk1:
+            expected[t.key()] = set(["album"])
         self.assertEqual(
-            # The query "fire" should match:
-            #   * Two of the songs from "Another Green World"
-            #   * The band "Earth, Wind & Fire"
-            #   * The EW&F track from the compilation.
-            set([trk2[1].key(), trk2[2].key(),
-                 trk3_art[0].key(), trk3[0].key()]),
+            expected,
+            search.fetch_keys_for_query_string(u"nations"))
+
+        # The query "fire" should match:
+        #   * Two of the songs from "Another Green World"
+        #   * The band "Earth, Wind & Fire"
+        #   * The EW&F track from the compilation.
+        expected = {
+            trk2[1].key(): set(["title"]),
+            trk2[2].key(): set(["title"]),
+            trk3_art[0].key(): set([None]),
+            trk3[0].key(): set(["artist"]),
+            }
+        self.assertEqual(
+            expected,
             search.fetch_keys_for_query_string(u"fire"))
