@@ -127,7 +127,7 @@ class TestPlaylistTrack(unittest.TestCase):
             track=self.tracks['You Are The Sunshine Of My Life']
         )
         track.put()
-        self.assertEqual(track.artist.name, "Stevie Wonder")
+        self.assertEqual(track.artist_name, "Stevie Wonder")
         self.assertEqual(track.album.title, "Talking Book")
         self.assertEqual(track.track.title, "You Are The Sunshine Of My Life")
     
@@ -135,7 +135,7 @@ class TestPlaylistTrack(unittest.TestCase):
         playlist = self.create_playlist()
         track = PlaylistTrack(
             playlist=playlist,
-            artist_name="Stevie Wonder",
+            freeform_artist_name="Stevie Wonder",
             album_title="Talking Book",
             track_title='You Are The Sunshine Of My Life'
         )
@@ -148,7 +148,7 @@ class TestPlaylistTrack(unittest.TestCase):
         playlist = self.create_playlist()
         track = PlaylistTrack(
             playlist=playlist,
-            artist_name="Stevie Wonder",
+            freeform_artist_name="Stevie Wonder",
             album_title="Talking Book",
             track_title='You Are The Sunshine Of My Life'
         )
@@ -157,7 +157,7 @@ class TestPlaylistTrack(unittest.TestCase):
         self.assertEqual(playlist.track_count, 1)
         track = PlaylistTrack(
             playlist=playlist,
-            artist_name="Squarepusher",
+            freeform_artist_name="Squarepusher",
             track_title='Beep Street'
         )
         track.put()
@@ -165,7 +165,7 @@ class TestPlaylistTrack(unittest.TestCase):
         self.assertEqual(playlist.track_count, 2)
         track = PlaylistTrack(
             playlist=playlist,
-            artist_name="Metallica",
+            freeform_artist_name="Metallica",
             track_title='Master of Puppets'
         )
         track.put()

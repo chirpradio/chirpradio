@@ -59,7 +59,7 @@ class PlaylistTrack(db.Model):
     # The playlist this track belongs to
     playlist = db.ReferenceProperty(Playlist, required=True)
     # Artist name if this is a freeform entry
-    artist_name = db.StringProperty(required=False)
+    freeform_artist_name = db.StringProperty(required=False)
     # Reference to artist from CHIRP digital library (if exists in library)
     artist = db.ReferenceProperty(Artist, required=False)
     # Track title if this is a freeform entry
@@ -77,6 +77,14 @@ class PlaylistTrack(db.Model):
     established = db.DateTimeProperty(auto_now_add=True)
     # The date this playlist track was last modified (automatically set to now)
     modified = db.DateTimeProperty(auto_now=True)
+    
+    @property
+    def artist_name(self):
+        # validate() should enforce that one of these is available:
+        if self.artist:
+            return self.artist.name
+        else:
+            return self.freeform_artist_name
     
     def __init__(self, *args, **kwargs):
         super(PlaylistTrack, self).__init__(*args, **kwargs)
