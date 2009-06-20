@@ -105,6 +105,25 @@ class Artist(db.Model):
             kwargs['key_name'] = "artist:%s" % hashed
         return cls(*args, **kwargs)
 
+    @classmethod
+    def fetch_by_name(cls, name):
+        """Fetch a single Artist by name."""
+        for art in cls.all().filter("name =", name).fetch(1):
+            return art
+        return None
+
+    @classmethod
+    def fetch_all(cls):
+        """Yields all artists, in a random order."""
+        q = cls.all().order("__key__")
+        while True:
+            batch = list(q.fetch(500))
+            if not batch:
+                break
+            for art in batch:
+                yield art
+            q = cls.all().order("__key__").filter("__key__ >", batch[-1].key())
+
     def __unicode__(self):
         return self.name
 
@@ -116,6 +135,8 @@ class Album(db.Model):
 
     Attributes:
       title: The name of the album.  This is used in TALB tags.
+      disc_number: If specified, this album is one part of a multi-disc
+        set.
       album_id: A unique integer identifier that is assigned to the
         album when it is imported into the music library.
       import_timestamp: When this album was added to the library.
@@ -125,10 +146,14 @@ class Album(db.Model):
         of this album.  This attribute is set if and only if
         'is_compilation' is False.
       num_tracks: The number of tracks on this album.
+      import_tags: A list of the tags that were attached to this album
+        when it was imported into the library.
       image: An image associated with this album.  This is typically
         used for the album's cover art.
     """
     title = db.StringProperty(required=True)
+
+    disc_number = db.IntegerProperty(required=False)
 
     album_id = db.IntegerProperty(required=True)
 
@@ -139,6 +164,8 @@ class Album(db.Model):
     album_artist = db.ReferenceProperty(Artist, required=False)
 
     num_tracks = db.IntegerProperty(required=True)
+
+    import_tags = db.StringListProperty()
 
     image = db.ReferenceProperty(DjDbImage)
 
@@ -197,6 +224,8 @@ class Track(db.Model):
       track_artist: A reference to the Artist entity of the track's creator.
         This must be set if self.album.is_compilation is True.
         It may be set if self.album.is_compilation is False.
+      import_tags: A list of the tags that were attached to this track
+        when it was imported into the library.
       sampling_rate_hz: The sampling rate of the track's MP3 file, measured
         in Hertz.
       bit_rate_kbps: The bit rate of the MP3 file, measured in kbps (kilobits
@@ -210,6 +239,8 @@ class Track(db.Model):
     title = db.StringProperty(required=True)
 
     track_artist = db.ReferenceProperty(Artist, required=False)
+
+    import_tags = db.StringListProperty()
 
     # TODO(trow): Validate that this is > 0 and <= self.album.num_tracks.
     track_num = db.IntegerProperty(required=True)
