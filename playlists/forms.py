@@ -23,30 +23,50 @@ from django.template import loader
 from django import forms
 from playlists.models import Playlist, PlaylistTrack
 
-class PlaylistForm(forms.Form):
+class PlaylistTrackForm(forms.Form):
     """
-    Manage a song in a DJ playlist
+    Manage a track in a DJ playlist
     """
-    artist = forms.CharField(label=_("Artist"))
-    song_title = forms.CharField(label=_("Song Title"))
-    album = forms.CharField(label=_("Album"))
-    label = forms.CharField(label=_("Label"))
-    song_notes = forms.CharField(label=_("Song Notes"), widget=forms.Textarea)
+    artist = forms.CharField(label=_("Artist"), 
+                required=True, 
+                widget=forms.TextInput(attrs={'class':'text'}),
+                error_messages={'required':'Please enter the artist name.'})
+    song_title = forms.CharField(label=_("Song Title"), 
+                required=True,
+                widget=forms.TextInput(attrs={'class':'text'}),
+                error_messages={'required':'Please enter the song title.'})
+    album = forms.CharField(label=_("Album"), 
+                required=False,
+                widget=forms.TextInput(attrs={'class':'text'}))
+    label = forms.CharField(label=_("Label"), 
+                required=False,
+                widget=forms.TextInput(attrs={'class':'text'}))
+    song_notes = forms.CharField(label=_("Song Notes"), 
+                required=False,
+                widget=forms.Textarea(attrs={'class':'text'}))
 
     def __init__(self, data=None, current_user=None):
         self.current_user = current_user
-        super(PlaylistForm, self).__init__(data=data)
+        super(PlaylistTrackForm, self).__init__(data=data)
 
     def save(self):
         if not self.current_user:
             raise ValueError("Cannot save() without a current_user")
         
-        playlist = Playlist()
-        playlist.current_user = self.current_user
+        playlist = Playlist(
+            dj_user=self.current_user,
+            playlist_type='on-air')
         playlist.save()
         
-        playlist_song = PlaylistTrack()
-        playlist_song.playlist = playlist
-        playlist_song.save()
-        return playlist_song
+        playlist_track = PlaylistTrack(playlist=playlist)
+        # TODO(kumar) lookup relations when doing autocompletion
+        playlist_track.freeform_artist_name = self.cleaned_data['artist']
+        playlist_track.freeform_track_title = self.cleaned_data['song_title']
+        if self.cleaned_data['album']:
+            playlist_track.freeform_album_title = self.cleaned_data['album']
+        # if self.cleaned_data['label']:
+        #     playlist_track.label_title = self.cleaned_data['label']
+        playlist_track.save()
+        
+        return playlist_track
         
