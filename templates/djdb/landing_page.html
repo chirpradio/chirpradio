@@ -20,7 +20,10 @@ Landing page for DJDB app
 {% if query_results.Artist %}
 <table>
 {% for artist in query_results.Artist %}
-<tr><td><a href="{{ artist.url}}">{{ artist.pretty_name }}</a></td></tr>
+<tr>
+<td><a href="{{ artist.url}}">{{ artist.pretty_name }}</a></td>
+<td>{{ artist.num_albums }} albums</td>
+</tr>
 {% endfor %}
 </table>
 {% endif %}

@@ -164,6 +164,13 @@ class Artist(db.Model):
         """URL for artist information page."""
         return u"/djdb/artist/" + self.name
 
+    @property
+    def num_albums(self):
+        """Returns the number of albums by this artist."""
+        # This should be a bit more efficient than looking at the
+        # length of set.album_set.
+        return Album.all().filter("album_artist =", self).count()
+
 
 class Album(db.Model):
     """An album in CHIRP's digital library.
