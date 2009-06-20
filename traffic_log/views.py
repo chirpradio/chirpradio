@@ -137,7 +137,7 @@ def spotDetail(request, spot_key=None):
 def editSpot(request, spot_key=None):
     spot = models.Spot.get(spot_key)
     constraints = [forms.SpotConstraintForm(instance=x) for x in spot.constraints]
-    
+    #
     if request.method ==  'POST':
         spot_form = forms.SpotForm(request.POST)
 
