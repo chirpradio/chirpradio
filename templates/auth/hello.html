@@ -4,12 +4,8 @@
 </head>
 <body>
 
-{% if user %}
-<p>
-Currently logged in as {{ user }}.
-<a href="{{ logout_url }}">Sign out</a>
-</p>
-{% else %}
+<img src="/media/common/img/chirp-logo-small.gif">
+
 <p>
 Welcome to CHIRP.  Please log in below.
 </p>
@@ -24,6 +20,6 @@ Welcome to CHIRP.  Please log in below.
 <p>
 <small><a href="/auth/forgot_password">Forgot your password?</a></small>
 </p>
-{% endif %}
+
 </body>
 </html>

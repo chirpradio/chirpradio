@@ -30,16 +30,9 @@ urlpatterns = patterns(
     # landing page.
     ('^$', 'landing_page.views.landing_page'),
 
-    # We serve all media using django.views.static.serve.  That is a
-    # reasonable thing to do since our traffic is very low.
-    (r'^media/(?P<path>.*)$', 'django.views.static.serve',
-     {'document_root': settings.MEDIA_ROOT }),
-
-    # A hack to serve the favicon, which we store in media/common/img,
-    # from /favicon.ico.
+    # A hack to serve the favicon, which we store in common.
     (r'^favicon.ico$', 'django.views.static.serve',
-     {'document_root': settings.MEDIA_ROOT,
-      'path': 'common/img/favicon.ico',
+     {'document_root': 'common', 'path': 'favicon.ico',
       }),
 
     # The site authentication system.
