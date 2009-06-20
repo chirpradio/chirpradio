@@ -90,6 +90,20 @@ class TestTaskManagement(VolunteerLoginTest):
             "from 9:00 a.m. - 10:00 a.m..")
         eq_(tasks[0].claimed_by, [User.objects.get(username='volunteertest')])
     
+    def test_hide_tasks_for_claiming_when_event_not_ready(self):
+        # make all tasks unready for claiming:
+        for event in Event.objects.all():
+            event.tasks_can_be_claimed = False
+            event.save()
+            
+        resp = self.client.get('/chirp/tasks/claim/')
+        context = resp.context[0]
+        
+        eq_(len(context['events']), 1)
+        event = context['events'][0]
+        eq_(event.name, "CHIRP Record Fair & Other Delights")
+        eq_([t for t in event.tasks], [])
+    
     def test_hide_expired_events(self):
         old_event = Event()
         old_event.name = "Pitchfork 2008"
