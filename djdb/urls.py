@@ -34,10 +34,4 @@ urlpatterns = patterns(
 
     # Images
     (IMAGE_URL_PATTERN, 'djdb.views.image'),
-
-    # A text list of all known artists
-    (r'^artists/all', 'djdb.views.artists_all'),
-
-    # Bulk-entry of new artists
-    (r'^artists/bulk_add', 'djdb.views.artists_bulk_add'),
 )

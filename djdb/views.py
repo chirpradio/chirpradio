@@ -49,22 +49,6 @@ def image(request):
     return http.HttpResponse(content=img.image_data,
                              mimetype=img.image_mimetype)
 
-def artists_all(request):
-    all_artist_names = []
-    # Reads all of the artist names from the datastore in batches
-    # of 1000 (which is the limit for datastore fetches).
-    while True:
-        query = models.Artist.all().order("name")
-        saw_one = False
-        for artist in query.fetch(limit=1000, offset=len(all_artist_names)):
-            all_artist_names.append(artist.name)
-            saw_one = True
-        if not saw_one:
-            break
-    all_artist_names.append("")  # To force a trailing newline
-    return http.HttpResponse(mimetype='text/plain; charset="utf-8"',
-                             content=u"\n".join(all_artist_names))
- 
 
 # Only the music director has the power to add new artists.
 @require_role(roles.MUSIC_DIRECTOR)
