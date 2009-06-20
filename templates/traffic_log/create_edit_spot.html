@@ -12,6 +12,9 @@
 <form action="{{ formaction }}" method="post">
 {{ spot.as_table }}
 <input type="hidden" name="spot_key" value="{{spot_key}}"/>
+<tr><td>*</td><td>
+{% include 'traffic_log/spot_contraint_form.html' %}
+</td></tr>
 <tr><td colspan="2" align="center"><input type="submit" name="Save Spot" value="Save Spot"/></td></tr>
 </table>
 </form>
