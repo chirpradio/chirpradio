@@ -32,6 +32,17 @@ urlpatterns = patterns(
     # Landing page
     (r'^/?$', 'djdb.views.landing_page'),
 
+    # Artist information page
+    (r'artist/(.*)', 'djdb.views.artist_page'),
+    
+    # Album information page
+    (r'album/(.*)', 'djdb.views.album_page'),
+
+    (r'update/artists/bulk_add', 'djdb.views.artists_bulk_add'),
+    
     # Images
     (IMAGE_URL_PATTERN, 'djdb.views.image'),
+
+    # Bootstrap -- development only!
+    (r'_bootstrap', 'djdb.bootstrap.bootstrap'),
 )

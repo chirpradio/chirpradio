@@ -108,6 +108,9 @@ class Artist(db.Model):
     @classmethod
     def fetch_by_name(cls, name):
         """Fetch a single Artist by name."""
+        name = name and name.strip()
+        if not name:
+            return None
         for art in cls.all().filter("name =", name).fetch(1):
             return art
         return None
@@ -124,8 +127,42 @@ class Artist(db.Model):
                 yield art
             q = cls.all().order("__key__").filter("__key__ >", batch[-1].key())
 
-    def __unicode__(self):
+    @property
+    def pretty_name(self):
+        """Returns a slightly prettier version of an artist's name."""
+        if self.name.endswith(", The"):
+            return "The " + self.name[:-5]
         return self.name
+
+    def __unicode__(self):
+        return self.pretty_name
+
+    @property
+    def sort_key(self):
+        """A key that can be used for sorting.
+
+        Included here for symmetry with the other object types.
+        """
+        return self.name
+
+    @property
+    def sorted_albums(self):
+        """Sorted list of albums by this artist."""
+        return sorted(self.album_set, key=lambda x: x.sort_key)
+
+    @property
+    def sorted_tracks(self):
+        """Sorted list of tracks by this artist.
+
+        These are tracks that appear on compilations.  It does not
+        include tracks on albums that are specifically by this artist.
+        """
+        return sorted(self.track_set, key=lambda x: x.sort_key)
+
+    @property
+    def url(self):
+        """URL for artist information page."""
+        return u"/djdb/artist/" + self.name
 
 
 class Album(db.Model):
@@ -191,6 +228,10 @@ class Album(db.Model):
     def __unicode__(self):
         return self.title
 
+    @property
+    def url(self):
+        return "/djdb/album/%d" % self.album_id
+
     _COMPILATION_ARTIST_NAME = u"Various Artists"
 
     _MISSING_ARTIST_NAME = u"*MISSING ARTIST*"
@@ -204,9 +245,26 @@ class Album(db.Model):
                 or self._MISSING_ARTIST_NAME)
 
     @property
+    def artist_url(self):
+        """Returns a URL for the artist information page for this album."""
+        if self.album_artist:
+            return self.album_artist.url
+        # TODO(trow): Generate some sort of reasonable artist URL for
+        # compilations.
+        return "/sorry/not/yet/supported"
+
+    @property
+    def sort_key(self):
+        """A key that can be used to sort Albums into a reasonable order."""
+        title = self.title
+        if title.lower().startswith("the "):
+            title = title[:4]
+        return (self.artist_name, title, self.disc_number)
+
+    @property
     def sorted_tracks(self):
         """Returns Album tracks sorted by track number."""
-        return sorted(self.track_set, key=lambda x: x.track_num)
+        return sorted(self.track_set, key=lambda x: x.sort_key)
 
 
 _CHANNEL_CHOICES = ("stereo", "joint_stereo", "dual_mono", "mono")
@@ -267,6 +325,17 @@ class Track(db.Model):
         """Returns a string containing the name of the track's creator."""
         return ((self.track_artist and self.track_artist.name)
                 or self.album.artist_name)
+
+    @property
+    def artist_url(self):
+        """Returns a URL for this track's artist's information."""
+        return ((self.track_artist and self.track_artist.url)
+                or self.album.album_artist.url)
+
+    @property
+    def sort_key(self):
+        """A key that can be used to sort Albums into a reasonable order."""
+        return (self.album.sort_key, self.track_num)
 
     _KEY_PREFIX = u"djdb/t:"
 

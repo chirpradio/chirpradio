@@ -1,0 +1,23 @@
+{% extends "common/base.html" %}
+
+{% block content %}
+
+<p>
+This is the album information page for <b>{{ album.title }}</b> by
+<a href="{{ album.artist_url }}">{{ album.artist_name }}</a>.
+It is still very primitive.
+</p>
+
+<table>
+{% for track in album.sorted_tracks %}
+<tr>
+<td>{{ track.track_num }}.</td>
+<td>{{ track.title }}</td>
+<td>{{ track.duration }}</td>
+<td><small>{{ track.bit_rate_kbps }} kbps</small></td>
+</tr>
+{% endfor %}
+</table>
+
+
+{% endblock %}

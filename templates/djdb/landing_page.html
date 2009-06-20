@@ -20,7 +20,7 @@ Landing page for DJDB app
 {% if query_results.Artist %}
 <table>
 {% for artist in query_results.Artist %}
-<tr><td>{{ artist.name }}</td></tr>
+<tr><td><a href="{{ artist.url}}">{{ artist.pretty_name }}</a></td></tr>
 {% endfor %}
 </table>
 {% endif %}
@@ -30,7 +30,10 @@ Landing page for DJDB app
 {% if query_results.Album %}
 <table>
 {% for album in query_results.Album %}
-<tr><td>{{ album.artist_name }}</td><td>{{ album.title }}</td>
+<tr>
+<td><a href="{{ album.artist_url}}">{{ album.artist_name }}</a></td>
+<td><a href="{{ album.url }}">{{ album.title }}</a></td>
+</tr>
 {% endfor %}
 </table>
 {% endif %}
@@ -42,8 +45,8 @@ Landing page for DJDB app
 {% for track in query_results.Track %}
 <tr>
 <td>{{ track.title }}</td>
-<td>{{ track.artist_name }}</td>
-<td>{{ track.album.title }}</td>
+<td><a href="{{ track.artist_url }}">{{ track.artist_name }}</a></td>
+<td><a href="{{ track.album.url }}">{{ track.album.title }}</a></td>
 {% endfor %}
 </table>
 {% endif %}

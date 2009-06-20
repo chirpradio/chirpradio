@@ -391,6 +391,8 @@ def load_and_segment_keys(fetched_keys):
             if by_kind is None:
                 by_kind = segmented[entity.kind()] = []
             by_kind.append(entity)
+    for val in segmented.itervalues():
+        val.sort(key=lambda x: x.sort_key)
     return segmented
 
 

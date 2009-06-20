@@ -41,6 +41,34 @@ def landing_page(request):
     return http.HttpResponse(template.render(ctx))
 
 
+def artist_page(request, artist_name):
+    artist = models.Artist.fetch_by_name(artist_name)
+    if artist is None:
+        return http.HttpResponse(status=404)
+    template = loader.get_template("djdb/artist_page.html")
+    ctx_vars = { "title": artist.pretty_name,
+                 "artist": artist,
+                 }
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+
+def album_page(request, album_id_str):
+    if not album_id_str.isdigit():
+        return http.HttpResponse(status=404)
+    q = models.Album.all().filter("album_id =", int(album_id_str))
+    album = None
+    for album in q.fetch(1):
+        pass
+    if album is None:
+        return http.HttpResponse(status=404)
+    template = loader.get_template("djdb/album_page.html")
+    ctx_vars = { "title": u"%s / %s" % (album.title, album.artist_name),
+                 "album": album }
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+
 def image(request):
     img = models.DjDbImage.get_by_url(request.path)
     if img is None:
