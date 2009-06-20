@@ -32,7 +32,7 @@ try:
 except ImportError:
     # Only allow crypto to be disabled if we are running in a local
     # development environment.
-    if not os.environ['SERVER_SOFTWARE'].startswith('Dev'):
+    if not os.environ.get('SERVER_SOFTWARE', 'Dev').startswith('Dev'):
         raise
     _DISABLE_CRYPTO = True
     logging.warn("PyCrypto not found!  Operating in insecure mode!")
