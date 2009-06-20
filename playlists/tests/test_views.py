@@ -12,7 +12,7 @@ class TestPlaylistViews(TestCase):
     def setUp(self):
         self.client.login(email="test@test.com", roles=[roles.DJ])
     
-    def test_add_track(self):
+    def test_add_track_with_minimal_fields(self):
         resp = self.client.post(reverse('playlists_add_track'), {
             'artist': "Squarepusher",
             'song_title': "Port Rhombus"
