@@ -22,6 +22,8 @@ import logging
 import os
 import time
 
+from common import in_prod
+
 # TODO(trow): This is a work-around for problems with PyCrypto on the Mac.
 # For more information, see
 # http://code.google.com/p/googleappengine/issues/detail?id=1627
@@ -32,7 +34,7 @@ try:
 except ImportError:
     # Only allow crypto to be disabled if we are running in a local
     # development environment.
-    if not os.environ.get('SERVER_SOFTWARE', 'Dev').startswith('Dev'):
+    if in_prod():
         raise
     _DISABLE_CRYPTO = True
     logging.warn("PyCrypto not found!  Operating in insecure mode!")
@@ -52,7 +54,6 @@ _CHIRP_SECURITY_TOKEN_COOKIE = 'chirp_security_token'
 
 # Our security tokens expire after two hours.
 _TOKEN_TIMEOUT_S = 2 * 60 * 60
-
 
 
 class UserNotAllowedError(Exception):
