@@ -41,7 +41,7 @@ _CHARACTER_NORMALIZATIONS = {
 
 # These words are ignored when indexing text and processing search
 # queries.
-_STOP_WORDS = set(["the", "and", "of"])
+_STOP_WORDS = set(['and', 'in', 'is', 'it', 'my', 'of', 'the', 'to'])
 
 
 def _is_stop_word(term):
