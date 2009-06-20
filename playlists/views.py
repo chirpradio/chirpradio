@@ -17,30 +17,46 @@
 
 """Views for DJ Playlists."""
 
-from django import http
+from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.template import loader, Context, RequestContext
 from auth.decorators import require_role
 import auth
 from auth import roles
-from playlists.forms import PlaylistForm
+from playlists.forms import PlaylistTrackForm
+from playlists.models import PlaylistTrack
 from djdb import search
 
 
 @require_role(roles.DJ)
 def landing_page(request):
     if request.method == 'POST':
-        form = PlaylistForm(
+        form = PlaylistTrackForm(data=request.POST)
+    else:
+        form = PlaylistTrackForm()
+    ctx_vars = { 
+        'form': form,
+        'tracks': PlaylistTrack.all()
+    }
+    ctx = RequestContext(request, ctx_vars)
+    template = loader.get_template('playlists/landing_page.html')
+    return HttpResponse(template.render(ctx))
+    
+@require_role(roles.DJ)
+def add_track(request):
+    if request.method == 'POST':
+        form = PlaylistTrackForm(
                     data=request.POST, 
                     current_user=auth.get_current_user(request))
         if form.is_valid():
             form.save()
+            return HttpResponseRedirect(reverse('playlists_landing_page'))
     else:
-        form = PlaylistForm()
+        form = PlaylistTrackForm()
     ctx_vars = { 
-        'form': form 
+        'form': form
     }
     ctx = RequestContext(request, ctx_vars)
     template = loader.get_template('playlists/landing_page.html')
-    return http.HttpResponse(template.render(ctx))
+    return HttpResponse(template.render(ctx))
     

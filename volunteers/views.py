@@ -22,12 +22,7 @@ from common.decorators import respond_with_json
 from volunteers import models
 
 
-def require_volunteer_coordinator(handler):
-    """A decorator that makes a page require the VOLUNTEER_COORDINATOR role."""
-    return require_role(handler, roles.VOLUNTEER_COORDINATOR)
-
-
-@require_volunteer_coordinator
+@require_role(roles.VOLUNTEER_COORDINATOR)
 def meetings(request):
     t = loader.get_template('volunteers/meetings.html')
     c = Context({
@@ -39,7 +34,7 @@ def meetings(request):
 
 
 # TODO(trow): This is totally broken.
-@require_volunteer_coordinator
+@require_role(roles.VOLUNTEER_COORDINATOR)
 @respond_with_json
 def add_meeting_attendee(request, meeting_id, user_id):
     m = Meeting.objects.get(id=meeting_id)
@@ -49,7 +44,7 @@ def add_meeting_attendee(request, meeting_id, user_id):
     
 
 # TODO(trow): This is totally broken.
-@require_volunteer_coordinator
+@require_role(roles.VOLUNTEER_COORDINATOR)
 @respond_with_json
 def delete_meeting_attendee(request, meeting_id, user_id):
     m = Meeting.objects.get(id=meeting_id)
@@ -59,7 +54,7 @@ def delete_meeting_attendee(request, meeting_id, user_id):
 
 
 # TODO(trow): This is totally broken.
-@require_volunteer_coordinator
+@require_role(roles.VOLUNTEER_COORDINATOR)
 @respond_with_json
 # TODO(trow): Should be YYYY MM DD
 def track_meeting(request, mon, day, year):

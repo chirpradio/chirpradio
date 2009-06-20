@@ -20,28 +20,28 @@
 
 <h1>CHIRPradio DJ Playlist Tracking Application</h1>
 
-<form method="post" id="playlist-form" action="">
+<form method="post" id="playlist-form" action="{% url playlists_add_track %}">
 <fieldset>
 
 {{ form.artist.errors }}
 <label for="artist">Artist</label>
-<input type="text" id="artist" class="text" name="artist" value="" />
+{{ form.artist }}
 
 {{ form.song_title.errors }}
 <label for="song_title">Song Title</label>
-<input type="text" id="song_title" class="text" name="song_title" value="" />
+{{ form.song_title }}
 
 {{ form.album.errors }}
 <label for="album">Album</label>
-<input type="text" id="album" class="text" name="album" value="" />
+{{ form.album }}
 
 {{ form.label.errors }}
 <label for="label">Label</label>
-<input type="text" id="label" class="text" name="label" value="" />
+{{ form.label }}
 
-{{ form.song_title.errors }}
+{{ form.song_notes.errors }}
 <label for="song_notes">Song Notes</label>
-<textarea id="song_notes" class="text" name="song_notes" cols="58" rows="8"></textarea>
+{{ form.song_notes }}
 
 <input type="submit" class="button" name="submit" value="Submit" />
 <input type="submit" class="button" name="break" value="Add Break" />
@@ -54,6 +54,22 @@
 <div id="playlist-column"> <!-- playlist column -->
 
 <h2>Artist &bull; Song Title &bull; Album &bull; Label</h2>
+
+{% for track in tracks %}
+
+<div class="song-info"> <!-- song information container -->
+<p class="time">1:12 PM</p>
+<p><span class="artist">{{ track.artist_name }}</span> 
+    &bull; <span class="song">{{ track.track_title }}</span> 
+    &bull; <span class="album">In The City</span> 
+    &bull; <span class="label">Polydor</span>
+</p>
+<p class="notes"><strong>Notes:</strong> Touring sans Paul Weller. Show Tuesday at Beat Kitchen.</p>
+</div>
+
+{% endfor %}
+
+
 <div class="song-info"> <!-- song information container -->
 <p class="time">1:12 PM</p>
 <p><span class="artist">The Jam</span> &bull; <span class="song">New of the World</span> &bull; <span class="album">In The City</span> &bull; <span class="label">Polydor</span></p>

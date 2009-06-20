@@ -114,6 +114,8 @@ class Event(db.Model):
     # TODO(trow): Require this to be >= 1.
     duration_days = db.IntegerProperty(default=1,
                                        verbose_name='event duration (days)')
+    tasks_can_be_claimed = db.BooleanProperty(default=False, 
+                                              verbose_name='tasks are ready to be claimed')
 
     def __unicode__(self):
         """Returns a human-readable version of an Event."""
@@ -127,8 +129,10 @@ class Event(db.Model):
     @property
     def tasks(self):
         raise NotImplementedError("TODO")
-        #for task in self.task_set.all().order_by("start_time"):
-        #    yield task
+        # tasks = []
+        # if self.tasks_can_be_claimed:
+        #     tasks = [t for t in self.task_set.all().order_by("start_time")]
+        # return tasks
     
 
 class TaskType(db.Model):
