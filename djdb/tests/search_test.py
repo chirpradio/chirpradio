@@ -54,6 +54,10 @@ class SearchTestCase(unittest.TestCase):
         self.assertEqual([u"foo"], search.explode(u"the foo"))
         self.assertEqual([u"foo"], search.explode(u"foo, the"))
 
+    def test_strip_tags(self):
+        self.assertEqual("foo", search.strip_tags("foo"))
+        self.assertEqual("foo ", search.strip_tags("foo [bar]"))
+
     def test_parse_query_string(self):
         # Check that we can handle the empty query.
         self.assertEqual([], search._parse_query_string(u""))
@@ -127,13 +131,13 @@ class SearchTestCase(unittest.TestCase):
         key4 = db.Key.from_path("kind_Bar", "key4")
 
         idx = search.Indexer()
-        idx.add_key(key1, [u"alpha beta"])
-        idx.add_key(key2, [u"alpha delta"])
+        idx.add_key(key1, "f1", u"alpha beta")
+        idx.add_key(key2, "f2", u"alpha delta")
         idx.save()
 
         idx = search.Indexer()
-        idx.add_key(key3, [u"alpha gamma"])
-        idx.add_key(key4, [u"alaska"])
+        idx.add_key(key3, "f1", u"alpha gamma")
+        idx.add_key(key4, "f2", u"alaska")
         idx.save()
 
         self.assertEqual(set([key1, key2, key3]), 
@@ -143,16 +147,21 @@ class SearchTestCase(unittest.TestCase):
             set([key1, key2]),
             search.fetch_keys_for_one_term("alpha", entity_kind="kind_Foo"))
 
+        self.assertEqual(
+            set([key1, key3]),
+            search.fetch_keys_for_one_term("alpha", field="f1"))
+
         self.assertEqual(set([key1]),
                          search.fetch_keys_for_one_term("beta"))
 
         self.assertEqual(0, len(search.fetch_keys_for_one_term("unknown")))
 
-
         self.assertEqual(set([key1, key2, key3]), 
                          search.fetch_keys_for_one_prefix("alpha"))
         self.assertEqual(set([key1, key2, key3, key4]), 
                          search.fetch_keys_for_one_prefix("al"))
+        self.assertEqual(set([key2, key4]), 
+                         search.fetch_keys_for_one_prefix("al", field="f2"))
 
         self.assertEqual(0, len(search.fetch_keys_for_one_prefix("unknown")))
 
@@ -165,12 +174,12 @@ class SearchTestCase(unittest.TestCase):
         key6 = db.Key.from_path("kind_Bar", "key6")
 
         idx = search.Indexer()
-        idx.add_key(key1, [u"alpha beta"])
-        idx.add_key(key2, [u"alpha delta"])
-        idx.add_key(key3, [u"alaska beta"])
-        idx.add_key(key4, [u"beta delta"])
-        idx.add_key(key5, [u"alpha alaska"])
-        idx.add_key(key6, [u"delta gamma"])
+        idx.add_key(key1, "f1", u"alpha beta")
+        idx.add_key(key2, "f2", u"alpha delta")
+        idx.add_key(key3, "f1", u"alaska beta")
+        idx.add_key(key4, "f2", u"beta delta")
+        idx.add_key(key5, "f1", u"alpha alaska")
+        idx.add_key(key6, "f2", u"delta gamma")
         idx.save()
 
         # Check that some simple queries are handled correctly.

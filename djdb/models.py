@@ -273,12 +273,16 @@ class SearchMatches(db.Model):
     # my_obj.key().kind().
     entity_kind = db.StringProperty(required=True)
 
+    # An optional field identifier, indicating where within entity this
+    # search term appeared.
+    field = db.StringProperty()
+
     # A normalized search term.
     term = db.StringProperty(required=True)
 
-    # When this chunk of matches was added.
+    # When this collection of matches was created.
     timestamp = db.DateTimeProperty(auto_now=True)
 
-    # A list of datastore keys for objects whose text metadata contains
+    # A list of datastore keys for entities whose text metadata contains
     # the term "term".
     matches = db.ListProperty(db.Key)

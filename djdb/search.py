@@ -85,6 +85,14 @@ def explode(text):
     return [term for term in scrub(text).split() if not _is_stop_word(term)]
 
 
+def strip_tags(text):
+    """Removes all tags from a string.
+
+    A tag is a chunk of text enclosed in square bracks, [like this].
+    """
+    return re.sub(r"\[[^\]]+\]", "", text)
+
+
 ###
 ### Indexing
 ###
@@ -110,65 +118,45 @@ class Indexer(object):
         """
         return self._transaction
 
-    def _get_matches(self, entity_kind, term):
+    def _get_matches(self, entity_kind, field, term):
         """Returns a cached SearchMatches object for a given kind and term."""
-        key = (entity_kind, term)
+        key = (entity_kind, field, term)
         sm = self._matches.get(key)
         if sm is None:
             sm = models.SearchMatches(generation=_GENERATION,
                                       entity_kind=entity_kind,
+                                      field=field,
                                       term=term,
                                       parent=self.transaction)
             self._matches[key] = sm
         return sm
 
-    def add_key(self, key, text_list):
+    def add_key(self, key, field, text):
         """Prepare to index content associated with a datastore key.
 
         Args:
           key: A db.Key instance.
-          text_list: An interable sequence of unicode strings.
+          field: A field identifier string.
+          text: A unicode string, the content to be indexed.
         """
-        all_terms = set()
-        for text in text_list:
-            all_terms.update(explode(text))
-        for term in all_terms:
-            sm = self._get_matches(key.kind(), term)
+        for term in set(explode(text)):
+            sm = self._get_matches(key.kind(), field, term)
             sm.matches.append(key)
-
-    @classmethod
-    def _get_artist_text(cls, artist):
-        """Returns a sequence of indexable Artist metadata strings."""
-        if artist:
-            return [artist.name]
-        return []
 
     def add_artist(self, artist):
         """Prepare to index metadata associated with an Artist instance."""
-        self.add_key(artist.key(), self._get_artist_text(artist))
-
-    @classmethod
-    def _get_album_text(cls, album):
-        """Returns a sequence of indexable Album metadata strings."""
-        # We don't want to index "Various Artists" in the event of a
-        # compilation, so we don't use album.artist_name here.
-        return [album.title] + cls._get_artist_text(album.album_artist)
+        self.add_key(artist.key(), None, artist.name)
 
     def add_album(self, album):
         """Prepare to index metdata associated with an Album instance."""
-        self.add_key(album.key(), self._get_album_text(album))
-
-    @classmethod
-    def _get_track_text(cls, track):
-        """Returns a sequence of indexable Track metadata strings."""
-        text = [track.title]
-        text.extend(cls._get_album_text(track.album))
-        text.extend(cls._get_artist_text(track.track_artist))
-        return text
+        self.add_key(album.key(), "title", strip_tags(album.title))
+        self.add_key(album.key(), "artist", album.artist_name)
 
     def add_track(self, track):
         """Prepare to index metdata associated with a Track instance."""
-        self.add_key(track.key(), self._get_track_text(track))
+        self.add_key(track.key(), "title", strip_tags(track.title))
+        self.add_key(track.key(), "album", strip_tags(track.album.title))
+        self.add_key(track.key(), "artist", track.artist_name)
 
     def save(self):
         """Write all pending index data into the Datastore."""
@@ -269,25 +257,24 @@ def _parse_query_string(query_str):
 ###
 
 def _fetch_all(query):
-    import sys
+    # For now, we don't actually return all results --- just the
+    # results we can gather from the first 999 match objects.
+    # That should always be enough.
     all_matches = set()
-    offset = 0
-    while True:
-        saw_one = False
-        for sm in query.fetch(limit=100, offset=offset):
-            all_matches.update(sm.matches)
-            offset += 1
-            saw_one = True
-        if not saw_one:
-            return all_matches
+    for sm in query.fetch(limit=999):
+        all_matches.update(sm.matches)
+    return all_matches
 
-def fetch_keys_for_one_term(term, entity_kind=None):
+
+def fetch_keys_for_one_term(term, entity_kind=None, field=None):
     """Find entity keys matching a single search term.
 
     Args:
       term: A unicode string containing a single search term.
       entity_kind: An optional string.  If given, the returned keys are
         restricted to entities of that kind.
+      field: An optional string.  If given, the returned keys are restricted
+        to matches for that particular field.
 
     Returns:
       A set of db.Key objects.
@@ -295,17 +282,21 @@ def fetch_keys_for_one_term(term, entity_kind=None):
     query = models.SearchMatches.all()
     if entity_kind:
         query.filter("entity_kind =", entity_kind)
+    if field:
+        query.filter("field =", field)
     query.filter("term =", term)
     return _fetch_all(query)
 
 
-def fetch_keys_for_one_prefix(term_prefix, entity_kind=None):
+def fetch_keys_for_one_prefix(term_prefix, entity_kind=None, field=None):
     """Find entity keys matching a single search term prefix.
 
     Args:
       term: A unicode string containing a single search term.
       entity_kind: An optional string.  If given, the returned keys are
         restricted to entities of that kind.
+      field: An optional string.  If given, the returned keys are restricted
+        to matches for that particular field.
 
     Returns:
       A set of db.Key objects.
@@ -313,8 +304,10 @@ def fetch_keys_for_one_prefix(term_prefix, entity_kind=None):
     query = models.SearchMatches.all()
     if entity_kind:
         query.filter("entity_kind =", entity_kind)
+    if field:
+        query.filter("field =", field)
     query.filter("term >=", term_prefix)
-    query.filter("term <", term_prefix + "~")
+    query.filter("term <", term_prefix + u"\uffff")
     return _fetch_all(query)
 
 
@@ -385,8 +378,9 @@ def load_and_segment_keys(fetched_keys):
     """
     segmented = {}
     for entity in db.get(fetched_keys):
-        by_kind = segmented.get(entity.kind())
-        if by_kind is None:
-            by_kind = segmented[entity.kind()] = []
-        by_kind.append(entity)
+        if entity:
+            by_kind = segmented.get(entity.kind())
+            if by_kind is None:
+                by_kind = segmented[entity.kind()] = []
+            by_kind.append(entity)
     return segmented
