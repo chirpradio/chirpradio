@@ -63,13 +63,13 @@ class PlaylistTrack(db.Model):
     # Reference to artist from CHIRP digital library (if exists in library)
     artist = db.ReferenceProperty(Artist, required=False)
     # Track title if this is a freeform entry
-    track_title = db.StringProperty(required=False)
+    freeform_track_title = db.StringProperty(required=False)
     # Reference to track (mp3 file) from CHIRP digital library (if exists in library)
     track = db.ReferenceProperty(Track, required=False)
     # The order at which this track appears in the playlist
     track_number = db.IntegerProperty(required=True, default=1)
     # Album title if this is a freeform entry
-    album_title = db.StringProperty(required=False)
+    freeform_album_title = db.StringProperty(required=False)
     # Reference to album from CHIRP digital library (if exists in library)
     album = db.ReferenceProperty(Album, required=False)
     # The date this playlist track was established 
@@ -85,6 +85,23 @@ class PlaylistTrack(db.Model):
             return self.artist.name
         else:
             return self.freeform_artist_name
+    
+    @property
+    def track_title(self):
+        # validate() should enforce that one of these is available:
+        if self.track:
+            return self.track.title
+        else:
+            return self.freeform_track_title
+    
+    @property
+    def album_title(self):
+        if self.album:
+            return self.album.title
+        elif self.freeform_album_title:
+            return self.freeform_album_title
+        else:
+            return None
     
     def __init__(self, *args, **kwargs):
         super(PlaylistTrack, self).__init__(*args, **kwargs)
