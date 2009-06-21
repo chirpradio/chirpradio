@@ -356,3 +356,52 @@ class SearchTestCase(unittest.TestCase):
         self.assertEqual(
             expected,
             search.fetch_keys_for_query_string(u"fire"))
+
+    def test_index_optimization(self):
+        # Create a bunch of test keys.
+        test_keys = [db.Key.from_path("kind_dummy", "key%02d" % i)
+                     for i in range(12)]
+        # Now create four test SearchMatches, all for the same term
+        # and over two different fields.  Split the four sets of keys
+        # between them.
+        for i in range(4):
+            sm = models.SearchMatches(generation=search._GENERATION,
+                                      entity_kind="kind_dummy",
+                                      field="field%d" % (i%2),
+                                      term="foo")
+            sm.matches.extend(test_keys[i::4])
+            sm.save()
+        # Optimize on our term
+        num_deleted = search.optimize_index("foo")
+        # We go from 4 objects to 2, so we should return 4-2=2.
+        self.assertEqual(2, num_deleted)
+        # There should now just one SearchMatches per field.
+        sm = None
+        query = models.SearchMatches.all().filter("term =", "foo")
+        all_sms = sorted(query.fetch(999), key=lambda sm: sm.field)
+        self.assertEqual(2, len(all_sms))
+        for sm in all_sms:
+            self.assertEqual(search._GENERATION, sm.generation)
+            self.assertEqual("kind_dummy", sm.entity_kind)
+            self.assertEqual("foo", sm.term)
+        self.assertEqual("field0", all_sms[0].field)
+        self.assertEqual(set(test_keys[0::2]), set(all_sms[0].matches))
+        self.assertEqual("field1", all_sms[1].field)
+        self.assertEqual(set(test_keys[1::2]), set(all_sms[1].matches))
+
+        # Create a SearchMatches for a stop word.  Optimization should
+        # cause that object to be deleted.
+        sm = models.SearchMatches(generation=search._GENERATION,
+                                  entity_kind="kind_dummy",
+                                  field="field",
+                                  term="the")
+        sm.matches.extend(test_keys)
+        sm.save()
+        num_deleted = search.optimize_index("the")
+        self.assertEqual(1, num_deleted)
+        query = models.SearchMatches.all().filter("term =", "the")
+        self.assertEqual(0, query.count())
+
+
+            
+        

@@ -164,6 +164,71 @@ class Indexer(object):
         self._matches = {}
 
 
+def optimize_index(term):
+    """Optimize our index for a specific term.
+
+    Locates all SearchMatches objects associated with the given term
+    and merges them together so that there is only one SearchMatches
+    per entity kind and field.
+
+    Args:
+      text: A normalized search term.
+
+    Returns:
+      The decrease in the number of SearchMatches objects as a result of
+      the optimization.
+    """
+    query = models.SearchMatches.all().filter("term =", term)
+
+    # First we iterate over all of the SearchMatches associated with
+    # particular term and segment them by entity kind and field.
+    segmented = {}
+    for sm in query.fetch(999):
+        # Skip anything outside the current generation.
+        if sm.generation != _GENERATION:
+            continue
+        key = (sm.entity_kind, sm.field)
+        subset = segmented.get(key)
+        if not subset:
+            subset = segmented[key] = []
+        subset.append(sm)
+
+    num_deleted = 0
+
+    # Is this term a stop word?  In that case we can just delete
+    # everything that we found.  This case occurs when new stop words
+    # are added to the list.
+    if _is_stop_word(term):
+        for subset in segmented.itervalues():
+            db.delete(subset)
+            num_deleted += len(subset)
+        return num_deleted
+
+    # Now for any segment that contains more than one SearchMatches object,
+    # merge them all together.
+    for (kind, field), subset in segmented.iteritems():
+        if len(subset) > 1:
+            merged = models.SearchMatches(generation=_GENERATION,
+                                          entity_kind=kind,
+                                          field=field,
+                                          term=term)
+            union_of_all_matches = set()
+            for sm in subset:
+                union_of_all_matches.update(sm.matches)
+            merged.matches.extend(union_of_all_matches)
+            # We have to be careful about how we make the change in the
+            # datastore: we write out the new merged object first and
+            # then delete the old objects.  That ensures that no matches
+            # will be lost if any operation fails.
+            merged.save()  # Save the new matches
+            db.delete(subset)  # Delete the old matches
+            # The -1 accounts for the new SearchMatches object that
+            # we created.
+            num_deleted += len(subset) - 1
+
+    return num_deleted
+
+
 def create_artists(all_artist_names):
     """Adds a set of artists to the datastore inside of a transaction.
 
@@ -184,6 +249,7 @@ def create_artists(all_artist_names):
         idx.save()
 
     db.run_in_transaction(transaction_fn)
+
 
 
 ###
@@ -257,11 +323,15 @@ def _parse_query_string(query_str):
 ###
 
 def _fetch_all(query):
+    """Returns a set of (db.Key, matching field) pairs."""
     # For now, we don't actually return all results --- just the
     # results we can gather from the first 999 match objects.
     # That should always be enough.
     all_matches = set()
     for sm in query.fetch(limit=999):
+        # Ignore objects that are not in the current generation.
+        if sm.generation != _GENERATION:
+            continue
         all_matches.update((m, sm.field) for m in sm.matches)
     return all_matches
 

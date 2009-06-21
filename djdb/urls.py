@@ -45,4 +45,7 @@ urlpatterns = patterns(
 
     # Bootstrap -- development only!
     (r'_bootstrap', 'djdb.bootstrap.bootstrap'),
+
+    # Web hook for index optimization
+    (r'_hooks/optimize_index', 'djdb.hooks.optimize_index'),
 )
