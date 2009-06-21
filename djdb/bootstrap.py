@@ -55,7 +55,6 @@ def bootstrap(request):
     search.create_artists(_ARTIST_NAMES)
     # Now build up a bunch of random albums for each artist.
     counter = 1
-    idx = search.Indexer()
     for art in models.Artist.all().fetch(100):
         for _ in range(random.randint(1, 10)):
 
@@ -64,6 +63,7 @@ def bootstrap(request):
             if random.randint(1, 10) == 1:
                 discs = range(1, random.randint(2, 5))
 
+            idx = search.Indexer()
             for disc_num in discs:
                 counter += 1
                 alb = models.Album(
@@ -73,8 +73,8 @@ def bootstrap(request):
                     import_timestamp=datetime.datetime.now(),
                     album_artist=art,
                     num_tracks=random.randint(2, 12),
+                    parent=idx.transaction,
                     )
-                alb.save()
                 idx.add_album(alb)
                 for i in range(alb.num_tracks):
                     trk = models.Track(
@@ -85,8 +85,8 @@ def bootstrap(request):
                         sampling_rate_hz=44100,
                         bit_rate_kbps=128,
                         channels=u"stereo",
-                        duration_ms=random.randint(60000, 300000))
-                    trk.save()
+                        duration_ms=random.randint(60000, 300000),
+                        parent=idx.transaction)
                     idx.add_track(trk)
-                idx.save()
+            idx.save()
     return http.HttpResponseRedirect("/djdb/")
