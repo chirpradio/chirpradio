@@ -103,6 +103,9 @@ class Indexer(object):
     def __init__(self):
         # A cache of our pending, to-be-written SearchMatches objects.
         self._matches = {}
+        # Additional objects to save at the same time as the
+        # SearchMatches.
+        self._txn_objects_to_save = []
         # We use the current time in microseconds as the transaction ID.
         timestamp = 1000000*int(time.time())
         self._transaction = db.Key.from_path("IndexerTransaction",
@@ -144,24 +147,44 @@ class Indexer(object):
             sm.matches.append(key)
 
     def add_artist(self, artist):
-        """Prepare to index metadata associated with an Artist instance."""
+        """Prepare to index metadata associated with an Artist instance.
+
+        artist must have the indexer's transaction as its parent key.
+        artist is saved when the indexer's save() method is called.
+        """
+        assert artist.parent_key() == self.transaction
         self.add_key(artist.key(), None, artist.name)
+        self._txn_objects_to_save.append(artist)
 
     def add_album(self, album):
-        """Prepare to index metdata associated with an Album instance."""
+        """Prepare to index metdata associated with an Album instance.
+
+        album must have the indexer's transaction as its parent key.
+        album is saved when the indexer's save() method is called.
+        """
+        assert album.parent_key() == self.transaction
         self.add_key(album.key(), "title", strip_tags(album.title))
         self.add_key(album.key(), "artist", album.artist_name)
+        self._txn_objects_to_save.append(album)
 
     def add_track(self, track):
-        """Prepare to index metdata associated with a Track instance."""
+        """Prepare to index metdata associated with a Track instance.
+
+        track must have the indexer's transaction as its parent key.
+        track is saved when the indexer's save() method is called.
+        """
+        assert track.parent_key() == self.transaction
         self.add_key(track.key(), "title", strip_tags(track.title))
         self.add_key(track.key(), "album", strip_tags(track.album.title))
         self.add_key(track.key(), "artist", track.artist_name)
+        self._txn_objects_to_save.append(track)
 
     def save(self):
         """Write all pending index data into the Datastore."""
-        db.save(self._matches.values())
+        self._txn_objects_to_save.extend(self._matches.itervalues())
+        db.save(self._txn_objects_to_save)
         self._matches = {}
+        self._txn_objects_to_save
 
 
 def optimize_index(term):
@@ -237,19 +260,12 @@ def create_artists(all_artist_names):
         names of the artists to be added.
     """
     idx = Indexer()
-
-    def transaction_fn():
-        artist_objs = []
-        for name in all_artist_names:
-            art = models.Artist.create(name=name,
-                                       parent=idx.transaction)
-            artist_objs.append(art)
-            idx.add_artist(art)
-        db.save(artist_objs)
-        idx.save()
-
-    db.run_in_transaction(transaction_fn)
-
+    artist_objs = []
+    for name in all_artist_names:
+        art = models.Artist.create(name=name,
+                                   parent=idx.transaction)
+        idx.add_artist(art)
+    idx.save()
 
 
 ###

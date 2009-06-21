@@ -246,17 +246,20 @@ class SearchTestCase(unittest.TestCase):
         self.assertEqual(None, search.fetch_keys_for_query_string(u"-foo"))
 
     def test_object_indexing(self):
+        idx = search.Indexer()
+
         # Create some test artists.
-        art1 = models.Artist(name=u"Fall, The")
-        art1.save()
-        art2 = models.Artist(name=u"Eno, Brian")
-        art2.save()
+        art1 = models.Artist(name=u"Fall, The", parent=idx.transaction,
+                             key_name="art1")
+        art2 = models.Artist(name=u"Eno, Brian", parent=idx.transaction,
+                             key_name="art2")
         # Create some test single-artist albums.
         alb1 = models.Album(title=u"This Nation's Saving Grace",
                             album_id=12345,
                             import_timestamp=datetime.datetime.now(),
                             album_artist=art1,
-                            num_tracks=123)
+                            num_tracks=123,
+                            parent=idx.transaction)
         trk1 = []
         for i, track_title in enumerate(
             (u"Mansion", u"Bombast", u"Cruiser's Creek", u"What You Need",
@@ -268,12 +271,14 @@ class SearchTestCase(unittest.TestCase):
                                      channels="stereo",
                                      duration_ms=123,
                                      title=track_title,
-                                     track_num=i+1))
+                                     track_num=i+1,
+                                     parent=idx.transaction))
         alb2 = models.Album(title=u"Another Green World",
                             album_id=67890,
                             import_timestamp=datetime.datetime.now(),
                             album_artist=art2,
-                            num_tracks=456)
+                            num_tracks=456,
+                            parent=idx.transaction)
         trk2 = []
         for i, track_title in enumerate(
             (u"Sky Saw", u"Over Fire Island", u"St. Elmo's Fire",
@@ -285,13 +290,15 @@ class SearchTestCase(unittest.TestCase):
                                      channels="joint_stereo",
                                      duration_ms=456,
                                      title=track_title,
-                                     track_num=i+1))
+                                     track_num=i+1,
+                                     parent=idx.transaction))
         # Create a test album that is a compilation.
         alb3 = models.Album(title=u"R&B Gold: 1976",
                             album_id=76543,
                             import_timestamp=datetime.datetime.now(),
                             is_compilation=True,
-                            num_tracks=789)
+                            num_tracks=789,
+                            parent=idx.transaction)
         trk3_art = []
         trk3 = []
         for i, (artist_name, track_title) in enumerate(
@@ -300,8 +307,9 @@ class SearchTestCase(unittest.TestCase):
              (u"Aretha Franklin", u"Something He Can Feel"),
              (u"KC & the Sunshine Band",
               u"(Shake, Shake, Shake) Shake Your Booty"))):
-            art = models.Artist(name=artist_name)
-            art.save()
+            art = models.Artist(name=artist_name,
+                                key_name=artist_name,
+                                parent=idx.transaction)
             trk3_art.append(art)
             trk3.append(models.Track(ufid="test3-%d" % i,
                                      album=alb3,
@@ -311,10 +319,10 @@ class SearchTestCase(unittest.TestCase):
                                      duration_ms=789,
                                      title=track_title,
                                      track_artist=art,
-                                     track_num=i+1))
+                                     track_num=i+1,
+                                     parent=idx.transaction))
 
         # Now index everything we just created.
-        idx = search.Indexer()
         idx.add_artist(art1)
         idx.add_artist(art2)
         for art in trk3_art:
@@ -327,7 +335,7 @@ class SearchTestCase(unittest.TestCase):
         for trk in trk1 + trk2 + trk3:
             idx.add_track(trk)
 
-        idx.save()
+        idx.save()  # This also saves all of the objects.
 
         # Now do some test searches.
 
