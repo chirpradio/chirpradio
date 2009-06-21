@@ -19,6 +19,8 @@
 
 import hashlib
 from google.appengine.ext import db
+from auth.models import User
+
 
 # A list of standard doctypes.
 # For now, the only valid doctype is "review".
@@ -166,7 +168,7 @@ class Artist(db.Model):
     @property
     def url(self):
         """URL for artist information page."""
-        return u"/djdb/artist/" + self.name
+        return u"/djdb/artist/%s/info" % self.name
 
     @property
     def num_albums(self):
@@ -241,7 +243,7 @@ class Album(db.Model):
 
     @property
     def url(self):
-        return "/djdb/album/%d" % self.album_id
+        return "/djdb/album/%d/info" % self.album_id
 
     _COMPILATION_ARTIST_NAME = u"Various Artists"
 

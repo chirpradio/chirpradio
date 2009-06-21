@@ -33,10 +33,10 @@ urlpatterns = patterns(
     (r'^/?$', 'djdb.views.landing_page'),
 
     # Artist information page
-    (r'artist/(.*)', 'djdb.views.artist_page'),
+    (r'artist/(.*)/info', 'djdb.views.artist_info_page'),
     
     # Album information page
-    (r'album/(.*)', 'djdb.views.album_page'),
+    (r'album/(.*)/info', 'djdb.views.album_info_page'),
 
     (r'update/artists/bulk_add', 'djdb.views.artists_bulk_add'),
     
