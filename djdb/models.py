@@ -20,6 +20,10 @@
 import hashlib
 from google.appengine.ext import db
 
+# A list of standard doctypes.
+# For now, the only valid doctype is "review".
+DOCTYPE_REVIEW = "review"  # A review, subject must be an Album object.
+
 
 class DjDbImage(db.Model):
     """An image (usually a JPEG or PNG) associated with an artist or album.
@@ -273,6 +277,14 @@ class Album(db.Model):
         """Returns Album tracks sorted by track number."""
         return sorted(self.track_set, key=lambda x: x.sort_key)
 
+    @property
+    def all_reviews(self):
+        """Returns all reviews for this object."""
+        rev_docs = [doc for doc in self.document_set
+                    if doc.doctype == DOCTYPE_REVIEW]
+        rev_docs.sort(key=lambda x: x.sort_key)
+        return rev_docs
+
 
 _CHANNEL_CHOICES = ("stereo", "joint_stereo", "dual_mono", "mono")
 
@@ -393,3 +405,36 @@ class SearchMatches(db.Model):
     # A list of datastore keys for entities whose text metadata contains
     # the term "term".
     matches = db.ListProperty(db.Key)
+
+
+class Document(db.Model):
+    """A document is a piece of (possibly long) user generated text
+    that is attached to a specific djdb object.
+    """
+    # The object that this document's text is the subject of.
+    subject = db.ReferenceProperty(required=True)
+
+    # The user who wrote the text.
+    author = db.ReferenceProperty(User, required=True)
+
+    # When this document was created.
+    timestamp = db.DateTimeProperty(required=True, auto_now=True)
+
+    # What type of document this is.
+    # Example: "review" for an Album review.
+    doctype = db.CategoryProperty(required=True)
+
+    # If True, this document should not be shown under normal
+    # circumstances.
+    is_hidden = db.BooleanProperty(required=True, default=False)
+
+    # The title of this document.
+    title = db.StringProperty(required=True)
+    
+    # The text of the document.
+    text = db.TextProperty(required=True)
+
+    @property
+    def sort_key(self):
+        # We want to sort documents in reverse chronological order.
+        return tuple(-x for x in self.timestamp.utctimetuple())
