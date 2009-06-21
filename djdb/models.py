@@ -380,9 +380,9 @@ class SearchMatches(db.Model):
     # my_obj.key().kind().
     entity_kind = db.StringProperty(required=True)
 
-    # An optional field identifier, indicating where within entity this
+    # A field identifier, indicating where within the entity this
     # search term appeared.
-    field = db.StringProperty()
+    field = db.StringProperty(required=True)
 
     # A normalized search term.
     term = db.StringProperty(required=True)

@@ -358,7 +358,7 @@ class SearchTestCase(unittest.TestCase):
         expected = {
             trk2[1].key(): set(["title"]),
             trk2[2].key(): set(["title"]),
-            trk3_art[0].key(): set([None]),
+            trk3_art[0].key(): set(["name"]),
             trk3[0].key(): set(["artist"]),
             }
         self.assertEqual(

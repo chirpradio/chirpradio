@@ -153,7 +153,7 @@ class Indexer(object):
         artist is saved when the indexer's save() method is called.
         """
         assert artist.parent_key() == self.transaction
-        self.add_key(artist.key(), None, artist.name)
+        self.add_key(artist.key(), "name", artist.name)
         self._txn_objects_to_save.append(artist)
 
     def add_album(self, album):
@@ -182,6 +182,10 @@ class Indexer(object):
     def save(self):
         """Write all pending index data into the Datastore."""
         self._txn_objects_to_save.extend(self._matches.itervalues())
+        # All of the objects in self._txn_objects_to_save are part of
+        # the same entity group.  This ensures that db.save is an
+        # atomic operation --- either all of the objects are
+        # successfully saved or none are.
         db.save(self._txn_objects_to_save)
         self._matches = {}
         self._txn_objects_to_save
