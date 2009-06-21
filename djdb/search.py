@@ -107,7 +107,7 @@ class Indexer(object):
         # SearchMatches.
         self._txn_objects_to_save = []
         # We use the current time in microseconds as the transaction ID.
-        timestamp = 1000000*int(time.time())
+        timestamp = int(1000000*time.time())
         self._transaction = db.Key.from_path("IndexerTransaction",
                                              timestamp)
 
