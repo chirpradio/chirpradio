@@ -386,7 +386,14 @@ class Track(db.Model):
         return self.title
 
 
+############################################################################
+
+
 class SearchMatches(db.Model):
+    """A set of objects matching a given search term.  We
+    implement search by running datastore queries across these
+    objects.
+    """
     # What generation is this data a part of?  In the future we can use
     # this for development, schema changes, reindexing, etc.
     generation = db.IntegerProperty(required=True)
@@ -410,9 +417,8 @@ class SearchMatches(db.Model):
     matches = db.ListProperty(db.Key)
 
 
-###
-### Document: User-generated text storage for reviews, notes, etc.
-###
+############################################################################
+
 
 class Document(db.Model):
     """A document is a piece of (possibly long) user generated text
@@ -451,3 +457,28 @@ class Document(db.Model):
     def sort_key(self):
         # We want to sort documents in reverse chronological order.
         return tuple(-x for x in self.timestamp.utctimetuple())
+
+
+############################################################################
+
+
+class TagEdit(db.Model):
+    """A user edit to an object's tags.
+
+    The state of an object's tags is computed by merging together
+    the various TagEdits.
+    """
+    # The object being tagged.
+    subject = db.ReferenceProperty(required=True)
+
+    # The user who made this edit.
+    author = db.ReferenceProperty(User, required=True)
+
+    # When this document was created.
+    timestamp = db.DateTimeProperty(required=True, auto_now=True)
+
+    # A list of the tags that were added.
+    added = db.StringListProperty()
+
+    # A list of the tags that were removed.
+    removed = db.StringListProperty()
