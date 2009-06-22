@@ -20,5 +20,21 @@ It is still very primitive.
 {% endfor %}
 </table>
 
+<h3>Reviews</h3>
+{% if album.reviews %}
+<a href="new_review">Write another review</a> of this album.
+{% for doc in album.reviews %}
+<p>
+<b>{{ doc.title }}</b><br>
+<i>By {{ doc.author }}</i><br>
+<small>Added {{ doc.timestamp|date:"F j, Y P" }}</small><br>
+{{ doc.text|safe }}
+</p>
+{% endfor %}
+{% else %}
+No reviews yet!  You could be the first to
+<a href="new_review">write a review</a> of this album.
+{% endif %}
+
 
 {% endblock %}

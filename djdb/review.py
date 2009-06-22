@@ -1,0 +1,36 @@
+###
+### Copyright 2009 The Chicago Independent Radio Project
+### All Rights Reserved.
+###
+### Licensed under the Apache License, Version 2.0 (the "License");
+### you may not use this file except in compliance with the License.
+### You may obtain a copy of the License at
+###
+###     http://www.apache.org/licenses/LICENSE-2.0
+###
+### Unless required by applicable law or agreed to in writing, software
+### distributed under the License is distributed on an "AS IS" BASIS,
+### WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+### See the License for the specific language governing permissions and
+### limitations under the License.
+###
+
+from django import forms
+from djdb import models
+
+
+def new(album, user):
+    """Returns a new partially-initialized Document object for a review.
+
+    Args:
+      album: The album being reviews.
+      user: The user writing the review.
+    """
+    return models.Document(subject=album, author=user,
+                           doctype=models.DOCTYPE_REVIEW)
+
+
+class Form(forms.Form):
+    title = forms.CharField(required=True, min_length=2, max_length=250)
+    text = forms.CharField(required=True, widget=forms.Textarea,
+                           min_length=10, max_length=20000)

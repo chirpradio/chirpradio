@@ -20,6 +20,7 @@
 import hashlib
 from google.appengine.ext import db
 from auth.models import User
+from common import sanitize_html
 
 
 # A list of standard doctypes.
@@ -280,7 +281,7 @@ class Album(db.Model):
         return sorted(self.track_set, key=lambda x: x.sort_key)
 
     @property
-    def all_reviews(self):
+    def reviews(self):
         """Returns all reviews for this object."""
         rev_docs = [doc for doc in self.document_set
                     if doc.doctype == DOCTYPE_REVIEW]
@@ -431,10 +432,14 @@ class Document(db.Model):
     is_hidden = db.BooleanProperty(required=True, default=False)
 
     # The title of this document.
-    title = db.StringProperty(required=True)
+    title = db.StringProperty()
     
     # The text of the document.
-    text = db.TextProperty(required=True)
+    unsafe_text = db.TextProperty()
+
+    @property
+    def text(self):
+        return sanitize_html.sanitize_html(self.unsafe_text)
 
     @property
     def sort_key(self):

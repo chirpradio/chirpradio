@@ -38,6 +38,8 @@ urlpatterns = patterns(
     # Album information page
     (r'album/(.*)/info', 'djdb.views.album_info_page'),
 
+    (r'album/(.*)/new_review', 'djdb.views.album_new_review'),
+
     (r'update/artists/bulk_add', 'djdb.views.artists_bulk_add'),
     
     # Images

@@ -17,12 +17,15 @@
 
 """Views for the DJ Database."""
 
+from django import forms
 from django import http
 from django.template import loader, Context, RequestContext
 from auth.decorators import require_role
 from auth import roles
+from common import sanitize_html
 from djdb import models
 from djdb import search
+from djdb import review
 
 
 def landing_page(request):
@@ -53,7 +56,7 @@ def artist_info_page(request, artist_name):
     return http.HttpResponse(template.render(ctx))
 
 
-def album_info_page(request, album_id_str):
+def _get_album_or_404(album_id_str):
     if not album_id_str.isdigit():
         return http.HttpResponse(status=404)
     q = models.Album.all().filter("album_id =", int(album_id_str))
@@ -62,9 +65,38 @@ def album_info_page(request, album_id_str):
         pass
     if album is None:
         return http.HttpResponse(status=404)
+    return album
+
+def album_info_page(request, album_id_str):
+    album = _get_album_or_404(album_id_str)
     template = loader.get_template("djdb/album_info_page.html")
     ctx_vars = { "title": u"%s / %s" % (album.title, album.artist_name),
                  "album": album }
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+
+def album_new_review(request, album_id_str):
+    album = _get_album_or_404(album_id_str)
+    template = loader.get_template("djdb/album_new_review.html")
+    ctx_vars = { "title": u"New Review", "album": album }
+    form = None
+    if request.method == "GET":
+        form = review.Form()
+    else:
+        form = review.Form(request.POST)
+        if form.is_valid():
+            if "preview" in request.POST:
+                ctx_vars["preview"] = sanitize_html.sanitize_html(
+                    form.cleaned_data["text"])
+            elif "save" in request.POST:
+                doc = review.new(album, request.user)
+                doc.title = form.cleaned_data["title"]
+                doc.unsafe_text = form.cleaned_data["text"]
+                doc.save()
+                # Redirect back to the album info page.
+                return http.HttpResponseRedirect("info")
+    ctx_vars["form"] = form
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
