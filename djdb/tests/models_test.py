@@ -98,6 +98,7 @@ class ModelsTestCase(unittest.TestCase):
                            album_id=12345,
                            import_timestamp=datetime.datetime.now(),
                            album_artist=self.test_artist,
+                           current_tags=[u"zap", u"explicit", u"foo"],
                            num_tracks=13)
         trk = models.Track(ufid="test ufid",
                            album=alb,
@@ -106,6 +107,7 @@ class ModelsTestCase(unittest.TestCase):
                            channels='stereo',
                            duration_ms=123456,
                            title="test track",
+                           current_tags=[u"zap", u"explicit", u"foo"],
                            track_num=4)
         # Check that the ufid property works properly.
         self.assertEqual("test ufid", trk.ufid)
@@ -117,7 +119,14 @@ class ModelsTestCase(unittest.TestCase):
         # Check that the unicode representation of the object is the track
         # name.
         self.assertEqual("test track", unicode(trk))
-
+        # Check that tag-related things work.
+        for obj in (alb, trk):
+            self.assertEqual([u"explicit", u"foo", u"zap"],
+                             obj.sorted_current_tags)
+        self.assertTrue(trk.is_explicit)
+        trk.current_tags = [u"foo"]
+        self.assertFalse(trk.is_explicit)
+        
         # Set a separate artist for this track, then check that the
         # artist_name property still works.
         trk_art = models.Artist(name='Track Artist')

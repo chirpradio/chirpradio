@@ -8,14 +8,28 @@ This is the album information page for <b>{{ album.title }}</b> by
 It is still very primitive.
 </p>
 
+{% if album.current_tags %}
+<h3>Album Tags</h3>
+{% for tag in album.sorted_current_tags %}
+[{{ tag }}]
+{% endfor %}
+{% endif %}
+
 <h3>Tracks</h3>
 <table>
 {% for track in album.sorted_tracks %}
-<tr>
+<tr
+{% if track.is_explicit %}style="color: red;"{% endif %}
+>
 <td>{{ track.track_num }}.</td>
 <td>{{ track.title }}</td>
 <td>{{ track.duration }}</td>
 <td><small>{{ track.bit_rate_kbps }} kbps</small></td>
+<td>
+{% for tag in track.sorted_current_tags %}
+[{{tag}}]
+{% endfor %}
+</td>
 </tr>
 {% endfor %}
 </table>

@@ -218,10 +218,14 @@ class Album(db.Model):
 
     import_tags = db.StringListProperty()
 
+    # This is just a cached version of the data; the authoritative
+    # version of the tags for 'obj' are found by calling
+    # TagEdit.fetch_and_merge(obj).
+    current_tags = db.StringListProperty()
+
     image = db.ReferenceProperty(DjDbImage)
 
-    # Keys are automatically assigned.  This key format makes uploading
-    # albums to the datastore an idempotent operation.
+    # Keys are automatically assigned. 
     _KEY_FORMAT = u"djdb/a:%x"
 
     @classmethod
@@ -288,6 +292,16 @@ class Album(db.Model):
         rev_docs.sort(key=lambda x: x.sort_key)
         return rev_docs
 
+    @property
+    def sorted_current_tags(self):
+        """Returns a sorted list of tags."""
+        return sorted(self.current_tags, key=unicode.lower)
+
+    def has_tag(self, tag):
+        """Returns true if tag 'tag' is currently set."""
+        tag = tag.lower()
+        return any(tag == t.lower() for t in self.current_tags)
+
 
 _CHANNEL_CHOICES = ("stereo", "joint_stereo", "dual_mono", "mono")
 
@@ -321,6 +335,11 @@ class Track(db.Model):
     track_artist = db.ReferenceProperty(Artist, required=False)
 
     import_tags = db.StringListProperty()
+
+    # This is just a cached version of the data; the authoritative
+    # version of the tags for 'obj' are found by calling
+    # TagEdit.fetch_and_merge(obj).
+    current_tags = db.StringListProperty()
 
     # TODO(trow): Validate that this is > 0 and <= self.album.num_tracks.
     track_num = db.IntegerProperty(required=True)
@@ -384,6 +403,21 @@ class Track(db.Model):
 
     def __unicode__(self):
         return self.title
+
+    @property
+    def sorted_current_tags(self):
+        """Returns a sorted list of tags."""
+        return sorted(self.current_tags, key=unicode.lower)
+
+    def has_tag(self, tag):
+        """Returns true if tag 'tag' is currently set."""
+        tag = tag.lower()
+        return any(tag == t.lower() for t in self.current_tags)
+
+    @property
+    def is_explicit(self):
+        """Returns True if the [Explicit] tag is set on this track."""
+        return self.has_tag("Explicit")
 
 
 ############################################################################
@@ -482,3 +516,25 @@ class TagEdit(db.Model):
 
     # A list of the tags that were removed.
     removed = db.StringListProperty()
+
+    @classmethod
+    def fetch_and_merge(cls, obj):
+        """Walk over an object's tag edit history and compute the
+        current state of its tags.
+
+        Args:
+          obj: The object in question.  If obj has an 'import_tags'
+            property, they are used to seed the set of tags.
+        """
+        current_tags = set(getattr(obj, "import_tags", []))
+        edit_query = cls.all()
+        edit_query.filter("subject =", obj)
+        edit_query.order("timestamp")
+        # TODO(trow): We should angrily complain if the number of tag
+        # edits is too high.
+        for edit in edit_query.fetch(999):
+            current_tags.difference_update(edit.removed)
+            current_tags.update(edit.added)
+        return current_tags
+
+
