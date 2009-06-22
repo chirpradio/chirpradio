@@ -34,3 +34,11 @@ class Form(forms.Form):
     title = forms.CharField(required=True, min_length=2, max_length=250)
     text = forms.CharField(required=True, widget=forms.Textarea,
                            min_length=10, max_length=20000)
+
+
+def fetch_recent(max_num_returned=10):
+    """Returns the most recent reviews, in reverse chronological order."""
+    rev_query = models.Document.all()
+    rev_query.filter("doctype =", models.DOCTYPE_REVIEW)
+    rev_query.order("-timestamp")
+    return rev_query.fetch(max_num_returned)

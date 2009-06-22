@@ -410,6 +410,10 @@ class SearchMatches(db.Model):
     matches = db.ListProperty(db.Key)
 
 
+###
+### Document: User-generated text storage for reviews, notes, etc.
+###
+
 class Document(db.Model):
     """A document is a piece of (possibly long) user generated text
     that is attached to a specific djdb object.
@@ -434,11 +438,13 @@ class Document(db.Model):
     # The title of this document.
     title = db.StringProperty()
     
-    # The text of the document.
+    # The text of the document, exactly as it was entered by the user.
+    # This might not be HTML-safe!
     unsafe_text = db.TextProperty()
 
     @property
     def text(self):
+        """Returns a sanitized version of the text the user input."""
         return sanitize_html.sanitize_html(self.unsafe_text)
 
     @property

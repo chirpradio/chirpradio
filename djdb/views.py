@@ -31,6 +31,10 @@ from djdb import review
 def landing_page(request):
     template = loader.get_template('djdb/landing_page.html')
     ctx_vars = { 'title': 'DJ Database' }
+
+    # Grab recent reviews.
+    ctx_vars["recent_reviews"] = review.fetch_recent()
+
     if request.method == "POST":
         query_str = request.POST.get("query")
         if query_str:

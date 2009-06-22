@@ -3,6 +3,16 @@
 {% block content %}
 Landing page for DJDB app
 
+<h2>Recent Reviews</h2>
+<ul>
+{% for rev in recent_reviews %}
+<li> <a href="{{ rev.subject.url }}">{{ rev.subject.title }},</a>
+reviewed by {{ rev.author }}:  <i>{{ rev.title }}</i>
+&nbsp;&nbsp;
+<small>Posted {{ rev.timestamp|date:"F j, Y P" }}</small>
+{% endfor %}
+</ul>
+
 <h2>Search the Database</h2>
 <form action="" method="post">
 <input type="text" name="query">
