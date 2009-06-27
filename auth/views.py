@@ -26,7 +26,6 @@ import os
 from django import http
 from django.template import loader, Context, RequestContext
 # App Engine imports
-from google.appengine.api import mail
 from google.appengine.api import users as google_users
 # Application imports
 import auth
@@ -34,6 +33,7 @@ from auth import roles
 from auth.decorators import require_role, require_signed_in_user
 from auth import forms as auth_forms
 from auth.models import User
+from common import email
 
 # Require this role in order to access any management tasks.
 USER_MANAGEMENT_ROLE = roles.VOLUNTEER_COORDINATOR
@@ -126,7 +126,7 @@ def forgot_password(request):
         if not form.is_valid():
             ctx_vars['form'] = form
         else:
-            email = ctx_vars['email'] = form.user.email
+            ctx_vars['email'] = form.user.email
             # Assemble the URL that can be used to access the password
             # reset form.
             token = auth.get_password_reset_token(form.user)
@@ -138,11 +138,10 @@ def forgot_password(request):
             msg_ctx = Context({'user': form.user, 'url': url})
             msg_body = msg_tmpl.render(msg_ctx)
             # Actually send the email message.
-            # TODO(trow): This should come from a more general account.
-            mail.send_mail(sender='trowbridge.jon@gmail.com',
-                           to=form.user.email,
-                           subject='Recovering your forgotten CHIRP password',
-                           body=msg_body)
+            email.send_to_user(
+                form.user,
+                subject='Recovering your forgotten CHIRP password',
+                body=msg_body)
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(tmpl.render(ctx))
 
@@ -254,6 +253,15 @@ def add_user(request):
         if form.is_valid():
             user = form.to_user()
             user.save()
+            # Send out the welcome email:
+            msg_tmpl = loader.get_template("auth/welcome_email.txt")
+            msg_ctx = Context({'user': user})
+            msg_body = msg_tmpl.render(msg_ctx)
+            # Actually send the email message.
+            # TODO(trow): This should come from a more general account.
+            email.send_to_user(user,
+                               subject='Invitation to use chirpradio',
+                               body=msg_body)
             ctx_vars['message'] = 'Successfully added user %s' % user.email
             ctx_vars['form'] = auth_forms.UserForm()
     ctx = RequestContext(request, ctx_vars)

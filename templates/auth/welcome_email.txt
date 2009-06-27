@@ -1,0 +1,23 @@
+Hello {{ user }},
+
+This is an automatically-generated email; please do not respond.
+
+You have been invited to use CHIRP's internal web applications.
+But before you get access to them, you need to choose a password.
+
+  (1) Go to http://chirpradio.appspot.com/auth/forgot_password
+
+  (2) Enter your email address and then click "submit".  You must use
+      this email address:  {{ user.email }}
+
+  (3) You will be sent an email containing a link that you can use to
+      choose your password.
+
+
+Once you have a password, you can get to the applications via this link:
+
+  http://chirpradio.appspot.com/
+
+
+Yours truly,
+The CHIRP Tech Committee
