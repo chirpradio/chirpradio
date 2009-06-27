@@ -20,6 +20,15 @@ CSS, etc. should fix this.
 <body>
 
 <div id="container">
+
+  <div id="danger">
+    This system is under active development.  It might not work properly in
+    all browsers.  We apologize in advance
+    for any problems you might have.  If you find a bug, please
+  <a href="http://code.google.com/p/chirpradio/issues/entry">file a bug report
+    </a> and let us know.
+  </div>
+
   <div id="auth">
     {% if user %}
     {{ user }} <a href="{{ logout_url }}">Sign Out</a>
@@ -34,12 +43,6 @@ CSS, etc. should fix this.
       please volunteer to make this page look better!)
   </div> {# end of header #}
   <div class="breadcrumbs">{% block breadcrumbs %}{% endblock %}</div>
-  <div class="message">
-    <b>This system is under active development.  We apologize in advance
-    for any problems.</b>  If you find a bug, please
-  <a href="http://code.google.com/p/chirpradio/issues/entry">file a bug report
-    </a> and let us know.
-  </div>
   <div id="content">
     {% if title %}<h1>{{ title }}</h1>{% endif %}
     {% block content %}{% endblock %}

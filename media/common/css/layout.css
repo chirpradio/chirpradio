@@ -26,6 +26,8 @@
 #branding h2 { padding:0 10px; font-size:14px; margin:-8px 0 8px 0; font-weight:normal; color:#ffc; }
 #user-tools { position:absolute; top:0; right:0; padding:1.2em 10px; font-size:11px; text-align:right; }
 
+#danger { background:yellow; padding:4px; font-size:9px; }
+
 /* SIDEBAR */
 #content-related h3 { font-size:12px; color:#666; margin-bottom:3px; }
 #content-related h4 { font-size:11px; }

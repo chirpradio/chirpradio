@@ -36,16 +36,16 @@ urlpatterns = patterns(
       }),
 
     # The site authentication system.
-    ('^auth/', include('auth.urls')),
+    ('^auth/?', include('auth.urls')),
 
     # The DJ database.
-    ('^djdb/', include('djdb.urls')),
+    ('^djdb/?', include('djdb.urls')),
     
     # DJ Playlists.
-    ('^playlists/', include('playlists.urls')),
+    ('^playlists/?', include('playlists.urls')),
 
     # The volunteer management app.
-    ('^volunteers/', include('volunteers.urls')),
+    ('^volunteers/?', include('volunteers.urls')),
 
     (r'^traffic_log/?', include('traffic_log.urls')),   
 
