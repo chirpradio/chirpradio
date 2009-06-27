@@ -1,0 +1,11 @@
+			      ----------
+			      DJDB Notes
+			      ----------
+
+
+Bootstrapping Test Data
+-----------------------
+
+Visit djdb/_bootstrap to inject randomized artist/album/track data
+into your local datastore.  Search for "fall" to get a sense of the
+test data.
