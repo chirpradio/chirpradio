@@ -37,10 +37,12 @@ CSS, etc. should fix this.
     {% endif %}
   </div> {# end of auth #}
   <div id="header">
-      <a href="/"><img src="/media/common/img/chirp-logo-small.gif"></a>
-      <h1>chirpradio: Internal applications for CHIRP</h1>
-      (Know HTML and CSS?  Have good taste?  If so, 
-      please volunteer to make this page look better!)
+      <a href="/">
+	<img src="/media/common/img/chirp-logo-small.gif" style="float:left;">
+      </a>
+      <h1>chirpradio: CHIRP internal applications</h1>
+      <small>(Know HTML and CSS?  Have good taste?  If so, 
+      please volunteer to make this page look better!)</small>
   </div> {# end of header #}
   <div class="breadcrumbs">{% block breadcrumbs %}{% endblock %}</div>
   <div id="content">
