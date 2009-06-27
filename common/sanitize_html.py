@@ -17,7 +17,7 @@
 
 from common.third_party.BeautifulSoup import BeautifulSoup
 
-_VALID_TAGS = set(["p", "i", "strong", "b", "u", "a", "br"])
+_VALID_TAGS = set(["p", "i", "b", "u", "a", "br"])
 _VALID_ATTRS = set(["href"])
 
 
@@ -30,3 +30,7 @@ def sanitize_html(text):
                      if attr in _VALID_ATTRS]
     return soup.renderContents().decode('utf8')
     
+
+def valid_tags_description():
+    """A human-readable description of the valid HTML_tags."""
+    return " ".join(sorted("<%s>" % tag for tag in _VALID_TAGS))
