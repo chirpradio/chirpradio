@@ -1,5 +1,10 @@
 {% extends "common/base.html" %}
 
+{% block breadcrumbs %}
+<a href="/">chipradio home</a> /
+<a href="/djdb/">DJ Database home</a>
+{% endblock %}
+
 {% block content %}
 
 <p>
@@ -12,7 +17,14 @@ It is still very primitive.
 {% for album in artist.sorted_albums %}
 <tr>
 <td><a href="{{ album.url }}">{{ album.title }}</a></td>
-<td>{{ album.num_tracks }} tracks</td>
+<td>
+{{ album.num_tracks }} track{{ album.num_tracks|pluralize }}
+</td>
+<td>
+{% if album.num_reviews %}
+{{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
+{% endif %}
+</td>
 </tr>
 {% endfor %}
 </table>

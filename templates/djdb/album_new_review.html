@@ -1,5 +1,10 @@
 {% extends "common/base.html" %}
 
+{% block breadcrumbs %}
+<a href="/">chipradio home</a> /
+<a href="/djdb/">DJ Database home</a>
+{% endblock %}
+
 {% block content %}
 
 You are writing a review of
@@ -14,18 +19,29 @@ is currently no way to change a review once it has been submitted!
 
 <form action="new_review.do" method="post">
 {% if preview %}
+<p>
 Your text of your review will look like this when it is displayed:
+</p>
+<div style="BACKGROUND-COLOR: #f0f0f0; PADDING: 10px; BORDER: black 10px solid">
 <p>
 {{ preview|safe }}
 </p>
+</div>
+<p>
 If this looks good to you, click on "Save".  Otherwise you can
-continue to edit the post in the form below.<br>
+continue to edit the post in the form below.
+</p>
 <input type="submit" name="save" value="Save">
 <hr><br><br>
 {% endif %}
-You can use basic HTML markup in your review
-(&lt;b&gt;, &lt;p&gt;, and such); unsupported tags will be stripped out
-automatically.
+<p>
+You can use basic HTML markup in the body of your review; unsupported
+HTML will be stripped out automatically.
+No HTML is allowed in the title of the review; is always treated as plain text.
+</p>
+<p>
+The allowed HTML tags are: {{ valid_html_tags }}
+</p>
 <table>
   {{ form.as_table }}
 </table>

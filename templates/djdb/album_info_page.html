@@ -1,5 +1,10 @@
 {% extends "common/base.html" %}
 
+{% block breadcrumbs %}
+<a href="/">chipradio home</a> /
+<a href="/djdb/">DJ Database home</a>
+{% endblock %}
+
 {% block content %}
 
 <p>
@@ -41,7 +46,7 @@ It is still very primitive.
 <p>
 <b>{{ doc.title }}</b><br>
 <i>By {{ doc.author }}</i><br>
-<small>Added {{ doc.timestamp|date:"F j, Y P" }}</small><br>
+<small>Added {{ doc.timestamp_display|date:"F j, Y P" }}</small><br>
 {{ doc.text|safe }}
 </p>
 {% endfor %}

@@ -1,5 +1,9 @@
 {% extends "common/base.html" %}
 
+{% block breadcrumbs %}
+<a href="/">chipradio home</a>
+{% endblock %}
+
 {% block content %}
 Landing page for DJDB app
 
@@ -9,7 +13,7 @@ Landing page for DJDB app
 <li> <a href="{{ rev.subject.url }}">{{ rev.subject.title }},</a>
 reviewed by {{ rev.author }}:  <i>{{ rev.title }}</i>
 &nbsp;&nbsp;
-<small>Posted {{ rev.timestamp|date:"F j, Y P" }}</small>
+<small>Posted {{ rev.timestamp_display|date:"F j, Y P" }}</small>
 {% endfor %}
 </ul>
 
@@ -26,33 +30,41 @@ reviewed by {{ rev.author }}:  <i>{{ rev.title }}</i>
 </p>
 
 <h3>Artists</h3>
-<i>{{ query_results.Artist|length }} matching artists</i><br>
+<i>{{ query_results.Artist|length }}
+matching artist{{ query_results.Artist|pluralize }}</i><br>
 {% if query_results.Artist %}
 <table>
 {% for artist in query_results.Artist %}
 <tr>
 <td><a href="{{ artist.url}}">{{ artist.pretty_name }}</a></td>
-<td>{{ artist.num_albums }} albums</td>
+<td>{{ artist.num_albums }} album{{ artist.num_albums|pluralize }}</td>
 </tr>
 {% endfor %}
 </table>
 {% endif %}
 
 <h3>Albums</h3>
-<i>{{ query_results.Album|length }} matching albums</i><br>
+<i>{{ query_results.Album|length }}
+matching album{{ query_results.Album|pluralize }}</i><br>
 {% if query_results.Album %}
 <table>
 {% for album in query_results.Album %}
 <tr>
 <td><a href="{{ album.artist_url}}">{{ album.artist_name }}</a></td>
 <td><a href="{{ album.url }}">{{ album.title }}</a></td>
+<td>
+{% if album.num_reviews %}
+{{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
+{% endif %}
+</td>
 </tr>
 {% endfor %}
 </table>
 {% endif %}
 
 <h3>Tracks</h3>
-<i>{{ query_results.Track|length }} matching tracks</i>
+<i>{{ query_results.Track|length }}
+matching track{{ query_results.Track|pluralize }}</i>
 {% if query_results.Track %}
 <table>
 {% for track in query_results.Track %}

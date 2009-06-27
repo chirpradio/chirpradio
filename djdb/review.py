@@ -22,11 +22,15 @@ from djdb import models
 def new(album, user):
     """Returns a new partially-initialized Document object for a review.
 
+    The new Document is in the same entity group as the album being
+    reviewed.
+
     Args:
       album: The album being reviews.
       user: The user writing the review.
     """
-    return models.Document(subject=album, author=user,
+    return models.Document(parent=album,
+                           subject=album, author=user,
                            doctype=models.DOCTYPE_REVIEW)
 
 

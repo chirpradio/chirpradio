@@ -17,6 +17,7 @@
 
 """Views for the DJ Database."""
 
+from google.appengine.ext import db
 from django import forms
 from django import http
 from django.template import loader, Context, RequestContext
@@ -91,13 +92,20 @@ def album_new_review(request, album_id_str):
         form = review.Form(request.POST)
         if form.is_valid():
             if "preview" in request.POST:
+                ctx_vars["valid_html_tags"] = (
+                    sanitize_html.valid_tags_description())
                 ctx_vars["preview"] = sanitize_html.sanitize_html(
                     form.cleaned_data["text"])
             elif "save" in request.POST:
                 doc = review.new(album, request.user)
                 doc.title = form.cleaned_data["title"]
                 doc.unsafe_text = form.cleaned_data["text"]
-                doc.save()
+                # Increment the number of reviews.
+                album.num_reviews += 1
+                # Now save both the modified album and the document.
+                # They are both in the same entity group, so this write
+                # is atomic.
+                db.put([album, doc])
                 # Redirect back to the album info page.
                 return http.HttpResponseRedirect("info")
     ctx_vars["form"] = form

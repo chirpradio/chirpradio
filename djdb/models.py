@@ -21,6 +21,7 @@ import hashlib
 from google.appengine.ext import db
 from auth.models import User
 from common import sanitize_html
+from common import time_util
 
 
 # A list of standard doctypes.
@@ -222,6 +223,10 @@ class Album(db.Model):
     # version of the tags for 'obj' are found by calling
     # TagEdit.fetch_and_merge(obj).
     current_tags = db.StringListProperty()
+
+    # This is just a cached version of the data; the authoritative
+    # review count is generate by calling len(album.reviews).
+    num_reviews = db.IntegerProperty(default=0)
 
     image = db.ReferenceProperty(DjDbImage)
 
@@ -466,6 +471,11 @@ class Document(db.Model):
 
     # When this document was created.
     timestamp = db.DateTimeProperty(required=True, auto_now=True)
+
+    @property
+    def timestamp_display(self):
+        """This is the time to show to users."""
+        return time_util.convert_utc_to_chicago(self.timestamp)
 
     # What type of document this is.
     # Example: "review" for an Album review.
