@@ -27,3 +27,9 @@ def landing_page(request):
             'title': 'Welcome to chirpradio',
             })
     return http.HttpResponse(template.render(ctx))
+
+
+def four_oh_four(request):
+    return http.HttpResponse("No such page: " + request.path,
+                             mimetype="text/plain",
+                             status=404)

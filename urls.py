@@ -48,4 +48,7 @@ urlpatterns = patterns(
     ('^volunteers/', include('volunteers.urls')),
 
     (r'^traffic_log/?', include('traffic_log.urls')),   
+
+    # A catch-all rule to generate a 404.
+    (r'', 'landing_page.views.four_oh_four'),
 )
