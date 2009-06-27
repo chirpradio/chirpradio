@@ -29,9 +29,17 @@ CSS, etc. should fix this.
   </div> {# end of auth #}
   <div id="header">
       <a href="/"><img src="/media/common/img/chirp-logo-small.gif"></a>
-      <h1>Placeholder for CHIRP header: Branding, etc. goes here.</h1>
+      <h1>chirpradio: Internal applications for CHIRP</h1>
+      (Know HTML and CSS?  Have good taste?  If so, 
+      please volunteer to make this page look better!)
   </div> {# end of header #}
   <div class="breadcrumbs">{% block breadcrumbs %}{% endblock %}</div>
+  <div class="message">
+    <b>This system is under active development.  We apologize in advance
+    for any problems.</b>  If you find a bug, please
+  <a href="http://code.google.com/p/chirpradio/issues/entry">file a bug report
+    </a> and let us know.
+  </div>
   <div id="content">
     {% if title %}<h1>{{ title }}</h1>{% endif %}
     {% block content %}{% endblock %}
