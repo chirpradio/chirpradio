@@ -3,6 +3,7 @@ from django.shortcuts import render_to_response
 from django.conf import settings
 from django.template import Context, loader
 from django.utils import simplejson
+import sys
 
 from traffic_log import models, forms, constants
 
@@ -12,13 +13,6 @@ def render(template, payload):
 def index(request):
     spots = models.Spot.all().order('-created').fetch(20)
     return render('traffic_log/index.html', dict(spots=spots))
-
-# def _saveConstraintForm(form):
-#     form = forms.SpotConstraintForm(request.POST)
-#     if form.is_valid():
-#         constraint = form.cleaned_data
-#                     constraints.append(forms.SpotConstraintForm(instance=obj))
-#     return form
 
 def saveConstraint(constraint):
     dows = [ int(x) for x in constraint['dow_list'] ]
@@ -36,22 +30,7 @@ def saveConstraint(constraint):
                 if not obj.is_saved():
                     obj.put()
                 keys.append(obj.key())
-                
-                        
     return keys
-# nevermind about creating constraints on their own for now    
-# def createSpotConstraint(request,fromMethod=False):
-#     constraints = []
-#     if request.method=='POST':
-#         constraint_form = _saveConstraintForm(forms.SpotConstraintForm(request.POST))
-#         if constraint_form.is_valid():
-#             return HttpResponseRedirect('/traffic_log/spot_constraint')
-#         constraints = [constraint_form]
-#     else:
-#         constraints = [forms.SpotConstraintForm()]
-        
-#     return render('traffic_log/create_edit_spot_constraint.html',{'constraints':constraints})
-
 
 def editSpotConstraint(request,spot_constraint_key=None):
     constraint = models.SpotConstraint.get(spot_constraint_key)
@@ -81,8 +60,17 @@ def editSpotConstraint(request,spot_constraint_key=None):
                   )
 
 
-def deleteSpotConstraint(request, spot_constraint_key=None):
-    models.SpotConstraint.get(spot_constraint_key).delete()
+def deleteSpotConstraint(request, spot_constraint_key=None, spot_key=None):
+    ## XXX only delete if spot_key is none, otherwise just remove the constraint from the spot.constraints
+    constraint = models.SpotConstraint.get(spot_constraint_key)
+    if spot_key:
+        constraint.spots.remove(models.Spot.get(spot_key).key())
+        constraint.save()
+    else:
+        constraint.delete()
+        
+        
+
     return HttpResponseRedirect('/traffic_log/spot_constraint/')
 
 def addSpotToConstraint(request, spot_constraint_key, spot_key=None):
@@ -105,7 +93,6 @@ def createSpot(request):
         spot_form = forms.SpotForm(request.POST)
         constraint_form = forms.SpotConstraintForm(request.POST)
         if constraint_form.is_valid() and spot_form.is_valid():
-            ## try/catch?
             constraint_keys = saveConstraint(constraint_form.cleaned_data)
             spot = spot_form.save()
             connectConstraintsAndSpot(constraint_keys, spot.key())
@@ -122,38 +109,37 @@ def createSpot(request):
         return HttpResponseRedirect('/traffic_log/spot/')          
 
     return render('traffic_log/create_edit_spot.html', 
-                  dict(spot=spot_form, constraints=[constraint_form], formaction="/traffic_log/spot/create/")
+                  dict(spot=spot_form, constraint_form=constraint_form, formaction="/traffic_log/spot/create/")
                   )
-
-import sys
-def spotDetail(request, spot_key=None):
-    spot = models.Spot.get(spot_key)
-    sys.stderr.write(",".join(str(x) for x in spot.constraints))
-    constraints = [forms.SpotConstraintForm(instance=x) for x in spot.constraints]
-    form = forms.SpotForm(instance=spot)
-    return render('traffic_log/spot_detail.html',{'spot':spot, 'constraints':constraints, 'dow_dict':constants.DOW_DICT} )
 
 
 def editSpot(request, spot_key=None):
     spot = models.Spot.get(spot_key)
-    constraints = [forms.SpotConstraintForm(instance=x) for x in spot.constraints]
-    #
     if request.method ==  'POST':
         spot_form = forms.SpotForm(request.POST)
-
+        constraint_form = forms.SpotConstraintForm(request.POST)
+        # check if spot is changed
+        # check if new constraint to be added
         if spot_form.is_valid():
             for field in spot_form.fields.keys():
                 setattr(spot,field,spot_form.cleaned_data[field])
-                
                 models.Spot.put(spot)
 
+        if constraint_form.is_valid():
+            connectConstraintsAndSpot(
+                saveConstraint(constraint_form.cleaned_data), spot.key()
+                )
+            
         return HttpResponseRedirect('/traffic_log/spot/')
-
+    
     else:
         return render('traffic_log/create_edit_spot.html', 
                       dict(spot=forms.SpotForm(instance=spot),
-                           constraints=constraints,
+                           spot_key=spot_key,
+                           constraints=spot.constraints,
+                           constraint_form=forms.SpotConstraintForm(),
                            edit=True,
+                           dow_dict=constants.DOW_DICT,
                            formaction="/traffic_log/spot/edit/%s"%spot.key()
                            )
                       )
@@ -162,6 +148,14 @@ def editSpot(request, spot_key=None):
 def deleteSpot(request, spot_key=None):
     models.Spot.get(spot_key).delete()
     return HttpResponseRedirect('/traffic_log/spot')
+
+
+def spotDetail(request, spot_key=None):
+    spot = models.Spot.get(spot_key)
+    sys.stderr.write(",".join(str(x) for x in spot.constraints))
+    constraints = [forms.SpotConstraintForm(instance=x) for x in spot.constraints]
+    form = forms.SpotForm(instance=spot)
+    return render('traffic_log/spot_detail.html',{'spot':spot, 'constraints':constraints, 'dow_dict':constants.DOW_DICT} )
 
 
 def listSpots(request):
@@ -176,8 +170,7 @@ def box(thing):
 
 def connectConstraintsAndSpot(constraint_keys,spot_key):
     for constraint in map(models.SpotConstraint.get, box(constraint_keys)):
-        import sys
-        sys.stderr.write(",".join(constraint.spots))
+        #sys.stderr.write(",".join(constraint.spots))
         if spot_key not in constraint.spots:
             constraint.spots.append(spot_key)
             constraint.put()

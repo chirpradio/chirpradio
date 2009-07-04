@@ -8,7 +8,7 @@ class SpotConstraint(search.SearchableModel):
     hour  = db.IntegerProperty(verbose_name="Hour", choices=constants.HOUR)
     slot  = db.IntegerProperty(verbose_name="Spot", choices=constants.SLOT)
     spots = db.ListProperty(db.Key)
-    
+
     def __init__(self, *args, **kw):
         kw['key_name'] = ":".join([ constants.DOW_DICT[kw['dow']], str(kw['hour']), str(kw['slot']) ])
         search.SearchableModel.__init__(self, *args, **kw)
@@ -25,7 +25,7 @@ class Spot(search.SearchableModel):
     
     @property
     def constraints(self):
-        return SpotConstraint.gql("where spots =:1", self.key())
+        return SpotConstraint.gql("where spots =:1 order by dow, hour, slot", self.key())
 
     def get_absolute_url(self):
         return '/traffic_log/spot/%s/' % self.key()
