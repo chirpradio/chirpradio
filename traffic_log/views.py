@@ -119,7 +119,6 @@ def box(thing):
         return [thing]
     
 
-@require_role(TRAFFIC_LOG_ADMIN)
 def connectConstraintsAndSpot(constraint_keys,spot_key):
     for constraint in map(models.SpotConstraint.get, box(constraint_keys)):
         #sys.stderr.write(",".join(constraint.spots))
@@ -127,7 +126,6 @@ def connectConstraintsAndSpot(constraint_keys,spot_key):
             constraint.spots.append(spot_key)
             constraint.put()
 
-@require_role(TRAFFIC_LOG_ADMIN)
 def saveConstraint(constraint):
     dows = [ int(x) for x in constraint['dow_list'] ]
     
@@ -145,6 +143,7 @@ def saveConstraint(constraint):
                 obj.put()
             keys.append(obj.key())
     return keys
+
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def deleteSpotConstraint(request, spot_constraint_key=None, spot_key=None):
