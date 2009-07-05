@@ -25,11 +25,12 @@ We use these roles to define a very simple set of permissions.
 DJ = 'dj'
 MUSIC_DIRECTOR = 'music_director'
 VOLUNTEER_COORDINATOR = 'volunteer_coordinator'
-
+TRAFFIC_LOG_ADMIN = 'traffic_log_admin'
 
 # A tuple containing all possible roles.
 ALL_ROLES = (
     DJ,
     MUSIC_DIRECTOR,
     VOLUNTEER_COORDINATOR,
+    TRAFFIC_LOG_ADMIN,
 )
