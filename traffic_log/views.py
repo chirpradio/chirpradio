@@ -7,86 +7,24 @@ import sys
 
 from traffic_log import models, forms, constants
 from auth.models import User
+from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
+from auth.decorators import require_role
 
 def render(template, payload):
     return render_to_response(template, payload)
 
+
+@require_role(DJ)
 def index(request):
     spots = models.Spot.all().order('-created').fetch(20)
     return render('traffic_log/index.html', dict(spots=spots))
 
-def saveConstraint(constraint):
-    dows = [ int(x) for x in constraint['dow_list'] ]
-    
-    keys = []
-    if constraint['hourbucket'] != "":
-        hours = range(*eval(constraint['hourbucket']))
-    else:
-        hours = [int(constraint['hour'])]
-    slot = int(constraint['slot'])
-    for d in dows:
-        for h in hours:
-            name = ":".join([constants.DOW_DICT[d],str(h), str(slot)])
-            obj  = models.SpotConstraint.get_or_insert(name,dow=d,hour=h,slot=slot)
-            if not obj.is_saved():
-                obj.put()
-            keys.append(obj.key())
-    return keys
-
-def editSpotConstraint(request,spot_constraint_key=None):
-    constraint = models.SpotConstraint.get(spot_constraint_key)
-    
-    if request.method ==  'POST':
-        constraint_form = forms.SpotConstraintForm(request.POST)
-
-        if constraint_form.is_valid():
-            for field in constraint_form.cleaned_data.keys():
-                value = constraint_form.cleaned_data[field]
-                value = int(value) if value !='' else ''
-                setattr(constraint,field,value)
-
-            constraint.put()
-            return HttpResponseRedirect('/traffic_log/spot_constraint')
-
-        constraints = [constraint_form]
-
-    else:
-        constraints=[forms.SpotConstraintForm(instance=constraint)]
-
-    return render('traffic_log/create_edit_spot_constraint.html', 
-                  dict(constraints=constraints,
-                       edit=True,
-                       formaction="/traffic_log/spot_constraint/edit/%s"%constraint.key()
-                       )
-                  )
-
-
-def deleteSpotConstraint(request, spot_constraint_key=None, spot_key=None):
-    """ delete a constraint out of the store or remove a spot from a
-    constraints spot list
-    >>> spot = models.Spot(title='test', body='test',
-    """
-    ## XXX only delete if spot_key is none, otherwise just remove the
-    ## constraint from the spot.constraints
-    constraint = models.SpotConstraint.get(spot_constraint_key)
-    if spot_key:
-        constraint.spots.remove(models.Spot.get(spot_key).key())
-        constraint.save()
-    else:
-        ## XXX but will this ever really be needed (since you can't
-        ## just create a constraint on it's own right now)?
-        constraint.delete()
-
-    return HttpResponseRedirect('/traffic_log/spot/edit/%s'%spot_key)
-
-def listSpotConstraints(request):
-    constraints = models.SpotConstraint.all().order('dow').order('hour').order('slot')
-    return render('traffic_log/view_constraints.html', {'constraints':constraints, 'dow_dict':constants.DOW_DICT})
 
 ## XXX crap alert
 ## I'm not checking for errors when data is being saved
 ## secondly I'm using a status flag...
-## 
+##
+@require_role(TRAFFIC_LOG_ADMIN)
 def createSpot(request):
     user = User.get_by_email("%s"%request.user)
     all_clear = False
@@ -122,6 +60,7 @@ def createSpot(request):
                   )
 
 
+@require_role(TRAFFIC_LOG_ADMIN)
 def editSpot(request, spot_key=None):
     spot = models.Spot.get(spot_key)
     if request.method ==  'POST':
@@ -153,7 +92,7 @@ def editSpot(request, spot_key=None):
                            )
                       )
 
-
+@require_role(TRAFFIC_LOG_ADMIN)
 def deleteSpot(request, spot_key=None):
     models.Spot.get(spot_key).delete()
     return HttpResponseRedirect('/traffic_log/spot')
@@ -178,13 +117,54 @@ def box(thing):
         return thing
     else:
         return [thing]
+    
 
+@require_role(TRAFFIC_LOG_ADMIN)
 def connectConstraintsAndSpot(constraint_keys,spot_key):
     for constraint in map(models.SpotConstraint.get, box(constraint_keys)):
         #sys.stderr.write(",".join(constraint.spots))
         if spot_key not in constraint.spots:
             constraint.spots.append(spot_key)
             constraint.put()
+
+@require_role(TRAFFIC_LOG_ADMIN)
+def saveConstraint(constraint):
+    dows = [ int(x) for x in constraint['dow_list'] ]
+    
+    keys = []
+    if constraint['hourbucket'] != "":
+        hours = range(*eval(constraint['hourbucket']))
+    else:
+        hours = [int(constraint['hour'])]
+    slot = int(constraint['slot'])
+    for d in dows:
+        for h in hours:
+            name = ":".join([constants.DOW_DICT[d],str(h), str(slot)])
+            obj  = models.SpotConstraint.get_or_insert(name,dow=d,hour=h,slot=slot)
+            if not obj.is_saved():
+                obj.put()
+            keys.append(obj.key())
+    return keys
+
+@require_role(TRAFFIC_LOG_ADMIN)
+def deleteSpotConstraint(request, spot_constraint_key=None, spot_key=None):
+    """ delete a constraint out of the store or remove a spot from a
+    constraints spot list
+    >>> spot = models.Spot(title='test', body='test',
+    """
+    ## XXX only delete if spot_key is none, otherwise just remove the
+    ## constraint from the spot.constraints
+    constraint = models.SpotConstraint.get(spot_constraint_key)
+    if spot_key:
+        constraint.spots.remove(models.Spot.get(spot_key).key())
+        constraint.save()
+    else:
+        ## XXX but will this ever really be needed (since you can't
+        ## just create a constraint on it's own right now)?
+        constraint.delete()
+
+    return HttpResponseRedirect('/traffic_log/spot/edit/%s'%spot_key)
+
 
 def generateLog(request):
     pass
