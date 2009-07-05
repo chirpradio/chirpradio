@@ -6,6 +6,7 @@ from django.utils import simplejson
 import sys
 
 from traffic_log import models, forms, constants
+from auth.models import User
 
 def render(template, payload):
     return render_to_response(template, payload)
@@ -22,14 +23,14 @@ def saveConstraint(constraint):
         hours = range(*eval(constraint['hourbucket']))
     else:
         hours = [int(constraint['hour'])]
-        slot = int(constraint['slot'])
-        for d in dows:
-            for h in hours:
-                name = ":".join([constants.DOW_DICT[d],str(h), str(slot)])
-                obj  = models.SpotConstraint.get_or_insert(name,dow=d,hour=h,slot=slot)
-                if not obj.is_saved():
-                    obj.put()
-                keys.append(obj.key())
+    slot = int(constraint['slot'])
+    for d in dows:
+        for h in hours:
+            name = ":".join([constants.DOW_DICT[d],str(h), str(slot)])
+            obj  = models.SpotConstraint.get_or_insert(name,dow=d,hour=h,slot=slot)
+            if not obj.is_saved():
+                obj.put()
+            keys.append(obj.key())
     return keys
 
 def editSpotConstraint(request,spot_constraint_key=None):
@@ -61,23 +62,22 @@ def editSpotConstraint(request,spot_constraint_key=None):
 
 
 def deleteSpotConstraint(request, spot_constraint_key=None, spot_key=None):
-    ## XXX only delete if spot_key is none, otherwise just remove the constraint from the spot.constraints
+    """ delete a constraint out of the store or remove a spot from a
+    constraints spot list
+    >>> spot = models.Spot(title='test', body='test',
+    """
+    ## XXX only delete if spot_key is none, otherwise just remove the
+    ## constraint from the spot.constraints
     constraint = models.SpotConstraint.get(spot_constraint_key)
     if spot_key:
         constraint.spots.remove(models.Spot.get(spot_key).key())
         constraint.save()
     else:
+        ## XXX but will this ever really be needed (since you can't
+        ## just create a constraint on it's own right now)?
         constraint.delete()
-        
-        
 
-    return HttpResponseRedirect('/traffic_log/spot_constraint/')
-
-def addSpotToConstraint(request, spot_constraint_key, spot_key=None):
-    return HttpResponseRedirect('/traffic_log/spot/')
-
-def assignSpotConstraint(request, spot_key=None, spot_constraint_key=None):
-    pass
+    return HttpResponseRedirect('/traffic_log/spot/edit/%s'%spot_key)
 
 def listSpotConstraints(request):
     constraints = models.SpotConstraint.all().order('dow').order('hour').order('slot')
@@ -88,17 +88,22 @@ def listSpotConstraints(request):
 ## secondly I'm using a status flag...
 ## 
 def createSpot(request):
+    user = User.get_by_email("%s"%request.user)
     all_clear = False
     if request.method == 'POST':
-        spot_form = forms.SpotForm(request.POST)
+        spot_form = forms.SpotForm(request.POST, {'author':user})
         constraint_form = forms.SpotConstraintForm(request.POST)
+
         if constraint_form.is_valid() and spot_form.is_valid():
             constraint_keys = saveConstraint(constraint_form.cleaned_data)
             spot = spot_form.save()
+            spot.author = user
+            spot.put()
             connectConstraintsAndSpot(constraint_keys, spot.key())
             all_clear = True
 
         elif spot_form.is_valid() and not constraint_form.data.values():
+            
             spot_form.save()
             all_clear = True
     else:
@@ -109,7 +114,11 @@ def createSpot(request):
         return HttpResponseRedirect('/traffic_log/spot/')          
 
     return render('traffic_log/create_edit_spot.html', 
-                  dict(spot=spot_form, constraint_form=constraint_form, formaction="/traffic_log/spot/create/")
+                  dict(spot=spot_form,
+                       constraint_form=constraint_form,
+                       author=user,
+                       formaction="/traffic_log/spot/create/"
+                       )
                   )
 
 
@@ -155,7 +164,9 @@ def spotDetail(request, spot_key=None):
     sys.stderr.write(",".join(str(x) for x in spot.constraints))
     constraints = [forms.SpotConstraintForm(instance=x) for x in spot.constraints]
     form = forms.SpotForm(instance=spot)
-    return render('traffic_log/spot_detail.html',{'spot':spot, 'constraints':constraints, 'dow_dict':constants.DOW_DICT} )
+    return render('traffic_log/spot_detail.html',
+                  {'spot':spot, 'constraints':constraints, 'dow_dict':constants.DOW_DICT}
+                  )
 
 
 def listSpots(request):

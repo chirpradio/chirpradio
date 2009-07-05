@@ -1,4 +1,5 @@
 from google.appengine.ext import db, search
+from auth.models import User
 from traffic_log import constants;
 
 
@@ -10,18 +11,19 @@ class SpotConstraint(search.SearchableModel):
     spots = db.ListProperty(db.Key)
 
     def __init__(self, *args, **kw):
-        kw['key_name'] = ":".join([ constants.DOW_DICT[kw['dow']], str(kw['hour']), str(kw['slot']) ])
+        key_name = "%d:%d:%d" % (kw['dow'], kw['hour'], kw['slot']) 
         search.SearchableModel.__init__(self, *args, **kw)
 
 
 class Spot(search.SearchableModel):
     title     = db.StringProperty(verbose_name="Spot Title", required=True)
-    body      = db.StringProperty(verbose_name="Spot Copy", multiline=True, required=False)
+    body      = db.TextProperty(verbose_name="Spot Copy",  required=False)
     type      = db.StringProperty(verbose_name="Spot Type", required=True, choices=constants.SPOT_TYPE)
     expire_on = db.DateTimeProperty(verbose_name="Expire Date", required=False)
     created   = db.DateTimeProperty(auto_now_add=True)
     updated   = db.DateTimeProperty(auto_now=True)
-    author    = db.UserProperty()
+    author    = db.ReferenceProperty(User)
+
     
     @property
     def constraints(self):
@@ -35,5 +37,5 @@ class TrafficLog(search.SearchableModel):
     log_date       = db.DateProperty()
     spot           = db.ReferenceProperty(Spot)
     readtime       = db.DateTimeProperty()
-    reader         = db.UserProperty()
+    reader         = db.ReferenceProperty(User, required=True)
     created        = db.DateTimeProperty(auto_now_add=True)

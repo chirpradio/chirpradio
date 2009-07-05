@@ -10,7 +10,6 @@
 <table border="1" cellpadding="5" cellspacing="0">
 <form action="{{ formaction }}" method="post">
 {{ spot.as_table }}
-<input type="hidden" name="spot_key" value="{{spot_key}}"/>
 <tr><td>*</td><td>
 {% if edit %}
 {% include 'traffic_log/constraint_list_table.html'%}
