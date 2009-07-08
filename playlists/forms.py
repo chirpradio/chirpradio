@@ -53,6 +53,7 @@ class PlaylistTrackForm(forms.Form):
         if not self.current_user:
             raise ValueError("Cannot save() without a current_user")
         
+        # TODO(kumar) find the right playlist or create one...
         playlist = Playlist(
             dj_user=self.current_user,
             playlist_type='on-air')

@@ -61,10 +61,14 @@
 <p class="time">1:12 PM</p>
 <p><span class="artist">{{ track.artist_name }}</span> 
     &bull; <span class="song">{{ track.track_title }}</span> 
-    &bull; <span class="album">In The City</span> 
-    &bull; <span class="label">Polydor</span>
+    &bull; <span class="album">{{ track.album_title }}</span> 
+    {% if track.label %}
+    &bull; <span class="label">{{ track.label }}</span>
+    {% endif %}
 </p>
-<p class="notes"><strong>Notes:</strong> Touring sans Paul Weller. Show Tuesday at Beat Kitchen.</p>
+{% if track.notes %}
+<p class="notes"><strong>Notes:</strong> {{ track.notes }}</p>
+{% endif %}
 </div>
 
 {% endfor %}
