@@ -72,6 +72,10 @@ class PlaylistTrack(db.Model):
     freeform_album_title = db.StringProperty(required=False)
     # Reference to album from CHIRP digital library (if exists in library)
     album = db.ReferenceProperty(Album, required=False)
+    # Label if this is a freeform entry
+    freeform_label = db.StringProperty(required=False)
+    # Notes about this track
+    notes = db.TextProperty(required=False)
     # The date this playlist track was established 
     # (automatically set to now upon creation)
     established = db.DateTimeProperty(auto_now_add=True)
@@ -100,6 +104,15 @@ class PlaylistTrack(db.Model):
             return self.album.title
         elif self.freeform_album_title:
             return self.freeform_album_title
+        else:
+            return None
+    
+    @property
+    def label(self):
+        # TODO(kumar) when a Label entity exists in the 
+        # the DJDB then we should provide a way to fetch by reference
+        if self.freeform_label:
+            return self.freeform_label
         else:
             return None
     

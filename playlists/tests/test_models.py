@@ -137,12 +137,17 @@ class TestPlaylistTrack(unittest.TestCase):
             playlist=playlist,
             freeform_artist_name="Stevie Wonder",
             freeform_album_title="Talking Book",
-            freeform_track_title='You Are The Sunshine Of My Life'
+            freeform_track_title='You Are The Sunshine Of My Life',
+            freeform_label='Warner Bros.',
+            notes="This track is a bit played out but it still has some nice melodies"
         )
         track.put()
         self.assertEqual(track.artist_name, "Stevie Wonder")
         self.assertEqual(track.album_title, "Talking Book")
         self.assertEqual(track.track_title, "You Are The Sunshine Of My Life")
+        self.assertEqual(track.label, "Warner Bros.")
+        self.assertEqual(track.notes, 
+                "This track is a bit played out but it still has some nice melodies")
         
     def test_track_number_is_set_automatically(self):
         playlist = self.create_playlist()
