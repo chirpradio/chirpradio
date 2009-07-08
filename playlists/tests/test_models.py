@@ -176,3 +176,26 @@ class TestPlaylistTrack(unittest.TestCase):
         track.put()
         self.assertEqual(track.track_number, 3)
         self.assertEqual(playlist.track_count, 3)
+    
+    def test_recent_tracks(self):
+        playlist = self.create_playlist()
+        track = PlaylistTrack(
+            playlist=playlist,
+            freeform_artist_name="Autechre",
+            freeform_album_title="Amber",
+            freeform_track_title="Ember"
+        )
+        track.put()
+        track = PlaylistTrack(
+            playlist=playlist,
+            freeform_artist_name="The Meters",
+            freeform_album_title="Chicken Strut",
+            freeform_track_title="Hand Clapping Song"
+        )
+        track.put()
+        
+        recent_tracks = [t for t in playlist.recent_tracks]
+        self.assertEqual(recent_tracks[0].track_title,
+            "Hand Clapping Song")
+        self.assertEqual(recent_tracks[1].track_title,
+            "Ember")

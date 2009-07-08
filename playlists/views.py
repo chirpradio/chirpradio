@@ -24,7 +24,7 @@ from auth.decorators import require_role
 import auth
 from auth import roles
 from playlists.forms import PlaylistTrackForm
-from playlists.models import PlaylistTrack
+from playlists.models import Playlist, PlaylistTrack
 from djdb import search
 
 
@@ -36,7 +36,7 @@ def landing_page(request):
         form = PlaylistTrackForm()
     ctx_vars = { 
         'form': form,
-        'tracks': PlaylistTrack.all()
+        'playlists': Playlist.all().filter('playlist_type =', 'on-air').order('-established')
     }
     ctx = RequestContext(request, ctx_vars)
     template = loader.get_template('playlists/landing_page.html')

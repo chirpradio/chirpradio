@@ -53,6 +53,13 @@ class Playlist(db.Model):
     def put(self, *args, **kwargs):
         self.validate()
         super(Playlist, self).put(*args, **kwargs)
+    
+    @property
+    def recent_tracks(self):
+        """Generates a list of recently played tracks in this playlist"""
+        q = PlaylistTrack.all().filter('playlist =', self).order('-established')
+        for track in q.fetch(1000):
+            yield track
 
 class PlaylistTrack(db.Model):
     """A track in a DJ playlist."""

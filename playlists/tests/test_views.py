@@ -28,7 +28,7 @@ class TestPlaylistViews(TestCase):
         # simulate the redirect:
         resp = self.client.get(reverse('playlists_landing_page'))
         context = resp.context
-        tracks = [t for t in context['tracks']]
+        tracks = [t for t in context['playlists'][0].recent_tracks]
         self.assertEquals(tracks[0].artist_name, "Squarepusher")
         self.assertEquals(tracks[0].track_title, "Port Rhombus")
     
@@ -44,7 +44,7 @@ class TestPlaylistViews(TestCase):
         # simulate the redirect:
         resp = self.client.get(reverse('playlists_landing_page'))
         context = resp.context
-        tracks = [t for t in context['tracks']]
+        tracks = [t for t in context['playlists'][0].recent_tracks]
         self.assertEquals(tracks[0].artist_name, "Squarepusher")
         self.assertEquals(tracks[0].track_title, "Port Rhombus")
         self.assertEquals(tracks[0].album_title, "Port Rhombus EP")
@@ -64,7 +64,7 @@ class TestPlaylistViews(TestCase):
         # simulate the redirect:
         resp = self.client.get(reverse('playlists_landing_page'))
         context = resp.context
-        tracks = [t for t in context['tracks']]
+        tracks = [t for t in context['playlists'][0].recent_tracks]
         self.assertEquals(tracks[0].artist_name, u'Ivan Krsti\u0107')
         self.assertEquals(tracks[0].track_title, u'Ivan Krsti\u0107')
         self.assertEquals(tracks[0].album_title, u'Ivan Krsti\u0107')

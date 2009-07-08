@@ -55,10 +55,12 @@
 
 <h2>Artist &bull; Song Title &bull; Album &bull; Label</h2>
 
-{% for track in tracks %}
+{% if playlists %}
+{% for playlist in playlists %}
 
+{% for track in playlist.recent_tracks  %}
 <div class="song-info"> <!-- song information container -->
-<p class="time">1:12 PM</p>
+<p class="time">{{ track.established|time:"g:i A" }}</p>
 <p><span class="artist">{{ track.artist_name }}</span> 
     &bull; <span class="song">{{ track.track_title }}</span> 
     &bull; <span class="album">{{ track.album_title }}</span> 
@@ -70,43 +72,52 @@
 <p class="notes"><strong>Notes:</strong> {{ track.notes }}</p>
 {% endif %}
 </div>
-
 {% endfor %}
 
-
-<div class="song-info"> <!-- song information container -->
-<p class="time">1:12 PM</p>
-<p><span class="artist">The Jam</span> &bull; <span class="song">New of the World</span> &bull; <span class="album">In The City</span> &bull; <span class="label">Polydor</span></p>
-<p class="notes"><strong>Notes:</strong> Touring sans Paul Weller. Show Tuesday at Beat Kitchen.</p>
-</div>
-
-<div class="song-info"> <!-- song information container -->
-<p class="time">1:08 PM</p>
-<p><span class="artist">The Clash</span> &bull; <span class="song">Brand New Cadillac</span> &bull; <span class="album">London Calling</span> &bull; <span class="label">Epic</span></p>
-</div>
-
-<div class="song-info"> <!-- song information container -->
-<p class="time">1:04 PM</p>
-<p><span class="artist">The Beach Boys</span> &bull; <span class="song">I'm Waiting For The Day</span> &bull; <span class="album">Pet Sounds</span> &bull; <span class="label">Capital</span></p>
-<p class="notes"><strong>Notes:</strong> News of Brian Wilson's death were greatly exagerated.</p>
-</div>
-
-<div class="song-info"> <!-- song information container -->
-<p class="time">12:59 PM</p>
-<p><span class="artist">Nirvana</span> &bull; <span class="song">In Bloom</span> &bull; <span class="album">Nevermind</span> &bull; <span class="label">DGC</span></p>
-</div>
-
+{% if forloop.last  %}
+{% else %}
 <p class="break">Break</p>
+{% endif %}
 
-<div class="song-info"> <!-- song information container -->
-<p class="time">12:50 PM</p>
-<p><span class="artist">Radiohead</span> &bull; <span class="song">Bodysnatchers</span> &bull; <span class="album">In Rainbows</span> &bull; <span class="label">XL</span></p>
-</div>
+{% endfor %}
+{% else %}
+<p>No tracks have been played within the last three hours.</p>
+{% endif %}
 
-<div class="song-info"> <!-- song information container -->
-<p class="time">12:47 PM</p>
-<p><span class="artist">Portishead</span> &bull; <span class="song">Hunter</span> &bull; <span class="album">Silence</span> &bull; <span class="label">Mercury</span></p>
-</div>
+
+{# <div class="song-info"> <!-- song information container --> #}
+{# <p class="time">1:12 PM</p> #}
+{# <p><span class="artist">The Jam</span> &bull; <span class="song">New of the World</span> &bull; <span class="album">In The City</span> &bull; <span class="label">Polydor</span></p> #}
+{# <p class="notes"><strong>Notes:</strong> Touring sans Paul Weller. Show Tuesday at Beat Kitchen.</p> #}
+{# </div> #}
+{#  #}
+{# <div class="song-info"> <!-- song information container --> #}
+{# <p class="time">1:08 PM</p> #}
+{# <p><span class="artist">The Clash</span> &bull; <span class="song">Brand New Cadillac</span> &bull; <span class="album">London Calling</span> &bull; <span class="label">Epic</span></p> #}
+{# </div> #}
+{#  #}
+{# <div class="song-info"> <!-- song information container --> #}
+{# <p class="time">1:04 PM</p> #}
+{# <p><span class="artist">The Beach Boys</span> &bull; <span class="song">I'm Waiting For The Day</span> &bull; <span class="album">Pet Sounds</span> &bull; <span class="label">Capital</span></p> #}
+{# <p class="notes"><strong>Notes:</strong> News of Brian Wilson's death were greatly exagerated.</p> #}
+{# </div> #}
+{#  #}
+{# <div class="song-info"> <!-- song information container --> #}
+{# <p class="time">12:59 PM</p> #}
+{# <p><span class="artist">Nirvana</span> &bull; <span class="song">In Bloom</span> &bull; <span class="album">Nevermind</span> &bull; <span class="label">DGC</span></p> #}
+{# </div> #}
+{#  #}
+{# <p class="break">Break</p> #}
+{#  #}
+{# <div class="song-info"> <!-- song information container --> #}
+{# <p class="time">12:50 PM</p> #}
+{# <p><span class="artist">Radiohead</span> &bull; <span class="song">Bodysnatchers</span> &bull; <span class="album">In Rainbows</span> &bull; <span class="label">XL</span></p> #}
+{# </div> #}
+{#  #}
+{# <div class="song-info"> <!-- song information container --> #}
+{# <p class="time">12:47 PM</p> #}
+{# <p><span class="artist">Portishead</span> &bull; <span class="song">Hunter</span> &bull; <span class="album">Silence</span> &bull; <span class="label">Mercury</span></p> #}
+{# </div> #}
 
 <p class="links"><a href="http://chirpradio.org/">CHIRPradio.org</a> &bull; <a href="http://chicagoindieradio.org/">CHIRP Wesbite</a></p>
 
