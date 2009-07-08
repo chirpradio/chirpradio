@@ -37,8 +37,8 @@ class TestPlaylistViews(TestCase):
             'artist': "Squarepusher",
             'song_title': "Port Rhombus",
             "album": "Port Rhombus EP",
-            # "label": "Warp Records",
-            # "song_notes": "Dark melody. Really nice break down into half time."
+            "label": "Warp Records",
+            "song_notes": "Dark melody. Really nice break down into half time."
         })
         self.assertRedirects(resp, reverse('playlists_landing_page'))
         # simulate the redirect:
@@ -48,3 +48,7 @@ class TestPlaylistViews(TestCase):
         self.assertEquals(tracks[0].artist_name, "Squarepusher")
         self.assertEquals(tracks[0].track_title, "Port Rhombus")
         self.assertEquals(tracks[0].album_title, "Port Rhombus EP")
+        self.assertEquals(tracks[0].label, "Warp Records")
+        self.assertEquals(tracks[0].notes, 
+                "Dark melody. Really nice break down into half time.")
+

@@ -59,13 +59,16 @@ class PlaylistTrackForm(forms.Form):
         playlist.save()
         
         playlist_track = PlaylistTrack(playlist=playlist)
-        # TODO(kumar) lookup relations when doing autocompletion
+        # TODO(kumar) lookup artist and albun relations when doing autocompletion.
+        # possible we can look up label relations when that exists in DJDB
         playlist_track.freeform_artist_name = self.cleaned_data['artist']
         playlist_track.freeform_track_title = self.cleaned_data['song_title']
         if self.cleaned_data['album']:
             playlist_track.freeform_album_title = self.cleaned_data['album']
-        # if self.cleaned_data['label']:
-        #     playlist_track.label_title = self.cleaned_data['label']
+        if self.cleaned_data['label']:
+            playlist_track.freeform_label = self.cleaned_data['label']
+        if self.cleaned_data['song_notes']:
+            playlist_track.notes = self.cleaned_data['song_notes']
         playlist_track.save()
         
         return playlist_track
