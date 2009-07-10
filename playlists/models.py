@@ -61,6 +61,12 @@ class Playlist(db.Model):
         for track in q.fetch(1000):
             yield track
 
+def LiveStream():
+    """The chirp live stream"""
+    # fixme: this is just a placeholder
+    pl = Playlist.all().filter('playlist_type =', 'on-air')[0]
+    return pl
+
 class PlaylistTrack(db.Model):
     """A track in a DJ playlist."""
     # The playlist this track belongs to

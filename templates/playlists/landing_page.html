@@ -55,31 +55,29 @@
 
 <h2>Artist &bull; Song Title &bull; Album &bull; Label</h2>
 
-{% if playlists %}
-{% for playlist in playlists %}
+{% if playlist_events %}
+{% for event in playlist_events %}
 
-{% for track in playlist.recent_tracks  %}
 <div class="song-info"> <!-- song information container -->
-<p class="time">{{ track.established|time:"g:i A" }}</p>
-<p><span class="artist">{{ track.artist_name }}</span> 
-    &bull; <span class="song">{{ track.track_title }}</span> 
-    &bull; <span class="album">{{ track.album_title }}</span> 
-    {% if track.label %}
-    &bull; <span class="label">{{ track.label }}</span>
+<p class="time">{{ event.established|time:"g:i A" }}</p>
+<p><span class="artist">{{ event.artist_name }}</span> 
+    &bull; <span class="song">{{ event.track_title }}</span> 
+    &bull; <span class="album">{{ event.album_title }}</span> 
+    {% if event.label %}
+    &bull; <span class="label">{{ event.label }}</span>
     {% endif %}
 </p>
-{% if track.notes %}
-<p class="notes"><strong>Notes:</strong> {{ track.notes }}</p>
+{% if event.notes %}
+<p class="notes"><strong>Notes:</strong> {{ event.notes }}</p>
 {% endif %}
 </div>
 {% endfor %}
 
-{% if forloop.last  %}
-{% else %}
-<p class="break">Break</p>
-{% endif %}
+{# {% if forloop.last  %} #}
+{# {% else %} #}
+{# <p class="break">Break</p> #}
+{# {% endif %} #}
 
-{% endfor %}
 {% else %}
 <p>No tracks have been played within the last three hours.</p>
 {% endif %}

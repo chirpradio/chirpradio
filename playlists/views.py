@@ -24,8 +24,9 @@ from auth.decorators import require_role
 import auth
 from auth import roles
 from playlists.forms import PlaylistTrackForm
-from playlists.models import Playlist, PlaylistTrack
+from playlists.models import Playlist, PlaylistTrack, LiveStream
 from djdb import search
+from datetime import datetime, timedelta
 
 
 @require_role(roles.DJ)
@@ -34,9 +35,14 @@ def landing_page(request):
         form = PlaylistTrackForm(data=request.POST)
     else:
         form = PlaylistTrackForm()
+    live_stream = LiveStream()
+    pl = PlaylistTrack.all().filter('playlist =', live_stream)
+    pl = pl.filter('established >=', datetime.now() - timedelta(hours=3))
+    pl = pl.order('-established')
+    
     ctx_vars = { 
         'form': form,
-        'playlists': Playlist.all().filter('playlist_type =', 'on-air').order('-established')
+        'playlist_events': pl
     }
     ctx = RequestContext(request, ctx_vars)
     template = loader.get_template('playlists/landing_page.html')
