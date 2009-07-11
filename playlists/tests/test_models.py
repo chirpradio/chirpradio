@@ -172,8 +172,10 @@ class TestPlaylistTrack(unittest.TestCase):
         track.put()
         self.assertEqual(track.artist_name, "Stevie Wonder")
         self.assertEqual(track.album_title, "Talking Book")
+        self.assertEqual(track.album_title_display, "Talking Book")
         self.assertEqual(track.track_title, "You Are The Sunshine Of My Life")
         self.assertEqual(track.label, "Warner Bros.")
+        self.assertEqual(track.label_display, "Warner Bros.")
         self.assertEqual(track.notes, 
                 "This track is a bit played out but it still has some nice melodies")
                 
@@ -184,6 +186,19 @@ class TestPlaylistTrack(unittest.TestCase):
         self.assertEqual(
             track.modified_display.timetuple()[0:2],
             datetime.datetime.now().timetuple()[0:2])
+    
+    def test_partial_track_by_free_entry(self):
+        selector = create_dj()
+        playlist = create_playlist()
+        track = PlaylistTrack(
+            selector=selector,
+            playlist=playlist,
+            freeform_artist_name="Stevie Wonder",
+            freeform_track_title='You Are The Sunshine Of My Life'
+        )
+        track.put()
+        self.assertEqual(track.album_title_display, "[Unknown Album]")
+        self.assertEqual(track.label_display, "[Unknown Label]")
         
     def test_track_number_is_set_automatically(self):
         selector = create_dj()

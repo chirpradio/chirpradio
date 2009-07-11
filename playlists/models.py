@@ -142,6 +142,14 @@ class PlaylistTrack(db.Model):
             return None
     
     @property
+    def album_title_display(self):
+        txt = self.album_title
+        if txt:
+            return txt
+        else:
+            return u"[Unknown Album]"
+    
+    @property
     def established_display(self):
         return time_util.convert_utc_to_chicago(self.established)
         
@@ -157,6 +165,14 @@ class PlaylistTrack(db.Model):
             return self.freeform_label
         else:
             return None
+    
+    @property
+    def label_display(self):
+        txt = self.label
+        if txt:
+            return txt
+        else:
+            return u"[Unknown Label]"
     
     def __init__(self, *args, **kwargs):
         super(PlaylistTrack, self).__init__(*args, **kwargs)
