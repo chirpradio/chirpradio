@@ -16,7 +16,7 @@ def create_dj():
     return dj
     
 def create_playlist():
-    playlist = Playlist(playlist_type='on-air')
+    playlist = Playlist(playlist_type='live-stream')
     playlist.put()
     return playlist
 
@@ -32,7 +32,7 @@ class TestPlaylist(unittest.TestCase):
         def make_playlist():
             playlist = Playlist(
                             created_by_dj=not_a_dj,
-                            playlist_type="on-air")
+                            playlist_type="live-stream")
             playlist.put()
         self.assertRaises(ValueError, make_playlist)
     
@@ -44,7 +44,7 @@ class TestPlaylist(unittest.TestCase):
     
     def test_playlist_creation(self):
         dj = create_dj()
-        playlist = Playlist(created_by_dj=dj, playlist_type="on-air")
+        playlist = Playlist(created_by_dj=dj, playlist_type="live-stream")
         playlist.put()
         self.assertEqual(playlist.track_count, 0)
         self.assertEqual(

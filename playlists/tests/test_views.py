@@ -22,7 +22,7 @@ class TestPlaylistViews(TestCase):
     
     def test_view_shows_3_hours_of_tracks(self):
         selector = User.all().filter('email =', 'test@test.com')[0]
-        playlist = Playlist(playlist_type='on-air')
+        playlist = Playlist(playlist_type='live-stream')
         playlist.put()
         track = PlaylistTrack(
                     playlist=playlist, 

@@ -29,12 +29,12 @@ class Playlist(db.Model):
     created_by_dj = db.ReferenceProperty(User, required=False)
     # The type of playlist.  Possible values: 
     #
-    # on-air
-    #   A playlist that was recorded while broadcasting 
-    #   on the air during a CHIRP radio program.
+    # live-stream
+    #   The persistant CHIRP radio live stream.  There is only one 
+    #   instance of this type of playlist.
     #
     # (more possible values TBD)
-    playlist_type = db.CategoryProperty(required=True, choices=('on-air',))
+    playlist_type = db.CategoryProperty(required=True, choices=('live-stream',))
     # Number of tracks contained in this playlist.
     # This gets updated each time a PlaylistTrack() is saved
     track_count = db.IntegerProperty(default=0, required=True)
@@ -65,14 +65,14 @@ class Playlist(db.Model):
 def LiveStream():
     """The chirp live stream"""
     
-    # There is only one persistant on-air stream.
+    # There is only one persistant live-stream stream.
     # If it doesn't exist, create it (probably only relevant for development)
     
-    query = Playlist.all().filter('playlist_type =', 'on-air')
+    query = Playlist.all().filter('playlist_type =', 'live-stream')
     if query.count(1):
         playlist = query[0]
     else:
-        playlist = Playlist(playlist_type='on-air')
+        playlist = Playlist(playlist_type='live-stream')
         playlist.put()
     
     return playlist
