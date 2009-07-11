@@ -62,10 +62,15 @@
 <p class="time">{{ event.established|time:"g:i A" }}</p>
 <p><span class="artist">{{ event.artist_name }}</span> 
     &bull; <span class="song">{{ event.track_title }}</span> 
-    &bull; <span class="album">{{ event.album_title }}</span> 
+    
+    {% if event.album_title %}
+    &bull; <span class="album">{{ event.album_title }}</span>     
+    {% endif %}
+    
     {% if event.label %}
     &bull; <span class="label">{{ event.label }}</span>
     {% endif %}
+    
 </p>
 {% if event.notes %}
 <p class="notes"><strong>Notes:</strong> {{ event.notes }}</p>

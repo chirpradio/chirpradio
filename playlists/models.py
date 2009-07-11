@@ -64,9 +64,18 @@ class Playlist(db.Model):
 
 def LiveStream():
     """The chirp live stream"""
-    # fixme: this is just a placeholder
-    pl = Playlist.all().filter('playlist_type =', 'on-air')[0]
-    return pl
+    
+    # There is only one persistant on-air stream.
+    # If it doesn't exist, create it (probably only relevant for development)
+    
+    query = Playlist.all().filter('playlist_type =', 'on-air')
+    if query.count(1):
+        playlist = query[0]
+    else:
+        playlist = Playlist(playlist_type='on-air')
+        playlist.put()
+    
+    return playlist
 
 class PlaylistTrack(db.Model):
     """A track in a DJ playlist."""

@@ -42,7 +42,7 @@ def landing_page(request):
     
     ctx_vars = { 
         'form': form,
-        'playlist_events': pl
+        'playlist_events': [e for e in pl]
     }
     ctx = RequestContext(request, ctx_vars)
     template = loader.get_template('playlists/landing_page.html')

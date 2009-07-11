@@ -21,7 +21,7 @@ import auth
 from django.utils.translation import ugettext_lazy as _
 from django.template import loader
 from django import forms
-from playlists.models import Playlist, PlaylistTrack
+from playlists.models import Playlist, PlaylistTrack, LiveStream
 
 class PlaylistTrackForm(forms.Form):
     """
@@ -53,14 +53,11 @@ class PlaylistTrackForm(forms.Form):
         if not self.current_user:
             raise ValueError("Cannot save() without a current_user")
         
-        # TODO(kumar) find the right playlist or create one...
-        playlist = Playlist(
-            playlist_type='on-air')
-        playlist.save()
-        
+        playlist = LiveStream()        
         playlist_track = PlaylistTrack(
                             playlist=playlist, 
                             selector=self.current_user)
+                            
         # TODO(kumar) lookup artist and albun relations when doing autocompletion.
         # possible we can look up label relations when that exists in DJDB
         playlist_track.freeform_artist_name = self.cleaned_data['artist']

@@ -87,6 +87,23 @@ class TestPlaylistViews(TestCase):
         self.assertEquals(tracks[0].label, "Warp Records")
         self.assertEquals(tracks[0].notes, 
                 "Dark melody. Really nice break down into half time.")
+    
+    def test_add_tracks_to_existing_stream(self):
+        # add several tracks:
+        resp = self.client.post(reverse('playlists_add_track'), {
+            'artist': "Steely Dan",
+            'song_title': "Peg",
+        })
+        resp = self.client.post(reverse('playlists_add_track'), {
+            'artist': "Hall & Oates",
+            'song_title': "M.E.T.H.O.D. of Love",
+        })
+        
+        resp = self.client.get(reverse('playlists_landing_page'))
+        context = resp.context
+        tracks = [t for t in context['playlist_events']]
+        self.assertEquals(tracks[0].artist_name, "Hall & Oates")
+        self.assertEquals(tracks[1].artist_name, "Steely Dan")
 
     def test_unicode_track_entry(self):
         resp = self.client.post(reverse('playlists_add_track'), {
