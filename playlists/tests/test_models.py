@@ -14,6 +14,11 @@ def create_dj():
     dj.roles.append(auth.roles.DJ)
     dj.put()
     return dj
+    
+def create_playlist():
+    playlist = Playlist(playlist_type='on-air')
+    playlist.put()
+    return playlist
 
 class TestPlaylist(unittest.TestCase):
     
@@ -26,23 +31,20 @@ class TestPlaylist(unittest.TestCase):
         not_a_dj.put()
         def make_playlist():
             playlist = Playlist(
-                            dj_user=not_a_dj,
+                            created_by_dj=not_a_dj,
                             playlist_type="on-air")
             playlist.put()
         self.assertRaises(ValueError, make_playlist)
     
     def test_unknown_playlist_type_raises_error(self):
-        dj = create_dj()
         def make_playlist():
-            playlist = Playlist(
-                            dj_user=dj,
-                            playlist_type="unknown-type")
+            playlist = Playlist(playlist_type="unknown-type")
             playlist.put()
         self.assertRaises(BadValueError, make_playlist)
     
     def test_playlist_creation(self):
         dj = create_dj()
-        playlist = Playlist(dj_user=dj, playlist_type="on-air")
+        playlist = Playlist(created_by_dj=dj, playlist_type="on-air")
         playlist.put()
         self.assertEqual(playlist.track_count, 0)
         self.assertEqual(
@@ -90,16 +92,12 @@ class TestPlaylistTrack(unittest.TestCase):
             self.tracks[title] = track
             track.put()
     
-    def create_playlist(self):
-        dj = create_dj()
-        playlist = Playlist(dj_user=dj, playlist_type='on-air')
-        playlist.put()
-        return playlist
-    
     def test_track_missing_title_raises_error(self):
+        selector = create_dj()
         def make_track():
-            playlist = self.create_playlist()
+            playlist = create_playlist()
             track = PlaylistTrack(
+                selector=selector,
                 playlist=playlist,
                 artist=self.stevie,
                 album=self.talking_book
@@ -108,9 +106,11 @@ class TestPlaylistTrack(unittest.TestCase):
         self.assertRaises(ValueError, make_track)
     
     def test_track_missing_artist_raises_error(self):
+        selector = create_dj()
         def make_track():
-            playlist = self.create_playlist()
+            playlist = create_playlist()
             track = PlaylistTrack(
+                selector=selector,
                 playlist=playlist,
                 album=self.talking_book,
                 track=self.tracks['You Are The Sunshine Of My Life']
@@ -119,8 +119,10 @@ class TestPlaylistTrack(unittest.TestCase):
         self.assertRaises(ValueError, make_track)
     
     def test_track_by_references(self):
-        playlist = self.create_playlist()
+        selector = create_dj()
+        playlist = create_playlist()
         track = PlaylistTrack(
+            selector=selector,
             playlist=playlist,
             artist=self.stevie,
             album=self.talking_book,
@@ -132,8 +134,10 @@ class TestPlaylistTrack(unittest.TestCase):
         self.assertEqual(track.track.title, "You Are The Sunshine Of My Life")
     
     def test_track_by_free_entry(self):
-        playlist = self.create_playlist()
+        selector = create_dj()
+        playlist = create_playlist()
         track = PlaylistTrack(
+            selector=selector,
             playlist=playlist,
             freeform_artist_name="Stevie Wonder",
             freeform_album_title="Talking Book",
@@ -150,8 +154,10 @@ class TestPlaylistTrack(unittest.TestCase):
                 "This track is a bit played out but it still has some nice melodies")
         
     def test_track_number_is_set_automatically(self):
-        playlist = self.create_playlist()
+        selector = create_dj()
+        playlist = create_playlist()
         track = PlaylistTrack(
+            selector=selector,
             playlist=playlist,
             freeform_artist_name="Stevie Wonder",
             freeform_album_title="Talking Book",
@@ -161,6 +167,7 @@ class TestPlaylistTrack(unittest.TestCase):
         self.assertEqual(track.track_number, 1)
         self.assertEqual(playlist.track_count, 1)
         track = PlaylistTrack(
+            selector=selector,
             playlist=playlist,
             freeform_artist_name="Squarepusher",
             freeform_track_title='Beep Street'
@@ -169,6 +176,7 @@ class TestPlaylistTrack(unittest.TestCase):
         self.assertEqual(track.track_number, 2)
         self.assertEqual(playlist.track_count, 2)
         track = PlaylistTrack(
+            selector=selector,
             playlist=playlist,
             freeform_artist_name="Metallica",
             freeform_track_title='Master of Puppets'
@@ -178,8 +186,10 @@ class TestPlaylistTrack(unittest.TestCase):
         self.assertEqual(playlist.track_count, 3)
     
     def test_recent_tracks(self):
-        playlist = self.create_playlist()
+        playlist = create_playlist()
+        selector = create_dj()
         track = PlaylistTrack(
+            selector=selector,
             playlist=playlist,
             freeform_artist_name="Autechre",
             freeform_album_title="Amber",
@@ -187,6 +197,7 @@ class TestPlaylistTrack(unittest.TestCase):
         )
         track.put()
         track = PlaylistTrack(
+            selector=selector,
             playlist=playlist,
             freeform_artist_name="The Meters",
             freeform_album_title="Chicken Strut",

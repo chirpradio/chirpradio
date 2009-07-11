@@ -25,8 +25,8 @@ from google.appengine.api.datastore_types import Key
 class Playlist(db.Model):
     """A DJ playlist.
     """
-    # DJ user who created the playlist
-    dj_user = db.ReferenceProperty(User, required=True)
+    # DJ user who created the playlist, if relevant
+    created_by_dj = db.ReferenceProperty(User, required=False)
     # The type of playlist.  Possible values: 
     #
     # on-air
@@ -46,9 +46,10 @@ class Playlist(db.Model):
     
     def validate(self):
         """Validate this instance before putting it to the datastore."""
-        if not self.dj_user.is_dj:
-            raise ValueError("User %r must be a DJ (user is: %r)" % (
-                                        self.dj_user, self.dj_user.roles))
+        if self.created_by_dj:
+            if not self.created_by_dj.is_dj:
+                raise ValueError("User %r must be a DJ (user is: %r)" % (
+                                    self.created_by_dj, self.created_by_dj.roles))
     
     def put(self, *args, **kwargs):
         self.validate()
@@ -71,6 +72,8 @@ class PlaylistTrack(db.Model):
     """A track in a DJ playlist."""
     # The playlist this track belongs to
     playlist = db.ReferenceProperty(Playlist, required=True)
+    # DJ user who selected this track.
+    selector = db.ReferenceProperty(User, required=True)
     # Artist name if this is a freeform entry
     freeform_artist_name = db.StringProperty(required=False)
     # Reference to artist from CHIRP digital library (if exists in library)
@@ -150,6 +153,9 @@ class PlaylistTrack(db.Model):
             raise ValueError("Must set either a track_title or reference a track")
         if not self.artist_name and not self.artist:
             raise ValueError("Must set either an artist_name or reference an artist")
+        if not self.selector.is_dj:
+            raise ValueError("User %r must be a DJ (user is: %r)" % (
+                                self.selector, self.selector.roles))
     
     def put(self, *args, **kwargs):
         self.validate()

@@ -55,11 +55,12 @@ class PlaylistTrackForm(forms.Form):
         
         # TODO(kumar) find the right playlist or create one...
         playlist = Playlist(
-            dj_user=self.current_user,
             playlist_type='on-air')
         playlist.save()
         
-        playlist_track = PlaylistTrack(playlist=playlist)
+        playlist_track = PlaylistTrack(
+                            playlist=playlist, 
+                            selector=self.current_user)
         # TODO(kumar) lookup artist and albun relations when doing autocompletion.
         # possible we can look up label relations when that exists in DJDB
         playlist_track.freeform_artist_name = self.cleaned_data['artist']

@@ -21,23 +21,26 @@ class TestPlaylistViews(TestCase):
             pl.delete()
     
     def test_view_shows_3_hours_of_tracks(self):
-        dj_user = User.all().filter('email =', 'test@test.com')[0]
-        playlist = Playlist(dj_user=dj_user, playlist_type='on-air')
+        selector = User.all().filter('email =', 'test@test.com')[0]
+        playlist = Playlist(playlist_type='on-air')
         playlist.put()
         track = PlaylistTrack(
                     playlist=playlist, 
+                    selector=selector,
                     freeform_artist_name="Steely Dan",
                     freeform_album_title="Aja",
                     freeform_track_title="Peg")
         track.put()
         track = PlaylistTrack(
-                    playlist=playlist, 
+                    playlist=playlist,
+                    selector=selector, 
                     freeform_artist_name="Def Leoppard",
                     freeform_album_title="Pyromania",
                     freeform_track_title="Photograph")
         track.put()
         track = PlaylistTrack(
-                    playlist=playlist, 
+                    playlist=playlist,
+                    selector=selector, 
                     freeform_artist_name="Freestyle Fellowship",
                     freeform_album_title="To Whom It May Concern",
                     freeform_track_title="Five O'Clock Follies")
