@@ -21,6 +21,7 @@ from auth.models import User
 from djdb.models import Artist, Album, Track
 from google.appengine.ext import db
 from google.appengine.api.datastore_types import Key
+from common import time_util
 
 class Playlist(db.Model):
     """A DJ playlist.
@@ -43,6 +44,14 @@ class Playlist(db.Model):
     established = db.DateTimeProperty(auto_now_add=True)
     # The date this playlist was last modified (automatically set to now)
     modified = db.DateTimeProperty(auto_now=True)
+    
+    @property
+    def established_display(self):
+        return time_util.convert_utc_to_chicago(self.established)
+        
+    @property
+    def modified_display(self):
+        return time_util.convert_utc_to_chicago(self.modified)
     
     def validate(self):
         """Validate this instance before putting it to the datastore."""
@@ -131,6 +140,14 @@ class PlaylistTrack(db.Model):
             return self.freeform_album_title
         else:
             return None
+    
+    @property
+    def established_display(self):
+        return time_util.convert_utc_to_chicago(self.established)
+        
+    @property
+    def modified_display(self):
+        return time_util.convert_utc_to_chicago(self.modified)
     
     @property
     def label(self):

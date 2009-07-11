@@ -53,6 +53,14 @@ class TestPlaylist(unittest.TestCase):
         self.assertEqual(
             playlist.modified.timetuple()[0:4],
             datetime.datetime.now().timetuple()[0:4])
+            
+        # for sanity, not real tests:
+        self.assertEqual(
+            playlist.established_display.timetuple()[0:2],
+            datetime.datetime.now().timetuple()[0:2])
+        self.assertEqual(
+            playlist.modified_display.timetuple()[0:2],
+            datetime.datetime.now().timetuple()[0:2])
 
 
 class TestPlaylistTrack(unittest.TestCase):
@@ -152,6 +160,14 @@ class TestPlaylistTrack(unittest.TestCase):
         self.assertEqual(track.label, "Warner Bros.")
         self.assertEqual(track.notes, 
                 "This track is a bit played out but it still has some nice melodies")
+                
+        # for sanity, not real tests:
+        self.assertEqual(
+            track.established_display.timetuple()[0:2],
+            datetime.datetime.now().timetuple()[0:2])
+        self.assertEqual(
+            track.modified_display.timetuple()[0:2],
+            datetime.datetime.now().timetuple()[0:2])
         
     def test_track_number_is_set_automatically(self):
         selector = create_dj()

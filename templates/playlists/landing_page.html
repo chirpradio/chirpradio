@@ -59,7 +59,7 @@
 {% for event in playlist_events %}
 
 <div class="song-info"> <!-- song information container -->
-<p class="time">{{ event.established|time:"g:i A" }}</p>
+<p class="time">{{ event.established_display|time:"g:i A" }}</p>
 <p><span class="artist">{{ event.artist_name }}</span> 
     &bull; <span class="song">{{ event.track_title }}</span> 
     
