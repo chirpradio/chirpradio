@@ -60,6 +60,39 @@ def artist_info_page(request, artist_name):
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
+def artist_search_for_autocomplete(request):
+    matching_entities = _get_matches_for_partial_entity_search(
+                                            request.GET.get('q', ''),
+                                            'Artist')        
+    response = http.HttpResponse(mimetype="text/plain")
+    for ent in matching_entities:
+        response.write("%s|%s\n" % (ent.key(), ent.pretty_name))
+    return response
+
+def album_search_for_autocomplete(request):
+    matching_entities = _get_matches_for_partial_entity_search(
+                                            request.GET.get('q', ''),
+                                            'Album')        
+    response = http.HttpResponse(mimetype="text/plain")
+    for ent in matching_entities:
+        response.write("%s|%s\n" % (ent.key(), ent.title))
+    return response
+
+def _get_matches_for_partial_entity_search(query, entity_name):
+    if not query:
+        return []
+    if len(query) < 3:
+        # conserve resources and refuse to perform a keyword 
+        # search if it's less than 3 characters.
+        return []
+    # append star to match partial artist names.
+    #       e.g. ?q=metalli will become "metalli*" to match Metallica
+    query = "%s*" % query
+    matches = search.simple_music_search(query)
+    if matches and matches[entity_name]:
+        return matches[entity_name]
+    else:
+        return []
 
 def _get_album_or_404(album_id_str):
     if not album_id_str.isdigit():

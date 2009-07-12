@@ -15,7 +15,9 @@
 ### limitations under the License.
 ###
 
+import datetime
 import unittest
+from django.test import TestCase as DjangoTestCase
 
 from django import http
 from django.test.client import Client
@@ -23,6 +25,8 @@ from django.test.client import Client
 from google.appengine.ext import db
 
 from djdb import models
+from djdb import search
+from auth import roles
 
 
 class ViewsTestCase(unittest.TestCase):
@@ -51,3 +55,64 @@ class ViewsTestCase(unittest.TestCase):
         # Check that we 404 on a bad SHA1.
         response = client.get(img.url + 'trailing garbage')
         self.assertEqual(404, response.status_code)
+
+class AutocompleteViewsTestCase(DjangoTestCase):
+    
+    def setUp(self):
+        self.client.login(email="test@test.com", roles=[roles.DJ])
+        
+        idx = search.Indexer()
+        
+        # Create some test artists.
+        art1 = models.Artist(name=u"Fall, The", parent=idx.transaction,
+                             key_name="art1")
+        art1.save()
+        art2 = models.Artist(name=u"Eno, Brian", parent=idx.transaction,
+                             key_name="art2")
+        art2.save()
+        # Create some test albums.
+        alb1 = models.Album(title=u"This Nation's Saving Grace",
+                            album_id=12345,
+                            import_timestamp=datetime.datetime.now(),
+                            album_artist=art1,
+                            num_tracks=123,
+                            parent=idx.transaction)
+        alb1.save()
+        alb2 = models.Album(title=u"Another Green World",
+                            album_id=67890,
+                            import_timestamp=datetime.datetime.now(),
+                            album_artist=art2,
+                            num_tracks=456,
+                            parent=idx.transaction)
+        alb2.save()
+        
+        idx.add_artist(art1)
+        idx.add_artist(art2)
+        idx.add_album(alb1)
+        idx.add_album(alb2)
+        idx.save()
+        
+    def test_short_query_is_ignored(self):
+        response = self.client.get("/djdb/artist/search.txt", {'q':'en'}) # too short
+        self.assertEqual(response.content, "")
+    
+    def test_artist_full_name(self):
+        response = self.client.get("/djdb/artist/search.txt", {'q':'brian eno'})
+        ent = models.Artist.all().filter("name =", "Eno, Brian")[0]
+        self.assertEqual(response.content, "%s|%s\n" % (ent.key(), ent.pretty_name))
+    
+    def test_artist_partial_name(self):
+        response = self.client.get("/djdb/artist/search.txt", {'q':'fal'}) # The Fall
+        ent = models.Artist.all().filter("name =", "Fall, The")[0]
+        self.assertEqual(response.content, "%s|%s\n" % (ent.key(), ent.pretty_name))
+    
+    def test_album_full_name(self):
+        response = self.client.get("/djdb/album/search.txt", {'q':'another green world'})
+        ent = models.Album.all().filter("title =", "Another Green World")[0]
+        self.assertEqual(response.content, "%s|%s\n" % (ent.key(), ent.title))
+    
+    def test_album_partial_name(self):
+        response = self.client.get("/djdb/album/search.txt", {'q':'another'})
+        ent = models.Album.all().filter("title =", "Another Green World")[0]
+        self.assertEqual(response.content, "%s|%s\n" % (ent.key(), ent.title))
+

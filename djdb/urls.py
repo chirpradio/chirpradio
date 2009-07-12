@@ -34,11 +34,17 @@ urlpatterns = patterns(
 
     # Artist information page
     (r'artist/(.*)/info', 'djdb.views.artist_info_page'),
+
+    # Artist search for jquery.autocomplete
+    (r'artist/search\.txt', 'djdb.views.artist_search_for_autocomplete'),
     
     # Album information page
     (r'album/(.*)/info', 'djdb.views.album_info_page'),
 
     (r'album/(.*)/new_review', 'djdb.views.album_new_review'),
+
+    # Album search for jquery.autocomplete
+    (r'album/search\.txt', 'djdb.views.album_search_for_autocomplete'),
 
     (r'update/artists/bulk_add', 'djdb.views.artists_bulk_add'),
     
