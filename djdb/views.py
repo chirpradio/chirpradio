@@ -66,7 +66,7 @@ def artist_search_for_autocomplete(request):
                                             'Artist')        
     response = http.HttpResponse(mimetype="text/plain")
     for ent in matching_entities:
-        response.write("%s|%s\n" % (ent.key(), ent.pretty_name))
+        response.write("%s|%s\n" % (ent.pretty_name, ent.key()))
     return response
 
 def album_search_for_autocomplete(request):
@@ -75,7 +75,7 @@ def album_search_for_autocomplete(request):
                                             'Album')        
     response = http.HttpResponse(mimetype="text/plain")
     for ent in matching_entities:
-        response.write("%s|%s\n" % (ent.key(), ent.title))
+        response.write("%s|%s\n" % (ent.title, ent.key()))
     return response
 
 def _get_matches_for_partial_entity_search(query, entity_name):

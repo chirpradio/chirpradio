@@ -99,20 +99,20 @@ class AutocompleteViewsTestCase(DjangoTestCase):
     def test_artist_full_name(self):
         response = self.client.get("/djdb/artist/search.txt", {'q':'brian eno'})
         ent = models.Artist.all().filter("name =", "Eno, Brian")[0]
-        self.assertEqual(response.content, "%s|%s\n" % (ent.key(), ent.pretty_name))
+        self.assertEqual(response.content, "%s|%s\n" % (ent.pretty_name, ent.key()))
     
     def test_artist_partial_name(self):
         response = self.client.get("/djdb/artist/search.txt", {'q':'fal'}) # The Fall
         ent = models.Artist.all().filter("name =", "Fall, The")[0]
-        self.assertEqual(response.content, "%s|%s\n" % (ent.key(), ent.pretty_name))
+        self.assertEqual(response.content, "%s|%s\n" % (ent.pretty_name, ent.key()))
     
     def test_album_full_name(self):
         response = self.client.get("/djdb/album/search.txt", {'q':'another green world'})
         ent = models.Album.all().filter("title =", "Another Green World")[0]
-        self.assertEqual(response.content, "%s|%s\n" % (ent.key(), ent.title))
+        self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
     
     def test_album_partial_name(self):
         response = self.client.get("/djdb/album/search.txt", {'q':'another'})
         ent = models.Album.all().filter("title =", "Another Green World")[0]
-        self.assertEqual(response.content, "%s|%s\n" % (ent.key(), ent.title))
+        self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
 
