@@ -10,6 +10,7 @@ from auth.models import User
 from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
 from auth.decorators import require_role
 
+
 def render(template, payload):
     return render_to_response(template, payload)
 
@@ -18,7 +19,6 @@ def render(template, payload):
 def index(request):
     spots = models.Spot.all().order('-created').fetch(20)
     return render('traffic_log/index.html', dict(spots=spots))
-
 
 ## XXX crap alert
 ## I'm not checking for errors when data is being saved
@@ -49,7 +49,7 @@ def createSpot(request):
         constraint_form = forms.SpotConstraintForm()
 
     if all_clear:
-        return HttpResponseRedirect('/traffic_log/spot/')          
+        return HttpResponseRedirect('/traffic_log/spot/%s'%spot.key())          
 
     return render('traffic_log/create_edit_spot.html', 
                   dict(spot=spot_form,
@@ -78,7 +78,7 @@ def editSpot(request, spot_key=None):
                 saveConstraint(constraint_form.cleaned_data), spot.key()
                 )
             
-        return HttpResponseRedirect('/traffic_log/spot/')
+        return HttpResponseRedirect('/traffic_log/spot/%s'%spot.key())
     
     else:
         return render('traffic_log/create_edit_spot.html', 
@@ -91,6 +91,7 @@ def editSpot(request, spot_key=None):
                            formaction="/traffic_log/spot/edit/%s"%spot.key()
                            )
                       )
+
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def deleteSpot(request, spot_key=None):
@@ -112,6 +113,7 @@ def listSpots(request):
     spots = models.Spot.all().order('-created').fetch(20)
     return render('traffic_log/spot_list.html', dict(spots=spots))
 
+
 def box(thing):
     if isinstance(thing,list):
         return thing
@@ -125,6 +127,7 @@ def connectConstraintsAndSpot(constraint_keys,spot_key):
         if spot_key not in constraint.spots:
             constraint.spots.append(spot_key)
             constraint.put()
+
 
 def saveConstraint(constraint):
     dows = [ int(x) for x in constraint['dow_list'] ]
@@ -149,7 +152,7 @@ def saveConstraint(constraint):
 def deleteSpotConstraint(request, spot_constraint_key=None, spot_key=None):
     """ delete a constraint out of the store or remove a spot from a
     constraints spot list
-    >>> spot = models.Spot(title='test', body='test',
+
     """
     ## XXX only delete if spot_key is none, otherwise just remove the
     ## constraint from the spot.constraints
@@ -160,6 +163,7 @@ def deleteSpotConstraint(request, spot_constraint_key=None, spot_key=None):
     else:
         ## XXX but will this ever really be needed (since you can't
         ## just create a constraint on it's own right now)?
+        ## should just raise exception
         constraint.delete()
 
     return HttpResponseRedirect('/traffic_log/spot/edit/%s'%spot_key)
@@ -168,7 +172,6 @@ def deleteSpotConstraint(request, spot_constraint_key=None, spot_key=None):
 def generateLog(request):
     pass
 
+
 def traffic_log(request):
     pass
-
-
