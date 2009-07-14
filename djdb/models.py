@@ -28,6 +28,9 @@ from common import time_util
 # For now, the only valid doctype is "review".
 DOCTYPE_REVIEW = "review"  # A review, subject must be an Album object.
 
+EXPLICIT_TAG = "explicit"
+RECOMMENDED_TAG = "recommended"
+
 
 class DjDbImage(db.Model):
     """An image (usually a JPEG or PNG) associated with an artist or album.
@@ -219,6 +222,9 @@ class Album(db.Model):
 
     import_tags = db.StringListProperty()
 
+    # Do not manipulate this field directly!  Instead, use the
+    # functions provided in the tag_util module.
+    #
     # This is just a cached version of the data; the authoritative
     # version of the tags for 'obj' are found by calling
     # TagEdit.fetch_and_merge(obj).
@@ -341,6 +347,9 @@ class Track(db.Model):
 
     import_tags = db.StringListProperty()
 
+    # Do not manipulate this field directly!  Instead, use the
+    # functions provided in the tag_util module.
+    #
     # This is just a cached version of the data; the authoritative
     # version of the tags for 'obj' are found by calling
     # TagEdit.fetch_and_merge(obj).
@@ -422,7 +431,12 @@ class Track(db.Model):
     @property
     def is_explicit(self):
         """Returns True if the [Explicit] tag is set on this track."""
-        return self.has_tag("Explicit")
+        return self.has_tag(EXPLICIT_TAG)
+
+    @property
+    def is_recommended(self):
+        """Returns True if the [Recommended] tag is set on this track."""
+        return self.has_tag(RECOMMENDED_TAG)
 
 
 ############################################################################
