@@ -19,4 +19,14 @@ $(document).ready(function() {
         }
     });
     
+    // be sure that freeform entry always clears out any 
+    // previously auto-completed keys :
+    
+    $("#id_artist").change(function() {
+        $("#id_artist_key").attr("value", "");
+    });
+    $("#id_album").change(function() {
+        $("#id_album_key").attr("value", "");
+    });
+    
 });
