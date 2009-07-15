@@ -31,6 +31,9 @@ class PlaylistTrackForm(forms.Form):
                 required=True, 
                 widget=forms.TextInput(attrs={'class':'text'}),
                 error_messages={'required':'Please enter the artist name.'})
+    artist_key = forms.Field(label=_("Artist Key"), 
+                required=False,
+                widget=forms.HiddenInput())
     song_title = forms.CharField(label=_("Song Title"), 
                 required=True,
                 widget=forms.TextInput(attrs={'class':'text'}),
@@ -38,6 +41,9 @@ class PlaylistTrackForm(forms.Form):
     album = forms.CharField(label=_("Album"), 
                 required=False,
                 widget=forms.TextInput(attrs={'class':'text'}))
+    album_key = forms.Field(label=_("Album Key"), 
+                required=False,
+                widget=forms.HiddenInput())
     label = forms.CharField(label=_("Label"), 
                 required=False,
                 widget=forms.TextInput(attrs={'class':'text'}))
