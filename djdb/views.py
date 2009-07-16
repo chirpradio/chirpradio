@@ -78,12 +78,21 @@ def album_search_for_autocomplete(request):
         response.write("%s|%s\n" % (ent.title, ent.key()))
     return response
 
+def track_search_for_autocomplete(request):
+    matching_entities = _get_matches_for_partial_entity_search(
+                                            request.GET.get('q', ''),
+                                            'Track')        
+    response = http.HttpResponse(mimetype="text/plain")
+    for ent in matching_entities:
+        response.write("%s|%s\n" % (ent.title, ent.key()))
+    return response
+
 def _get_matches_for_partial_entity_search(query, entity_name):
     if not query:
         return []
     if len(query) < 3:
         # conserve resources and refuse to perform a keyword 
-        # search if it's less than 3 characters.
+        # search if query is less than 3 characters.
         return []
     # append star to match partial artist names.
     #       e.g. ?q=metalli will become "metalli*" to match Metallica
