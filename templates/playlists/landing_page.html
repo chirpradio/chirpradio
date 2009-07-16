@@ -12,6 +12,8 @@
     src="/media/common/js/jquery-autocomplete/jquery.autocomplete.js"></script>
 <script type="text/javascript" 
     src="/media/common/js/chirp/chirp.js"></script>
+<script type="text/javascript" 
+    src="/media/playlists/js/playlists.js"></script>
 </head>
 <body>
 
@@ -26,6 +28,7 @@
 {{ form.artist.errors }}
 <label for="artist">Artist</label>
 {{ form.artist }}
+{{ form.artist_key }}
 
 {{ form.song_title.errors }}
 <label for="song_title">Song Title</label>
@@ -34,6 +37,7 @@
 {{ form.album.errors }}
 <label for="album">Album</label>
 {{ form.album }}
+{{ form.album_key }}
 
 {{ form.label.errors }}
 <label for="label">Label</label>

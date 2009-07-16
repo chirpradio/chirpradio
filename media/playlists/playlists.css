@@ -43,7 +43,15 @@ p.links a:hover { color: #fff; background: #ec3005; }
 
 #playlist-form { width: 334px; padding-bottom: 110px; background: transparent url(shadow_bottom.png) right bottom no-repeat; }
 #playlist-form label { display: block; width: 291px; font-size: 12px; font-weight: bold; padding: 5px; color: #fff; background: #5ed4f3; text-transform: uppercase; }
-#playlist-form input.text, #playlist-form textarea { margin-bottom: 15px; border: 1px solid #5ed4f3; width: 293px; font-size: 12px; line-height: 17px; color: #4a4a4a; padding: 3px; }
+#playlist-form input.text, #playlist-form textarea { 
+    margin-bottom: 15px; 
+    border: 1px solid #5ed4f3; 
+    width: 293px; 
+    font-size: 12px; 
+    line-height: 17px; 
+    color: #4a4a4a; 
+    padding: 3px; 
+}
 #playlist-form input:focus.text, #playlist-form textarea:focus { background: #ffffc8; }
 #playlist-form input.button { width: 200px; display: block; margin-bottom: 15px; }
 
@@ -59,4 +67,15 @@ p.links a:hover { color: #fff; background: #ec3005; }
     color: #ec0035;
     /* slightly counteract the 62.5% affect from body: */
     font-size: 1.2em;
+}
+
+/* AUTOCOMPLETE */
+.ac_results li {
+    cursor: pointer;
+    font-size: 12px; 
+    line-height: 17px; 
+    color: #4a4a4a; 
+    padding: 3px; 
+    background: #ffffc8;
+    border: 1px solid #5ed4f3;
 }

@@ -1,0 +1,1 @@
+This is a directory for ephemeral and experimental scripts that later might get incorporated into the main trunk.

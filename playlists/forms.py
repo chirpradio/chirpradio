@@ -21,6 +21,7 @@ import auth
 from django.utils.translation import ugettext_lazy as _
 from django.template import loader
 from django import forms
+from djdb.models import Artist, Album
 from playlists.models import Playlist, PlaylistTrack, LiveStream
 
 class PlaylistTrackForm(forms.Form):
@@ -31,6 +32,9 @@ class PlaylistTrackForm(forms.Form):
                 required=True, 
                 widget=forms.TextInput(attrs={'class':'text'}),
                 error_messages={'required':'Please enter the artist name.'})
+    artist_key = forms.Field(label=_("Artist Key"), 
+                required=False,
+                widget=forms.HiddenInput())
     song_title = forms.CharField(label=_("Song Title"), 
                 required=True,
                 widget=forms.TextInput(attrs={'class':'text'}),
@@ -38,6 +42,9 @@ class PlaylistTrackForm(forms.Form):
     album = forms.CharField(label=_("Album"), 
                 required=False,
                 widget=forms.TextInput(attrs={'class':'text'}))
+    album_key = forms.Field(label=_("Album Key"), 
+                required=False,
+                widget=forms.HiddenInput())
     label = forms.CharField(label=_("Label"), 
                 required=False,
                 widget=forms.TextInput(attrs={'class':'text'}))
@@ -57,12 +64,15 @@ class PlaylistTrackForm(forms.Form):
         playlist_track = PlaylistTrack(
                             playlist=playlist, 
                             selector=self.current_user)
-                            
-        # TODO(kumar) lookup artist and albun relations when doing autocompletion.
-        # possible we can look up label relations when that exists in DJDB
-        playlist_track.freeform_artist_name = self.cleaned_data['artist']
+        
+        if self.cleaned_data['artist_key']:
+            playlist_track.artist = Artist.get(self.cleaned_data['artist_key'])
+        else:
+            playlist_track.freeform_artist_name = self.cleaned_data['artist']
         playlist_track.freeform_track_title = self.cleaned_data['song_title']
-        if self.cleaned_data['album']:
+        if self.cleaned_data['album_key']:
+            playlist_track.album = Album.get(self.cleaned_data['album_key'])
+        elif self.cleaned_data['album']:
             playlist_track.freeform_album_title = self.cleaned_data['album']
         if self.cleaned_data['label']:
             playlist_track.freeform_label = self.cleaned_data['label']

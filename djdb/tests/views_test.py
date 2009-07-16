@@ -66,10 +66,8 @@ class AutocompleteViewsTestCase(DjangoTestCase):
         # Create some test artists.
         art1 = models.Artist(name=u"Fall, The", parent=idx.transaction,
                              key_name="art1")
-        art1.save()
         art2 = models.Artist(name=u"Eno, Brian", parent=idx.transaction,
                              key_name="art2")
-        art2.save()
         # Create some test albums.
         alb1 = models.Album(title=u"This Nation's Saving Grace",
                             album_id=12345,
@@ -77,20 +75,33 @@ class AutocompleteViewsTestCase(DjangoTestCase):
                             album_artist=art1,
                             num_tracks=123,
                             parent=idx.transaction)
-        alb1.save()
         alb2 = models.Album(title=u"Another Green World",
                             album_id=67890,
                             import_timestamp=datetime.datetime.now(),
                             album_artist=art2,
                             num_tracks=456,
                             parent=idx.transaction)
-        alb2.save()
+        
+        for i, track_title in enumerate((   u"Spider And I", 
+                                            u"Running To Tie Your Shoes", 
+                                            u"Kings Lead Hat")):
+            idx.add_track(models.Track(ufid="test3-%d" % i,
+                                     album=alb2,
+                                     sampling_rate_hz=44110,
+                                     bit_rate_kbps=128,
+                                     channels="mono",
+                                     duration_ms=789,
+                                     title=track_title,
+                                     track_artist=art2,
+                                     track_num=i+1,
+                                     parent=idx.transaction))
         
         idx.add_artist(art1)
         idx.add_artist(art2)
         idx.add_album(alb1)
         idx.add_album(alb2)
-        idx.save()
+        
+        idx.save() # this also saves all objects
         
     def test_short_query_is_ignored(self):
         response = self.client.get("/djdb/artist/search.txt", {'q':'en'}) # too short
@@ -99,20 +110,31 @@ class AutocompleteViewsTestCase(DjangoTestCase):
     def test_artist_full_name(self):
         response = self.client.get("/djdb/artist/search.txt", {'q':'brian eno'})
         ent = models.Artist.all().filter("name =", "Eno, Brian")[0]
-        self.assertEqual(response.content, "%s|%s\n" % (ent.key(), ent.pretty_name))
+        self.assertEqual(response.content, "%s|%s\n" % (ent.pretty_name, ent.key()))
     
     def test_artist_partial_name(self):
         response = self.client.get("/djdb/artist/search.txt", {'q':'fal'}) # The Fall
         ent = models.Artist.all().filter("name =", "Fall, The")[0]
-        self.assertEqual(response.content, "%s|%s\n" % (ent.key(), ent.pretty_name))
+        self.assertEqual(response.content, "%s|%s\n" % (ent.pretty_name, ent.key()))
     
     def test_album_full_name(self):
         response = self.client.get("/djdb/album/search.txt", {'q':'another green world'})
         ent = models.Album.all().filter("title =", "Another Green World")[0]
-        self.assertEqual(response.content, "%s|%s\n" % (ent.key(), ent.title))
+        self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
     
     def test_album_partial_name(self):
         response = self.client.get("/djdb/album/search.txt", {'q':'another'})
         ent = models.Album.all().filter("title =", "Another Green World")[0]
-        self.assertEqual(response.content, "%s|%s\n" % (ent.key(), ent.title))
+        self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
+    
+    def test_track_full_name(self):
+        response = self.client.get("/djdb/track/search.txt", {'q':'spider and I'})
+        ent = models.Track.all().filter("title =", "Spider And I")[0]
+        self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
+    
+    def test_track_partial_name(self):
+        response = self.client.get("/djdb/track/search.txt", {'q':'spid'})
+        ent = models.Track.all().filter("title =", "Spider And I")[0]
+        self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
+
 
