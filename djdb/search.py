@@ -325,10 +325,9 @@ def _parse_query_string(query_str):
                 logic = IS_FORBIDDEN
             if i == len(subparts)-1 and is_prefix:
                 flavor = IS_PREFIX
-            # Skip stop words, but only in the case of a full term.
-            # The use of a stop word as a prefix (e.g. the query "the*")
-            # is allowed.
-            if flavor == IS_TERM and _is_stop_word(subp):
+            # Skip stop words when building a query 
+            # because no stop words exist in the index.
+            if _is_stop_word(subp):
                 continue
             # Skip parts where the search term or prefix is empty.
             if not subp:

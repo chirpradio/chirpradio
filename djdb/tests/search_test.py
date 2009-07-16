@@ -98,8 +98,7 @@ class SearchTestCase(unittest.TestCase):
              (search.IS_REQUIRED, search.IS_PREFIX, u"bar")],
             search._parse_query_string(u"---Foo Bar*****"))
 
-        # Check that we filter out stop words, but only in the case of
-        # terms.
+        # Check that we filter out stop words for all flavors.
         self.assertEqual(
             [(search.IS_REQUIRED, search.IS_TERM, u"foo")],
             search._parse_query_string(u"foo the"))
@@ -107,12 +106,10 @@ class SearchTestCase(unittest.TestCase):
             [(search.IS_REQUIRED, search.IS_TERM, u"foo")],
             search._parse_query_string(u"foo -the"))
         self.assertEqual(
-            [(search.IS_REQUIRED, search.IS_TERM, u"foo"),
-             (search.IS_REQUIRED, search.IS_PREFIX, u"the")],
+            [(search.IS_REQUIRED, search.IS_TERM, u"foo")],
             search._parse_query_string(u"foo the*"))
         self.assertEqual(
-            [(search.IS_REQUIRED, search.IS_TERM, u"foo"),
-             (search.IS_FORBIDDEN, search.IS_PREFIX, u"the")],
+            [(search.IS_REQUIRED, search.IS_TERM, u"foo")],
             search._parse_query_string(u"foo -the*"))
 
         # Check some corner cases.
@@ -173,6 +170,7 @@ class SearchTestCase(unittest.TestCase):
         key4 = db.Key.from_path("kind_Bar", "key4")
         key5 = db.Key.from_path("kind_Bar", "key5")
         key6 = db.Key.from_path("kind_Bar", "key6")
+        key7 = db.Key.from_path("kind_Bar", "key7")
 
         idx = search.Indexer()
         idx.add_key(key1, "f1", u"alpha beta")
@@ -181,6 +179,8 @@ class SearchTestCase(unittest.TestCase):
         idx.add_key(key4, "f2", u"beta delta")
         idx.add_key(key5, "f1", u"alpha alaska")
         idx.add_key(key6, "f2", u"delta gamma")
+        # an indexed value ending in a stop word:
+        idx.add_key(key7, "stop-word-prefix", u"something in")
         idx.save()
 
         # Check that some simple queries are handled correctly.
@@ -206,6 +206,11 @@ class SearchTestCase(unittest.TestCase):
         self.assertEqual(
             {key4: set(["f2"]), key6: set(["f2"])},
             search.fetch_keys_for_query_string(u"delta -al*"))
+        # Make sure we can run a prefix search on a stop word
+        # (this is necessary for autocomplete searches)
+        self.assertEqual(
+            {key7: set(["stop-word-prefix"])},
+            search.fetch_keys_for_query_string(u"something in*"))
 
         # Check that entity kind restrictions are respected.
         self.assertEqual(
