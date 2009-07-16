@@ -81,7 +81,7 @@ class TestPlaylistViews(PlaylistViewsTest):
     def test_add_track_with_minimal_fields(self):
         resp = self.client.post(reverse('playlists_add_track'), {
             'artist': "Squarepusher",
-            'song_title': "Port Rhombus"
+            'song': "Port Rhombus"
         })
         self.assertNoFormErrors(resp)
         self.assertRedirects(resp, reverse('playlists_landing_page'))
@@ -95,7 +95,7 @@ class TestPlaylistViews(PlaylistViewsTest):
     def test_add_track_with_all_fields(self):
         resp = self.client.post(reverse('playlists_add_track'), {
             'artist': "Squarepusher",
-            'song_title': "Port Rhombus",
+            'song': "Port Rhombus",
             "album": "Port Rhombus EP",
             "label": "Warp Records",
             "song_notes": "Dark melody. Really nice break down into half time."
@@ -117,12 +117,12 @@ class TestPlaylistViews(PlaylistViewsTest):
         # add several tracks:
         resp = self.client.post(reverse('playlists_add_track'), {
             'artist': "Steely Dan",
-            'song_title': "Peg",
+            'song': "Peg",
         })
         self.assertNoFormErrors(resp)
         resp = self.client.post(reverse('playlists_add_track'), {
             'artist': "Hall & Oates",
-            'song_title': "M.E.T.H.O.D. of Love",
+            'song': "M.E.T.H.O.D. of Love",
         })
         self.assertNoFormErrors(resp)
         
@@ -135,7 +135,7 @@ class TestPlaylistViews(PlaylistViewsTest):
     def test_unicode_track_entry(self):
         resp = self.client.post(reverse('playlists_add_track'), {
             'artist': u'Ivan Krsti\u0107',
-            'song_title': u'Ivan Krsti\u0107',
+            'song': u'Ivan Krsti\u0107',
             "album": u'Ivan Krsti\u0107',
             "label": u'Ivan Krsti\u0107',
             "song_notes": u'Ivan Krsti\u0107'
@@ -195,10 +195,12 @@ class TestPlaylistViewsWithLibrary(PlaylistViewsTest):
     def test_add_track_linked_to_library(self):
         stevie = Artist.all().filter("name =", "Stevie Wonder")[0]
         talking_book = Album.all().filter("title =", "Talking Book")[0]
+        sunshine = Track.all().filter("title =", "You Are The Sunshine Of My Life")[0]
         resp = self.client.post(reverse('playlists_add_track'), {
             'artist_key': stevie.key(),
             'artist': stevie.name,
-            'song_title': "Boogie On",
+            'song': "You Are The Sunshine Of My Life",
+            'song_key': sunshine.key(),
             'album_key': talking_book.key(),
             'album': talking_book.title
         })
@@ -210,6 +212,7 @@ class TestPlaylistViewsWithLibrary(PlaylistViewsTest):
         tracks = [t for t in context['playlist_events']]
         self.assertEquals(tracks[0].artist_name, "Stevie Wonder")
         self.assertEquals(tracks[0].artist.key(), stevie.key())
-        self.assertEquals(tracks[0].track_title, "Boogie On")
         self.assertEquals(tracks[0].album_title, "Talking Book")
         self.assertEquals(tracks[0].album.key(), talking_book.key())
+        self.assertEquals(tracks[0].track_title, "You Are The Sunshine Of My Life")
+        self.assertEquals(tracks[0].track.key(), sunshine.key())

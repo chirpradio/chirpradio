@@ -59,10 +59,8 @@ def main():
     # Create some test artists.
     art1 = models.Artist(name=u"Fall, The", parent=idx.transaction,
                          key_name="art1")
-    art1.save()
     art2 = models.Artist(name=u"Eno, Brian", parent=idx.transaction,
                          key_name="art2")
-    art2.save()
     # Create some test albums.
     alb1 = models.Album(title=u"This Nation's Saving Grace",
                         album_id=12345,
@@ -70,20 +68,32 @@ def main():
                         album_artist=art1,
                         num_tracks=123,
                         parent=idx.transaction)
-    alb1.save()
     alb2 = models.Album(title=u"Another Green World",
                         album_id=67890,
                         import_timestamp=datetime.datetime.now(),
                         album_artist=art2,
                         num_tracks=456,
                         parent=idx.transaction)
-    alb2.save()
-    
+    for i, track_title in enumerate((   u"Spider And I", 
+                                        u"Running To Tie Your Shoes", 
+                                        u"Kings Lead Hat")):
+        idx.add_track(models.Track(ufid="test3-%d" % i,
+                                 album=alb2,
+                                 sampling_rate_hz=44110,
+                                 bit_rate_kbps=128,
+                                 channels="mono",
+                                 duration_ms=789,
+                                 title=track_title,
+                                 track_artist=art2,
+                                 track_num=i+1,
+                                 parent=idx.transaction))
     idx.add_artist(art1)
     idx.add_artist(art2)
     idx.add_album(alb1)
     idx.add_album(alb2)
-    idx.save()
+    
+    idx.save() # saves all objects
+    
     print "created some artists and stuff"
 
 if __name__ == '__main__':
