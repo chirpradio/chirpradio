@@ -154,8 +154,11 @@ class TestPlaylistTrack(unittest.TestCase):
         )
         track.put()
         self.assertEqual(track.artist_name, "Stevie Wonder")
-        self.assertEqual(track.album.title, "Talking Book")
-        self.assertEqual(track.track.title, "You Are The Sunshine Of My Life")
+        self.assertEqual(track.artist, self.stevie)
+        self.assertEqual(track.album_title, "Talking Book")
+        self.assertEqual(track.album, self.talking_book)
+        self.assertEqual(track.track_title, "You Are The Sunshine Of My Life")
+        self.assertEqual(track.track, self.tracks['You Are The Sunshine Of My Life'])
     
     def test_track_by_free_entry(self):
         selector = create_dj()
