@@ -70,6 +70,12 @@ p.links a:hover { color: #fff; background: #ec3005; }
 }
 
 /* AUTOCOMPLETE */
+input.ac_loading {
+    
+}
+.ac_over {
+    font-weight: bold;
+}
 .ac_results li {
     cursor: pointer;
     font-size: 12px; 
