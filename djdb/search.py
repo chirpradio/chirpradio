@@ -285,8 +285,8 @@ def create_artists(all_artist_names):
 IS_REQUIRED = "0:is_required"
 IS_FORBIDDEN = "1:is_forbidden"
 
-IS_TERM = "is_term"
-IS_PREFIX = "is_prefix"
+IS_TERM = "0:is_term"
+IS_PREFIX = "1:is_prefix"
 
 def _parse_query_string(query_str):
     """Convert a query string into a sequence of annotated terms.
