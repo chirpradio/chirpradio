@@ -48,6 +48,10 @@ def _is_stop_word(term):
     return len(term) <= 1 or term in _STOP_WORDS
 
 
+def _is_stop_word_prefix(prefix):
+    return any(sw.startswith(prefix) for sw in _STOP_WORDS)
+
+
 def _scrub_char(c):
     """Normalize a character for use in indexing and searching.
     
@@ -295,6 +299,10 @@ def _parse_query_string(query_str):
       (3) "foo*" means "find all entities whose text contains a term starting
           with the prefix "foo".
 
+    We automatically filter out query terms that are stop words, as
+    well as prefix-query terms that are also the prefix of a stop
+    word.
+
     Returns:
       A sequence of 3-tuples of rules, of the form
         (logic, flavor, arg)
@@ -304,7 +312,6 @@ def _parse_query_string(query_str):
       If logic == IS_FORBIDDEN, text must not match the rule to be returned.
       If flavor == IS_TERM, arg is a term string.  
       If flavor == IS_PREFIX, arg is a term prefix string.
-     
     """
     query_str_parts = query_str.split()
     query = []
@@ -324,6 +331,11 @@ def _parse_query_string(query_str):
             if i == 0 and not is_required:
                 logic = IS_FORBIDDEN
             if i == len(subparts)-1 and is_prefix:
+                # We need to filter out any prefix which might match a
+                # stop word.  Otherwise a prefix search like "mott
+                # th*" would fail to match "Mott the Hoople".
+                if _is_stop_word_prefix(subp):
+                    continue
                 flavor = IS_PREFIX
             # Skip stop words when building a query 
             # because no stop words exist in the index.
