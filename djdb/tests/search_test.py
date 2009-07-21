@@ -210,7 +210,7 @@ class SearchTestCase(unittest.TestCase):
         # (this is necessary for autocomplete searches)
         self.assertEqual(
             {key7: set(["stop-word-prefix"])},
-            search.fetch_keys_for_query_string(u"something in*"))
+            search.fetch_keys_for_query_string(u"something i*"))
 
         # Check that entity kind restrictions are respected.
         self.assertEqual(
