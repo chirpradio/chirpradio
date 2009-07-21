@@ -55,17 +55,17 @@ class PlaylistTrackForm(forms.Form):
                 required=False,
                 widget=forms.Textarea(attrs={'class':'text'}))
 
-    def __init__(self, data=None, current_user=None):
+    def __init__(self, data=None, current_user=None, playlist=None):
         self.current_user = current_user
+        self.playlist = playlist or ChirpBroadcast()
         super(PlaylistTrackForm, self).__init__(data=data)
 
     def save(self):
         if not self.current_user:
             raise ValueError("Cannot save() without a current_user")
-        
-        playlist = ChirpBroadcast()        
+              
         playlist_track = PlaylistTrack(
-                            playlist=playlist, 
+                            playlist=self.playlist, 
                             selector=self.current_user)
         
         if self.cleaned_data['artist_key']:

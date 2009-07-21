@@ -21,7 +21,7 @@ import datetime
 import unittest
 from auth import roles
 from auth.models import User
-from playlists.models import Playlist, PlaylistTrack, ChirpBroadcast
+from playlists.models import Playlist, PlaylistTrack, PlaylistBreak, ChirpBroadcast
 from djdb.models import Artist, Album, Track
 
 __all__ = ['TestPlaylistViews', 'TestPlaylistViewsWithLibrary']
@@ -38,13 +38,16 @@ class PlaylistViewsTest(TestCase):
             pl.delete()
 
     def assertNoFormErrors(self, response):
-        if response.context and response.context.get('form'):
-            self.assertEquals(response.context['form'].errors.as_text(), "")
+        if response.context and response.context[0].get('form'):
+            self.assertEquals(response.context[0]['form'].errors.as_text(), "")
+    
+    def get_selector(self):
+        return User.all().filter('email =', 'test@test.com')[0]
 
 class TestPlaylistViews(PlaylistViewsTest):
     
     def test_view_shows_3_hours_of_tracks(self):
-        selector = User.all().filter('email =', 'test@test.com')[0]
+        selector = self.get_selector()
         playlist = ChirpBroadcast()
         track = PlaylistTrack(
                     playlist=playlist, 
@@ -78,7 +81,7 @@ class TestPlaylistViews(PlaylistViewsTest):
         self.assertEquals(len(tracks), 2, "tracks older than 3 hours were not hidden")
     
     def test_add_track_with_minimal_fields(self):
-        resp = self.client.post(reverse('playlists_add_track'), {
+        resp = self.client.post(reverse('playlists_add_event'), {
             'artist': "Squarepusher",
             'song': "Port Rhombus"
         })
@@ -92,7 +95,7 @@ class TestPlaylistViews(PlaylistViewsTest):
         self.assertEquals(tracks[0].track_title, "Port Rhombus")
     
     def test_add_track_with_all_fields(self):
-        resp = self.client.post(reverse('playlists_add_track'), {
+        resp = self.client.post(reverse('playlists_add_event'), {
             'artist': "Squarepusher",
             'song': "Port Rhombus",
             "album": "Port Rhombus EP",
@@ -114,12 +117,12 @@ class TestPlaylistViews(PlaylistViewsTest):
     
     def test_add_tracks_to_existing_stream(self):
         # add several tracks:
-        resp = self.client.post(reverse('playlists_add_track'), {
+        resp = self.client.post(reverse('playlists_add_event'), {
             'artist': "Steely Dan",
             'song': "Peg",
         })
         self.assertNoFormErrors(resp)
-        resp = self.client.post(reverse('playlists_add_track'), {
+        resp = self.client.post(reverse('playlists_add_event'), {
             'artist': "Hall & Oates",
             'song': "M.E.T.H.O.D. of Love",
         })
@@ -132,7 +135,7 @@ class TestPlaylistViews(PlaylistViewsTest):
         self.assertEquals(tracks[1].artist_name, "Steely Dan")
 
     def test_unicode_track_entry(self):
-        resp = self.client.post(reverse('playlists_add_track'), {
+        resp = self.client.post(reverse('playlists_add_event'), {
             'artist': u'Ivan Krsti\u0107',
             'song': u'Ivan Krsti\u0107',
             "album": u'Ivan Krsti\u0107',
@@ -150,6 +153,43 @@ class TestPlaylistViews(PlaylistViewsTest):
         self.assertEquals(tracks[0].album_title, u'Ivan Krsti\u0107')
         self.assertEquals(tracks[0].label, u'Ivan Krsti\u0107')
         self.assertEquals(tracks[0].notes, u'Ivan Krsti\u0107')
+    
+    def test_add_break(self):
+        playlist = ChirpBroadcast()
+        selector = self.get_selector()
+        track = PlaylistTrack(
+                    playlist=playlist, 
+                    selector=selector,
+                    freeform_artist_name="Steely Dan",
+                    freeform_album_title="Aja",
+                    freeform_track_title="Peg")
+        track.put()
+        track = PlaylistTrack(
+                    playlist=playlist,
+                    selector=selector, 
+                    freeform_artist_name="Def Leoppard",
+                    freeform_album_title="Pyromania",
+                    freeform_track_title="Photograph")
+        track.put()
+        
+        resp = self.client.post(reverse('playlists_add_event'), {
+            'submit': "Add Break"
+        })
+        self.assertNoFormErrors(resp)
+        self.assertRedirects(resp, reverse('playlists_landing_page'))
+        # simulate the redirect:
+        resp = self.client.get(reverse('playlists_landing_page'))
+        
+        context = resp.context[0]
+        event_types = [type(t) for t in context['playlist_events']]
+        self.assertEqual(event_types[0], PlaylistBreak)
+        self.assertEqual(event_types[1], PlaylistTrack)
+        self.assertEqual(event_types[2], PlaylistTrack)
+        
+        # print resp.content
+        assert '<p class="break">Break</p>' in resp.content
+        assert '<p><span class="artist">Def Leoppard</span>' in resp.content
+        assert '<p><span class="artist">Steely Dan</span>' in resp.content
 
 class TestPlaylistViewsWithLibrary(PlaylistViewsTest):
     
@@ -195,7 +235,7 @@ class TestPlaylistViewsWithLibrary(PlaylistViewsTest):
         stevie = Artist.all().filter("name =", "Stevie Wonder")[0]
         talking_book = Album.all().filter("title =", "Talking Book")[0]
         sunshine = Track.all().filter("title =", "You Are The Sunshine Of My Life")[0]
-        resp = self.client.post(reverse('playlists_add_track'), {
+        resp = self.client.post(reverse('playlists_add_event'), {
             'artist_key': stevie.key(),
             'artist': stevie.name,
             'song': "You Are The Sunshine Of My Life",

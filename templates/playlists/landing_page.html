@@ -1,4 +1,5 @@
 {% extends "common/base.html" %}
+{% load playlists_extras %}
 
 {% block extrastyle %}
 <link rel="stylesheet" href="/media/playlists/playlists.css" />
@@ -22,7 +23,7 @@
 
 <h1>CHIRPradio DJ Playlist Tracking Application</h1>
 
-<form method="post" id="playlist-form" action="{% url playlists_add_track %}">
+<form method="post" id="playlist-form" action="{% url playlists_add_event %}">
 <fieldset>
 
 {{ form.artist.errors }}
@@ -49,7 +50,7 @@
 {{ form.song_notes }}
 
 <input type="submit" class="button" name="submit" value="Submit" />
-<input type="submit" class="button" name="break" value="Add Break" />
+<input type="submit" class="button" name="submit" value="Add Break" />
 <!--<input type="submit" class="button" name="populate" value="Fill form via Traktor" />-->
 
 </fieldset>
@@ -63,25 +64,28 @@
 {% if playlist_events %}
 {% for event in playlist_events %}
 
-<div class="song-info"> <!-- song information container -->
-<p class="time">{{ event.established_display|time:"g:i A" }}</p>
-<p><span class="artist">{{ event.artist_name }}</span> 
-    &bull; <span class="song">{{ event.track_title }}</span> 
-    &bull; <span class="album">{{ event.album_title_display }}</span>
-    &bull; <span class="label">{{ event.label_display }}</span>
+    {% ifeventisbreak event %}
+
+        <p class="break">Break</p>
     
-</p>
-{% if event.notes %}
-<p class="notes"><strong>Notes:</strong> {{ event.notes }}</p>
-{% endif %}
-</div>
+    {% else %}
+    
+        <div class="song-info"> <!-- song information container -->
+        <p class="time">{{ event.established_display|time:"g:i A" }}</p>
+        <p><span class="artist">{{ event.artist_name }}</span> 
+            &bull; <span class="song">{{ event.track_title }}</span> 
+            &bull; <span class="album">{{ event.album_title_display }}</span>
+            &bull; <span class="label">{{ event.label_display }}</span>
+    
+        </p>
+        {% if event.notes %}
+        <p class="notes"><strong>Notes:</strong> {{ event.notes }}</p>
+        {% endif %}
+        </div>
+
+    {% endifeventisbreak %}
+
 {% endfor %}
-
-{# {% if forloop.last  %} #}
-{# {% else %} #}
-{# <p class="break">Break</p> #}
-{# {% endif %} #}
-
 {% else %}
 <p>No tracks have been played within the last three hours.</p>
 {% endif %}

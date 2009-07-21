@@ -24,7 +24,8 @@ from auth.decorators import require_role
 import auth
 from auth import roles
 from playlists.forms import PlaylistTrackForm
-from playlists.models import Playlist, PlaylistTrack, ChirpBroadcast
+from playlists.models import (
+    Playlist, PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast)
 from djdb import search
 from datetime import datetime, timedelta
 
@@ -39,7 +40,7 @@ def landing_page(request):
     else:
         form = PlaylistTrackForm()
     broadcast = ChirpBroadcast()
-    pl = PlaylistTrack.all().filter('playlist =', broadcast)
+    pl = PlaylistEvent.all().filter('playlist =', broadcast)
     pl = pl.filter('established >=', datetime.now() - timedelta(hours=3))
     pl = pl.order('-established')
     
@@ -54,14 +55,22 @@ def landing_page(request):
     return HttpResponse(template.render(ctx))
     
 @require_role(roles.DJ)
-def add_track(request):
+def add_event(request):
     if request.method == 'POST':
-        form = PlaylistTrackForm(
-                    data=request.POST, 
-                    current_user=auth.get_current_user(request))
-        if form.is_valid():
-            form.save()
+        playlist = ChirpBroadcast()
+        if request.POST.get('submit') == 'Add Break':
+            # special case...
+            b = PlaylistBreak(playlist=playlist)
+            b.put()
             return HttpResponseRedirect(reverse('playlists_landing_page'))
+        else:
+            form = PlaylistTrackForm(
+                        data=request.POST, 
+                        current_user=auth.get_current_user(request),
+                        playlist=playlist)
+            if form.is_valid():
+                form.save()
+                return HttpResponseRedirect(reverse('playlists_landing_page'))
     else:
         form = PlaylistTrackForm()
     ctx_vars = { 

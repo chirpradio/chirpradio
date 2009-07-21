@@ -22,6 +22,6 @@ from django.conf.urls.defaults import patterns, url
 
 urlpatterns = patterns(
     '',
-    url(r'^track$', 'playlists.views.add_track', name="playlists_add_track"),
+    url(r'^event$', 'playlists.views.add_event', name="playlists_add_event"),
     url(r'^/?$', 'playlists.views.landing_page', name="playlists_landing_page"),
 )
