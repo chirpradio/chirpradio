@@ -19,12 +19,13 @@ import datetime
 import unittest
 from djdb.models import Artist, Album, Track
 from playlists.models import (
-        Playlist, DJPlaylist, BroadcastPlaylist, PlaylistTrack, ChirpBroadcast)
+        Playlist, DJPlaylist, BroadcastPlaylist, PlaylistTrack, 
+        PlaylistBreak, ChirpBroadcast)
 import auth.roles
 from auth.models import User
 from google.appengine.api.datastore_errors import BadValueError
 
-__all__ = ['TestPlaylist', 'TestPlaylistTrack']
+__all__ = ['TestPlaylist', 'TestPlaylistTrack', 'TestPlaylistBreak']
 
 def create_dj():    
     dj = User(email="test")
@@ -90,7 +91,7 @@ class TestPlaylist(unittest.TestCase):
             playlist.modified_display.timetuple()[0:2],
             datetime.datetime.now().timetuple()[0:2])
 
-class TestPlaylistTrack(unittest.TestCase):
+class PlaylistEventTest(unittest.TestCase):
     
     def setUp(self):
         for model in (
@@ -126,6 +127,8 @@ class TestPlaylistTrack(unittest.TestCase):
                         track_num=idx+1)
             self.tracks[title] = track
             track.put()
+
+class TestPlaylistTrack(PlaylistEventTest):
     
     def test_track_missing_title_raises_error(self):
         selector = create_dj()
@@ -239,3 +242,30 @@ class TestPlaylistTrack(unittest.TestCase):
             "Hand Clapping Song")
         self.assertEqual(recent_tracks[1].track_title,
             "Ember")
+
+class TestPlaylistBreak(PlaylistEventTest):
+    
+    def test_break(self):
+        playlist = ChirpBroadcast()
+        selector = create_dj()
+        
+        track = PlaylistTrack(
+            selector=selector,
+            playlist=playlist,
+            freeform_artist_name="The Meters",
+            freeform_album_title="Chicken Strut",
+            freeform_track_title="Hand Clapping Song"
+        )
+        track.put()
+        
+        pl_break = PlaylistBreak(playlist=playlist)
+        pl_break.put()
+        
+        self.assertEqual(
+            [type(e) for e in playlist.recent_tracks],
+            [PlaylistTrack])
+        
+        self.assertEqual(
+            [type(e) for e in playlist.recent_events],
+            [PlaylistBreak, PlaylistTrack])
+        

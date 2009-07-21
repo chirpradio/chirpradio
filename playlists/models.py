@@ -47,6 +47,16 @@ class Playlist(polymodel.PolyModel):
         q = PlaylistTrack.all().filter('playlist =', self).order('-established')
         for track in q.fetch(1000):
             yield track
+    
+    @property
+    def recent_events(self):
+        """Generates a list of recent events in this playlist.
+        
+        This is like self.recent_tracks but also includes breaks.
+        """
+        q = PlaylistEvent.all().filter('playlist =', self).order('-established')
+        for event in q.fetch(1000):
+            yield event
 
 class DJPlaylist(Playlist):
     """A playlist created by a DJ.
@@ -90,11 +100,36 @@ def ChirpBroadcast():
         playlist.put()
     
     return playlist
-
-class PlaylistTrack(db.Model):
-    """A track in a Playlist."""
-    # The playlist this track belongs to
+    
+class PlaylistEvent(polymodel.PolyModel):
+    """An event that occurs in a Playlist."""
+    # The playlist this event belongs to
     playlist = db.ReferenceProperty(Playlist, required=True)
+    # The date this playlist event was established 
+    # (automatically set to now upon creation)
+    established = db.DateTimeProperty(auto_now_add=True)
+    # The date this playlist event was last modified (automatically set to now)
+    modified = db.DateTimeProperty(auto_now=True)
+    
+    @property
+    def established_display(self):
+        return time_util.convert_utc_to_chicago(self.established)
+        
+    @property
+    def modified_display(self):
+        return time_util.convert_utc_to_chicago(self.modified)
+
+class PlaylistBreak(PlaylistEvent):
+    """A break in a playlist.
+    
+    Typically this is what a DJ will use to indicate that it's time 
+    to talk over the air.  The DJ would glance at the playlist and read 
+    aloud the four or five songs that were played since the last break
+    """
+    # this doesn't have any special fields
+
+class PlaylistTrack(PlaylistEvent):
+    """A track in a Playlist."""
     # DJ user who selected this track.
     selector = db.ReferenceProperty(User, required=True)
     # Artist name if this is a freeform entry
@@ -115,11 +150,6 @@ class PlaylistTrack(db.Model):
     freeform_label = db.StringProperty(required=False)
     # Notes about this track
     notes = db.TextProperty(required=False)
-    # The date this playlist track was established 
-    # (automatically set to now upon creation)
-    established = db.DateTimeProperty(auto_now_add=True)
-    # The date this playlist track was last modified (automatically set to now)
-    modified = db.DateTimeProperty(auto_now=True)
     
     @property
     def artist_name(self):
@@ -153,14 +183,6 @@ class PlaylistTrack(db.Model):
             return txt
         else:
             return u"[Unknown Album]"
-    
-    @property
-    def established_display(self):
-        return time_util.convert_utc_to_chicago(self.established)
-        
-    @property
-    def modified_display(self):
-        return time_util.convert_utc_to_chicago(self.modified)
     
     @property
     def label(self):
