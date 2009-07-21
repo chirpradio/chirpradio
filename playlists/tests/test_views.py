@@ -72,7 +72,7 @@ class TestPlaylistViews(PlaylistViewsTest):
         track.put()
         
         resp = self.client.get(reverse('playlists_landing_page'))
-        context = resp.context
+        context = resp.context[0]
         tracks = [t for t in context['playlist_events']]
         self.assertEquals(tracks[0].track_title, "Photograph")
         self.assertEquals(tracks[1].track_title, "Peg")
@@ -87,7 +87,7 @@ class TestPlaylistViews(PlaylistViewsTest):
         self.assertRedirects(resp, reverse('playlists_landing_page'))
         # simulate the redirect:
         resp = self.client.get(reverse('playlists_landing_page'))
-        context = resp.context
+        context = resp.context[0]
         tracks = [t for t in context['playlist_events']]
         self.assertEquals(tracks[0].artist_name, "Squarepusher")
         self.assertEquals(tracks[0].track_title, "Port Rhombus")
@@ -104,7 +104,7 @@ class TestPlaylistViews(PlaylistViewsTest):
         self.assertRedirects(resp, reverse('playlists_landing_page'))
         # simulate the redirect:
         resp = self.client.get(reverse('playlists_landing_page'))
-        context = resp.context
+        context = resp.context[0]
         tracks = [t for t in context['playlist_events']]
         self.assertEquals(tracks[0].artist_name, "Squarepusher")
         self.assertEquals(tracks[0].track_title, "Port Rhombus")
@@ -127,7 +127,7 @@ class TestPlaylistViews(PlaylistViewsTest):
         self.assertNoFormErrors(resp)
         
         resp = self.client.get(reverse('playlists_landing_page'))
-        context = resp.context
+        context = resp.context[0]
         tracks = [t for t in context['playlist_events']]
         self.assertEquals(tracks[0].artist_name, "Hall & Oates")
         self.assertEquals(tracks[1].artist_name, "Steely Dan")
@@ -144,7 +144,7 @@ class TestPlaylistViews(PlaylistViewsTest):
         self.assertRedirects(resp, reverse('playlists_landing_page'))
         # simulate the redirect:
         resp = self.client.get(reverse('playlists_landing_page'))
-        context = resp.context
+        context = resp.context[0]
         tracks = [t for t in context['playlist_events']]
         self.assertEquals(tracks[0].artist_name, u'Ivan Krsti\u0107')
         self.assertEquals(tracks[0].track_title, u'Ivan Krsti\u0107')
@@ -208,7 +208,7 @@ class TestPlaylistViewsWithLibrary(PlaylistViewsTest):
         self.assertRedirects(resp, reverse('playlists_landing_page'))
         # simulate the redirect:
         resp = self.client.get(reverse('playlists_landing_page'))
-        context = resp.context
+        context = resp.context[0]
         tracks = [t for t in context['playlist_events']]
         self.assertEquals(tracks[0].artist_name, "Stevie Wonder")
         self.assertEquals(tracks[0].artist.key(), stevie.key())

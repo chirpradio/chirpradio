@@ -17,14 +17,14 @@ body { font-size: 62.5%; font-family: Helvetica, Arial, sans-serif; background: 
 
 /* BUILDING BLOCKS */
 
-#container { width: 800px; margin: 0 auto; }
+#playlist { width: 800px; margin: 0 auto; }
 #form-column { float: left; width: 334px; background: transparent url(shadow.png) right top repeat-y; }
 #playlist-column { float: right; width: 450px; }
 .song-info { border-bottom: 1px solid #aaa; padding: 20px 0 16px; }
 
 /* HEADLINES & TEXT */
 
-h1 { width: 301px; height: 48px; text-indent: -9999px; background: transparent url(header.png) left top no-repeat; margin: 20px 0; }
+#playlist h1 { width: 301px; height: 48px; text-indent: -9999px; background: transparent url(header.png) left top no-repeat; margin: 20px 0; }
 h2 { margin-top: 20px; padding-bottom: 10px; color: #ec0035; font-size: 12px; font-weight: bold; text-transform: uppercase; border-bottom: 3px double #aaa; }
 .song-info p { font-size: 18px; line-height: 22px; margin-bottom: 5px; color: #aaa; }
 p.time { font-weight: bold; font-size: 11px; line-height: 11px; color: #ec0035; }
@@ -84,4 +84,9 @@ input.ac_loading {
     padding: 3px; 
     background: #ffffc8;
     border: 1px solid #5ed4f3;
+}
+
+/* CHIRP */
+#auth {
+    border-bottom: 1px solid #000;
 }

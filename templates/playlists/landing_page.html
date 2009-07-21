@@ -1,11 +1,10 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+{% extends "common/base.html" %}
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
-
-<head>
-<title>CHIRPradio.org DJ Playlist Tracker</title>
-
+{% block extrastyle %}
 <link rel="stylesheet" href="/media/playlists/playlists.css" />
+{% endblock %}
+
+{% block extrahead %}
 <script type="text/javascript" 
     src="/media/common/js/jquery/jquery-1.3.1.js"></script>
 <script type="text/javascript" 
@@ -14,10 +13,11 @@
     src="/media/common/js/chirp/chirp.js"></script>
 <script type="text/javascript" 
     src="/media/playlists/js/playlists.js"></script>
-</head>
-<body>
+{% endblock %}
 
-<div id="container"> <!-- site wrapper -->
+{% block page_content %}
+
+<div id="playlist"> <!-- site wrapper -->
 <div id="form-column"> <!-- form column -->
 
 <h1>CHIRPradio DJ Playlist Tracking Application</h1>
@@ -50,7 +50,7 @@
 
 <input type="submit" class="button" name="submit" value="Submit" />
 <input type="submit" class="button" name="break" value="Add Break" />
-<input type="submit" class="button" name="populate" value="Fill form via Traktor" />
+<!--<input type="submit" class="button" name="populate" value="Fill form via Traktor" />-->
 
 </fieldset>
 </form>
@@ -124,6 +124,5 @@
 <p class="links"><a href="http://chirpradio.org/">CHIRPradio.org</a> &bull; <a href="http://chicagoindieradio.org/">CHIRP Wesbite</a></p>
 
 </div> <!-- end playlist column -->
-</div> <!-- end site wrapper -->
-</body>
-</html>
+</div> <!-- end site wrapper -->    
+{% endblock %}

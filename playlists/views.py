@@ -28,6 +28,9 @@ from playlists.models import Playlist, PlaylistTrack, LiveStream
 from djdb import search
 from datetime import datetime, timedelta
 
+common_context = {
+    'title': 'CHIRPradio.org DJ Playlist Tracker'
+}
 
 @require_role(roles.DJ)
 def landing_page(request):
@@ -44,6 +47,8 @@ def landing_page(request):
         'form': form,
         'playlist_events': [e for e in pl]
     }
+    ctx_vars.update(common_context)
+    
     ctx = RequestContext(request, ctx_vars)
     template = loader.get_template('playlists/landing_page.html')
     return HttpResponse(template.render(ctx))
@@ -62,6 +67,7 @@ def add_track(request):
     ctx_vars = { 
         'form': form
     }
+    ctx_vars.update(common_context)
     ctx = RequestContext(request, ctx_vars)
     template = loader.get_template('playlists/landing_page.html')
     return HttpResponse(template.render(ctx))
