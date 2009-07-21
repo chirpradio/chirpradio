@@ -24,7 +24,7 @@ from auth.decorators import require_role
 import auth
 from auth import roles
 from playlists.forms import PlaylistTrackForm
-from playlists.models import Playlist, PlaylistTrack, LiveStream
+from playlists.models import Playlist, PlaylistTrack, ChirpBroadcast
 from djdb import search
 from datetime import datetime, timedelta
 
@@ -38,8 +38,8 @@ def landing_page(request):
         form = PlaylistTrackForm(data=request.POST)
     else:
         form = PlaylistTrackForm()
-    live_stream = LiveStream()
-    pl = PlaylistTrack.all().filter('playlist =', live_stream)
+    broadcast = ChirpBroadcast()
+    pl = PlaylistTrack.all().filter('playlist =', broadcast)
     pl = pl.filter('established >=', datetime.now() - timedelta(hours=3))
     pl = pl.order('-established')
     

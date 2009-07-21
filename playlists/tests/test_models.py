@@ -18,7 +18,8 @@
 import datetime
 import unittest
 from djdb.models import Artist, Album, Track
-from playlists.models import Playlist, PlaylistTrack
+from playlists.models import (
+        Playlist, DJPlaylist, BroadcastPlaylist, PlaylistTrack, ChirpBroadcast)
 import auth.roles
 from auth.models import User
 from google.appengine.api.datastore_errors import BadValueError
@@ -30,11 +31,6 @@ def create_dj():
     dj.roles.append(auth.roles.DJ)
     dj.put()
     return dj
-    
-def create_playlist():
-    playlist = Playlist(playlist_type='live-stream')
-    playlist.put()
-    return playlist
 
 class TestPlaylist(unittest.TestCase):
     
@@ -46,21 +42,13 @@ class TestPlaylist(unittest.TestCase):
         not_a_dj = User(email="test")
         not_a_dj.put()
         def make_playlist():
-            playlist = Playlist(
-                            created_by_dj=not_a_dj,
-                            playlist_type="live-stream")
+            playlist = DJPlaylist(name='funk 45 collection', created_by_dj=not_a_dj)
             playlist.put()
         self.assertRaises(ValueError, make_playlist)
     
-    def test_unknown_playlist_type_raises_error(self):
-        def make_playlist():
-            playlist = Playlist(playlist_type="unknown-type")
-            playlist.put()
-        self.assertRaises(BadValueError, make_playlist)
-    
-    def test_playlist_creation(self):
+    def test_dj_playlist_creation(self):
         dj = create_dj()
-        playlist = Playlist(created_by_dj=dj, playlist_type="live-stream")
+        playlist = DJPlaylist(name='Best of Celine Dion', created_by_dj=dj)
         playlist.put()
         self.assertEqual(playlist.track_count, 0)
         self.assertEqual(
@@ -70,7 +58,7 @@ class TestPlaylist(unittest.TestCase):
             playlist.modified.timetuple()[0:4],
             datetime.datetime.now().timetuple()[0:4])
             
-        # for sanity, not real tests:
+        # just for sanity, not very good tests:
         self.assertEqual(
             playlist.established_display.timetuple()[0:2],
             datetime.datetime.now().timetuple()[0:2])
@@ -78,6 +66,29 @@ class TestPlaylist(unittest.TestCase):
             playlist.modified_display.timetuple()[0:2],
             datetime.datetime.now().timetuple()[0:2])
 
+    def test_chirp_broadcast_playlist_is_a_singleton(self):
+        first = ChirpBroadcast()
+        second = ChirpBroadcast()
+        self.assertEqual(first.key(), second.key())
+        fetched = BroadcastPlaylist.all().filter("channel =", "CHIRP")[0]
+        self.assertEqual(fetched.key(), first.key())
+    
+    def test_chirp_broadcast_playlist(self):
+        playlist = ChirpBroadcast()
+        self.assertEqual(
+            playlist.established.timetuple()[0:4],
+            datetime.datetime.now().timetuple()[0:4])
+        self.assertEqual(
+            playlist.modified.timetuple()[0:4],
+            datetime.datetime.now().timetuple()[0:4])
+            
+        # just for sanity, not very good tests:
+        self.assertEqual(
+            playlist.established_display.timetuple()[0:2],
+            datetime.datetime.now().timetuple()[0:2])
+        self.assertEqual(
+            playlist.modified_display.timetuple()[0:2],
+            datetime.datetime.now().timetuple()[0:2])
 
 class TestPlaylistTrack(unittest.TestCase):
     
@@ -119,7 +130,7 @@ class TestPlaylistTrack(unittest.TestCase):
     def test_track_missing_title_raises_error(self):
         selector = create_dj()
         def make_track():
-            playlist = create_playlist()
+            playlist = ChirpBroadcast()
             track = PlaylistTrack(
                 selector=selector,
                 playlist=playlist,
@@ -132,7 +143,7 @@ class TestPlaylistTrack(unittest.TestCase):
     def test_track_missing_artist_raises_error(self):
         selector = create_dj()
         def make_track():
-            playlist = create_playlist()
+            playlist = ChirpBroadcast()
             track = PlaylistTrack(
                 selector=selector,
                 playlist=playlist,
@@ -144,7 +155,7 @@ class TestPlaylistTrack(unittest.TestCase):
     
     def test_track_by_references(self):
         selector = create_dj()
-        playlist = create_playlist()
+        playlist = ChirpBroadcast()
         track = PlaylistTrack(
             selector=selector,
             playlist=playlist,
@@ -162,7 +173,7 @@ class TestPlaylistTrack(unittest.TestCase):
     
     def test_track_by_free_entry(self):
         selector = create_dj()
-        playlist = create_playlist()
+        playlist = ChirpBroadcast()
         track = PlaylistTrack(
             selector=selector,
             playlist=playlist,
@@ -192,7 +203,7 @@ class TestPlaylistTrack(unittest.TestCase):
     
     def test_partial_track_by_free_entry(self):
         selector = create_dj()
-        playlist = create_playlist()
+        playlist = ChirpBroadcast()
         track = PlaylistTrack(
             selector=selector,
             playlist=playlist,
@@ -202,41 +213,9 @@ class TestPlaylistTrack(unittest.TestCase):
         track.put()
         self.assertEqual(track.album_title_display, "[Unknown Album]")
         self.assertEqual(track.label_display, "[Unknown Label]")
-        
-    def test_track_number_is_set_automatically(self):
-        selector = create_dj()
-        playlist = create_playlist()
-        track = PlaylistTrack(
-            selector=selector,
-            playlist=playlist,
-            freeform_artist_name="Stevie Wonder",
-            freeform_album_title="Talking Book",
-            freeform_track_title='You Are The Sunshine Of My Life'
-        )
-        track.put()
-        self.assertEqual(track.track_number, 1)
-        self.assertEqual(playlist.track_count, 1)
-        track = PlaylistTrack(
-            selector=selector,
-            playlist=playlist,
-            freeform_artist_name="Squarepusher",
-            freeform_track_title='Beep Street'
-        )
-        track.put()
-        self.assertEqual(track.track_number, 2)
-        self.assertEqual(playlist.track_count, 2)
-        track = PlaylistTrack(
-            selector=selector,
-            playlist=playlist,
-            freeform_artist_name="Metallica",
-            freeform_track_title='Master of Puppets'
-        )
-        track.put()
-        self.assertEqual(track.track_number, 3)
-        self.assertEqual(playlist.track_count, 3)
     
     def test_recent_tracks(self):
-        playlist = create_playlist()
+        playlist = ChirpBroadcast()
         selector = create_dj()
         track = PlaylistTrack(
             selector=selector,

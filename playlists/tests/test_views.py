@@ -21,7 +21,7 @@ import datetime
 import unittest
 from auth import roles
 from auth.models import User
-from playlists.models import Playlist, PlaylistTrack
+from playlists.models import Playlist, PlaylistTrack, ChirpBroadcast
 from djdb.models import Artist, Album, Track
 
 __all__ = ['TestPlaylistViews', 'TestPlaylistViewsWithLibrary']
@@ -45,8 +45,7 @@ class TestPlaylistViews(PlaylistViewsTest):
     
     def test_view_shows_3_hours_of_tracks(self):
         selector = User.all().filter('email =', 'test@test.com')[0]
-        playlist = Playlist(playlist_type='live-stream')
-        playlist.put()
+        playlist = ChirpBroadcast()
         track = PlaylistTrack(
                     playlist=playlist, 
                     selector=selector,

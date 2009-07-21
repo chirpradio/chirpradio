@@ -22,23 +22,11 @@ from djdb.models import Artist, Album, Track
 from google.appengine.ext import db
 from google.appengine.api.datastore_types import Key
 from common import time_util
+from google.appengine.ext.db import polymodel
 
-class Playlist(db.Model):
-    """A DJ playlist.
+class Playlist(polymodel.PolyModel):
+    """A playlist of songs.
     """
-    # DJ user who created the playlist, if relevant
-    created_by_dj = db.ReferenceProperty(User, required=False)
-    # The type of playlist.  Possible values: 
-    #
-    # live-stream
-    #   The persistant CHIRP radio live stream.  There is only one 
-    #   instance of this type of playlist.
-    #
-    # (more possible values TBD)
-    playlist_type = db.CategoryProperty(required=True, choices=('live-stream',))
-    # Number of tracks contained in this playlist.
-    # This gets updated each time a PlaylistTrack() is saved
-    track_count = db.IntegerProperty(default=0, required=True)
     # The date this playlist was established 
     # (automatically set to now upon creation)
     established = db.DateTimeProperty(auto_now_add=True)
@@ -53,17 +41,6 @@ class Playlist(db.Model):
     def modified_display(self):
         return time_util.convert_utc_to_chicago(self.modified)
     
-    def validate(self):
-        """Validate this instance before putting it to the datastore."""
-        if self.created_by_dj:
-            if not self.created_by_dj.is_dj:
-                raise ValueError("User %r must be a DJ (user is: %r)" % (
-                                    self.created_by_dj, self.created_by_dj.roles))
-    
-    def put(self, *args, **kwargs):
-        self.validate()
-        super(Playlist, self).put(*args, **kwargs)
-    
     @property
     def recent_tracks(self):
         """Generates a list of recently played tracks in this playlist"""
@@ -71,23 +48,51 @@ class Playlist(db.Model):
         for track in q.fetch(1000):
             yield track
 
-def LiveStream():
-    """The chirp live stream"""
+class DJPlaylist(Playlist):
+    """A playlist created by a DJ.
+    
+    This might be in preparation for a show or just for organizational purposes.
+    """
+    # A name to identify this playlist by
+    name = db.StringProperty(required=True)
+    # DJ user who created the playlist, if relevant
+    created_by_dj = db.ReferenceProperty(User, required=True)
+    # Number of tracks contained in this playlist.
+    # TODO(kumar) this is not currently used.
+    track_count = db.IntegerProperty(default=0, required=True)
+    
+    def validate(self):
+        """Validate this instance before putting it to the datastore."""
+        if not self.created_by_dj.is_dj:
+            raise ValueError("User %r must be a DJ (user is: %r)" % (
+                                self.created_by_dj, self.created_by_dj.roles))
+    
+    def put(self, *args, **kwargs):
+        self.validate()
+        super(DJPlaylist, self).put(*args, **kwargs)
+
+class BroadcastPlaylist(Playlist):
+    """A continuous playlist for a live broadcast."""
+    # The name of the broadcast channel
+    channel = db.StringProperty(required=True)
+
+def ChirpBroadcast():
+    """The continuous CHIRP broadcast"""
     
     # There is only one persistant live-stream stream.
-    # If it doesn't exist, create it (probably only relevant for development)
+    # If it doesn't exist, create it once for all time
     
-    query = Playlist.all().filter('playlist_type =', 'live-stream')
+    query = BroadcastPlaylist.all().filter('channel =', 'CHIRP')
     if query.count(1):
         playlist = query[0]
     else:
-        playlist = Playlist(playlist_type='live-stream')
+        playlist = BroadcastPlaylist(channel='CHIRP')
         playlist.put()
     
     return playlist
 
 class PlaylistTrack(db.Model):
-    """A track in a DJ playlist."""
+    """A track in a Playlist."""
     # The playlist this track belongs to
     playlist = db.ReferenceProperty(Playlist, required=True)
     # DJ user who selected this track.
@@ -173,18 +178,6 @@ class PlaylistTrack(db.Model):
             return txt
         else:
             return u"[Unknown Label]"
-    
-    def __init__(self, *args, **kwargs):
-        super(PlaylistTrack, self).__init__(*args, **kwargs)
-        # TODO(kumar) wrap in a transaction?
-        if isinstance(kwargs['playlist'], Key):
-            playlist = Playlist.get(kwargs['playlist'])
-        else:
-            playlist = kwargs['playlist']
-        track_number = playlist.track_count + 1
-        playlist.track_count = track_number
-        playlist.put()
-        self.track_number = track_number
     
     def validate(self):
         """Validate this instance before putting it to the datastore.

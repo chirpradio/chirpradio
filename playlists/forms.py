@@ -22,7 +22,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.template import loader
 from django import forms
 from djdb.models import Artist, Album, Track
-from playlists.models import Playlist, PlaylistTrack, LiveStream
+from playlists.models import Playlist, PlaylistTrack, ChirpBroadcast
 
 class PlaylistTrackForm(forms.Form):
     """
@@ -63,7 +63,7 @@ class PlaylistTrackForm(forms.Form):
         if not self.current_user:
             raise ValueError("Cannot save() without a current_user")
         
-        playlist = LiveStream()        
+        playlist = ChirpBroadcast()        
         playlist_track = PlaylistTrack(
                             playlist=playlist, 
                             selector=self.current_user)
