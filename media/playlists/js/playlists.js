@@ -5,7 +5,11 @@ $(document).ready(function() {
     
     var default_opt = {
         selectFirst: false,
-        minChars: 3
+        minChars: 3,
+        maxItemsToShow: 15,
+        matchContains: true // tells the cache to do substring matches 
+                            // (necessary when searching "eno" and the 
+                            // result is "Eno, Brian")
     };
     
     $("#id_artist").autocomplete("/djdb/artist/search.txt", 
