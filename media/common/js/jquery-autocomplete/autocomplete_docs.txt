@@ -2,6 +2,8 @@ Autocomplete - a jQuery plugin
 
 NOTE: This is a modification of the jQuery Autocomplete Plug-in written by Dylan Verheul. The documentation is also based on Dylan's documentation, I made additions/changes as need to support my modifications.
 
+See http://www.pengoworks.com/workshop/jquery/autocomplete.htm
+
 Usage:
 ======
 $("selector").autocomplete(url [, options]);
