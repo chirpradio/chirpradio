@@ -136,5 +136,11 @@ class AutocompleteViewsTestCase(DjangoTestCase):
         response = self.client.get("/djdb/track/search.txt", {'q':'spid'})
         ent = models.Track.all().filter("title =", "Spider And I")[0]
         self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
+    
+    def test_track_no_matches(self):
+        # when there are no Track matches but there are Artist matches, 
+        # the entity key does not get added to the matches dict
+        response = self.client.get("/djdb/track/search.txt", {'q':'eno'})
+        self.assertEqual(response.content, "")
 
 

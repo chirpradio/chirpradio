@@ -27,6 +27,9 @@ from common import sanitize_html
 from djdb import models
 from djdb import search
 from djdb import review
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def landing_page(request):
@@ -98,7 +101,7 @@ def _get_matches_for_partial_entity_search(query, entity_name):
     #       e.g. ?q=metalli will become "metalli*" to match Metallica
     query = "%s*" % query
     matches = search.simple_music_search(query)
-    if matches and matches[entity_name]:
+    if matches and matches.get(entity_name):
         return matches[entity_name]
     else:
         return []

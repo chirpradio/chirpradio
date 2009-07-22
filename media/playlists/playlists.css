@@ -26,10 +26,21 @@ body { font-size: 62.5%; font-family: Helvetica, Arial, sans-serif; background: 
 
 #playlist h1 { width: 301px; height: 48px; text-indent: -9999px; background: transparent url(header.png) left top no-repeat; margin: 20px 0; }
 h2 { margin-top: 20px; padding-bottom: 10px; color: #ec0035; font-size: 12px; font-weight: bold; text-transform: uppercase; border-bottom: 3px double #aaa; }
-.song-info p { font-size: 18px; line-height: 22px; margin-bottom: 5px; color: #aaa; }
+.song-info p { 
+    font-size: 18px; 
+    line-height: 22px; 
+    margin-bottom: 5px; 
+    color: #aaa; 
+}
 p.time { font-weight: bold; font-size: 11px; line-height: 11px; color: #ec0035; }
 p.notes { color: #999; font-size: 14px; line-height: 16px; }
-p.break { padding: 1px 5px 2px; font-weight: bold; color: #fff; background: #aaa; text-transform: uppercase; }
+p.break { 
+    padding: 2px 5px 2px 5px; 
+    font-weight: bold; 
+    color: #fff; 
+    background: #aaa; 
+    text-transform: uppercase; 
+}
 .song-info span { color: #2a2a2a; }
 span.artist { font-weight: bold; }
 p.links { border-top: 1px solid #aaa; margin-top: 1px; padding-top: 10px; font-size: 12px; text-align: right; }
@@ -78,6 +89,7 @@ input.ac_loading {
 }
 .ac_results li {
     cursor: pointer;
+    list-style: none;
     font-size: 12px; 
     line-height: 17px; 
     color: #4a4a4a; 
