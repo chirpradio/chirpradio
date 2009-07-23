@@ -15,6 +15,7 @@
 ### limitations under the License.
 ###
 
+import auth
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 import datetime
@@ -24,7 +25,8 @@ from auth.models import User
 from playlists.models import Playlist, PlaylistTrack, PlaylistBreak, ChirpBroadcast
 from djdb.models import Artist, Album, Track
 
-__all__ = ['TestPlaylistViews', 'TestPlaylistViewsWithLibrary']
+__all__ = ['TestPlaylistViews', 'TestPlaylistViewsWithLibrary', 
+           'TestDeleteTrackFromPlaylist']
 
 class PlaylistViewsTest(TestCase):
     
@@ -93,6 +95,9 @@ class TestPlaylistViews(PlaylistViewsTest):
         tracks = [t for t in context['playlist_events']]
         self.assertEquals(tracks[0].artist_name, "Squarepusher")
         self.assertEquals(tracks[0].track_title, "Port Rhombus")
+        
+        # when this user has created the entry she gets a link to delete it
+        assert '[delete]' in resp.content
     
     def test_add_track_with_all_fields(self):
         resp = self.client.post(reverse('playlists_add_event'), {
@@ -255,3 +260,93 @@ class TestPlaylistViewsWithLibrary(PlaylistViewsTest):
         self.assertEquals(tracks[0].album.key(), talking_book.key())
         self.assertEquals(tracks[0].track_title, "You Are The Sunshine Of My Life")
         self.assertEquals(tracks[0].track.key(), sunshine.key())
+
+class TestDeleteTrackFromPlaylist(PlaylistViewsTest):
+    
+    def setUp(self):
+        super(TestDeleteTrackFromPlaylist, self).setUp()
+        self.playlist = ChirpBroadcast()
+        selector = self.get_selector()
+        self.track = PlaylistTrack(
+                    playlist=self.playlist, 
+                    selector=selector,
+                    freeform_artist_name="Steely Dan",
+                    freeform_album_title="Aja",
+                    freeform_track_title="Peg")
+        self.track.put()
+    
+    def test_delete_known_track(self):
+        resp = self.client.get(reverse('playlists_landing_page'))
+        context = resp.context[0]
+        tracks = [t for t in context['playlist_events']]
+        self.assertEquals(tracks[0].artist_name, "Steely Dan")
+        
+        resp = self.client.get(reverse('playlists_delete_event', 
+                                        args=[self.track.key()]))
+        self.assertRedirects(resp, reverse('playlists_landing_page'))
+        # simulate the redirect:
+        resp = self.client.get(reverse('playlists_landing_page'))
+        context = resp.context[0]
+        tracks = [t for t in context['playlist_events']]
+        self.assertEquals(tracks, [])
+    
+    def test_delete_unknown_track(self):
+        resp = self.client.get(reverse('playlists_landing_page'))
+        context = resp.context[0]
+        tracks = [t for t in context['playlist_events']]
+        self.assertEquals(tracks[0].artist_name, "Steely Dan")
+
+        resp = self.client.get(reverse('playlists_delete_event', 
+                                        args=['<bogus-key>']))
+        
+        self.assertRedirects(resp, reverse('playlists_landing_page'))
+        # simulate the redirect:
+        resp = self.client.get(reverse('playlists_landing_page'))
+        
+        # should be no change:
+        context = resp.context[0]
+        tracks = [t for t in context['playlist_events']]
+        self.assertEquals(tracks[0].artist_name, "Steely Dan")
+    
+    def test_cannot_delete_someone_elses_track(self):
+        other_user = User(email="other@elsewhere.com")
+        other_user.roles.append(auth.roles.DJ)
+        other_user.put()
+        other_track = PlaylistTrack(
+                    playlist=self.playlist, 
+                    selector=other_user,
+                    freeform_artist_name="Peaches",
+                    freeform_track_title="Rock Show")
+        other_track.put()
+        
+        resp = self.client.get(reverse('playlists_delete_event', 
+                                        args=[other_track.key()]))
+
+        self.assertRedirects(resp, reverse('playlists_landing_page'))
+        # simulate the redirect:
+        resp = self.client.get(reverse('playlists_landing_page'))
+        
+        # should be no change:
+        context = resp.context[0]
+        tracks = [t.artist_name for t in context['playlist_events']]
+        self.assertEquals(tracks, ["Peaches", "Steely Dan"])
+    
+    def test_delete_link_appears_for_current_user(self):
+        resp = self.client.get(reverse('playlists_landing_page'))
+        assert '[delete]' in resp.content
+        
+        for track in PlaylistTrack.all():
+            track.delete()
+        
+        other_user = User(email="other@elsewhere.com")
+        other_user.roles.append(auth.roles.DJ)
+        other_user.put()
+        other_track = PlaylistTrack(
+                    playlist=self.playlist, 
+                    selector=other_user,
+                    freeform_artist_name="Peaches",
+                    freeform_track_title="Rock Show")
+        other_track.put()
+        
+        resp = self.client.get(reverse('playlists_landing_page'))
+        assert '[delete]' not in resp.content

@@ -18,6 +18,7 @@
 """Datastore model for DJ Playlists."""
 
 from auth.models import User
+import auth
 from djdb.models import Artist, Album, Track
 from google.appengine.ext import db
 from google.appengine.api.datastore_types import Key

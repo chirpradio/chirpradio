@@ -28,6 +28,7 @@ from playlists.models import (
     Playlist, PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast)
 from djdb import search
 from datetime import datetime, timedelta
+from google.appengine.api.datastore_errors import BadKeyError
 
 common_context = {
     'title': 'CHIRPradio.org DJ Playlist Tracker'
@@ -46,7 +47,8 @@ def landing_page(request):
     
     ctx_vars = { 
         'form': form,
-        'playlist_events': [e for e in pl]
+        'playlist_events': [e for e in pl],
+        'current_user': auth.get_current_user(request)
     }
     ctx_vars.update(common_context)
     
@@ -56,6 +58,7 @@ def landing_page(request):
     
 @require_role(roles.DJ)
 def add_event(request):
+    current_user = auth.get_current_user(request)
     if request.method == 'POST':
         playlist = ChirpBroadcast()
         if request.POST.get('submit') == 'Add Break':
@@ -66,7 +69,7 @@ def add_event(request):
         else:
             form = PlaylistTrackForm(
                         data=request.POST, 
-                        current_user=auth.get_current_user(request),
+                        current_user=current_user,
                         playlist=playlist)
             if form.is_valid():
                 form.save()
@@ -74,10 +77,23 @@ def add_event(request):
     else:
         form = PlaylistTrackForm()
     ctx_vars = { 
-        'form': form
+        'form': form,
+        'current_user': current_user
     }
     ctx_vars.update(common_context)
     ctx = RequestContext(request, ctx_vars)
     template = loader.get_template('playlists/landing_page.html')
     return HttpResponse(template.render(ctx))
+    
+@require_role(roles.DJ)
+def delete_event(request, event_key):
+    try:
+        e = PlaylistEvent.get(event_key)
+    except BadKeyError:
+        pass
+    else:
+        if e.selector.key() == auth.get_current_user(request).key():
+            e.delete()
+    return HttpResponseRedirect(reverse('playlists_landing_page'))
+
     

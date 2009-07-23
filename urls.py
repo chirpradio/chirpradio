@@ -42,7 +42,7 @@ urlpatterns = patterns(
     ('^djdb/?', include('djdb.urls')),
     
     # DJ Playlists.
-    ('^playlists/?', include('playlists.urls')),
+    ('^playlists/', include('playlists.urls')),
 
     # The volunteer management app.
     ('^volunteers/?', include('volunteers.urls')),
