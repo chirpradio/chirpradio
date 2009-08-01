@@ -90,19 +90,22 @@ def track_search_for_autocomplete(request):
         response.write("%s|%s\n" % (ent.title, ent.key()))
     return response
 
-def _get_matches_for_partial_entity_search(query, entity_name):
+def _get_matches_for_partial_entity_search(query, entity_kind):
     if not query:
         return []
     if len(query) < 3:
         # conserve resources and refuse to perform a keyword 
         # search if query is less than 3 characters.
         return []
+    # If the query string doesn't end in whitespace,
     # append star to match partial artist names.
     #       e.g. ?q=metalli will become "metalli*" to match Metallica
-    query = "%s*" % query
-    matches = search.simple_music_search(query)
-    if matches and matches.get(entity_name):
-        return matches[entity_name]
+    if not query[-1].isspace():
+        query = "%s*" % query
+    matches = search.simple_music_search(query, max_num_results=25,
+                                         entity_kind=entity_kind)
+    if matches:
+        return matches.get(entity_kind, [])
     else:
         return []
 

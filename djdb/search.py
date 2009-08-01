@@ -497,19 +497,30 @@ def load_and_segment_keys(fetched_keys):
     return segmented
 
 
-def simple_music_search(query_str):
+def simple_music_search(query_str, max_num_results=None, entity_kind=None):
     """A simple free-form search well-suited for the music library.
 
     Args:
       query_str: A unicode query string.
+      max_num_results: The maximum number of items to return.  If the
+        number of matches exceeds this, some items will be discarded.
+        If None, all matches will be returned.
+      entity_kind: An optional string.  If given, the returned keys are
+        restricted to entities of that kind.
 
+    Returns:
+      A dict mapping object types to lists of entities.
     """
     # First, find all matching keys.
-    all_matches = fetch_keys_for_query_string(query_str)
+    all_matches = fetch_keys_for_query_string(query_str, entity_kind)
 
     # If we returned None, this is an invalid query.
     if all_matches is None:
         return None
+
+    # If we got too many matches, throw some away.
+    if max_num_results and len(all_matches) > max_num_results:
+        all_matches = all_matches[:max_num_results]
 
     # Next, filter out all tracks that do not have a title match.
     filtered = []
