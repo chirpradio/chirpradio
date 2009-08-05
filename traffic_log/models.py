@@ -16,6 +16,8 @@ class SpotConstraint(search.SearchableModel):
 
 
 class Spot(search.SearchableModel):
+    """
+    """
     title     = db.StringProperty(verbose_name="Spot Title", required=True)
     body      = db.TextProperty(verbose_name="Spot Copy",  required=False)
     type      = db.StringProperty(verbose_name="Spot Type", required=True, choices=constants.SPOT_TYPE)
@@ -23,7 +25,6 @@ class Spot(search.SearchableModel):
     created   = db.DateTimeProperty(auto_now_add=True)
     updated   = db.DateTimeProperty(auto_now=True)
     author    = db.ReferenceProperty(User)
-
     
     @property
     def constraints(self):

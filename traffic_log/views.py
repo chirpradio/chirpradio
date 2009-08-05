@@ -20,10 +20,6 @@ def index(request):
     spots = models.Spot.all().order('-created').fetch(20)
     return render('traffic_log/index.html', dict(spots=spots))
 
-## XXX crap alert
-## I'm not checking for errors when data is being saved
-## secondly I'm using a status flag...
-##
 @require_role(TRAFFIC_LOG_ADMIN)
 def createSpot(request):
     user = User.get_by_email("%s"%request.user)
@@ -41,9 +37,9 @@ def createSpot(request):
             all_clear = True
 
         elif spot_form.is_valid() and not constraint_form.data.values():
-            
             spot_form.save()
             all_clear = True
+            
     else:
         spot_form = forms.SpotForm()
         constraint_form = forms.SpotConstraintForm()
@@ -54,7 +50,7 @@ def createSpot(request):
     return render('traffic_log/create_edit_spot.html', 
                   dict(spot=spot_form,
                        constraint_form=constraint_form,
-                       author=user,
+                       Author=user,
                        formaction="/traffic_log/spot/create/"
                        )
                   )
@@ -114,13 +110,6 @@ def listSpots(request):
     return render('traffic_log/spot_list.html', dict(spots=spots))
 
 
-def box(thing):
-    if isinstance(thing,list):
-        return thing
-    else:
-        return [thing]
-    
-
 def connectConstraintsAndSpot(constraint_keys,spot_key):
     for constraint in map(models.SpotConstraint.get, box(constraint_keys)):
         #sys.stderr.write(",".join(constraint.spots))
@@ -150,10 +139,6 @@ def saveConstraint(constraint):
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def deleteSpotConstraint(request, spot_constraint_key=None, spot_key=None):
-    """ delete a constraint out of the store or remove a spot from a
-    constraints spot list
-
-    """
     ## XXX only delete if spot_key is none, otherwise just remove the
     ## constraint from the spot.constraints
     constraint = models.SpotConstraint.get(spot_constraint_key)
@@ -175,3 +160,11 @@ def generateLog(request):
 
 def traffic_log(request):
     pass
+
+
+def box(thing):
+    if isinstance(thing,list):
+        return thing
+    else:
+        return [thing]
+    
