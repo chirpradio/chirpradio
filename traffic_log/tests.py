@@ -41,9 +41,9 @@ class TrafficLogTestCase(unittest.TestCase):
         self.assertTrue(self.admin_u.is_traffic_log_admin)
         self.assertTrue(self.dj_u.is_dj)
         self.assertTrue(self.user_u.is_active)
-    
+
     def test_spot_create(self):
-        pass
+
 
     def test_constraint_create(self):
         pass

@@ -9,6 +9,7 @@ from traffic_log import models, forms, constants
 from auth.models import User
 from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
 from auth.decorators import require_role
+import auth
 
 
 def render(template, payload):
@@ -22,11 +23,16 @@ def index(request):
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def createSpot(request):
-    user = User.get_by_email("%s"%request.user)
+    user = auth.get_current_user(request)
     all_clear = False
     if request.method == 'POST':
         spot_form = forms.SpotForm(request.POST, {'author':user})
         constraint_form = forms.SpotConstraintForm(request.POST)
+        import sys
+        sys.stderr.write("is bound:%s\n"%constraint_form.is_bound)
+        sys.stderr.write("is valid:%s\n"%constraint_form.is_valid())
+        sys.stderr.write("len data:%s\n"%constraint_form.data)
+        sys.stderr.flush()
 
         if constraint_form.is_valid() and spot_form.is_valid():
             constraint_keys = saveConstraint(constraint_form.cleaned_data)
@@ -36,8 +42,9 @@ def createSpot(request):
             connectConstraintsAndSpot(constraint_keys, spot.key())
             all_clear = True
 
-        elif spot_form.is_valid() and not constraint_form.data.values():
-            spot_form.save()
+        elif spot_form.is_valid():
+            spot = spot_form.save()
+            
             all_clear = True
             
     else:

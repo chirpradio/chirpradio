@@ -1,8 +1,8 @@
+{% extends 'common/base.html' %}
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 
-<html>
-<head>
 
+{% block extrahead %}
 <script src="http://www.google.com/jsapi" type="text/javascript"></script>
 
 <script language="Javascript" type="text/javascript">
@@ -45,14 +45,13 @@ drag();
 
 google.setOnLoadCallback(start);
 </script>
+{% endblock %}
 
-<title>
 {% block title %}
 Page title
 {% endblock %}
-</title>
-</head>
-<body>
+
+{% block page_content %}
 
 <h2>{% block topbar %}Traffic Log{% endblock %}</h2>
 <hr/>
@@ -68,9 +67,7 @@ Page title
 </div>
 <div id="content">Loading...</div>
 <div class="contents">
-{% block contents %}
-{% endblock %}
+{% block contents %}{% endblock %}
 </div>
+{% endblock %}
 
-</body>
-</html>

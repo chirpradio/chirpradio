@@ -51,3 +51,11 @@ indexes:
 # manually, move them above the marker line.  The index.yaml file is
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
+
+# Used 80 times in query history.
+- kind: SpotConstraint
+  properties:
+  - name: spots
+  - name: dow
+  - name: hour
+  - name: slot
