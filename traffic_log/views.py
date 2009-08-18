@@ -1,25 +1,25 @@
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render_to_response
+#from django.shortcuts import render_to_response
 from django.conf import settings
-from django.template import Context, loader
+from django.template import Context, RequestContext, loader
 from django.utils import simplejson
 import sys
 
-from traffic_log import models, forms, constants
+import auth
 from auth.models import User
 from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
 from auth.decorators import require_role
-import auth
+from traffic_log import models, forms, constants
 
 
-def render(template, payload):
-    return render_to_response(template, payload)
-
+def render(request, template, payload):
+    template = loader.get_template(template)
+    return HttpResponse(template.render(RequestContext(request, payload)))
 
 @require_role(DJ)
 def index(request):
     spots = models.Spot.all().order('-created').fetch(20)
-    return render('traffic_log/index.html', dict(spots=spots))
+    return render(request, 'traffic_log/index.html', dict(spots=spots))
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def createSpot(request):
@@ -28,12 +28,6 @@ def createSpot(request):
     if request.method == 'POST':
         spot_form = forms.SpotForm(request.POST, {'author':user})
         constraint_form = forms.SpotConstraintForm(request.POST)
-        import sys
-        sys.stderr.write("is bound:%s\n"%constraint_form.is_bound)
-        sys.stderr.write("is valid:%s\n"%constraint_form.is_valid())
-        sys.stderr.write("len data:%s\n"%constraint_form.data)
-        sys.stderr.flush()
-
         if constraint_form.is_valid() and spot_form.is_valid():
             constraint_keys = saveConstraint(constraint_form.cleaned_data)
             spot = spot_form.save()
@@ -54,7 +48,7 @@ def createSpot(request):
     if all_clear:
         return HttpResponseRedirect('/traffic_log/spot/%s'%spot.key())          
 
-    return render('traffic_log/create_edit_spot.html', 
+    return render(request, 'traffic_log/create_edit_spot.html', 
                   dict(spot=spot_form,
                        constraint_form=constraint_form,
                        Author=user,
@@ -66,6 +60,7 @@ def createSpot(request):
 @require_role(TRAFFIC_LOG_ADMIN)
 def editSpot(request, spot_key=None):
     spot = models.Spot.get(spot_key)
+    user = auth.get_current_user(request)
     if request.method ==  'POST':
         spot_form = forms.SpotForm(request.POST)
         constraint_form = forms.SpotConstraintForm(request.POST)
@@ -74,6 +69,7 @@ def editSpot(request, spot_key=None):
         if spot_form.is_valid():
             for field in spot_form.fields.keys():
                 setattr(spot,field,spot_form.cleaned_data[field])
+                spot.author = user
                 models.Spot.put(spot)
 
         if constraint_form.is_valid():
@@ -84,7 +80,7 @@ def editSpot(request, spot_key=None):
         return HttpResponseRedirect('/traffic_log/spot/%s'%spot.key())
     
     else:
-        return render('traffic_log/create_edit_spot.html', 
+        return render(request, 'traffic_log/create_edit_spot.html', 
                       dict(spot=forms.SpotForm(instance=spot),
                            spot_key=spot_key,
                            constraints=spot.constraints,
@@ -107,14 +103,14 @@ def spotDetail(request, spot_key=None):
     sys.stderr.write(",".join(str(x) for x in spot.constraints))
     constraints = [forms.SpotConstraintForm(instance=x) for x in spot.constraints]
     form = forms.SpotForm(instance=spot)
-    return render('traffic_log/spot_detail.html',
+    return render(request, 'traffic_log/spot_detail.html',
                   {'spot':spot, 'constraints':constraints, 'dow_dict':constants.DOW_DICT}
                   )
 
 
 def listSpots(request):
     spots = models.Spot.all().order('-created').fetch(20)
-    return render('traffic_log/spot_list.html', dict(spots=spots))
+    return render(request, 'traffic_log/spot_list.html', dict(spots=spots))
 
 
 def connectConstraintsAndSpot(constraint_keys,spot_key):

@@ -10,10 +10,18 @@ class SpotForm(djangoforms.ModelForm):
     
 
 class SpotConstraintForm(djangoforms.ModelForm):
-    hourbucket = djangoforms.forms.ChoiceField(label="Hour Bucket", required=False, choices=constants.HOURBUCKET_CHOICES)
-    dow_list   = djangoforms.forms.MultipleChoiceField(label="Day of Week", required=True, choices=constants.DOW_CHOICES)
-    hour       = djangoforms.forms.ChoiceField(label="Hour", required=False, choices=constants.HOUR_CHOICES)
-    slot       = djangoforms.forms.ChoiceField(label="Slot", required=True, choices=constants.SLOT_CHOICES)
+    hourbucket = djangoforms.forms.ChoiceField(label="Hour Bucket",
+                                               required=False,
+                                               choices=constants.HOURBUCKET_CHOICES)
+    dow_list   = djangoforms.forms.MultipleChoiceField(label="Day of Week",
+                                                       required=True,
+                                                       choices=constants.DOW_CHOICES)
+    hour       = djangoforms.forms.ChoiceField(label="Hour",
+                                               required=False,
+                                               choices=constants.HOUR_CHOICES)
+    slot       = djangoforms.forms.ChoiceField(label="Slot",
+                                               required=True,
+                                               choices=constants.SLOT_CHOICES)
 
     class Meta:
         model  = models.SpotConstraint

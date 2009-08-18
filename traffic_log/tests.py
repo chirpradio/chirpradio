@@ -43,7 +43,7 @@ class TrafficLogTestCase(unittest.TestCase):
         self.assertTrue(self.user_u.is_active)
 
     def test_spot_create(self):
-
+        pass
 
     def test_constraint_create(self):
         pass

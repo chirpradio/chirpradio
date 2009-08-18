@@ -1,4 +1,4 @@
-{% extends 'common/base.html' %}
+{% extends 'common/internal_page.html' %}
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 
 
@@ -30,7 +30,7 @@ var start_timer = function() {
 google.load("jquery","1")
 google.load("jqueryui", "1");
 function drag(){
-  $('#content').html('<div id="draggable-handle-div" style="width:100px;border:1px solid #999;">' +
+  $('#tlcontent').html('<div id="draggable-handle-div" style="width:100px;border:1px solid #999;">' +
                      '<div style="background-color:#999">dragme</div>content</div>');
   $("#draggable-handle-div").draggable({
     "handle": "div"
@@ -47,14 +47,12 @@ google.setOnLoadCallback(start);
 </script>
 {% endblock %}
 
-{% block title %}
-Page title
+{% block content %}
+<nobr>
+{% block topbar %}
+<h2>Traffic Log - {% now "F j, Y h:i A" %}</h2>
 {% endblock %}
-
-{% block page_content %}
-
-<h2>{% block topbar %}Traffic Log{% endblock %}</h2>
-<hr/>
+</nobr>
 
 {% block nav %}
 <table cellspacing="0" cellpadding="5" border="1">
@@ -64,8 +62,7 @@ Page title
 </table>
 {% endblock %}
 
-</div>
-<div id="content">Loading...</div>
+<!--div id='tlcontent'>Loading...</div-->
 <div class="contents">
 {% block contents %}{% endblock %}
 </div>
