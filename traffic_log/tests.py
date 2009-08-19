@@ -14,8 +14,6 @@
 ### See the License for the specific language governing permissions and
 ### limitations under the License.
 ###
-
-import base64
 import os
 import time
 import unittest
@@ -42,14 +40,15 @@ class TrafficLogTestCase(unittest.TestCase):
         self.assertTrue(self.dj_u.is_dj)
         self.assertTrue(self.user_u.is_active)
 
-    def test_spot_create(self):
-        pass
-
-    def test_constraint_create(self):
-        pass
 
     def test_spot_constraint_assign(self):
-        pass
+        user = User(email='test')
+        user.save()
+        spot_key = models.Spot(title='test',body='body',type='Live Read Promo', author=user).put()
+        constraint_key = models.SpotConstraint(dow=1,hour=1,slot=0).put()
+        views.connectConstraintsAndSpot([constraint_key], spot_key)
+        
+        self.assertEqual(models.Spot.get(spot_key).constraints.count(), 1)
 
     def test_traffic_log_generate(self):
         pass
@@ -69,10 +68,6 @@ class TrafficLogTestCase(unittest.TestCase):
 # >>> user.save()
 # datastore_types.Key.from_path(u'User', 1, _app=u'chirpradio')
 
-# >>> spot_key = models.Spot(title='test',body='body',type='Live Read Promo', author=user).put()
-# >>> constraint_key = models.SpotConstraint(dow=1,hour=1,slot=0).put()
-# >>> views.connectConstraintsAndSpot([constraint_key], spot_key)
-# >>> models.Spot.get(spot_key).constraints.count()
 # 1
 # """
 # # delete constraint
