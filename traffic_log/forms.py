@@ -30,4 +30,4 @@ class SpotConstraintForm(djangoforms.ModelForm):
 
 class TrafficLogForm(djangoforms.ModelForm):
     class Meta:
-        model = models.TrafficLog
+        model = models.TrafficLogEntry
