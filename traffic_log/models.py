@@ -4,11 +4,11 @@ from traffic_log import constants;
 
 
 class SpotConstraint(search.SearchableModel):
-    dow   = db.IntegerProperty(verbose_name="Day of Week", choices=constants.DOW)
+    dow      = db.IntegerProperty(verbose_name="Day of Week", choices=constants.DOW)
     dow_list = db.StringListProperty()
-    hour  = db.IntegerProperty(verbose_name="Hour", choices=constants.HOUR)
-    slot  = db.IntegerProperty(verbose_name="Spot", choices=constants.SLOT)
-    spots = db.ListProperty(db.Key)
+    hour     = db.IntegerProperty(verbose_name="Hour", choices=constants.HOUR)
+    slot     = db.IntegerProperty(verbose_name="Spot", choices=constants.SLOT)
+    spots    = db.ListProperty(db.Key)
 
     def __init__(self, *args, **kw):
         key_name = "%d:%d:%d" % (kw['dow'], kw['hour'], kw['slot']) 
@@ -34,9 +34,12 @@ class Spot(search.SearchableModel):
         return '/traffic_log/spot/%s/' % self.key()
 
 
-class TrafficLog(search.SearchableModel):
-    log_date       = db.DateProperty()
-    spot           = db.ReferenceProperty(Spot)
-    readtime       = db.DateTimeProperty()
-    reader         = db.ReferenceProperty(User, required=True)
-    created        = db.DateTimeProperty(auto_now_add=True)
+class TrafficLogEntry(search.SearchableModel):
+    log_date  = db.DateProperty()
+    spot      = db.ReferenceProperty(Spot)
+    hour      = db.IntegerProperty()
+    slot      = db.IntegerProperty()
+    scheduled = db.ReferenceProperty(SpotConstraint)
+    readtime  = db.DateTimeProperty()
+    reader    = db.ReferenceProperty(User)
+    created   = db.DateTimeProperty(auto_now_add=True)
