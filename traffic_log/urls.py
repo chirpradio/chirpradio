@@ -12,5 +12,6 @@ urlpatterns = patterns('',
     (r'^spot/(?P<spot_key>[^\.^/]+)/?$', 'traffic_log.views.spotDetail'),                       
     (r'^spot_constraint/delete/(?P<spot_constraint_key>[^\.^/]+)/spot/(?P<spot_key>[^\.^/]+)?$',
      'traffic_log.views.deleteSpotConstraint'),
+    (r'^generate/(\d{4})/(\d{2})/(\d{2})','traffic_log.views.generateTrafficLog')
     )
 
