@@ -4,6 +4,8 @@ from django.conf import settings
 from django.template import Context, RequestContext, loader
 from django.utils import simplejson
 import sys
+import random
+import datetime
 
 import auth
 from auth.models import User
@@ -100,7 +102,6 @@ def deleteSpot(request, spot_key=None):
 
 def spotDetail(request, spot_key=None):
     spot = models.Spot.get(spot_key)
-    sys.stderr.write(",".join(str(x) for x in spot.constraints))
     constraints = [forms.SpotConstraintForm(instance=x) for x in spot.constraints]
     form = forms.SpotForm(instance=spot)
     return render(request, 'traffic_log/spot_detail.html',
@@ -157,13 +158,59 @@ def deleteSpotConstraint(request, spot_constraint_key=None, spot_key=None):
     return HttpResponseRedirect('/traffic_log/spot/edit/%s'%spot_key)
 
 
-def generateLog(request):
+def randomSpot(spotkeylist):
+    return models.Spot.get(random.choice(spotkeylist))
+
+
+def generateTrafficLog(request, year, month, day):
+    for d in constants.DOW:
+        next_day = datetime.datetime(int(year), int(month), int(day)) + datetime.timedelta(d)
+        generateTrafficLogEntries(request, next_day.date())
+        
+
+## if we want sunday => 1, sat => 7
+def _ourDow(dow):
+    if dow == 7:
+        return dow
+    else:
+        return (dow + 1) % 7
+
+    
+def generateTrafficLogEntries(request, date):
+    dow = date.isoweekday() # or _ourDow(date.isoweekday())
+    for hour in constants.HOUR:
+        for slot in constants.SLOT:
+            constraint = models.SpotConstraint.gql("where dow=%d and hour=%d and slot=%d"%(dow,hour,slot))
+            if constraint.count():
+                constraint = constraint.get()
+                spot = randomSpot(constraint.spots)
+                if spot:
+                    models.TrafficLogEntry(
+                        log_date  = date,
+                        ## since spot is a reference property, can I just store the key directly instead of fetching the Spot object?
+                        ## random.choice(constraint.get().spots)
+                        spot      = randomSpot(constraint.spots),
+                        hour      = hour,
+                        slot      = slot,
+                        scheduled = constraint
+                        ).put()
+                
+def displayAndReadSpot(request, traffic_log_key):
+    pass
+
+def editTrafficLogEntry(request, key):
     pass
 
 
-def traffic_log(request):
+def deleteTrafficLogEntry(request, key):
     pass
 
+
+def traffic_log(request, date):
+    ## fetch TrafficLogEntry(s) for given date
+    ## if none are found
+    spots_for_date = TrafficLog.gql("where log_date=%s order by hour, slot"%date)
+    return render(request, 'traffic_log/index.html', dict(spots=spots_for_date))
 
 def box(thing):
     if isinstance(thing,list):
