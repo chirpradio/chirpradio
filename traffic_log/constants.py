@@ -16,13 +16,13 @@ SPOT_TYPE = [
     ]
 
 DAY = (
-    'Sunday',
     'Monday',
     'Tuesday',
     'Wednesday',
     'Thursday',
     'Friday',
     'Saturday',
+    'Sunday',
     )
 
 DOW_CHOICES = (zip(DOW, DAY))
