@@ -167,14 +167,6 @@ def generateTrafficLog(request, year, month, day):
         next_day = datetime.datetime(int(year), int(month), int(day)) + datetime.timedelta(d)
         generateTrafficLogEntries(request, next_day.date())
         
-
-## if we want sunday => 1, sat => 7
-def _ourDow(dow):
-    if dow == 7:
-        return dow
-    else:
-        return (dow + 1) % 7
-
     
 def generateTrafficLogEntries(request, date):
     dow = date.isoweekday() # or _ourDow(date.isoweekday())
@@ -189,11 +181,19 @@ def generateTrafficLogEntries(request, date):
                         log_date  = date,
                         ## since spot is a reference property, can I just store the key directly instead of fetching the Spot object?
                         ## random.choice(constraint.get().spots)
-                        spot      = randomSpot(constraint.spots),
+                        spot      = spot,
                         hour      = hour,
                         slot      = slot,
                         scheduled = constraint
                         ).put()
+
+## if we want sunday => 1, sat => 7
+def _ourDow(dow):
+    if dow == 7:
+        return dow
+    else:
+        return (dow + 1) % 7
+
                 
 def displayAndReadSpot(request, traffic_log_key):
     pass
