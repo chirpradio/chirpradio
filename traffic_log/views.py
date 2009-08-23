@@ -105,13 +105,17 @@ def spotDetail(request, spot_key=None):
     constraints = [forms.SpotConstraintForm(instance=x) for x in spot.constraints]
     form = forms.SpotForm(instance=spot)
     return render(request, 'traffic_log/spot_detail.html',
-                  {'spot':spot, 'constraints':constraints, 'dow_dict':constants.DOW_DICT}
+                  {
+                    'spot':spot,
+                    'constraints':constraints,
+                    'dow_dict':constants.DOW_DICT
+                    }
                   )
 
 
 def listSpots(request):
     spots = models.Spot.all().order('-created').fetch(20)
-    return render(request, 'traffic_log/spot_list.html', dict(spots=spots))
+    return render(request, 'traffic_log/spot_list.html', {'spots':spots})
 
 
 def connectConstraintsAndSpot(constraint_keys,spot_key):
@@ -158,45 +162,58 @@ def deleteSpotConstraint(request, spot_constraint_key=None, spot_key=None):
     return HttpResponseRedirect('/traffic_log/spot/edit/%s'%spot_key)
 
 
-def randomSpot(spotkeylist):
-    return models.Spot.get(random.choice(spotkeylist))
-
-
-def generateTrafficLog(request, year, month, day):
+def generateTrafficLogEntriesForWeek(request, year, month, day):
     for d in constants.DOW:
         next_day = datetime.datetime(int(year), int(month), int(day)) + datetime.timedelta(d)
         generateTrafficLogEntries(request, next_day.date())
         
     
-def generateTrafficLogEntries(request, date):
-    dow = date.isoweekday() # or _ourDow(date.isoweekday())
+def generateTrafficLogEntriesForDay(request, date=None):
+    date = date if date else datetime.datetime.today().date()
     for hour in constants.HOUR:
-        for slot in constants.SLOT:
-            constraint = models.SpotConstraint.gql("where dow=%d and hour=%d and slot=%d"%(dow,hour,slot))
-            if constraint.count():
-                constraint = constraint.get()
-                spot = randomSpot(constraint.spots)
-                if spot:
-                    models.TrafficLogEntry(
-                        log_date  = date,
-                        ## since spot is a reference property, can I just store the key directly instead of fetching the Spot object?
-                        ## random.choice(constraint.get().spots)
-                        spot      = spot,
-                        hour      = hour,
-                        slot      = slot,
-                        scheduled = constraint
-                        ).put()
+        entries_for_hour = generateTrafficLogEntriesForHour(request, date, hour)
 
-## if we want sunday => 1, sat => 7
-def _ourDow(dow):
-    if dow == 7:
-        return dow
+
+## maybe we don't generate a weeks worth of logs and instead jit the logs?
+def generateTrafficLogEntriesForHour(request, datetime=None, hour=None):
+    now = datetime if datetime else datetime.datetime.now()
+    hour = hour if hour else now.hour
+    log_for_hour = []
+    for slot in constants.SLOT:
+        log_for_hour.append(getOrCreateTrafficLogEntry(now.date, hour, slot))
+            
+
+def getOrCreateTrafficLogEntry(date, hour, slot):
+    entry = models.TrafficLogEntry.gql("where log_date = :1 and hour = :2 and slot = :3", date, hour, slot)
+    if entry.count():
+        return entry.get()
     else:
-        return (dow + 1) % 7
+        constraint = models.SpotConstraint.gql("where dow = :1 and hour = :2 and slot = :3",date.isoweekday(),hour,slot))
+        if constraint.count():
+            constraint = constraint.get()
+            spot = randomSpot(constraint.spots)
+            if spot:
+                new_entry = models.TrafficLogEntry(
+                    log_date  = date,
+                    spot      = spot,
+                    hour      = hour,
+                    slot      = slot,
+                    scheduled = constraint
+                    )
+                new_entry.put()
+                return new_entry
+            else:
+                return
+ 
+
+def randomSpot(spotkeylist):
+    #return models.Spot.get(random.choice(spotkeylist))
+    return random.choice(spotkeylist)
 
                 
 def displayAndReadSpot(request, traffic_log_key):
     pass
+
 
 def editTrafficLogEntry(request, key):
     pass
