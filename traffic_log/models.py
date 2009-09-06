@@ -33,7 +33,7 @@ class Spot(search.SearchableModel):
     def get_absolute_url(self):
         return '/traffic_log/spot/%s/' % self.key()
 
-
+## there can only be one entry per date, hour, slot
 class TrafficLogEntry(search.SearchableModel):
     log_date  = db.DateProperty()
     spot      = db.ReferenceProperty(Spot)
@@ -43,3 +43,5 @@ class TrafficLogEntry(search.SearchableModel):
     readtime  = db.DateTimeProperty()
     reader    = db.ReferenceProperty(User)
     created   = db.DateTimeProperty(auto_now_add=True)
+
+    
