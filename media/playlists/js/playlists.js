@@ -17,6 +17,9 @@ $(document).ready(function() {
         $.extend({
             onItemSelect: function(li) {
                 var entity_key = li.extra[0];
+                var song = $("#id_song").get(0);
+                song.autocompleter.setExtraParams({artist_key: entity_key});
+                song.autocompleter.flushCache();
                 $("#id_artist_key").attr("value", entity_key);
             }
         }, default_opt)

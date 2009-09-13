@@ -84,10 +84,27 @@ def album_search_for_autocomplete(request):
 def track_search_for_autocomplete(request):
     matching_entities = _get_matches_for_partial_entity_search(
                                             request.GET.get('q', ''),
-                                            'Track')        
+                                            'Track')
+    artist_key = request.GET.get('artist_key', None)
+    
     response = http.HttpResponse(mimetype="text/plain")
-    for ent in matching_entities:
-        response.write("%s|%s\n" % (ent.title, ent.key()))
+    for track in matching_entities:
+        if artist_key:
+            # skip this track if it doesn't match the 
+            # artist we are searching tracks by.
+            # if a track doesn't have an associated artist 
+            # then we will never filter it out.
+            track_artist_key = None
+            if track.track_artist:
+                # for compilations
+                track_artist_key = track.track_artist.key()
+            if track.album:
+                track_artist_key = track.album.album_artist.key()
+            if track_artist_key:
+                if str(track_artist_key) != str(artist_key):
+                    continue
+                    
+        response.write("%s|%s\n" % (track.title, track.key()))
     return response
 
 def _get_matches_for_partial_entity_search(query, entity_kind):

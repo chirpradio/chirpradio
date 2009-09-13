@@ -66,8 +66,10 @@ class AutocompleteViewsTestCase(DjangoTestCase):
         # Create some test artists.
         art1 = models.Artist(name=u"Fall, The", parent=idx.transaction,
                              key_name="art1")
+        self.the_fall = art1
         art2 = models.Artist(name=u"Eno, Brian", parent=idx.transaction,
                              key_name="art2")
+        self.eno = art2
         # Create some test albums.
         alb1 = models.Album(title=u"This Nation's Saving Grace",
                             album_id=12345,
@@ -131,6 +133,23 @@ class AutocompleteViewsTestCase(DjangoTestCase):
         response = self.client.get("/djdb/track/search.txt", {'q':'spider and I'})
         ent = models.Track.all().filter("title =", "Spider And I")[0]
         self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
+    
+    def test_track_full_name_by_artist(self):
+        response = self.client.get("/djdb/track/search.txt", {
+                                        'q':'spider and I',
+                                        'artist_key': self.eno.key()})
+                                        
+        ent = models.Track.all().filter("title =", "Spider And I")[0]
+        self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
+    
+    def test_track_full_name_by_wrong_artist(self):
+        response = self.client.get("/djdb/track/search.txt", {
+                                        'q':'spider and I',
+                                        'artist_key': self.the_fall.key()})
+                                        
+        self.assertEqual(response.content, "", 
+            "Expected no results since Spider And I is not by The Fall, got: %r" % 
+                                                                response.content)
     
     def test_track_partial_name(self):
         response = self.client.get("/djdb/track/search.txt", {'q':'spid'})
