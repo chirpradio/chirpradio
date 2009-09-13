@@ -188,7 +188,7 @@ def getOrCreateTrafficLogEntry(date, hour, slot):
     if entry.count():
         return entry.get()
     else:
-        constraint = models.SpotConstraint.gql("where dow = :1 and hour = :2 and slot = :3",date.isoweekday(),hour,slot))
+        constraint = models.SpotConstraint.gql("where dow = :1 and hour = :2 and slot = :3",date.isoweekday(),hour,slot)
         if constraint.count():
             constraint = constraint.get()
             spot = randomSpot(constraint.spots)
