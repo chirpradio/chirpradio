@@ -47,6 +47,9 @@ $(document).ready(function() {
     // previously auto-completed keys :
     
     $("#id_artist").change(function() {
+        var song = $("#id_song").get(0);
+        song.autocompleter.setExtraParams({artist_key: ""});
+        song.autocompleter.flushCache();
         $("#id_artist_key").attr("value", "");
     });
     $("#id_album").change(function() {
