@@ -47,7 +47,6 @@ class TrafficLogTestCase(unittest.TestCase):
         spot_key = models.Spot(title='test',body='body',type='Live Read Promo', author=user).put()
         constraint_key = models.SpotConstraint(dow=1,hour=1,slot=0).put()
         views.connectConstraintsAndSpot([constraint_key], spot_key)
-        
         self.assertEqual(models.Spot.get(spot_key).constraints.count(), 1)
 
     def test_traffic_log_generate(self):

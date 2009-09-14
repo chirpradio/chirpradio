@@ -162,6 +162,7 @@ def deleteSpotConstraint(request, spot_constraint_key=None, spot_key=None):
     return HttpResponseRedirect('/traffic_log/spot/edit/%s'%spot_key)
 
 
+## maybe we don't generate a weeks worth of logs and instead jit the logs per hour or per day?
 def generateTrafficLogEntriesForWeek(request, year, month, day):
     for d in constants.DOW:
         next_day = datetime.datetime(int(year), int(month), int(day)) + datetime.timedelta(d)
@@ -174,7 +175,6 @@ def generateTrafficLogEntriesForDay(request, date=None):
         entries_for_hour = generateTrafficLogEntriesForHour(request, date, hour)
 
 
-## maybe we don't generate a weeks worth of logs and instead jit the logs?
 def generateTrafficLogEntriesForHour(request, datetime=None, hour=None):
     now = datetime if datetime else datetime.datetime.now()
     hour = hour if hour else now.hour
@@ -184,11 +184,23 @@ def generateTrafficLogEntriesForHour(request, datetime=None, hour=None):
             
 
 def getOrCreateTrafficLogEntry(date, hour, slot):
-    entry = models.TrafficLogEntry.gql("where log_date = :1 and hour = :2 and slot = :3", date, hour, slot)
+    entry = models.TrafficLogEntry.gql(
+        "where log_date = :1 and hour = :2 and slot = :3",
+        date, hour, slot
+        )
+    
     if entry.count():
         return entry.get()
     else:
+<<<<<<< local
+        constraint = models.SpotConstraint.gql(
+            "where dow = :1 and hour = :2 and slot = :3",
+            date.isoweekday(), hour, slot
+            )
+        
+=======
         constraint = models.SpotConstraint.gql("where dow = :1 and hour = :2 and slot = :3",date.isoweekday(),hour,slot)
+>>>>>>> other
         if constraint.count():
             constraint = constraint.get()
             spot = randomSpot(constraint.spots)
