@@ -518,14 +518,15 @@ def simple_music_search(query_str, max_num_results=None, entity_kind=None):
     if all_matches is None:
         return None
 
-    # If we got too many matches, throw some away.
-    if max_num_results and len(all_matches) > max_num_results:
-        all_matches = all_matches[:max_num_results]
-
     # Next, filter out all tracks that do not have a title match.
     filtered = []
+    recordcount = 0
     for key, fields in all_matches.iteritems():
         if key.kind() != "Track" or "title" in fields:
+            recordcount += 1
+            # If we got too many matches, throw some away.
+            if max_num_results and recordcount > max_num_results:
+                break
             filtered.append(key)
 
     # Finally, return a segmented dict of matches.

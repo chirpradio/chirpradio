@@ -416,5 +416,23 @@ class SearchTestCase(unittest.TestCase):
         self.assertEqual(0, query.count())
 
 
-            
+class SearchTestCaseWithData(SearchTestCase):
+    
+    def setUp(self):
+        idx = search.Indexer()
+        # Create some test artists.
+        art = models.Artist(name=u"beatles", parent=idx.transaction, key_name="ss-art1")
+        idx.add_artist(art)
+        art = models.Artist(name=u"beatnicks", parent=idx.transaction, key_name="ss-art2")
+        idx.add_artist(art)
+        art = models.Artist(name=u"beatnuts", parent=idx.transaction, key_name="ss-art3")
+        idx.add_artist(art)
+        idx.save()
+    
+    def test_search_results_are_truncated(self):
+        # this is a regression for a bug
+        matches = search.simple_music_search(u"beat*", max_num_results=2,
+                                                entity_kind='Artist')
+        # print matches
+        self.assertEquals(len(matches['Artist']), 2)
         
