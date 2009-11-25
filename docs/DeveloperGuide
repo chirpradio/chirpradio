@@ -27,12 +27,27 @@ http://hgbook.red-bean.com/
 Prerequisites
 -------------
 
+Everything should run in Python 2.5 or greater
+http://python.org/download/
+
+Install the Google App Engine SDK from
+http://code.google.com/appengine/downloads.html
+
+If on Mac OS X be sure to start up the launcher once 
+so that it prompts you to create symbolic links in /usr/local/google_appengine
+
 You may need to install PyCrypto.  For more information about PyCrypto, see:
 http://www.dlitz.net/software/pycrypto/
 
 On a Debian/Ubuntu system, use this command:
 % sudo apt-get install python-crypto
 
+On a Mac OS X system *with* mac ports, type:
+% sudo port install py25-crypto
+
+However, if you used an installer from python.org on Mac OS X
+then you need to grab the pycrypto source and run:
+% sudo python setup.py install
 
 Running Locally
 ---------------
