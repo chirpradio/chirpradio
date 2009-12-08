@@ -30,11 +30,22 @@ Prerequisites
 Everything should run in Python 2.5 or greater
 http://python.org/download/
 
+Note: Recent Ubuntu Linux versions (at least after Jaunty) ship with Python 2.6.
+Many have reported problems running the Google App Engine SDK with a non-2.5.* 
+version of Python.  To install Python 2.5 without breaking the default Python
+install, you can use this command:
+% sudo apt-get install python2.5
+
 Install the Google App Engine SDK from
 http://code.google.com/appengine/downloads.html
 
 If on Mac OS X be sure to start up the launcher once 
 so that it prompts you to create symbolic links in /usr/local/google_appengine
+
+Unlike the Google App Engine Python SDK for Mac OS X/Windows, the Linux version 
+comes as a zip archive rather than an installer.  To install, just unpack the
+archive into /usr/local/google_appengine.  Or you can unpack it to your home directory
+and create a symlink in /usr/local/google_appengine.
 
 You may need to install PyCrypto.  For more information about PyCrypto, see:
 http://www.dlitz.net/software/pycrypto/
@@ -49,11 +60,19 @@ However, if you used an installer from python.org on Mac OS X
 then you need to grab the pycrypto source and run:
 % sudo python setup.py install
 
+NOTE: The Google App Engine SDK currently does not run inside a virtualenv.
+This is a known bug.
+
 Running Locally
 ---------------
 	
 To start up a local server, run
 % python manage.py runserver
+
+Note: If you are running on a system with multiple versions of Python
+installed, make sure that you are using the 2.5 version, e.g.:
+
+% python2.5 manage.py runserver
 
 You can reach your local server by going to http://localhost:8000/
 in your web browser.
