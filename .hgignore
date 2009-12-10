@@ -6,4 +6,6 @@ index.yaml
 *.pyc
 #*#
 .svn
+.project
+.pydevproject
 
