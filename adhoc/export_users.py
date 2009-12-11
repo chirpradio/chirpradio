@@ -28,7 +28,10 @@ def main():
     
     writer = csv.writer(open('users.csv', 'w'))
     for user in users:
-        writer.writerow([user[4],user[2],user[3], 'changemerightnow', user[7],user[8],user[9].split('.')[0],user[10].split('.')[0], 'dj'])
+        email = user[4]
+        if not email:
+            email = user[2] + "." + user[3] + '@changme.com'
+        writer.writerow([email,user[2],user[3], 'changemerightnow', user[7],user[8],user[9].split('.')[0],user[10].split('.')[0], 'dj'])
     
     cursor.close()
     connection.close()

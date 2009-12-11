@@ -25,5 +25,13 @@ class UserLoader(bulkloader.Loader):
                                     ('date_joined',lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')),
                                     ('roles', str.split)
                                    ])   
+    
+    def handle_entity(self, entity):
+        print "email: " + entity.email
+        q = db.GqlQuery("select * from User where email = :1", entity.email)
+        if q.fetch(1):
+            return None
+        else:
+            return entity
 
 loaders = [UserLoader]
