@@ -27,11 +27,11 @@ class UserLoader(bulkloader.Loader):
                                    ])   
     
     def handle_entity(self, entity):
-        print "email: " + entity.email
         q = db.GqlQuery("select * from User where email = :1", entity.email)
         if q.fetch(1):
             return None
         else:
+            print "adding: " + entity.email
             return entity
 
 loaders = [UserLoader]
