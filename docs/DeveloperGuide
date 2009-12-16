@@ -19,6 +19,14 @@ To push your changes into the master repository:
 To get your GoogleCode.com password (needed to push changes):
 http://code.google.com/hosting/settings
 
+To push your changes to a temporary location so that other 
+developers can review them before they get pushed into the master,
+make yourself a clone.  When you're on the main source code page of 
+the project, you'll see a link to Clones and under that there is a link 
+to create your own clone.  This creates an isolated repository that you 
+can safely push your changes to during development.  When your changes 
+are ready, someone can easily pull them into the master repository.
+
 For more information about Mercurial, see "Mercurial: The Definitive
 Guide", by Bryan O'Sullivan.
 http://hgbook.red-bean.com/
