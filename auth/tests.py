@@ -268,6 +268,14 @@ class AuthTestCase(unittest.TestCase):
 
         
 class FormsTestCase(unittest.TestCase):
+    
+    def test_unknown_user_by_email(self):
+        form = auth_forms.LoginForm({
+            'redirect': '/', 
+            'email': 'not-known@host.com', 
+            'password': 'wrong'
+        })
+        self.assertFalse(form.is_valid())
 
     def test_login_form(self):
         # Set up a test user.
