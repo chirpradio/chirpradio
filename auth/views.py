@@ -202,9 +202,40 @@ def reset_password(request):
 
 @require_role(USER_MANAGEMENT_ROLE)
 def main_page(request):
-    """Lists all users."""
     tmpl = loader.get_template('auth/main_page.html')
     all_users = list(User.all().order('last_name').order('first_name'))
+
+    msg = ''
+    
+    """Send password reset emails to selected users."""
+    if request.method == 'POST' :
+        if request.POST.get('SendPwdEmails') :
+            num_emails = 0;
+            for i, user in enumerate(all_users) :
+                if request.POST.get('checkbox_%d' % (i + 1)) :
+                    num_emails += 1
+                    
+                    # Assemble the URL that can be used to access the password
+                    # reset form.
+                    token = auth.get_password_reset_token(user)
+                    url = 'http://%s/auth/reset_password?token=%s' % (
+                        os.environ['HTTP_HOST'], token)
+                    logging.warn('Sent password recovery URL: %s', url)
+
+                    # Send the email message.
+                    msg_tmpl = loader.get_template('auth/reset_password_email.txt')
+                    msg_ctx = Context({'user': user, 'url': url})
+                    msg_body = msg_tmpl.render(msg_ctx)
+#                    print msg_body
+                    email.send_to_user(
+                        user,
+                        subject='Please Set/Reset your CHIRP password',
+                        body=msg_body)
+            if num_emails :
+                msg = 'Email(s) sent.'
+             
+
+    """Lists all users."""
     num_active_users = sum(u.is_active for u in all_users)
     active = [u for u in all_users if u.is_active]
     inactive = [u for u in all_users if not u.is_active]
@@ -212,6 +243,7 @@ def main_page(request):
             'title': 'User Management',
             'all_users': active + inactive,
             'num_active_users': num_active_users,
+            'msg' : msg
             })
     return http.HttpResponse(tmpl.render(ctx))
 

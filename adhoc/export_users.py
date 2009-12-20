@@ -13,7 +13,7 @@ def main():
     
     cursor = connection.cursor()
     
-    cursor.execute("select * from auth_user")
+    cursor.execute("select * from auth_user where is_active=0")
     
     users = cursor.fetchall()
     
@@ -31,7 +31,7 @@ def main():
         email = user[4]
         if not email:
             email = user[2] + "." + user[3] + '@changme.com'
-        writer.writerow([email,user[2],user[3], 'changemerightnow', user[7],user[8],user[9].split('.')[0],user[10].split('.')[0], 'dj'])
+        writer.writerow([email,user[2],user[3], '', user[7],user[8],user[9].split('.')[0],user[10].split('.')[0], 'dj'])
     
     cursor.close()
     connection.close()
