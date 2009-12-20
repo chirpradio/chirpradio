@@ -25,17 +25,22 @@ class LoginForm(forms.Form):
     redirect = forms.CharField(widget=HiddenInput, required=True)
     email = forms.EmailField(required=True)
     password = forms.CharField(required=True, widget=PasswordInput)
-
-    def clean_password(self):
+    
+    def clean_email(self):
         self.user = User.get_by_email(self.cleaned_data['email'])
         if self.user is None:
             raise forms.ValidationError('Unknown email address')
         if not self.user.is_active:
             raise forms.ValidationError('Account not active')
-        if not self.user.password:
-            raise forms.ValidationError('Password not set')
-        if not self.user.check_password(self.cleaned_data['password']):
-            raise forms.ValidationError('Incorrect password')
+        return self.cleaned_data['email']
+
+    def clean_password(self):
+        if 'email' in self.cleaned_data:
+            self.user = User.get_by_email(self.cleaned_data['email'])
+            if not self.user.password:
+                raise forms.ValidationError('Password not set')
+            if not self.user.check_password(self.cleaned_data['password']):
+                raise forms.ValidationError('Incorrect password')
         return self.cleaned_data['password']
 
 
