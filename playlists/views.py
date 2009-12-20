@@ -34,6 +34,44 @@ common_context = {
     'title': 'CHIRPradio.org DJ Playlist Tracker'
 }
 
+class PlaylistEventView(object):
+    """UI wrapper around playlist event data object
+    with extra attributes for use in templates.
+    
+    Extra attributes available on view objects:
+    
+    **is_break**
+    True if this event is a song break
+    
+    **is_new**
+    True if this event is a song played before the last break.
+    Note that this attribute is controlled by iter_playlist_events_for_view()
+    
+    """
+    
+    def __init__(self, playlist_event):
+        self.playlist_event = playlist_event
+        self.is_break = type(self.playlist_event) is PlaylistBreak
+        self.is_new = False
+    
+    def __getattr__(self, key):
+        return getattr(self.playlist_event, key)
+
+def iter_playlist_events_for_view(query):
+    """Iterate a query of playlist event objects.
+    
+    returns a generator to produce PlaylistEventView() objects 
+    which contain some extra attributes for the view.
+    """
+    first_break = False
+    for playlist_event in query:
+        pl_view = PlaylistEventView(playlist_event)
+        if pl_view.is_break:
+            first_break = True
+        if not first_break:
+            pl_view.is_new = True
+        yield pl_view
+
 @require_role(roles.DJ)
 def landing_page(request):
     if request.method == 'POST':
@@ -47,7 +85,7 @@ def landing_page(request):
     
     ctx_vars = { 
         'form': form,
-        'playlist_events': [e for e in pl],
+        'playlist_events': list(iter_playlist_events_for_view(pl)),
         'current_user': auth.get_current_user(request)
     }
     ctx_vars.update(common_context)

@@ -64,13 +64,13 @@
 {% if playlist_events %}
 {% for event in playlist_events %}
 
-    {% ifeventisbreak event %}
+    {% if event.is_break %}
 
         <p class="break">Break</p>
     
     {% else %}
     
-        <div class="song-info new"> <!-- song information container -->
+        <div class="song-info {% if event.is_new %}new{% endif %}"> <!-- song information container -->
         <p class="time">{{ event.established_display|time:"g:i A" }}</p>
         <p><span class="artist">{{ event.artist_name }}</span> 
             &bull; <span class="song">{{ event.track_title }}</span> 
@@ -88,7 +88,7 @@
         {% endifequal %}
         </div>
 
-    {% endifeventisbreak %}
+    {% endif %}
 
 {% endfor %}
 {% else %}

@@ -177,19 +177,41 @@ class TestPlaylistViews(PlaylistViewsTest):
                     freeform_track_title="Photograph")
         track.put()
         
+        # add the break:
         resp = self.client.post(reverse('playlists_add_event'), {
             'submit': "Add Break"
         })
         self.assertNoFormErrors(resp)
         self.assertRedirects(resp, reverse('playlists_landing_page'))
-        # simulate the redirect:
+        
+        # add one track after the break:
+        track = PlaylistTrack(
+                    playlist=playlist,
+                    selector=selector, 
+                    freeform_artist_name="Kid Sister",
+                    freeform_album_title="Ultraviolet",
+                    freeform_track_title="Right Hand Hi")
+        track.put()
+        
         resp = self.client.get(reverse('playlists_landing_page'))
         
         context = resp.context[0]
-        event_types = [type(t) for t in context['playlist_events']]
-        self.assertEqual(event_types[0], PlaylistBreak)
-        self.assertEqual(event_types[1], PlaylistTrack)
-        self.assertEqual(event_types[2], PlaylistTrack)
+        events = [t for t in context['playlist_events']]
+        
+        self.assertEqual(events[0].artist_name, "Kid Sister")
+        self.assertEqual(events[0].is_break, False)
+        self.assertEqual(events[0].is_new, True)
+        
+        self.assertEqual(events[1].is_break, True)
+        self.assertEqual(events[1].is_new, False)
+        
+        self.assertEqual(events[2].artist_name, "Def Leoppard")
+        self.assertEqual(events[2].is_break, False)
+        self.assertEqual(events[2].is_new, False)
+        
+        self.assertEqual(events[3].artist_name, "Steely Dan")
+        self.assertEqual(events[3].is_break, False)
+        self.assertEqual(events[3].is_new, False)
         
         # print resp.content
         assert '<p class="break">Break</p>' in resp.content
