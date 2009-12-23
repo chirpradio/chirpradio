@@ -124,8 +124,8 @@ def create_event(request):
 
         if vars['form'].is_valid():
             track = vars['form'].save()
-            #url_track_create(track)
-            taskqueue.add(url='/playlists/task_create', params={'id':str(track.key())})
+            url_track_create(track)
+            #taskqueue.add(url='/playlists/task_create', params={'id':str(track.key())})
             return HttpResponseRedirect(reverse('playlists_landing_page'))
 
     return render_to_response('playlists/landing_page.html', vars)
@@ -137,8 +137,8 @@ def delete_event(request, event_key):
         e = PlaylistEvent.get(event_key)
         if e and e.selector.key() == auth.get_current_user(request).key():
             e.delete()
-            #url_track_delete(event_key)
-            taskqueue.add(url='/playlists/task_delete', params={'id':event_key})
+            url_track_delete(event_key)
+            #taskqueue.add(url='/playlists/task_delete', params={'id':event_key})
     except BadKeyError:
         pass
     return HttpResponseRedirect(reverse('playlists_landing_page'))
@@ -148,10 +148,33 @@ def delete_event(request, event_key):
 TODO(selizondo): get taskqueue/deferred task working
 
 Publish Track being played to remote PHP server
+
+URLs for PHP test server
+
+    # status of last track published
+    curl -v -X GET http://geoff.terrorware.com/hacks/chirpapi/playlist/current
+
+    # create/publish track
+    curl -v -X POST http://geoff.terrorware.com/hacks/chirpapi/playlist/create
+         -d "track_name=s&track_label=l&track_artist=a&track_album=r&dj_name=d&time_played=2009-12-20 14:37&playlist_track_id=agpjaGlycHJhZGlvchMLEg1QbGF5bGlzdEV2ZW50GB0M"
+
+    # delete previously published track via playlist_track_id
+    curl -v -X DELETE http://geoff.terrorware.com/hacks/chirpapi/playlist/delete/website/agpjaGlycHJhZGlvchMLEg1QbGF5bGlzdEV2ZW50GB0M"
 """
 import urllib
 from google.appengine.api import urlfetch
 
+def _urls(type='create'):
+    urls = {
+        #'create':'http://192.168.58.128:8101/api/track/',
+        #'delete':'http://192.168.58.128:8101/api/track/'
+        'create':'http://geoff.terrorware.com/hacks/chirpapi/playlist/create',
+        'delete':'http://geoff.terrorware.com/hacks/chirpapi/playlist/delete/website/'
+    }
+    return urls[type]
+
+"""Thin wrapper for taskqueue
+"""
 def task_create(request):
     try:
         track = PlaylistEvent.get(request.POST['id'])
@@ -164,14 +187,14 @@ def url_track_create(track=None):
         return
 
     # TODO(selizondo): test against PHP URL
-    url = "http://192.168.58.128:8101/api/track/"
+    url = _urls('create')
     form_data = urllib.urlencode({
         'track_name': track.track_title,
         'track_artist': track.artist_name,
         'track_album': track.album_title,
         'track_label': track.label,
         'dj_name': track.selector.last_name,
-        'timeplayed': track.modified.strftime("%Y-%m-%d %H:%M:%S"),
+        'time_played': track.modified.strftime("%Y-%m-%d %H:%M:%S"),
         'playlist_track_id': str(track.key()),
     })
 
@@ -180,7 +203,8 @@ def url_track_create(track=None):
     result = urlfetch.fetch(url=url, payload=form_data, method=urlfetch.POST, headers=headers)
     #print result.status_code, result.content
 
-
+"""Thin wrapper for taskqueue
+"""
 def task_delete(request):
     url_track_delete(request.POST['id'])
 
@@ -189,9 +213,8 @@ def url_track_delete(id):
         return
 
     # TODO(selizondo): test against PHP URL
-    url = "http://192.168.58.128:8101/api/track/" + str(id)
+    url = _urls('delete') + str(id)
     form_data = urllib.urlencode({'playlist_track_id': str(id)})
     headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "application/json"}
     result = urlfetch.fetch(url=url, payload=form_data, method=urlfetch.DELETE, headers=headers)
     #print result.status_code, result.content
-
