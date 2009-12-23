@@ -158,7 +158,7 @@ URLs for PHP test server
     curl -v -X POST http://geoff.terrorware.com/hacks/chirpapi/playlist/create
          -d "track_name=s&track_label=l&track_artist=a&track_album=r&dj_name=d&time_played=2009-12-20 14:37&playlist_track_id=agpjaGlycHJhZGlvchMLEg1QbGF5bGlzdEV2ZW50GB0M"
 
-    # delete previously published track via playlist_track_id
+    # delete previously published track using playlist_track_id from create
     curl -v -X DELETE http://geoff.terrorware.com/hacks/chirpapi/playlist/delete/website/agpjaGlycHJhZGlvchMLEg1QbGF5bGlzdEV2ZW50GB0M"
 """
 import urllib
