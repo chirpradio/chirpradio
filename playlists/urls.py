@@ -23,7 +23,7 @@ from django.conf.urls.defaults import patterns, url
 urlpatterns = patterns(
     '',
     url(r'^event$', 'playlists.views.add_event', name="playlists_add_event"),
-    url(r'^event/([^/]+)/delete$', 'playlists.views.delete_event', 
+    url(r'^event/([^/]+)/delete$', 'playlists.views.delete_event',
                                                 name="playlists_delete_event"),
     url(r'^/?$', 'playlists.views.landing_page', name="playlists_landing_page"),
 )
