@@ -159,7 +159,7 @@ class ChirpApi {
         $response = json_encode(
                       array('track_id' => $track_id,
                             'article_id' => $article_id,
-                            'url' => $url)
+                            'url_title' => $url_title)
                     ) . "\n";
       }
       else {
@@ -176,7 +176,7 @@ class ChirpApi {
 
   private function current() {
     $this->db_connect();
-    $query = "SELECT ID AS article_id, Title AS track_title, Body AS track_album, Keywords AS track_artist, custom_1 AS track_label, custom_2 AS dj_name, custom_3 AS track_id, LastMod FROM textpattern WHERE Section = 'playlists' ORDER By LastMod DESC, id DESC LIMIT 1";
+    $query = "SELECT ID AS article_id, Title AS track_title, Body AS track_album, Keywords AS track_artist, custom_1 AS track_label, custom_2 AS dj_name, custom_3 AS track_id, LastMod AS time_played FROM textpattern WHERE Section = 'playlists' ORDER By LastMod DESC, id DESC LIMIT 1";
     if ($result = mysql_query($query)) {
       $current_track = mysql_fetch_object($result);
       $response = json_encode($current_track) . "\n";
@@ -189,7 +189,7 @@ class ChirpApi {
   }
 
   private function delete($track_id) {
-    $select_query = sprintf("SELECT ID AS article_id, custom_3 AS track_id FROM textpattern WHERE custom_3 = '%d'", $id);
+    $select_query = sprintf("SELECT ID AS article_id, custom_3 AS track_id FROM textpattern WHERE custom_3 = '%s'", $track_id);
     $delete_query = sprintf("DELETE FROM textpattern WHERE custom_3 = '%d'", $id);
 
     $this->db_connect();
