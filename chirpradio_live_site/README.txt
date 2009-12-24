@@ -25,13 +25,14 @@ Parameters:
 Response:
 
 JSON structure with the Track ID (should match the one posted), Textpattern Article ID, and
-Textpattern URL: 
+Textpattern URL path: 
 
-{"track_id":15, "article_id":"15", "url":"http://chirpradio.org/playlists/2-jawbreaker-the-boat-dreams-from-the-hill"}
+{"track_id":"agpjaGlycHJhZGlvcg8LEghQbGF5bGlzdBiIBQw","article_id":26,"url_title":"26-test-artist-test-album"}
 
 Usage example:
 
-curl -d "track_name=Test Song&track_label=Test Label&track_album=Test Album&dj_name=Test DJ&time_played=2009-12-20 14:37&playlist_track_id=666" http://geoff.terrorware.com/hacks/chirpapi/playlist/create
+curl -d "track_name=Test Song&track_label=Test Label&track_artist=Test Artist&track_album=Test Album&dj_name=Test DJ&time_played=`date --rfc-3339=seconds`&track_id=agpjaGlycHJhZGlvcg8LEghQbGF5bGlzdBiIBQw" http://geoff.terrorware.com/hacks/chirpapi/playlist/create
+
 
 API Method: playlist/current
 
@@ -50,7 +51,7 @@ Response:
 
 JSON structure with track article information:
 
-{"article_id":"24","track_title":"pipiop","track_album":"pipoi","track_artist":"popoi","track_label":"pioopoi","dj_name":"None","track_id":"agpjaGlycHJhZGlvchMLEg1QbGF5bGlzdEV2ZW50GCUM","LastMod":"2009-12-23 09:31:45"}
+{"article_id":"26","track_title":"Test Song","track_album":"Test Album","track_artist":"Test Artist","track_label":"Test Label","dj_name":"Test DJ","track_id":"agpjaGlycHJhZGlvcg8LEghQbGF5bGlzdBiIBQw","time_played":"2009-12-24 15:41:23"}
 
 Usage example:
 
@@ -74,8 +75,8 @@ Response:
 
 JSON structure with the article_id (from Textpattern), track_id (from Playlist App) of deleted track: 
 
-{"article_id":"14","track_id":"666"}
+{"article_id":"26","track_id":"agpjaGlycHJhZGlvcg8LEghQbGF5bGlzdBiIBQw"}
 
 Usage example:
 
-curl -v -X DELETE http://geoff.terrorware.com/hacks/chirpapi/playlist/delete/playlist-app/666
+curl -v -X DELETE http://geoff.terrorware.com/hacks/chirpapi/playlist/delete/agpjaGlycHJhZGlvcg8LEghQbGF5bGlzdBiIBQw
