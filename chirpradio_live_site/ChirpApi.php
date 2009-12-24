@@ -176,7 +176,7 @@ class ChirpApi {
 
   private function current() {
     $this->db_connect();
-    $query = "SELECT ID AS track_id, Title AS track_title, Body AS track_album, Keywords AS track_artist, custom_1 AS track_label, custom_2 AS dj_name, custom_3 AS playlist_track_id, LastMod FROM textpattern WHERE Section = 'playlists' ORDER By LastMod DESC, id DESC LIMIT 1";
+    $query = "SELECT ID AS article_id, Title AS track_title, Body AS track_album, Keywords AS track_artist, custom_1 AS track_label, custom_2 AS dj_name, custom_3 AS track_id, LastMod FROM textpattern WHERE Section = 'playlists' ORDER By LastMod DESC, id DESC LIMIT 1";
     if ($result = mysql_query($query)) {
       $current_track = mysql_fetch_object($result);
       $response = json_encode($current_track) . "\n";

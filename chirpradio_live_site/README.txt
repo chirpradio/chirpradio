@@ -50,30 +50,7 @@ Response:
 
 JSON structure with track article information:
 
-{"id":"15","track_title":"Test Song","track_album":"Test Album","track_artist":"Test Band","track_label":"Test Label","dj_name":"Test DJ","playlist_track_id":"666","LastMod":"2009-12-20 14:37:00"}
-
-Usage example:
-
-curl -v http://geoff.terrorware.com/hacks/chirpapi/playlist/current
-
-API Method: playlist/current
-
-Get the currently playing song (more accurately, the last playlist track article that Textpattern knows about).
-
-HTTP Method(s):
-GET
-
-Requires authentication:
-false
-
-Parameters:
-none
-
-Response:
-
-JSON structure with track article information:
-
-{"id":"15","track_title":"Test Song","track_album":"Test Album","track_artist":"Test Band","track_label":"Test Label","dj_name":"Test DJ","playlist_track_id":"666","LastMod":"2009-12-20 14:37:00"}
+{"article_id":"24","track_title":"pipiop","track_album":"pipoi","track_artist":"popoi","track_label":"pioopoi","dj_name":"None","track_id":"agpjaGlycHJhZGlvchMLEg1QbGF5bGlzdEV2ZW50GCUM","LastMod":"2009-12-23 09:31:45"}
 
 Usage example:
 
