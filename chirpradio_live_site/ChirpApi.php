@@ -1,3 +1,5 @@
+<?
+
 class ChirpApiException extends Exception { }
 class NotFoundException extends ChirpApiException { }
 class InvalidRequestException extends ChirpApiException { }
@@ -206,3 +208,5 @@ class ChirpApi {
     return $response;
   }
 }
+
+?>
