@@ -5,6 +5,7 @@ class NotFoundException extends ChirpApiException { }
 class InvalidRequestException extends ChirpApiException { }
 class DatabaseConnectionException extends ChirpApiException { }
 class DatabaseQueryException extends ChirpApiException { }
+class InvalidCredentialsException extends ChirpApiException { }
 
 class ChirpApi {
   private $link;
@@ -38,6 +39,7 @@ class ChirpApi {
              }
          }
          else if ($request['q'] == 'playlist/create') { 
+             $this->authenticate();
              if ($method == 'POST') {
                // Check that API call has all the needed parameters
                $parameters = array(
@@ -71,6 +73,7 @@ class ChirpApi {
              }
          }
          else if (strpos($request['q'], 'playlist/delete/') === 0) {
+           $this->authenticate();
            $track_id = substr($request['q'], strrpos($request['q'], '/') + 1);
 
            if ($method == 'DELETE') {
@@ -91,6 +94,61 @@ class ChirpApi {
       }
 
       return $response;
+  }
+
+  // function to parse the http auth header
+  private function http_digest_parse($txt) {
+      // protect against missing data
+      $needed_parts = array(
+          'nonce'=>1, 
+          'nc'=>1, 
+          'cnonce'=>1, 
+          'qop'=>1, 
+          'username'=>1, 
+          'uri'=>1, 
+          'response'=>1);
+      $data = array();
+      $keys = implode('|', array_keys($needed_parts));
+
+      preg_match_all('@(' . $keys . ')=(?:([\'"])([^\2]+?)\2|([^\s,]+))@', $txt, $matches, PREG_SET_ORDER);
+
+      foreach ($matches as $m) {
+        $data[$m[1]] = $m[3] ? $m[3] : $m[4];
+        unset($needed_parts[$m[1]]);
+      }
+
+      return $needed_parts ? false : $data;
+  }
+
+  private function authenticate() {
+      global $api_auth_realm, $api_auth_users;
+
+      // Workaround for PHP in CGI mode.   $_SERVER['PHP_AUTH_DIGEST'] doesn't get set
+      // so we have to set $_ENV['REDIRECT_HTTP_AUTHORIZATION'] with a RewriteRule
+      if (isset($_ENV['REDIRECT_HTTP_AUTHORIZATION']) && !isset($_SERVER['PHP_AUTH_DIGEST'])) {
+          $_SERVER['PHP_AUTH_DIGEST'] = $_ENV['REDIRECT_HTTP_AUTHORIZATION'];
+      }
+
+      if (empty($_SERVER['PHP_AUTH_DIGEST'])) {
+          header('HTTP/1.1 401 Unauthorized');
+          header('WWW-Authenticate: Digest realm="'.$api_auth_realm.
+                 '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($api_auth_realm).'"');
+          throw new InvalidCredentialsException(); 
+      }
+
+      // analyze the PHP_AUTH_DIGEST variable
+      $data = $this->http_digest_parse($_SERVER['PHP_AUTH_DIGEST']);
+      if (!$data || !isset($api_auth_users[$data['username']])) {
+          throw new InvalidCredentialsException(); 
+      }
+
+      // generate the valid response
+      $A1 = md5($data['username'] . ':' . $api_auth_realm . ':' . $api_auth_users[$data['username']]);
+      $A2 = md5($_SERVER['REQUEST_METHOD'].':'.$data['uri']);
+      $valid_response = md5($A1.':'.$data['nonce'].':'.$data['nc'].':'.$data['cnonce'].':'.$data['qop'].':'.$A2);
+
+      if ($data['response'] != $valid_response)
+          throw new InvalidCredentialsException(); 
   }
 
   private function db_connect() {
@@ -190,7 +248,7 @@ class ChirpApi {
 
   private function delete($track_id) {
     $select_query = sprintf("SELECT ID AS article_id, custom_3 AS track_id FROM textpattern WHERE custom_3 = '%s'", $track_id);
-    $delete_query = sprintf("DELETE FROM textpattern WHERE custom_3 = '%d'", $id);
+    $delete_query = sprintf("DELETE FROM textpattern WHERE custom_3 = '%s'", $track_id);
 
     $this->db_connect();
 

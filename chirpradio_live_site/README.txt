@@ -1,6 +1,8 @@
-API Methods
+API Authentication
 
-TODO: Put this in the code itself so it can be extracted with doxygen
+Some API methods require authentication.  Currently this is implemented with HTTP Digest Authentication.  For more information on this authentication method see http://en.wikipedia.org/wiki/Digest_access_authentication
+
+API Methods
 
 API Method: playlist/create
 
@@ -10,7 +12,7 @@ HTTP Method(s):
 POST
 
 Requires authentication:
-true (eventually, but not yet implemented)
+true
 
 Parameters:
 
@@ -31,7 +33,7 @@ Textpattern URL path:
 
 Usage example:
 
-curl -d "track_name=Test Song&track_label=Test Label&track_artist=Test Artist&track_album=Test Album&dj_name=Test DJ&time_played=`date --rfc-3339=seconds`&track_id=agpjaGlycHJhZGlvcg8LEghQbGF5bGlzdBiIBQw" http://geoff.terrorware.com/hacks/chirpapi/playlist/create
+curl --digest --user chirpapi -d "track_name=Test Song&track_label=Test Label&track_artist=Test Artist&track_album=Test Album&dj_name=Test DJ&time_played=`date --rfc-3339=seconds`&track_id=agpjaGlycHJhZGlvcg8LEghQbGF5bGlzdBiIBQw" http://geoff.terrorware.com/hacks/chirpapi/playlist/create
 
 
 API Method: playlist/current
@@ -79,4 +81,4 @@ JSON structure with the article_id (from Textpattern), track_id (from Playlist A
 
 Usage example:
 
-curl -v -X DELETE http://geoff.terrorware.com/hacks/chirpapi/playlist/delete/agpjaGlycHJhZGlvcg8LEghQbGF5bGlzdBiIBQw
+curl --digest --user chirpapi  -v -X DELETE http://geoff.terrorware.com/hacks/chirpapi/playlist/delete/agpjaGlycHJhZGlvcg8LEghQbGF5bGlzdBiIBQw

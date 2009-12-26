@@ -24,10 +24,14 @@ catch (DatabaseQueryException $e) {
   header('HTTP/1.1 500 Internal Server Error');
   echo $e->getMessage() . "\n";
 }
+catch (InvalidCredentialsException $e) {
+  header('HTTP/1.1 401 Unauthorized');
+  echo "Invalid credentials\n";
+}
 catch (ChirpApiException $e) {
   // Catchall
   header('HTTP/1.1 503 Service Unavailable');
-  echo("Service unavailable.");
+  echo "Service unavailable.\n";
 }
 
 ?>
