@@ -20,8 +20,23 @@ def render(request, template, payload):
 
 @require_role(DJ)
 def index(request):
-    spots = models.Spot.all().order('-created').fetch(20)
-    return render(request, 'traffic_log/index.html', dict(spots=spots))
+    now = datetime.datetime.now()
+    today = now.date()
+    current_hour = now.hour
+    next_hour = current_hour + 1
+    if next_hour == 25:
+        next_hour = 0
+    current_spots = (models.SpotConstraint.all()
+                        .filter("dow =", today.isoweekday())
+                        .filter("hour IN", (current_hour, next_hour))
+                        .order("hour")
+                        .order("slot"))
+    
+    slotted_spots = [s for s in current_spots.fetch(10)] # ten possible slots per hour
+    return render(request, 'traffic_log/index.html', dict(
+        date=today,
+        slotted_spots=slotted_spots
+    ))
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def createSpot(request):
@@ -37,12 +52,6 @@ def createSpot(request):
             spot.put()
             connectConstraintsAndSpot(constraint_keys, spot.key())
             all_clear = True
-
-        elif spot_form.is_valid():
-            spot = spot_form.save()
-            
-            all_clear = True
-            
     else:
         spot_form = forms.SpotForm()
         constraint_form = forms.SpotConstraintForm()
@@ -131,6 +140,8 @@ def saveConstraint(constraint):
     
     keys = []
     if constraint['hourbucket'] != "":
+        ## fixme: kumar thinks this is not such a good idea.  
+        ## use split(",") and int() instead.
         hours = range(*eval(constraint['hourbucket']))
     else:
         hours = [int(constraint['hour'])]

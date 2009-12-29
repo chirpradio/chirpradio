@@ -9,6 +9,27 @@ class SpotConstraint(search.SearchableModel):
     hour     = db.IntegerProperty(verbose_name="Hour", choices=constants.HOUR)
     slot     = db.IntegerProperty(verbose_name="Spot", choices=constants.SLOT)
     spots    = db.ListProperty(db.Key)
+    
+    def iter_spots(self):
+        for spot in Spot.get(self.spots):
+            yield spot
+    
+    @property
+    def readable_slot_time(self):
+        min_slot = str(self.slot)
+        if min_slot == '0':
+            min_slot = '00'
+        meridian = 'am'
+        hour = self.hour
+        if hour > 12:
+            meridian = 'pm'
+            hour = hour - 12
+        # exceptions:
+        if hour == 12:
+            meridian = 'pm'
+        if hour == 0:
+            hour = 12
+        return "%s:%s%s" % (hour, min_slot, meridian)
 
     def __init__(self, *args, **kw):
         key_name = "%d:%d:%d" % (kw['dow'], kw['hour'], kw['slot']) 
