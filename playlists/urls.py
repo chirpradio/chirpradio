@@ -20,10 +20,10 @@
 from django.conf import settings
 from django.conf.urls.defaults import patterns, url
 
-urlpatterns = patterns(
-    '',
-    url(r'^event$', 'playlists.views.add_event', name="playlists_add_event"),
-    url(r'^event/([^/]+)/delete$', 'playlists.views.delete_event', 
-                                                name="playlists_delete_event"),
-    url(r'^/?$', 'playlists.views.landing_page', name="playlists_landing_page"),
+urlpatterns = patterns('playlists.views',
+    url(r'^create_event$', 'create_event', name="playlists_add_event"),
+    url(r'^delete_event/([^/]+)$', 'delete_event', name="playlists_delete_event"),
+    url(r'^task_create$', 'task_create'),
+    url(r'^task_delete$', 'task_delete'),
+    url(r'^/?$', 'landing_page', name="playlists_landing_page"),
 )
