@@ -54,6 +54,19 @@ indexes:
 
 - kind: SpotConstraint
   properties:
+  - name: dow
+  - name: hour
+  - name: hour
+  - name: slot
+
+- kind: SpotConstraint
+  properties:
+  - name: dow
+  - name: hour
+  - name: slot
+
+- kind: SpotConstraint
+  properties:
   - name: spots
   - name: dow
   - name: hour

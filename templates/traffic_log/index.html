@@ -9,17 +9,35 @@ Traffic Log for "DATE"
 {% block nav %}
 {{ block.super }}
 <br/>
-<a href="#">Jump to Current Hour</a>
+
+<input type="button" value="Refresh spots" />
+
 {% endblock %}
 {% block contents %}
 <p/>
 
-<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
-<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
-<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
-<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
-<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
-<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
-<input type="checkbox" name="readtime" value="readtime"> - Hour:Slot - Spot Type - Spot Title <br/>
+<table>
+<tr>
+    <th>Time slot</th>
+    <th>Spot</th>
+    <th>Actions</th>
+</tr>
+{% for slotted_spot in slotted_spots %}
+<tr>
+    <td><b>{{ slotted_spot.readable_slot_time }}</b></td>
+    {# hmmm, I think there won't ever be multiple spots even though this is a list (kumar) #}
+    {% for spot in slotted_spot.iter_spots  %}
+    
+    <td>{{ spot.title }}</td>
+    <td>
+        <input type="button" value="Show text for reading" /> 
+        <input type="button" value="Done" /></td>
+    
+    {% endfor %}
+</tr>
 
+{# <input type="checkbox" name="readtime" value="readtime" /> #}
+{# Hour:Slot #}
+    
+{% endfor %}
 {% endblock %}

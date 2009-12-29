@@ -1,10 +1,21 @@
 
 <table width="100%" border="1" cellpadding="3" cellspacing="0">
   <tr align="center">
-	<td >{{ constraint_form.dow_list }}</td>
+	<td >
+	    {{ constraint_form.dow_list.errors }}
+	    {{ constraint_form.dow_list }}</td>
 	<td>
-	  {{ constraint_form.hourbucket }} <br/>or<br/> {{ constraint_form.hour }}
+	  {{ constraint_form.hourbucket.errors }}
+	  {{ constraint_form.hour.errors }}
+	  
+	  {{ constraint_form.hourbucket }} 
+	  <br/>or<br/> 
+	  {{ constraint_form.hour }}
+	
 	</td>
-	<td>{{ constraint_form.slot }}</td>
+	<td>
+	    {{ constraint_form.slot.errors }}
+	    {{ constraint_form.slot }}
+	</td>
   </tr>
 </table>
