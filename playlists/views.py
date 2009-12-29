@@ -188,12 +188,18 @@ def url_track_create(track=None):
 
     # TODO(selizondo): test against PHP URL
     url = _urls('create')
+    
+    def as_utf8_str(s):
+        if isinstance(s, unicode):
+            s = s.encode('utf8')
+        return s
+        
     form_data = urllib.urlencode({
-        'track_name': track.track_title,
-        'track_artist': track.artist_name,
-        'track_album': track.album_title,
-        'track_label': track.label,
-        'dj_name': track.selector.last_name,
+        'track_name': as_utf8_str(track.track_title),
+        'track_artist': as_utf8_str(track.artist_name),
+        'track_album': as_utf8_str(track.album_title),
+        'track_label': as_utf8_str(track.label),
+        'dj_name': as_utf8_str("%s %s" % (track.selector.first_name, track.selector.last_name)),
         'time_played': track.modified.strftime("%Y-%m-%d %H:%M:%S"),
         'playlist_track_id': str(track.key()),
     })
