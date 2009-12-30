@@ -1,6 +1,9 @@
 {% extends 'traffic_log/base.html' %}
 
-<html><head><script src='/media/traffic_log/js/trafficlog.js' %} type="text/javascript"></script></head>
+{% block extrahead_for_page %}
+<script src='/media/traffic_log/js/trafficlog.js' %} type="text/javascript"></script>
+{% endblock %}
+
 {% block title %}
 Traffic Log for "DATE"
 {% endblock %}
@@ -10,7 +13,7 @@ Traffic Log for "DATE"
 {{ block.super }}
 <br/>
 
-<input type="button" value="Refresh spots" />
+<input id="refresh-button" type="button" value="Refresh spots" />
 
 {% endblock %}
 {% block contents %}
