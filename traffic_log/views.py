@@ -49,6 +49,13 @@ def index(request):
         slotted_spots=slotted_spots
     ))
 
+@require_role(DJ)
+def spotTextForReading(request, spot_key=None):
+    spot = models.Spot.get(spot_key)
+    return render(request, 'traffic_log/spot_detail_for_reading.html', dict(
+        spot=spot
+    ))
+
 @require_role(TRAFFIC_LOG_ADMIN)
 def createSpot(request):
     user = auth.get_current_user(request)
