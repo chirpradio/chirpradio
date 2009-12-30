@@ -15,17 +15,10 @@
 ### limitations under the License.
 ###
 
-import os
-from common.models import DBConfig
+"""URLs for common app."""
 
+from django.conf.urls.defaults import patterns, url
 
-def in_dev():
-    """Returns true if we are running in the development environment."""
-    return os.environ.get('SERVER_SOFTWARE', 'Dev').startswith('Dev')
-
-
-def in_prod():
-    """Returns true if we are running in production."""
-    return not in_dev()
-
-dbconfig = DBConfig()
+urlpatterns = patterns('common.views',
+    url(r'^_init_config$', '_init_config'),
+)

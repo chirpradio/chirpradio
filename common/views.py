@@ -15,17 +15,16 @@
 ### limitations under the License.
 ###
 
-import os
-from common.models import DBConfig
+from django.http import HttpResponse, HttpResponseRedirect
+from common.models import Config
 
-
-def in_dev():
-    """Returns true if we are running in the development environment."""
-    return os.environ.get('SERVER_SOFTWARE', 'Dev').startswith('Dev')
-
-
-def in_prod():
-    """Returns true if we are running in production."""
-    return not in_dev()
-
-dbconfig = DBConfig()
+def _init_config(request):
+    q = Config.all()
+    if q.count(1) == 0:
+        c = Config()
+        c.varname = "dummy"
+        c.value = "you can safely delete this after creating new var/vals"
+        c.put()
+        return HttpResponse("Config initialized. You can now add new values in the Datastore admin.")
+    else:
+        return HttpResponse("Config does not need initialization")

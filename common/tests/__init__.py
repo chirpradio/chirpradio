@@ -1,0 +1,1 @@
+from common.tests.test_dbconfig import *
