@@ -18,17 +18,28 @@ def render(request, template, payload):
     template = loader.get_template(template)
     return HttpResponse(template.render(RequestContext(request, payload)))
 
+def add_hour(base_hour):
+    """Adds an hour to base_hour and ensures it's in range.
+    
+    Operates on 24 hour clock hours.
+    """
+    next_hour = base_hour + 1
+    if next_hour == 25:
+        next_hour = 0
+    return next_hour
+
 @require_role(DJ)
 def index(request):
     now = datetime.datetime.now()
     today = now.date()
     current_hour = now.hour
-    next_hour = current_hour + 1
-    if next_hour == 25:
-        next_hour = 0
+    hour_plus1 = add_hour(current_hour)
+    hour_plus2 = add_hour(hour_plus1)
+    hour_plus3 = add_hour(hour_plus2)
+    
     current_spots = (models.SpotConstraint.all()
                         .filter("dow =", today.isoweekday())
-                        .filter("hour IN", (current_hour, next_hour))
+                        .filter("hour IN", (current_hour, hour_plus1, hour_plus2, hour_plus3))
                         .order("hour")
                         .order("slot"))
     
@@ -36,6 +47,13 @@ def index(request):
     return render(request, 'traffic_log/index.html', dict(
         date=today,
         slotted_spots=slotted_spots
+    ))
+
+@require_role(DJ)
+def spotTextForReading(request, spot_key=None):
+    spot = models.Spot.get(spot_key)
+    return render(request, 'traffic_log/spot_detail_for_reading.html', dict(
+        spot=spot
     ))
 
 @require_role(TRAFFIC_LOG_ADMIN)

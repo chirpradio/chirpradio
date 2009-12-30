@@ -1,0 +1,18 @@
+
+.spot_detail_for_reading {
+    width: 750px;
+    padding: 0.3em;
+    font-size: 4em;
+    line-height: 1.1em;
+}
+
+#facebox .body {
+    width: 750px;
+}
+
+/*#facebox table {
+    width: 600px;
+}*/
+/*#facebox .content {
+    width: 75%;
+}*/

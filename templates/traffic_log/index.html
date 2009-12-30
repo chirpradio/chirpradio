@@ -1,8 +1,14 @@
 {% extends 'traffic_log/base.html' %}
 
-<html><head><script src='/media/traffic_log/js/trafficlog.js' %} type="text/javascript"></script></head>
+{% block extrahead_for_page %}
+<link rel="stylesheet" type="text/css" href="/media/common/js/jquery-facebox/facebox.css" media="screen" />
+<script type="text/javascript" src="/media/common/js/jquery-facebox/facebox.js"></script>
+<link rel="stylesheet" type="text/css" href="/media/traffic_log/css/trafficlog.css" media="screen" />
+<script type="text/javascript" src="/media/traffic_log/js/trafficlog.js"></script>
+{% endblock %}
+
 {% block title %}
-Traffic Log for "DATE"
+Traffic Log Spots
 {% endblock %}
 
 
@@ -10,7 +16,7 @@ Traffic Log for "DATE"
 {{ block.super }}
 <br/>
 
-<input type="button" value="Refresh spots" />
+<input id="refresh-button" type="button" value="Refresh time slots" />
 
 {% endblock %}
 {% block contents %}
@@ -30,8 +36,11 @@ Traffic Log for "DATE"
     
     <td>{{ spot.title }}</td>
     <td>
-        <input type="button" value="Show text for reading" /> 
-        <input type="button" value="Done" /></td>
+        <input class="show-text-for-reading" id="spot-read__{{ spot.key }}" type="button" 
+            value="Show text for reading" /> 
+        <input class="done-with-spot-from-main-view" id="spot-done__{{ spot.key }}" type="button" 
+            value="Done" />
+    </td>
     
     {% endfor %}
 </tr>
