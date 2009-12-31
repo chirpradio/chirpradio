@@ -43,6 +43,56 @@ URLs for PHP test server
 CHIRPAPI_USERNAME = dbconfig.get('chirpapi.username', 'chirpapi')
 CHIRPAPI_PASSWORD = dbconfig.get('chirpapi.password', 'chirpapi')
 
+class PlaylistEventListener(object):
+    """Listens to creations or deletions of playlist entries."""
+    
+    def create(self, track):
+        """This instance of PlaylistEvent was created."""
+        raise NotImplementedError
+    
+    def delete(self, track_key):
+        """The key of this PlaylistEvent was deleted."""
+        raise NotImplementedError
+
+class LiveSiteListener(PlaylistEventListener):
+    """Sends playlist events to the live CHIRP site (a Textpattern PHP site)."""
+    
+    def create(self, track):
+        """This instance of PlaylistEvent was created."""
+        url_track_create(track)
+    
+    def delete(self, track_key):
+        """The key of this PlaylistEvent was deleted."""
+        url_track_delete(track_key)
+
+class Live365Listener(PlaylistEventListener):
+    """Sends playlist events as metadata to the Live 365 player."""
+    
+    def create(self, track):
+        """This instance of PlaylistEvent was created."""
+        pass
+    
+    def delete(self, track_key):
+        """The key of this PlaylistEvent was deleted."""
+        pass
+    
+class PlaylistEventDispatcher(object):
+    
+    def __init__(self, listeners):
+        self.listeners = listeners
+    
+    def create(self, *args, **kw):
+        for listener in self.listeners:
+            listener.create(*args, **kw)
+    
+    def delete(self, *args, **kw):
+        for listener in self.listeners:
+            listener.delete(*args, **kw)
+
+playlist_event_listeners = PlaylistEventDispatcher([
+    LiveSiteListener(),
+    Live365Listener()
+])
 
 def _urls(type='create'):
     urls = {
@@ -60,13 +110,13 @@ def url_track_create(track):
     if in_dev():
         _url_track_create(track)
     else:
-        taskqueue.add(url='/playlists/task_create', params={'id':str(track.key())})
+        taskqueue.add(url='/playlists/task/send_track_to_live_site', params={'id':str(track.key())})
 
 def url_track_delete(key):
     if in_dev():
         _url_track_delete(key)
     else:
-        taskqueue.add(url='/playlists/task_delete', params={'id':key})
+        taskqueue.add(url='/playlists/task/delete_track_from_live_site', params={'id':key})
 
 
 
@@ -165,35 +215,9 @@ def _auth_handler(username, password, auth_type=None, auth_url=None):
 
 """Thin wrapper for taskqueue actions mapped in playlists/urls.py
 """
-def _get_track(key):
-    return PlaylistEvent.get(key)
 
-def task_create(request):
-    _url_track_create(_get_track(request.POST['id']))
+def send_to_live_site(request):
+    _url_track_create(PlaylistEvent.get(request.POST['id']))
 
-def task_delete(request):
+def delete_from_live_site(request):
     _url_track_delete(request.POST['id'])
-
-
-"""WSGI Application  mapped in app.yaml
-Since want to restrict access to appengine tasks need to set a handler
-in app.yaml with 'login: admin' and script app handler tasks.py
-taskqueue urls only use HTTP POST and have to be manually excuted
-check admin console at http://HOST:PORT/_ah/admin/tasks?queue=default
-"""
-class TaskCreateHandler(webapp.RequestHandler):
-    def post(self):
-        _url_track_create(_get_track(self.request.get('id')))
-
-class TaskDeleteHandler(webapp.RequestHandler):
-    def post(self):
-        _url_track_delete(self.request.get('id'))
-
-def main():
-    wsgiref.handlers.CGIHandler().run(webapp.WSGIApplication([
-        ('/playlists/task_create', TaskCreateHandler),
-        ('/playlists/task_delete', TaskDeleteHandler),
-    ]))
-
-if __name__ == '__main__':
-    main()

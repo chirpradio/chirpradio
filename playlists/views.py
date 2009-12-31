@@ -30,7 +30,7 @@ import auth
 from auth import roles
 from playlists.forms import PlaylistTrackForm
 from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast
-from playlists.tasks import url_track_create, url_track_delete
+from playlists.tasks import playlist_event_listeners
 
 
 common_context = {
@@ -122,7 +122,7 @@ def create_event(request):
 
         if vars['form'].is_valid():
             track = vars['form'].save()
-            url_track_create(track)
+            playlist_event_listeners.create(track)
             return HttpResponseRedirect(reverse('playlists_landing_page'))
 
     return render_to_response('playlists/landing_page.html', vars)
@@ -138,6 +138,6 @@ def delete_event(request, event_key):
     else:
         if e and e.selector.key() == auth.get_current_user(request).key():
             e.delete()
-            url_track_delete(event_key)
+            playlist_event_listeners.delete(event_key)
 
     return HttpResponseRedirect(reverse('playlists_landing_page'))
