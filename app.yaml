@@ -17,6 +17,12 @@ handlers:
   static_dir: media
   expiration: 2h
 
+# restrict public access to production url with login: admin option
+- url: /playlists/task.*
+  script: playlists/tasks.py
+  # comment if in dev mode
+  #login: admin
+
 # For everything else, we always want to use HTTPS.
 - url: /.*
   secure: always

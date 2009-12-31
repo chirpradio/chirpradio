@@ -21,20 +21,16 @@ from datetime import datetime, timedelta
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
-from django.template import loader, Context, RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
 
 from google.appengine.api.datastore_errors import BadKeyError
-from google.appengine.ext import deferred
-from google.appengine.api.labs import taskqueue
 
 from auth.decorators import require_role
 import auth
 from auth import roles
-from common import in_dev
 from playlists.forms import PlaylistTrackForm
 from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast
-
+from playlists.tasks import url_track_create, url_track_delete
 
 
 common_context = {
@@ -126,10 +122,7 @@ def create_event(request):
 
         if vars['form'].is_valid():
             track = vars['form'].save()
-            if in_dev():
-                url_track_create(track)
-            else:
-                taskqueue.add(url='/playlists/task_create', params={'id':str(track.key())})
+            url_track_create(track)
             return HttpResponseRedirect(reverse('playlists_landing_page'))
 
     return render_to_response('playlists/landing_page.html', vars)
@@ -141,143 +134,8 @@ def delete_event(request, event_key):
         e = PlaylistEvent.get(event_key)
         if e and e.selector.key() == auth.get_current_user(request).key():
             e.delete()
-            if in_dev():
-                url_track_delete(event_key)
-            else:
-                taskqueue.add(url='/playlists/task_delete', params={'id':event_key})
+            url_track_delete(event_key)
     except BadKeyError:
         pass
+
     return HttpResponseRedirect(reverse('playlists_landing_page'))
-
-
-"""
-
-Publish Track being played to remote PHP server
-
-URLs for PHP test server
-
-    # status of last track published
-    curl --digest -u chirpapi:chirpapi -v -X GET http://geoff.terrorware.com/hacks/chirpapi/playlist/current
-
-    # create/publish track
-    curl --digest -u chirpapi:chirpapi -v -X POST http://geoff.terrorware.com/hacks/chirpapi/playlist/create
-         -d "track_name=s&track_label=l&track_artist=a&track_album=r&dj_name=d&time_played=2009-12-20 14:37&track_id=agpjaGlycHJhZGlvchMLEg1QbGF5bGlzdEV2ZW50GB0M"
-
-    # delete previously published track using track_id from create
-    curl --digest -u chirpapi:chirpapi -v -X DELETE http://geoff.terrorware.com/hacks/chirpapi/playlist/delete/agpjaGlycHJhZGlvchMLEg1QbGF5bGlzdEV2ZW50GB0M"
-"""
-import urllib
-from google.appengine.api import urlfetch
-
-def _urls(type='create'):
-    urls = {
-        #'create':'http://192.168.58.128:8101/api/track/',
-        #'delete':'http://192.168.58.128:8101/api/track/'
-        'create':'http://geoff.terrorware.com/hacks/chirpapi/playlist/create',
-        'delete':'http://geoff.terrorware.com/hacks/chirpapi/playlist/delete'
-    }
-    return urls[type]
-
-
-""" TODO(selizondo): secure urls for taskqueue tasks
-"""
-
-"""Thin wrapper for taskqueue
-"""
-def task_create(request):
-    try:
-        track = PlaylistEvent.get(request.POST['id'])
-        url_track_create(track)
-    except:
-        pass
-
-def url_track_create(track=None):
-    if track is None:
-        return
-
-    def as_utf8_str(s):
-        if isinstance(s, unicode):
-            s = s.encode('utf8')
-        return s
-
-    data = urllib.urlencode({
-        'track_name': as_utf8_str(track.track_title),
-        'track_artist': as_utf8_str(track.artist_name),
-        'track_album': as_utf8_str(track.album_title),
-        'track_label': as_utf8_str(track.label),
-        'dj_name': as_utf8_str("%s %s" % (track.selector.first_name, track.selector.last_name)),
-        'time_played': track.modified.strftime("%Y-%m-%d %H:%M:%S"),
-        'track_id': str(track.key()),
-    })
-    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "application/json"}
-
-    #
-    url_digest = _urls('create')
-    #d = _fetch_url(url_digest, data, 'POST', headers)
-    d = _fetch_url(url_digest, data, 'POST', headers, 'digest', url_digest)
-    #logging.info(d)
-
-"""Thin wrapper for taskqueue
-"""
-def task_delete(request):
-    url_track_delete(request.POST['id'])
-
-def url_track_delete(id):
-    if not id:
-        return
-    #
-    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "application/json"}
-
-    #
-    url_digest = _urls('delete')
-    #d = _fetch_url(url_digest + str(id), data, 'DELETE', headers)
-    d = _fetch_url(url_digest + "/" + str(id), {}, 'DELETE', headers, 'digest', url_digest)
-    #logging.info(d)
-
-
-"""urllib2.Request only supports GET|POST, extend it to support any HTTP method type
-"""
-import urllib2
-
-class AnyRequest(urllib2.Request):
-  def get_method(self):
-    if hasattr(self, 'http_method'):
-      return getattr(self, 'http_method')
-    else:
-      return urllib2.Request.get_method(self)
-
-# TODO(selizondo): move user/passwd outside public codebase
-CHIRPAPI_USERNAME = 'chirpapi'
-CHIRPAPI_PASSWORD = 'chirpapi'
-
-def _fetch_url(url=None, data=None, method='GET', headers=None, auth_type=None, auth_url=None):
-
-    # init auth hander if using http authentication
-    if auth_type and auth_type in ('basic','digest'):
-        _auth_handler(CHIRPAPI_USERNAME, CHIRPAPI_PASSWORD, auth_type, auth_url)
-
-    try:
-        # request
-        req = AnyRequest(url, data, headers)
-        req.http_method = method
-
-        # response
-        res = urllib2.urlopen(req)
-        return {'code': res.code, 'content': res.read()}
-    except IOError, e:
-        logging.info(e)
-        pass
-
-    return {}
-
-def _auth_handler(username, password, auth_type=None, auth_url=None):
-  password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-  password_mgr.add_password(None, auth_url, username, password)
-
-  if auth_type == 'digest':
-    handler = urllib2.HTTPDigestAuthHandler(password_mgr)
-  else:
-    handler = urllib2.HTTPBasicAuthHandler(password_mgr)
-
-  opener = urllib2.build_opener(handler)
-  urllib2.install_opener(opener)
