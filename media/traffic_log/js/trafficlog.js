@@ -41,7 +41,7 @@ $(document).ready(function() {
         <table> \
           <tbody> \
             <tr> \
-              <td class="tl"/><td class="b"/><td class="tr"/> \
+              <td class="tl"/><td class="b tb"/><td class="tr"/> \
             </tr> \
             <tr> \
               <td class="b"/> \

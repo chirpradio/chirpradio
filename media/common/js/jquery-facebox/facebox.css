@@ -2,6 +2,11 @@
   background:url(b.png);
 }
 
+#facebox .tb {
+    height: 10px;
+    border: 0;
+}
+
 #facebox .tl {
   background:url(tl.png);
 }
@@ -40,6 +45,7 @@
   margin: 0;
   /* we can't let border cells grow past 10px */
   font-size: 8px;
+  line-height: 8px;
 }
 
 #facebox .body {

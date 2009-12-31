@@ -127,6 +127,7 @@ def deleteSpot(request, spot_key=None):
     return HttpResponseRedirect('/traffic_log/spot')
 
 
+@require_role(DJ)
 def spotDetail(request, spot_key=None):
     spot = models.Spot.get(spot_key)
     constraints = [forms.SpotConstraintForm(instance=x) for x in spot.constraints]
@@ -140,6 +141,7 @@ def spotDetail(request, spot_key=None):
                   )
 
 
+@require_role(DJ)
 def listSpots(request):
     spots = models.Spot.all().order('-created').fetch(20)
     return render(request, 'traffic_log/spot_list.html', {'spots':spots})
