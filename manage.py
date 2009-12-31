@@ -35,4 +35,19 @@ except ImportError:
 
 
 if __name__ == "__main__":
+    
+    # chirp: hack to enable testlib.
+    # TODO(kumar) switch to Nose for testing and make this a Nose plugin
+    import sys
+    import os
+    if 'test' in sys.argv:
+        testlib = os.path.join(os.path.dirname(__file__), 'testlib')
+        if not os.path.exists(testlib):
+            raise EnvironmentError("Expected lib dir to exist: %r" % testlib)
+        pkg_paths = [os.path.join(testlib, p) for p in os.listdir(testlib) if p.endswith('.zip')]
+        for path in pkg_paths:
+            mod = os.path.splitext(os.path.basename(path))[0]
+            # e.g. /path/to/fudge-0.9.4.zip/fudge-0.9.4
+            sys.path.append(os.path.join(path, mod))
+    
     execute_manager(settings)

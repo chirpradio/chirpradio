@@ -80,16 +80,24 @@ def _url_track_create(track=None):
         if isinstance(s, unicode):
             s = s.encode('utf8')
         return s
-
-    data = urllib.urlencode({
+    
+    qs = {
         'track_name': as_utf8_str(track.track_title),
         'track_artist': as_utf8_str(track.artist_name),
-        'track_album': as_utf8_str(track.album_title),
-        'track_label': as_utf8_str(track.label),
         'dj_name': as_utf8_str("%s %s" % (track.selector.first_name, track.selector.last_name)),
         'time_played': track.modified.strftime("%Y-%m-%d %H:%M:%S"),
         'track_id': str(track.key()),
-    })
+    }
+    # optional:
+    if track.album_title:
+        qs['track_album'] = as_utf8_str(track.album_title)
+    if track.label:
+        qs['track_label'] = as_utf8_str(track.label)
+    # TODO(kumar) waiting until API supports this:
+    # if track.notes:
+    #     qs['track_notes'] = as_utf8_str(track.notes)
+
+    data = urllib.urlencode(qs)
     headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "application/json"}
 
     #
@@ -136,7 +144,7 @@ def _fetch_url(url=None, data=None, method='GET', headers=None, auth_type=None, 
         d = {'code': res.code, 'content': res.read()}
         logging.info(d)
         return d
-    except IOError, e:
+    except Exception, e:
         logging.error(e)
         pass
 
@@ -158,11 +166,7 @@ def _auth_handler(username, password, auth_type=None, auth_url=None):
 """Thin wrapper for taskqueue actions mapped in playlists/urls.py
 """
 def _get_track(key):
-    try:
-        return PlaylistEvent.get(key)
-    except:
-        logging.error("PlaylistEvent Not Found: %s" % (key))
-    return None
+    return PlaylistEvent.get(key)
 
 def task_create(request):
     _url_track_create(_get_track(request.POST['id']))

@@ -130,12 +130,14 @@ def create_event(request):
 
 @require_role(roles.DJ)
 def delete_event(request, event_key):
+    e = None
     try:
         e = PlaylistEvent.get(event_key)
+    except BadKeyError:
+        pass
+    else:
         if e and e.selector.key() == auth.get_current_user(request).key():
             e.delete()
             url_track_delete(event_key)
-    except BadKeyError:
-        pass
 
     return HttpResponseRedirect(reverse('playlists_landing_page'))
