@@ -69,11 +69,47 @@ class Live365Listener(PlaylistEventListener):
     """Sends playlist events as metadata to the Live 365 player."""
     
     def create(self, track):
-        """This instance of PlaylistEvent was created."""
-        pass
+        """This instance of PlaylistEvent was created.
+        
+        POST parameters and their meaning
+        
+        **member_name**
+        Live365 member name
+        
+        **password**
+        Live365 password
+        
+        **sessionid**
+        Unused.  This is an alternative to user password and looks like
+        membername:sessionkey as returned by api_login.cgi
+        
+        **version**
+        Version of API request.  Currently this must be 2
+        
+        **filename**
+        I think we can leave this blank because Live365 docs say they 
+        will use it to guess song and artist info if none was sent.
+        
+        **seconds**
+        Length of the track in seconds.  Live365 uses this to refresh its 
+        popup player window thing.  So really we should probably set this to 60 or 120 
+        because DJs might be submitting playlist entries out of sync with when 
+        they are actually playing the songs.
+        
+        **title**
+        Song title
+        
+        **album**
+        Album title
+        """
+        # in prod: http://www.live365.com/cgi-bin/add_song.cgi
+        service_url = dbconfig['live365.service_url']
     
     def delete(self, track_key):
-        """The key of this PlaylistEvent was deleted."""
+        """The key of this PlaylistEvent was deleted.
+        
+        I don't think this can be implemented for Live365
+        """
         pass
     
 class PlaylistEventDispatcher(object):

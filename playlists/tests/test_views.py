@@ -49,6 +49,7 @@ class PlaylistViewsTest(TestCase):
         self.client.login(email="test@test.com", roles=[roles.DJ])
         dbconfig['chirpapi.url.create'] = 'http://testapi/playlist/create'
         dbconfig['chirpapi.url.delete'] = 'http://testapi/playlist/delete'
+        dbconfig['live365.service_url'] = 'http://__dummylive365service__/cgi-bin/add_song.cgi'
     
     def tearDown(self):
         for pl in Playlist.all():
