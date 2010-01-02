@@ -13,7 +13,7 @@ def main():
     
     cursor = connection.cursor()
     
-    cursor.execute("select * from auth_user where is_active=0")
+    cursor.execute("select * from auth_user where is_active=1")
     
     users = cursor.fetchall()
     
@@ -24,18 +24,19 @@ def main():
      
     ## To model:
     #    email:4,first_name:2,last_name:3,password,is_active:7,is_superuser:8
-    #    last_login:9,date_joined:10,roles
+    #    last_login:9 (ignored) ,date_joined:10,roles
     
-    writer = csv.writer(open('users.csv', 'w'))
+    users_file = open('users.csv', 'w')
+    writer = csv.writer(users_file)
     for user in users:
         email = user[4]
-        if not email:
-            email = user[2] + "." + user[3] + '@changme.com'
-        writer.writerow([email,user[2],user[3], '', user[7],user[8],user[9].split('.')[0],user[10].split('.')[0], 'dj'])
+        # empty password so that reset is forced after import:
+        writer.writerow([email,user[2],user[3], '', user[7],user[8],user[10].split('.')[0], 'dj'])
     
     cursor.close()
     connection.close()
-    
+    print "Wrote %s" % users_file.name
+    users_file.close()
     
 if __name__ == '__main__':
     main()    
