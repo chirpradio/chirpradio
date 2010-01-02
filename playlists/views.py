@@ -89,7 +89,7 @@ def get_vars(request):
 
     vars = {
         'form': form,
-        'current_user': current_user,
+        'user': current_user,
         'playlist': form.playlist
     }
     vars.update(common_context)
