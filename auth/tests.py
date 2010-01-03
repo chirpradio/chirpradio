@@ -25,6 +25,7 @@ from django.test.client import Client
 from google.appengine.api import users as google_users
 from django.test import TestCase as DjangoTestCase
 
+from common.testutil import FormTestCaseHelper
 import auth
 from auth import forms as auth_forms
 from auth import roles
@@ -400,16 +401,12 @@ class FormsTestCase(unittest.TestCase):
                 'confirm_new_password': 'foo'})
         self.assertTrue(form.is_valid())
 
-class UserViewsTestCase(DjangoTestCase):
+class UserViewsTestCase(FormTestCaseHelper, DjangoTestCase):
     
     def setUp(self):
         for u in User.all().fetch(1000):
             u.delete()
         self.client.login(email="test@test.com", roles=[roles.VOLUNTEER_COORDINATOR])
-
-    def assertNoFormErrors(self, response):
-        if response.context and response.context[0].get('form'):
-            self.assertEquals(response.context[0]['form'].errors.as_text(), "")
 
     def test_email_is_case_insensitive_on_creation(self):
         resp = self.client.post('/auth/add_user/', {
