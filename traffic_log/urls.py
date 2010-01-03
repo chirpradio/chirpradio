@@ -4,7 +4,7 @@ from traffic_log.models import *
 from django.views.generic import *
 
 urlpatterns = patterns('',
-    (r'^/?$', 'traffic_log.views.index'),
+    url(r'^/?$', 'traffic_log.views.index', name='trafficlog.index'),
     (r'^spot/?$','traffic_log.views.listSpots'),
     (r'^spot/create/?$', 'traffic_log.views.createSpot'),
     (r'^spot/text-for-reading/(?P<spot_key>[^\./]+)$', 'traffic_log.views.spotTextForReading'),

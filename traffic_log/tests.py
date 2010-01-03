@@ -17,15 +17,51 @@
 import os
 import time
 import unittest
+import datetime
 
+from django.core.urlresolvers import reverse
+from django.test import TestCase as DjangoTestCase
 from django import http
 from django.test.client import Client
 
+from common import time_util
 from auth import roles
 from auth.models import User
 from traffic_log import views, models, constants
 
+class TestTrafficLogViews(DjangoTestCase):
+    
+    def setUp(self):
+        self.client.login(email="test@test.com", roles=[roles.DJ])
+    
+    def test_landing_page_shows_spots(self):
+        user = User(email='test')
+        user.save()
+        spot_key = models.Spot(
+                        title='Legal ID',
+                        body='You are listening to chirpradio.org',
+                        type='Station ID', 
+                        author=user).put()
+        # assign it to every day of the week at the top of the hour:
+        constraint_keys = views.saveConstraint(dict(hourbucket="0,24", dow_list=range(1,8), slot=0))
+        views.connectConstraintsAndSpot(constraint_keys, spot_key)
+        
+        resp = self.client.get(reverse('trafficlog.index'))
+        context = resp.context[0]
+        spot_map = {}
+        for s in context['slotted_spots']:
+            spot_map[s.hour] = list(s.iter_spots())[0].body
+        
+        now = time_util.chicago_now()
+        
+        self.assertEqual(spot_map[now.hour], 'You are listening to chirpradio.org')
+        self.assertEqual(spot_map[(now + datetime.timedelta(hours=1)).hour], 
+                'You are listening to chirpradio.org')
+        self.assertEqual(spot_map[(now + datetime.timedelta(hours=2)).hour], 
+                'You are listening to chirpradio.org')
+
 class TrafficLogTestCase(unittest.TestCase):
+    
     def setUp(self):
         self.admin_u = User(email='test')
         self.admin_u.roles.append(roles.TRAFFIC_LOG_ADMIN)

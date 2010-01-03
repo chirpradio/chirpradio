@@ -157,7 +157,7 @@ def saveConstraint(constraint):
     
     keys = []
     if constraint['hourbucket'] != "":
-        ## fixme: kumar thinks this is not such a good idea.  
+        ## TODO(Kumar) I don't think this is such a good idea.  
         ## use split(",") and int() instead.
         hours = range(*eval(constraint['hourbucket']))
     else:
