@@ -1,12 +1,15 @@
+
+import sys
+import random
+import datetime
+
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils import simplejson
-import sys
-import random
-import datetime
 
+from common import time_util
 import auth
 from auth.models import User
 from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
@@ -25,7 +28,7 @@ def add_hour(base_hour):
 
 @require_role(DJ)
 def index(request):
-    now = datetime.datetime.now()
+    now = time_util.chicago_now()
     today = now.date()
     current_hour = now.hour
     hour_plus1 = add_hour(current_hour)
@@ -201,7 +204,7 @@ def generateTrafficLogEntriesForDay(request, date=None):
 
 
 def generateTrafficLogEntriesForHour(request, datetime=None, hour=None):
-    now = datetime if datetime else datetime.datetime.now()
+    now = datetime if datetime else chicago_now()
     hour = hour if hour else now.hour
     log_for_hour = []
     for slot in constants.SLOT:
