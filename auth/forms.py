@@ -27,6 +27,7 @@ class LoginForm(forms.Form):
     password = forms.CharField(required=True, widget=PasswordInput)
     
     def clean_email(self):
+        self.cleaned_data['email'] = self.cleaned_data['email'].lower()
         self.user = User.get_by_email(self.cleaned_data['email'])
         if self.user is None:
             raise forms.ValidationError('Unknown email address')
@@ -70,6 +71,7 @@ class ForgotPasswordForm(forms.Form):
     user = None
 
     def clean_email(self):
+        self.cleaned_data['email'] = self.cleaned_data['email'].lower()
         self.user = User.get_by_email(self.cleaned_data['email'])
         if self.user is None:
             raise forms.ValidationError('Unknown email address')
@@ -102,7 +104,7 @@ class UserForm(forms.Form):
         if (email != self.cleaned_data.get('original_email')
             and User.get_by_email(email) is not None):
             raise forms.ValidationError('Email address already in use')
-        return email
+        return email.lower()
 
     def clean_first_name(self):
         # Remove leading and trailing whitespace.

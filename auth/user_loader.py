@@ -25,7 +25,7 @@ from auth import models
 class UserLoader(bulkloader.Loader):
     def __init__(self):
         bulkloader.Loader.__init__(self, 'User',
-                                   [('email', datastore_types.Email),
+                                   [('email', lambda e: datastore_types.Email(e.lower())),
                                     ('first_name', str),
                                     ('last_name', str),
                                     ('password', str),

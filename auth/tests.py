@@ -23,6 +23,7 @@ import unittest
 from django import http
 from django.test.client import Client
 from google.appengine.api import users as google_users
+from django.test import TestCase as DjangoTestCase
 
 import auth
 from auth import forms as auth_forms
@@ -269,6 +270,10 @@ class AuthTestCase(unittest.TestCase):
         
 class FormsTestCase(unittest.TestCase):
     
+    def setUp(self):
+        for u in User.all().fetch(1000):
+            u.delete()
+    
     def test_unknown_user_by_email(self):
         form = auth_forms.LoginForm({
             'redirect': '/', 
@@ -310,6 +315,19 @@ class FormsTestCase(unittest.TestCase):
                                      'email': 'no_such_user@test.com',
                                      'password': 'password'})
         self.assertFalse(form.is_valid())
+
+    def test_login_with_case_insensitive_email(self):
+        # Set up a test user.
+        email = 'test_login_form_email@test.com'
+        user = User(email=email)
+        user.set_password('password')
+        user.save()
+        
+        # This should succeed.
+        form = auth_forms.LoginForm({'redirect': '/',
+                                     'email': 'TEST_LOGIN_FORM_EMAIL@TEST.COM',
+                                     'password': 'password'})
+        self.assertTrue(form.is_valid())
         
     def test_change_password_form(self):
         # Set up a test user
@@ -360,6 +378,15 @@ class FormsTestCase(unittest.TestCase):
         self.assertFalse(form.is_valid())
         self.assertEqual(None, form.user)
 
+    def test_forgot_password_form_case_insensitive_email(self):
+        # Set up a test user
+        user = User(email='test_forgot_password_form_email@test.com')
+        user.set_password('password')
+        user.save()
+        
+        form = auth_forms.ForgotPasswordForm({'email': 'TEST_FORGOT_PASSWORD_FORM_EMAIL@TEST.COM'})
+        self.assertTrue(form.is_valid())
+
     def test_reset_password_form(self):
         # The form should validate only if both passwords are identical.
         form = auth_forms.ResetPasswordForm({
@@ -373,6 +400,28 @@ class FormsTestCase(unittest.TestCase):
                 'confirm_new_password': 'foo'})
         self.assertTrue(form.is_valid())
 
+class UserViewsTestCase(DjangoTestCase):
+    
+    def setUp(self):
+        for u in User.all().fetch(1000):
+            u.delete()
+        self.client.login(email="test@test.com", roles=[roles.VOLUNTEER_COORDINATOR])
+
+    def assertNoFormErrors(self, response):
+        if response.context and response.context[0].get('form'):
+            self.assertEquals(response.context[0]['form'].errors.as_text(), "")
+
+    def test_email_is_case_insensitive_on_creation(self):
+        resp = self.client.post('/auth/add_user/', {
+            'email': 'FancyPants@glitterCLUB.com',
+            'first_name': 'Steve',
+            'last_name': 'Dolfin'
+        })
+        self.assertNoFormErrors(resp)
+        
+        u = User.all().filter('last_name =', 'Dolfin').fetch(1)[0]
+        self.assertEqual(u.email, 'fancypants@glitterclub.com')
+        
     def test_user_edit_form(self):
         # TODO: Add some tests here!
         pass
