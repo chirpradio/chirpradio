@@ -1,7 +1,7 @@
 from django.http import HttpResponse, HttpResponseRedirect
-#from django.shortcuts import render_to_response
 from django.conf import settings
-from django.template import Context, RequestContext, loader
+from django.shortcuts import render_to_response, get_object_or_404
+from django.template import RequestContext
 from django.utils import simplejson
 import sys
 import random
@@ -12,11 +12,6 @@ from auth.models import User
 from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
 from auth.decorators import require_role
 from traffic_log import models, forms, constants
-
-
-def render(request, template, payload):
-    template = loader.get_template(template)
-    return HttpResponse(template.render(RequestContext(request, payload)))
 
 def add_hour(base_hour):
     """Adds an hour to base_hour and ensures it's in range.
@@ -44,17 +39,19 @@ def index(request):
                         .order("slot"))
     
     slotted_spots = [s for s in current_spots.fetch(10)] # ten possible slots per hour
-    return render(request, 'traffic_log/index.html', dict(
-        date=today,
-        slotted_spots=slotted_spots
-    ))
+    
+    return render_to_response('traffic_log/index.html', dict(
+            date=today,
+            slotted_spots=slotted_spots
+        ), context_instance=RequestContext(request))
 
 @require_role(DJ)
 def spotTextForReading(request, spot_key=None):
     spot = models.Spot.get(spot_key)
-    return render(request, 'traffic_log/spot_detail_for_reading.html', dict(
-        spot=spot
-    ))
+    
+    return render_to_response('traffic_log/spot_detail_for_reading.html', dict(
+            spot=spot
+        ), context_instance=RequestContext(request))
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def createSpot(request):
@@ -77,13 +74,12 @@ def createSpot(request):
     if all_clear:
         return HttpResponseRedirect('/traffic_log/spot/%s'%spot.key())          
 
-    return render(request, 'traffic_log/create_edit_spot.html', 
+    return render_to_response('traffic_log/create_edit_spot.html', 
                   dict(spot=spot_form,
                        constraint_form=constraint_form,
                        Author=user,
                        formaction="/traffic_log/spot/create/"
-                       )
-                  )
+                       ), context_instance=RequestContext(request))
 
 
 @require_role(TRAFFIC_LOG_ADMIN)
@@ -107,9 +103,8 @@ def editSpot(request, spot_key=None):
                 )
             
         return HttpResponseRedirect('/traffic_log/spot/%s'%spot.key())
-    
     else:
-        return render(request, 'traffic_log/create_edit_spot.html', 
+        return render_to_response('traffic_log/create_edit_spot.html', 
                       dict(spot=forms.SpotForm(instance=spot),
                            spot_key=spot_key,
                            constraints=spot.constraints,
@@ -117,8 +112,7 @@ def editSpot(request, spot_key=None):
                            edit=True,
                            dow_dict=constants.DOW_DICT,
                            formaction="/traffic_log/spot/edit/%s"%spot.key()
-                           )
-                      )
+                           ), context_instance=RequestContext(request))
 
 
 @require_role(TRAFFIC_LOG_ADMIN)
@@ -132,19 +126,19 @@ def spotDetail(request, spot_key=None):
     spot = models.Spot.get(spot_key)
     constraints = [forms.SpotConstraintForm(instance=x) for x in spot.constraints]
     form = forms.SpotForm(instance=spot)
-    return render(request, 'traffic_log/spot_detail.html',
-                  {
-                    'spot':spot,
-                    'constraints':constraints,
-                    'dow_dict':constants.DOW_DICT
-                    }
-                  )
+    return render_to_response('traffic_log/spot_detail.html', {
+            'spot':spot,
+            'constraints':constraints,
+            'dow_dict':constants.DOW_DICT
+        }, context_instance=RequestContext(request))
 
 
 @require_role(DJ)
 def listSpots(request):
     spots = models.Spot.all().order('-created').fetch(20)
-    return render(request, 'traffic_log/spot_list.html', {'spots':spots})
+    return render_to_response('traffic_log/spot_list.html', 
+        {'spots':spots}, 
+        context_instance=RequestContext(request))
 
 
 def connectConstraintsAndSpot(constraint_keys,spot_key):
@@ -265,7 +259,9 @@ def traffic_log(request, date):
     ## fetch TrafficLogEntry(s) for given date
     ## if none are found
     spots_for_date = TrafficLog.gql("where log_date=%s order by hour, slot"%date)
-    return render(request, 'traffic_log/index.html', dict(spots=spots_for_date))
+    return render_to_response('traffic_log/spot_list.html', 
+        dict(spots=spots_for_date), 
+        context_instance=RequestContext(request))
 
 def box(thing):
     if isinstance(thing,list):

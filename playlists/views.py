@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.shortcuts import render_to_response, get_object_or_404
+from django.template import loader, RequestContext
 
 from google.appengine.api.datastore_errors import BadKeyError
 
@@ -89,7 +90,6 @@ def get_vars(request):
 
     vars = {
         'form': form,
-        'user': current_user,
         'playlist': form.playlist
     }
     vars.update(common_context)
@@ -106,7 +106,8 @@ def landing_page(request):
 
     vars['playlist_events'] = list(iter_playlist_events_for_view(pl))
 
-    return render_to_response('playlists/landing_page.html', vars)
+    return render_to_response('playlists/landing_page.html', vars,
+            context_instance=RequestContext(request))
 
 
 @require_role(roles.DJ)
@@ -125,7 +126,8 @@ def create_event(request):
             playlist_event_listeners.create(track)
             return HttpResponseRedirect(reverse('playlists_landing_page'))
 
-    return render_to_response('playlists/landing_page.html', vars)
+    return render_to_response('playlists/landing_page.html', vars,
+            context_instance=RequestContext(request))
 
 
 @require_role(roles.DJ)
