@@ -24,15 +24,25 @@ from django.test import TestCase as DjangoTestCase
 from django import http
 from django.test.client import Client
 
+from common.testutil import FormTestCaseHelper
 from common import time_util
 from auth import roles
 from auth.models import User
 from traffic_log import views, models, constants
 
+def clear_data():
+    for s in models.Spot.all().fetch(1000):
+        s.delete()
+    for c in models.SpotConstraint.all().fetch(1000):
+        c.delete()
+
 class TestTrafficLogViews(DjangoTestCase):
     
     def setUp(self):
         self.client.login(email="test@test.com", roles=[roles.DJ])
+    
+    def tearDown(self):
+        clear_data()
     
     def test_landing_page_shows_spots(self):
         user = User(email='test')
@@ -59,6 +69,34 @@ class TestTrafficLogViews(DjangoTestCase):
                 'You are listening to chirpradio.org')
         self.assertEqual(spot_map[(now + datetime.timedelta(hours=2)).hour], 
                 'You are listening to chirpradio.org')
+
+class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
+    
+    def setUp(self):
+        self.client.login(email="test@test.com", roles=[roles.TRAFFIC_LOG_ADMIN])
+    
+    def tearDown(self):
+        clear_data()
+    
+    def test_create_spot(self):
+        resp = self.client.post(reverse('trafficlog.createSpot'), {
+            'title': 'Legal ID',
+            'body': 'You are listening to chirpradio.org',
+            'type': 'Station ID',
+            'hourbucket': '0,24',
+            'dow_list': [str(d) for d in range(1,8)],
+            'slot': '0'
+        })
+        self.assertNoFormErrors(resp)
+        spot = models.Spot.all().filter("title =", "Legal ID").fetch(1)[0]
+        dow = set()
+        hours = set()
+        for constraint in spot.constraints:
+            dow.add(constraint.dow)
+            hours.add(constraint.hour)
+        self.assertEqual(sorted(dow), range(1,8))
+        self.assertEqual(sorted(hours), range(0,24))
+
 
 class TrafficLogTestCase(unittest.TestCase):
     

@@ -6,7 +6,7 @@ from django.views.generic import *
 urlpatterns = patterns('',
     url(r'^/?$', 'traffic_log.views.index', name='trafficlog.index'),
     (r'^spot/?$','traffic_log.views.listSpots'),
-    (r'^spot/create/?$', 'traffic_log.views.createSpot'),
+    url(r'^spot/create/?$', 'traffic_log.views.createSpot', name='trafficlog.createSpot'),
     (r'^spot/text-for-reading/(?P<spot_key>[^\./]+)$', 'traffic_log.views.spotTextForReading'),
     (r'^spot/edit/(?P<spot_key>[^\.^/]+)$', 'traffic_log.views.editSpot'),
     (r'^spot/delete/(?P<spot_key>[^\.^/]+)$', 'traffic_log.views.deleteSpot'),
