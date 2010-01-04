@@ -5,7 +5,6 @@ from traffic_log import constants;
 
 class SpotConstraint(search.SearchableModel):
     dow      = db.IntegerProperty(verbose_name="Day of Week", choices=constants.DOW)
-    dow_list = db.StringListProperty()
     hour     = db.IntegerProperty(verbose_name="Hour", choices=constants.HOUR)
     slot     = db.IntegerProperty(verbose_name="Spot", choices=constants.SLOT)
     spots    = db.ListProperty(db.Key)
