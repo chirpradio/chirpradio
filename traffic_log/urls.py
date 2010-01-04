@@ -4,10 +4,13 @@ from traffic_log.models import *
 from django.views.generic import *
 
 urlpatterns = patterns('',
-    url(r'^/?$', 'traffic_log.views.index', name='trafficlog.index'),
+    url(r'^/?$', 'traffic_log.views.index', name='traffic_log.index'),
     (r'^spot/?$','traffic_log.views.listSpots'),
-    url(r'^spot/create/?$', 'traffic_log.views.createSpot', name='trafficlog.createSpot'),
-    (r'^spot/text-for-reading/(?P<spot_key>[^\./]+)$', 'traffic_log.views.spotTextForReading'),
+    url(r'^spot/create/?$', 'traffic_log.views.createSpot', name='traffic_log.createSpot'),
+    url(r'^spot/(?P<spot_key>[^\./]+)/read$', 'traffic_log.views.spotTextForReading',
+                                                name="traffic_log.spotTextForReading"),
+    url(r'^spot/(?P<spot_key>[^\./]+)/finish/?$', 'traffic_log.views.finishSpot',
+                                                name="traffic_log.finishSpot"),
     (r'^spot/edit/(?P<spot_key>[^\.^/]+)$', 'traffic_log.views.editSpot'),
     (r'^spot/delete/(?P<spot_key>[^\.^/]+)$', 'traffic_log.views.deleteSpot'),
     (r'^spot/(?P<spot_key>[^\.^/]+)/?$', 'traffic_log.views.spotDetail'),                       

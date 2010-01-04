@@ -31,6 +31,8 @@ from auth.models import User
 from traffic_log import views, models, constants
 
 def clear_data():
+    for x in models.TrafficLogEntry.all().fetch(1000):
+        x.delete()
     for s in models.Spot.all().fetch(1000):
         s.delete()
     for c in models.SpotConstraint.all().fetch(1000):
@@ -56,19 +58,25 @@ class TestTrafficLogViews(DjangoTestCase):
         constraint_keys = views.saveConstraint(dict(hourbucket="0,24", dow_list=range(1,8), slot=0))
         views.connectConstraintsAndSpot(constraint_keys, spot_key)
         
-        resp = self.client.get(reverse('trafficlog.index'))
+        resp = self.client.get(reverse('traffic_log.index'))
         context = resp.context[0]
         spot_map = {}
-        for s in context['slotted_spots']:
-            spot_map[s.hour] = list(s.iter_spots())[0].body
+        constraint_map = {}
+        for c in context['slotted_spots']:
+            spot_map[c.hour] = list(c.iter_spots())[0]
+            constraint_map[c.hour] = c
         
         now = time_util.chicago_now()
         
-        self.assertEqual(spot_map[now.hour], 'You are listening to chirpradio.org')
-        self.assertEqual(spot_map[(now + datetime.timedelta(hours=1)).hour], 
+        self.assertEqual(spot_map[now.hour].body, 'You are listening to chirpradio.org')
+        self.assertEqual(spot_map[(now + datetime.timedelta(hours=1)).hour].body, 
                 'You are listening to chirpradio.org')
-        self.assertEqual(spot_map[(now + datetime.timedelta(hours=2)).hour], 
+        self.assertEqual(spot_map[(now + datetime.timedelta(hours=2)).hour].body, 
                 'You are listening to chirpradio.org')
+        
+        constraint = constraint_map[now.hour]
+        spot = list(constraint.iter_spots())[0]
+        assert constraint.url_to_finish_spot(spot) in resp.content
 
 class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
     
@@ -79,7 +87,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         clear_data()
     
     def test_create_spot(self):
-        resp = self.client.post(reverse('trafficlog.createSpot'), {
+        resp = self.client.post(reverse('traffic_log.createSpot'), {
             'title': 'Legal ID',
             'body': 'You are listening to chirpradio.org',
             'type': 'Station ID',
@@ -91,13 +99,53 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot = models.Spot.all().filter("title =", "Legal ID").fetch(1)[0]
         dow = set()
         hours = set()
+        constraint_map = {}
         for constraint in spot.constraints:
             dow.add(constraint.dow)
             hours.add(constraint.hour)
+            constraint_map[(constraint.dow, constraint.hour, constraint.slot)] = constraint
         self.assertEqual(sorted(dow), range(1,8))
         self.assertEqual(sorted(hours), range(0,24))
+        
+        # check with Sunday 12:00pm
+        self.assertEqual(constraint_map[(1L, 12L, 0L)].url_to_finish_spot(spot), 
+            "/traffic_log/spot/%s/finish?hour=12&dow=1&slot=0" % spot.key())
 
+class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
+    
+    def setUp(self):
+        self.client.login(email="dj-test@test.com", roles=[roles.DJ])
+    
+    def tearDown(self):
+        clear_data()
 
+    def test_finish_spot(self):
+        self.assertEqual(list(models.TrafficLogEntry.all().fetch(5)), [])
+        
+        author = User(email='test')
+        author.save()
+        spot = models.Spot(
+                        title='Legal ID',
+                        body='You are listening to chirpradio.org',
+                        type='Station ID', 
+                        author=author)
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        resp = self.client.get(reverse('traffic_log.finishSpot', args=(spot.key(),)), {
+            'hour': constraint.hour,
+            'dow': constraint.dow,
+            'slot': constraint.slot
+        })
+        logged = models.TrafficLogEntry.all().fetch(1)[0]
+        self.assertEqual(logged.reader.email, "dj-test@test.com")
+        self.assertEqual(logged.readtime.timetuple()[0:5], datetime.datetime.now().timetuple()[0:5])
+        self.assertEqual(logged.log_date, time_util.chicago_now().date())
+        self.assertEqual(logged.spot.key(), spot.key())
+        self.assertEqual(logged.scheduled.key(), constraint.key())
+        self.assertEqual(logged.hour, constraint.hour)
+    
 class TrafficLogTestCase(unittest.TestCase):
     
     def setUp(self):
@@ -124,9 +172,6 @@ class TrafficLogTestCase(unittest.TestCase):
         self.assertEqual(models.Spot.get(spot_key).constraints.count(), 1)
 
     def test_traffic_log_generate(self):
-        pass
-
-    def test_spot_logging(self):
         pass
     
     def test_spot_constraint_delete(self):
