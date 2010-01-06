@@ -15,9 +15,9 @@ class ChirpApi {
   private $db_name;
   private $db_port;
 
-  public function __construct($db_host, $db_port, $db_username, $db_password, $db_name) {
+  public function __construct($db_host, $db_username, $db_password, $db_name) {
     $this->db_username = $db_username;
-    $this->db_port = $db_port;
+    $this->db_port = 3306;
     $this->db_host = $db_host;
     $this->db_password = $db_password;
     $this->db_name = $db_name;
@@ -65,7 +65,8 @@ class ChirpApi {
                  $request['track_artist'],
                  $request['track_label'],
                  $request['dj_name'],
-                 $request['time_played']
+                 $request['time_played'],
+                 $request['track_notes']
                  );
              }
              else {
@@ -121,7 +122,7 @@ class ChirpApi {
   }
 
   private function authenticate() {
-      global $api_auth_realm, $api_auth_users;
+      global $txpcfg;
 
       // Workaround for PHP in CGI mode.   $_SERVER['PHP_AUTH_DIGEST'] doesn't get set
       // so we have to set $_ENV['REDIRECT_HTTP_AUTHORIZATION'] with a RewriteRule
@@ -131,19 +132,19 @@ class ChirpApi {
 
       if (empty($_SERVER['PHP_AUTH_DIGEST'])) {
           header('HTTP/1.1 401 Unauthorized');
-          header('WWW-Authenticate: Digest realm="'.$api_auth_realm.
-                 '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($api_auth_realm).'"');
+          header('WWW-Authenticate: Digest realm="'.$txpcfg['api_auth_realm'].
+                 '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($txpcfg['api_auth_realm']).'"');
           throw new InvalidCredentialsException(); 
       }
 
       // analyze the PHP_AUTH_DIGEST variable
       $data = $this->http_digest_parse($_SERVER['PHP_AUTH_DIGEST']);
-      if (!$data || !isset($api_auth_users[$data['username']])) {
+      if (!$data || !isset($txpcfg['api_auth_users'][$data['username']])) {
           throw new InvalidCredentialsException(); 
       }
 
       // generate the valid response
-      $A1 = md5($data['username'] . ':' . $api_auth_realm . ':' . $api_auth_users[$data['username']]);
+      $A1 = md5($data['username'] . ':' . $txpcfg['api_auth_realm'] . ':' . $txpcfg['api_auth_users'][$data['username']]);
       $A2 = md5($_SERVER['REQUEST_METHOD'].':'.$data['uri']);
       $valid_response = md5($A1.':'.$data['nonce'].':'.$data['nc'].':'.$data['cnonce'].':'.$data['qop'].':'.$A2);
 
@@ -165,25 +166,43 @@ class ChirpApi {
   }
 
   private function create($track_id, $track_name, $track_album, $track_artist, $track_label, 
-                          $dj_name, $time_played) {
+                          $dj_name, $time_played, $track_notes) {
     // Expiration time of "Article" should be one week after the date the song was played
     $expiration_time = strftime("%Y-%m-%d %H:%M:%S", strtotime("$posted_time +1 week"));
     $author_id = 'lovehasnologic'; // TODO: Make this configurable
 
     $this->db_connect();
 
+    // Set the URL-only title so it's like "artist-song-title" so the full URL is like
+    // http://chirpradio.org/playlists/1234/they-might-be-giants-your-racist-friend 
+    //
+    // Escape spaces with hyphens
+    // E.g. jawbreaker-the-boat-dreams-from-the-hill
+    //
+    // The URL title needs to be be limited to 157 characters 
+    // (200 minus 43 reserved for http://chirpradio.org/playlists/##########/)  
+    $track_url_length = 157;
+    $url_title = substr(sprintf("%s-%s",
+                         str_replace(" ", "-", strtolower($track_artist)),
+                         str_replace(" ", "-", strtolower($track_album))
+                         ),
+                         0, $track_url_length);
+
     // Insert information about the track into the Textpattern database as an article.
     // See http://code.google.com/p/chirpradio/issues/detail?id=44#c4 for more on
     // field mappings
-    $query = sprintf("INSERT INTO textpattern (Posted, Expires, AuthorID, LastMod, Title, Body, Body_html, Annotate, AnnotateInvite, Status, textile_body, textile_excerpt, Section, Keywords, custom_1, custom_2, custom_3) " .
-             "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, '%s', %d, %d, %d, '%s', '%s', '%s', '%s', '%s')",
+    $query = sprintf("INSERT INTO textpattern (Posted, Expires, AuthorID, LastMod, Title, url_title, Body, Body_html, Excerpt, Excerpt_html, Annotate, AnnotateInvite, Status, textile_body, textile_excerpt, Section, Keywords, custom_1, custom_2, custom_3) " .
+             "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, '%s', %d, %d, %d, '%s', '%s', '%s', '%s', '%s')",
              $time_played,
              $expiration_time,
              $author_id,
              $time_played,
              $track_name,
+             $track_url_length,
              $track_album,
              "<p>$track_album</p>",
+             $track_notes,
+             "<p>$track_notes</p>",
              1,
              "Comment",
              4,
@@ -195,25 +214,9 @@ class ChirpApi {
              $dj_name,
              $track_id
              );
-    if ($result = mysql_query($query)) {
-      $article_id = mysql_insert_id();
-      // set as "id-artist-name-song-title" limiting the entire thing to no
-      // more than 200 characters (http://chirpradio.org/playlists/.... needs to be < 200) 
-      // So, the path needs to be < 168 chars
-      // Escape spaces with hyphens
-      // E.g. 2-jawbreaker-the-boat-dreams-from-the-hill
-      $track_url_length = 168;
-      $url_title = substr(sprintf("%d-%s-%s",
-                           $article_id,
-                           str_replace(" ", "-", strtolower($track_artist)),
-                           str_replace(" ", "-", strtolower($track_album))
-                           ),
-                           0, $track_url_length);
 
-      $query = sprintf("UPDATE textpattern SET url_title = '%s' WHERE ID = %d",
-                       $url_title,
-                       $track_id);
       if ($result = mysql_query($query)) {
+        $article_id = mysql_insert_id();
         $response = json_encode(
                       array('track_id' => $track_id,
                             'article_id' => $article_id,
@@ -223,10 +226,6 @@ class ChirpApi {
       else {
         throw new DatabaseQueryException('Database query failed: ' . mysql_error());
       }
-    }
-    else {
-      throw new DatabaseQueryException('Database query failed: ' . mysql_error());
-    }
 
     return $response;
 
@@ -234,13 +233,13 @@ class ChirpApi {
 
   private function current() {
     $this->db_connect();
-    $query = "SELECT ID AS article_id, Title AS track_title, Body AS track_album, Keywords AS track_artist, custom_1 AS track_label, custom_2 AS dj_name, custom_3 AS track_id, LastMod AS time_played FROM textpattern WHERE Section = 'playlists' ORDER By LastMod DESC, id DESC LIMIT 1";
+    $query = "SELECT ID AS article_id, Title AS track_title, Body AS track_album, Keywords AS track_artist, custom_1 AS track_label, custom_2 AS dj_name, custom_3 AS track_id, LastMod AS time_played, Excerpt as track_notes FROM textpattern WHERE Section = 'playlists' ORDER By LastMod DESC, id DESC LIMIT 1";
     if ($result = mysql_query($query)) {
       $current_track = mysql_fetch_object($result);
       $response = json_encode($current_track) . "\n";
     }
     else {
-      throw DatabaseQueryException('Database query failed: ' . mysql_error());
+      throw new DatabaseQueryException('Database query failed: ' . mysql_error());
     }
 
     return $response;
