@@ -1,10 +1,10 @@
 <?php
 
-require_once 'settings.php';
+require_once '../textpattern/config.php';
 require_once 'ChirpApi.php';
 
 try {
-  $api = new ChirpApi($db_host, $db_port, $db_username, $db_password, $db_name);
+  $api = new ChirpApi($txpcfg['host'], $txpcfg['user'], $txpcfg['pass'], $txpcfg['db']);
   $response = $api->handle_request($_REQUEST);
   header('Content-type: application/json');
   echo $response;
