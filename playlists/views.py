@@ -96,15 +96,18 @@ def get_vars(request):
     return vars
 
 
+def get_playlist_history(playlist):
+    pl = PlaylistEvent.all().filter('playlist =', playlist)
+    pl = pl.filter('established >=', datetime.now() - timedelta(hours=3))
+    pl = pl.order('-established')
+    return list(iter_playlist_events_for_view(pl))
+
 @require_role(roles.DJ)
 def landing_page(request):
     vars = get_vars(request)
 
-    pl = PlaylistEvent.all().filter('playlist =', vars['playlist'])
-    pl = pl.filter('established >=', datetime.now() - timedelta(hours=3))
-    pl = pl.order('-established')
-
-    vars['playlist_events'] = list(iter_playlist_events_for_view(pl))
+    # load the playlist history
+    vars['playlist_events'] = get_playlist_history(vars['playlist'])
 
     return render_to_response('playlists/landing_page.html', vars,
             context_instance=RequestContext(request))
@@ -125,6 +128,9 @@ def create_event(request):
             track = vars['form'].save()
             playlist_event_listeners.create(track)
             return HttpResponseRedirect(reverse('playlists_landing_page'))
+
+    # load the playlist history
+    vars['playlist_events'] = get_playlist_history(vars['playlist'])
 
     return render_to_response('playlists/landing_page.html', vars,
             context_instance=RequestContext(request))
