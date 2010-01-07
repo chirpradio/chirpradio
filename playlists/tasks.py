@@ -18,11 +18,14 @@
 import logging
 import urllib, urllib2
 import wsgiref.handlers
+from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from google.appengine.ext import webapp
 from google.appengine.api.labs import taskqueue
 from common import dbconfig, in_dev
 from playlists.models import PlaylistEvent
+
+log = logging.getLogger()
 
 """
 Publish Track being played to remote PHP server
@@ -160,6 +163,7 @@ def url_track_delete(key):
 """ bluk of the remoting code
 """
 def _url_track_create(track=None):
+    log.info("chirpradio.org create track %s" % track.key())
     if track is None:
         return
 
@@ -180,9 +184,7 @@ def _url_track_create(track=None):
         qs['track_album'] = as_utf8_str(track.album_title)
     if track.label:
         qs['track_label'] = as_utf8_str(track.label)
-    # TODO(kumar) waiting until API supports this:
-    # if track.notes:
-    #     qs['track_notes'] = as_utf8_str(track.notes)
+        qs['track_notes'] = as_utf8_str(track.notes)
 
     data = urllib.urlencode(qs)
     headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "application/json"}
@@ -193,6 +195,7 @@ def _url_track_create(track=None):
     _fetch_url(url, data, 'POST', headers, 'digest', url)
 
 def _url_track_delete(id):
+    log.info("chirpradio.org delete track %s" % id)
     if not id:
         return
     #
@@ -229,10 +232,10 @@ def _fetch_url(url=None, data=None, method='GET', headers=None, auth_type=None, 
         # response
         res = urllib2.urlopen(req)
         d = {'code': res.code, 'content': res.read()}
-        logging.info(d)
+        log.info(d)
         return d
     except Exception, e:
-        logging.error(e)
+        log.error(e)
         pass
 
     return {}
@@ -255,6 +258,8 @@ def _auth_handler(username, password, auth_type=None, auth_url=None):
 
 def send_track_to_live_site(request):
     _url_track_create(PlaylistEvent.get(request.POST['id']))
+    return HttpResponse("OK")
 
 def delete_track_from_live_site(request):
     _url_track_delete(request.POST['id'])
+    return HttpResponse("OK")
