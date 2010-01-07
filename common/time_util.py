@@ -20,12 +20,23 @@
 import datetime
 
 def convert_utc_to_chicago(dt):
+    """Convert any datetime to Chicago time.
+    
+    If it is not already in a designated time zone 
+    then it will be treated as UTC time which is the 
+    default for Google App Engine.  Note that App Engine 
+    currently ignores TZ settings in your os.environ
+    """
     if dt.tzinfo is None:
         # per app engine docs, all datetimes 
         # are set to UTC but in actuality this means 
         # their tzinfo properties are None
         dt = dt.replace(tzinfo=utc_tzinfo)
     return dt.astimezone(central_tzinfo)
+
+def chicago_now():
+    """Return datetime.now() in Chicago time."""
+    return convert_utc_to_chicago(datetime.datetime.now())
 
 # This code is mostly lifted from the docs:
 # http://code.google.com/appengine

@@ -14,11 +14,13 @@ You have been granted the role "{{ r }}".<br>
 <p>
 There isn't much here yet.  Things you can do:
 <ul>
-<li> <a href="/djdb">DJ Database</a>
+{% if user.is_dj %}
+<li> <a href="/djdb/">DJ Database</a>
 <li> <a href="/playlists/">Playlist Tracker</a>
-<li> <a href="/traffic_log">Traffic Log</a>
+<li> <a href="/traffic_log/">Traffic Log</a>
+{% endif %}
 {% if user.is_volunteer_coordinator %}
-<li> <a href="/auth">User Management</a>
+<li> <a href="/auth/">User Management</a>
 {% endif %}
 <li> <a href="/auth/change_password">Change Your Password</a>
 </ul>

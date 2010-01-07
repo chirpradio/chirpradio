@@ -2,6 +2,7 @@
 <div class="spot_detail_for_reading">
 {{ spot.body }}
 <div id="spot-reading-buttons">
-    <input id="spot-reading-done-button" type="button" value="Done" />
+    <a class="finish-spot-after-reading"
+        href="{% url traffic_log.finishSpot spot.key %}">Finish</a>
 </div>
 </div>

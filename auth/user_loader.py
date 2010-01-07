@@ -1,3 +1,13 @@
+
+"""Bulk upload users from CSV file.
+
+To bulk upload users, you first need to run "adhoc\export_users.py <sqllite3-database>". Make sure
+the GAE directory is in your path. Then from <app-directory> do::
+
+    appcfg.py upload_data --config_file auth\user_loader.py --filename=adhoc\users.csv --kind=User --url=http://localhost:8000/remote_api <app-directory>
+
+"""
+
 import datetime
 from google.appengine.ext import db
 from google.appengine.tools import bulkloader
@@ -15,13 +25,12 @@ from auth import models
 class UserLoader(bulkloader.Loader):
     def __init__(self):
         bulkloader.Loader.__init__(self, 'User',
-                                   [('email', datastore_types.Email),
+                                   [('email', lambda e: datastore_types.Email(e.lower())),
                                     ('first_name', str),
                                     ('last_name', str),
                                     ('password', str),
                                     ('is_active', bool),
                                     ('is_superuser', bool),
-                                    ('last_login', lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')),
                                     ('date_joined',lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')),
                                     ('roles', str.split)
                                    ])   

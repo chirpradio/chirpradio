@@ -1,22 +1,38 @@
-from django.http import HttpResponse, HttpResponseRedirect
-#from django.shortcuts import render_to_response
-from django.conf import settings
-from django.template import Context, RequestContext, loader
-from django.utils import simplejson
+###
+### Copyright 2009 The Chicago Independent Radio Project
+### All Rights Reserved.
+###
+### Licensed under the Apache License, Version 2.0 (the "License");
+### you may not use this file except in compliance with the License.
+### You may obtain a copy of the License at
+###
+###     http://www.apache.org/licenses/LICENSE-2.0
+###
+### Unless required by applicable law or agreed to in writing, software
+### distributed under the License is distributed on an "AS IS" BASIS,
+### WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+### See the License for the specific language governing permissions and
+### limitations under the License.
+###
+
 import sys
 import random
 import datetime
 
+from django.http import HttpResponse, HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from django.conf import settings
+from django.shortcuts import render_to_response, get_object_or_404
+from django.template import RequestContext
+from django.utils import simplejson
+
+from common.utilities import as_json
+from common import time_util
 import auth
 from auth.models import User
 from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
 from auth.decorators import require_role
 from traffic_log import models, forms, constants
-
-
-def render(request, template, payload):
-    template = loader.get_template(template)
-    return HttpResponse(template.render(RequestContext(request, payload)))
 
 def add_hour(base_hour):
     """Adds an hour to base_hour and ensures it's in range.
@@ -30,31 +46,94 @@ def add_hour(base_hour):
 
 @require_role(DJ)
 def index(request):
-    now = datetime.datetime.now()
+    now = time_util.chicago_now()
     today = now.date()
     current_hour = now.hour
     hour_plus1 = add_hour(current_hour)
     hour_plus2 = add_hour(hour_plus1)
     hour_plus3 = add_hour(hour_plus2)
+    hours_to_show = [current_hour, hour_plus1, hour_plus2, hour_plus3]
     
     current_spots = (models.SpotConstraint.all()
                         .filter("dow =", today.isoweekday())
-                        .filter("hour IN", (current_hour, hour_plus1, hour_plus2, hour_plus3))
+                        .filter("hour IN", hours_to_show)
                         .order("hour")
                         .order("slot"))
     
-    slotted_spots = [s for s in current_spots.fetch(10)] # ten possible slots per hour
-    return render(request, 'traffic_log/index.html', dict(
-        date=today,
-        slotted_spots=slotted_spots
-    ))
+    def hour_position(s):
+        return hours_to_show.index(s.hour)
+        
+    slotted_spots = sorted([s for s in current_spots.fetch(10)], key=hour_position) 
+    
+    return render_to_response('traffic_log/index.html', dict(
+            date=today,
+            slotted_spots=slotted_spots
+        ), context_instance=RequestContext(request))
 
 @require_role(DJ)
 def spotTextForReading(request, spot_key=None):
     spot = models.Spot.get(spot_key)
-    return render(request, 'traffic_log/spot_detail_for_reading.html', dict(
-        spot=spot
-    ))
+    
+    return render_to_response('traffic_log/spot_detail_for_reading.html', dict(
+            spot=spot
+        ), context_instance=RequestContext(request))
+
+@require_role(DJ)
+@as_json
+def finishSpot(request, spot_key=None):
+    dow = int(request.GET['dow'])
+    if dow not in constants.DOW:
+        raise ValueError("dow value %r is out of range" % dow)
+    hour = int(request.GET['hour'])
+    if hour not in constants.HOUR:
+        raise ValueError("hour value %r is out of range" % hour)
+    slot = int(request.GET['slot'])
+    if slot not in constants.SLOT:
+        raise ValueError("dow value %r is out of range" % slot)
+        
+    q = (models.SpotConstraint.all()
+                    .filter("dow =", dow)
+                    .filter("hour =", hour)
+                    .filter("slot =", slot))
+    count = q.count(1) 
+    if count == 0:
+        raise ValueError("No spot constraint found for dow=%r, hour=%r, slot=%r" % (
+                                                                    dow, hour, slot))
+    elif count > 1:
+        # kumar: not sure if this will actually happen
+        raise ValueError("Multiple spot constraints found for dow=%r, hour=%r, slot=%r" % (
+                                                                    dow, hour, slot))
+    
+    constraint = q.fetch(1)[0]
+    spot = models.Spot.get(spot_key)
+    
+    today = time_util.chicago_now().date()
+    q = (models.TrafficLogEntry.all()
+                    .filter("log_date =", today)
+                    .filter("spot =", spot)
+                    .filter("hour =", hour)
+                    .filter("slot =", slot))
+    if q.count(1):
+        existing_logged_spot = q.fetch(1)[0]
+        raise RuntimeError("This spot %r at %r has already been read %s" % (
+                    spot, constraint, existing_logged_spot.reader))
+    
+    logged_spot = models.TrafficLogEntry(
+        log_date = today,
+        spot = spot,
+        hour = hour,
+        slot = slot,
+        scheduled = constraint,
+        readtime = time_util.chicago_now(), 
+        reader = auth.get_current_user(request)
+    )
+    logged_spot.put()
+    
+    return {
+        'spot_key': str(spot.key()), 
+        'spot_constraint_key': str(constraint.key()),
+        'logged_spot': str(logged_spot.key())
+    }
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def createSpot(request):
@@ -77,13 +156,12 @@ def createSpot(request):
     if all_clear:
         return HttpResponseRedirect('/traffic_log/spot/%s'%spot.key())          
 
-    return render(request, 'traffic_log/create_edit_spot.html', 
+    return render_to_response('traffic_log/create_edit_spot.html', 
                   dict(spot=spot_form,
                        constraint_form=constraint_form,
                        Author=user,
                        formaction="/traffic_log/spot/create/"
-                       )
-                  )
+                       ), context_instance=RequestContext(request))
 
 
 @require_role(TRAFFIC_LOG_ADMIN)
@@ -107,9 +185,8 @@ def editSpot(request, spot_key=None):
                 )
             
         return HttpResponseRedirect('/traffic_log/spot/%s'%spot.key())
-    
     else:
-        return render(request, 'traffic_log/create_edit_spot.html', 
+        return render_to_response('traffic_log/create_edit_spot.html', 
                       dict(spot=forms.SpotForm(instance=spot),
                            spot_key=spot_key,
                            constraints=spot.constraints,
@@ -117,8 +194,7 @@ def editSpot(request, spot_key=None):
                            edit=True,
                            dow_dict=constants.DOW_DICT,
                            formaction="/traffic_log/spot/edit/%s"%spot.key()
-                           )
-                      )
+                           ), context_instance=RequestContext(request))
 
 
 @require_role(TRAFFIC_LOG_ADMIN)
@@ -132,19 +208,19 @@ def spotDetail(request, spot_key=None):
     spot = models.Spot.get(spot_key)
     constraints = [forms.SpotConstraintForm(instance=x) for x in spot.constraints]
     form = forms.SpotForm(instance=spot)
-    return render(request, 'traffic_log/spot_detail.html',
-                  {
-                    'spot':spot,
-                    'constraints':constraints,
-                    'dow_dict':constants.DOW_DICT
-                    }
-                  )
+    return render_to_response('traffic_log/spot_detail.html', {
+            'spot':spot,
+            'constraints':constraints,
+            'dow_dict':constants.DOW_DICT
+        }, context_instance=RequestContext(request))
 
 
 @require_role(DJ)
 def listSpots(request):
     spots = models.Spot.all().order('-created').fetch(20)
-    return render(request, 'traffic_log/spot_list.html', {'spots':spots})
+    return render_to_response('traffic_log/spot_list.html', 
+        {'spots':spots}, 
+        context_instance=RequestContext(request))
 
 
 def connectConstraintsAndSpot(constraint_keys,spot_key):
@@ -160,7 +236,7 @@ def saveConstraint(constraint):
     
     keys = []
     if constraint['hourbucket'] != "":
-        ## fixme: kumar thinks this is not such a good idea.  
+        ## TODO(Kumar) I don't think this is such a good idea.  
         ## use split(",") and int() instead.
         hours = range(*eval(constraint['hourbucket']))
     else:
@@ -207,7 +283,7 @@ def generateTrafficLogEntriesForDay(request, date=None):
 
 
 def generateTrafficLogEntriesForHour(request, datetime=None, hour=None):
-    now = datetime if datetime else datetime.datetime.now()
+    now = datetime if datetime else chicago_now()
     hour = hour if hour else now.hour
     log_for_hour = []
     for slot in constants.SLOT:
@@ -265,7 +341,9 @@ def traffic_log(request, date):
     ## fetch TrafficLogEntry(s) for given date
     ## if none are found
     spots_for_date = TrafficLog.gql("where log_date=%s order by hour, slot"%date)
-    return render(request, 'traffic_log/index.html', dict(spots=spots_for_date))
+    return render_to_response('traffic_log/spot_list.html', 
+        dict(spots=spots_for_date), 
+        context_instance=RequestContext(request))
 
 def box(thing):
     if isinstance(thing,list):

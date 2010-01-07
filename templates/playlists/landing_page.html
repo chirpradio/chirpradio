@@ -81,7 +81,7 @@
         {% if event.notes %}
         <p class="notes"><strong>Notes:</strong> {{ event.notes }}</p>
         {% endif %}
-        {% ifequal event.selector.key current_user.key %}
+        {% ifequal event.selector.key user.key %}
         <p class="playlist-event-management">
             <a title="Delete this entry" href="{% url playlists_delete_event event.key %}">[delete]</a>
         </p>

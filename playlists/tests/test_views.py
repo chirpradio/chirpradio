@@ -28,6 +28,7 @@ from django.core.urlresolvers import reverse
 import fudge
 from fudge.inspector import arg
 
+from common.testutil import FormTestCaseHelper
 from common import dbconfig
 import auth
 from auth import roles
@@ -43,12 +44,13 @@ __all__ = ['TestPlaylistViews', 'TestPlaylistViewsWithLibrary',
 # that don't need to make assertions about URL fetches
 stub_fetch_url = fudge.Fake('_fetch_url', callable=True)
 
-class PlaylistViewsTest(TestCase):
+class PlaylistViewsTest(FormTestCaseHelper, TestCase):
     
     def setUp(self):
         self.client.login(email="test@test.com", roles=[roles.DJ])
         dbconfig['chirpapi.url.create'] = 'http://testapi/playlist/create'
         dbconfig['chirpapi.url.delete'] = 'http://testapi/playlist/delete'
+        dbconfig['live365.service_url'] = 'http://__dummylive365service__/cgi-bin/add_song.cgi'
     
     def tearDown(self):
         for pl in Playlist.all():
@@ -56,10 +58,6 @@ class PlaylistViewsTest(TestCase):
                 track.delete()
             pl.delete()
         fudge.clear_expectations()
-
-    def assertNoFormErrors(self, response):
-        if response.context and response.context[0].get('form'):
-            self.assertEquals(response.context[0]['form'].errors.as_text(), "")
     
     def get_selector(self):
         return User.all().filter('email =', 'test@test.com')[0]
