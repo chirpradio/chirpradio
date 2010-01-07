@@ -167,8 +167,12 @@ class ChirpApi {
 
   private function create($track_id, $track_name, $track_album, $track_artist, $track_label, 
                           $dj_name, $time_played, $track_notes) {
+
+    // Convert the timestamp to the timezone of the server
+    $time_played = strftime("%Y-%m-%d %H:%M:%S", strtotime("$time_played"));
+
     // Expiration time of "Article" should be one week after the date the song was played
-    $expiration_time = strftime("%Y-%m-%d %H:%M:%S", strtotime("$posted_time +1 week"));
+    $expiration_time = strftime("%Y-%m-%d %H:%M:%S", strtotime("$time_played +1 week"));
     $author_id = 'lovehasnologic'; // TODO: Make this configurable
 
     $this->db_connect();
