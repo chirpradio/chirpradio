@@ -18,6 +18,7 @@
 import logging
 import urllib, urllib2
 import wsgiref.handlers
+from django.core.urlresolvers import reverse
 from google.appengine.ext import webapp
 from google.appengine.api.labs import taskqueue
 from common import dbconfig, in_dev
@@ -146,13 +147,13 @@ def url_track_create(track):
     if in_dev():
         _url_track_create(track)
     else:
-        taskqueue.add(url='/playlists/task/send_track_to_live_site', params={'id':str(track.key())})
+        taskqueue.add(url=reverse('playlists.send_track_to_live_site'), params={'id':str(track.key())})
 
 def url_track_delete(key):
     if in_dev():
         _url_track_delete(key)
     else:
-        taskqueue.add(url='/playlists/task/delete_track_from_live_site', params={'id':key})
+        taskqueue.add(url=reverse('playlists.delete_track_from_live_site'), params={'id':key})
 
 
 
@@ -252,8 +253,8 @@ def _auth_handler(username, password, auth_type=None, auth_url=None):
 """Thin wrapper for taskqueue actions mapped in playlists/urls.py
 """
 
-def send_to_live_site(request):
+def send_track_to_live_site(request):
     _url_track_create(PlaylistEvent.get(request.POST['id']))
 
-def delete_from_live_site(request):
+def delete_track_from_live_site(request):
     _url_track_delete(request.POST['id'])

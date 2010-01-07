@@ -27,6 +27,8 @@ urlpatterns = patterns('playlists.views',
 )
 
 urlpatterns += patterns('playlists.tasks',
-    url(r'^task/send_to_live_site$', 'send_to_live_site'),
-    url(r'^task/delete_from_live_site$', 'delete_from_live_site'),
+    url(r'^task/send_track_to_live_site$', 'send_track_to_live_site', 
+            name='playlists.send_track_to_live_site'),
+    url(r'^task/delete_track_from_live_site$', 'delete_track_from_live_site', 
+            name='playlists.delete_track_from_live_site'),
 )
