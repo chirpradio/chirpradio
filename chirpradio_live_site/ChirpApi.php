@@ -198,7 +198,7 @@ class ChirpApi {
              $author_id,
              $time_played,
              $track_name,
-             $track_url_length,
+             $url_title,
              $track_album,
              "<p>$track_album</p>",
              $track_notes,
