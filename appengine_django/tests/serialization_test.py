@@ -41,6 +41,11 @@ class ModelB(BaseModel):
   description = db.StringProperty()
   friend = db.Reference(ModelA)
 
+class ModelC(BaseModel):
+  dt_value = db.DateTimeProperty(auto_now_add=True)
+  d_value = db.DateProperty(auto_now_add=True)
+  t_value = db.TimeProperty(auto_now_add=True)
+
 
 class TestAllFormats(type):
 
@@ -277,11 +282,8 @@ class SerializationTest(unittest.TestCase):
 
   def runObjectWithNonExistantParentTest(self, format):
     """Test deserialization of an object referencing a non-existant parent."""
-    # NOTE(trow): Test disabled, as it fails when the app name has
-    # been changed.  The pre-serialized version has
-    # google-app-engine-django hard-wired in as the app.
-    #self.doModelKeyDeserialisationReferenceTest(
-    #    self.SERIALIZED_WITH_NON_EXISTANT_PARENT, format)
+    self.doModelKeyDeserialisationReferenceTest(
+        self.SERIALIZED_WITH_NON_EXISTANT_PARENT, format)
 
   def runCreateKeyReferenceFromListTest(self, format):
     """Tests that a reference specified as a list in json/yaml can be loaded OK."""
@@ -307,6 +309,12 @@ class SerializationTest(unittest.TestCase):
     """Tests that a reference specified as a plain key_name loads OK."""
     self.doModelKeyDeserialisationReferenceTest(
         self.MK_SERIALIZED_WITH_KEY_AS_TEXT, format)
+
+  def runDateTimeTest(self, format):
+    """Tests that db.DateTimeProperty and related can be correctly handled."""
+    obj = ModelC()
+    obj.put()
+    self.doSerialisationTest(format, obj)
 
 
 if __name__ == '__main__':

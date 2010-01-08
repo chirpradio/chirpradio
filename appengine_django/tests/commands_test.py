@@ -159,11 +159,11 @@ class CommandsTest(unittest.TestCase):
     """Tests the reste command."""
     self.assertCommandSucceeds("reset", ["appengine_django"])
 
-  def testRunserver(self):
-    """Tests the runserver command."""
-    # TODO(Kumar) see if this failing test is fixed in a 
-    # newer version of app engine helper?
-    # self.assertCommandSucceeds("runserver", int_after=2.0)
+  # Disabled due to flakiness - re-enable when it can be guaranteed to succeed
+  # reliably.
+  #def testRunserver(self):
+  #  """Tests the runserver command."""
+  #  self.assertCommandSucceeds("runserver", int_after=2.0)
 
   def testShell(self):
     """Tests the shell command."""

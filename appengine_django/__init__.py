@@ -54,83 +54,10 @@ if PARENT_DIR.endswith(".zip"):
 # Add this project to the start of sys path to enable direct imports.
 sys.path = [PARENT_DIR,] + sys.path
 
-# Try to import the appengine code from the system path.
-try:
-  from google.appengine.api import apiproxy_stub_map
-except ImportError, e:
-  # Not on the system path. Build a list of alternative paths where it may be.
-  # First look within the project for a local copy, then look for where the Mac
-  # OS SDK installs it.
-  paths = [os.path.join(PARENT_DIR, '.google_appengine'),
-           os.path.join(PARENT_DIR, 'google_appengine'),
-           '/usr/local/google_appengine']
-  # Then if on windows, look for where the Windows SDK installed it.
-  for path in os.environ.get('PATH', '').split(';'):
-    path = path.rstrip('\\')
-    if path.endswith('google_appengine'):
-      paths.append(path)
-  try:
-    from win32com.shell import shell
-    from win32com.shell import shellcon
-    id_list = shell.SHGetSpecialFolderLocation(
-        0, shellcon.CSIDL_PROGRAM_FILES)
-    program_files = shell.SHGetPathFromIDList(id_list)
-    paths.append(os.path.join(program_files, 'Google',
-                              'google_appengine'))
-  except ImportError, e:
-    # Not windows.
-    pass
-  # Loop through all possible paths and look for the SDK dir.
-  SDK_PATH = None
-  for sdk_path in paths:
-    if os.path.exists(sdk_path):
-      SDK_PATH = os.path.realpath(sdk_path)
-      break
-  if SDK_PATH is None:
-    # The SDK could not be found in any known location.
-    sys.stderr.write("The Google App Engine SDK could not be found!\n")
-    sys.stderr.write("See README for installation instructions.\n")
-    sys.exit(1)
-  if SDK_PATH == os.path.join(PARENT_DIR, 'google_appengine'):
-    logging.warn('Loading the SDK from the \'google_appengine\' subdirectory '
-                 'is now deprecated!')
-    logging.warn('Please move the SDK to a subdirectory named '
-                 '\'.google_appengine\' instead.')
-    logging.warn('See README for further details.')
-  # Add the SDK and the libraries within it to the system path.
-  EXTRA_PATHS = [
-      SDK_PATH,
-      os.path.join(SDK_PATH, 'lib', 'antlr3'),
-      os.path.join(SDK_PATH, 'lib', 'django'),
-      os.path.join(SDK_PATH, 'lib', 'webob'),
-      os.path.join(SDK_PATH, 'lib', 'yaml', 'lib'),
-  ]
-  # Add SDK paths at the start of sys.path, but after the local directory which
-  # was added to the start of sys.path on line 50 above. The local directory
-  # must come first to allow the local imports to override the SDK and
-  # site-packages directories.
-  sys.path = sys.path[0:1] + EXTRA_PATHS + sys.path[1:]
-  from google.appengine.api import apiproxy_stub_map
-
 # Look for a zipped copy of Django.
 have_django_zip = False
 django_zip_path = os.path.join(PARENT_DIR, 'django.zip')
-if os.path.exists(django_zip_path):
-  have_django_zip = True
-  sys.path.insert(1, django_zip_path)
 
-# Remove the standard version of Django if a local copy has been provided.
-if have_django_zip or os.path.exists(os.path.join(PARENT_DIR, 'django')):
-  for k in [k for k in sys.modules if k.startswith('django')]:
-    del sys.modules[k]
-
-# Must set this env var *before* importing any more of Django.
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-
-from django import VERSION
-from django.conf import settings
-
-from google.appengine.api import yaml_errors
 
 # Flags made available this module
 appid = None
@@ -145,6 +72,109 @@ INCOMPATIBLE_COMMANDS = ["adminindex", "createcachetable", "dbshell",
                          "inspectdb", "runfcgi", "syncdb", "validate"]
 
 
+def FixPython26Logging():
+  import logging
+  logging.logMultiprocessing = 0
+
+
+def LoadSdk():
+  # Try to import the appengine code from the system path.
+  try:
+    from google.appengine.api import apiproxy_stub_map
+  except ImportError, e:
+    # Hack to fix reports of import errors on Ubuntu 9.10.
+    if 'google' in sys.modules:
+      del sys.modules['google']
+    # Not on the system path. Build a list of alternative paths where it may be.
+    # First look within the project for a local copy, then look for where the Mac
+    # OS SDK installs it.
+    paths = [os.path.join(PARENT_DIR, '.google_appengine'),
+             os.path.join(PARENT_DIR, 'google_appengine'),
+             '/usr/local/google_appengine']
+    # Then if on windows, look for where the Windows SDK installed it.
+    for path in os.environ.get('PATH', '').split(';'):
+      path = path.rstrip('\\')
+      if path.endswith('google_appengine'):
+        paths.append(path)
+    try:
+      from win32com.shell import shell
+      from win32com.shell import shellcon
+      id_list = shell.SHGetSpecialFolderLocation(
+          0, shellcon.CSIDL_PROGRAM_FILES)
+      program_files = shell.SHGetPathFromIDList(id_list)
+      paths.append(os.path.join(program_files, 'Google',
+                                'google_appengine'))
+    except ImportError, e:
+      # Not windows.
+      pass
+    # Loop through all possible paths and look for the SDK dir.
+    SDK_PATH = None
+    for sdk_path in paths:
+      if os.path.exists(sdk_path):
+        SDK_PATH = os.path.realpath(sdk_path)
+        break
+    if SDK_PATH is None:
+      # The SDK could not be found in any known location.
+      sys.stderr.write("The Google App Engine SDK could not be found!\n")
+      sys.stderr.write("See README for installation instructions.\n")
+      sys.exit(1)
+    if SDK_PATH == os.path.join(PARENT_DIR, 'google_appengine'):
+      logging.warn('Loading the SDK from the \'google_appengine\' subdirectory '
+                   'is now deprecated!')
+      logging.warn('Please move the SDK to a subdirectory named '
+                   '\'.google_appengine\' instead.')
+      logging.warn('See README for further details.')
+    # Add the SDK and the libraries within it to the system path.
+    EXTRA_PATHS = [
+        SDK_PATH,
+        os.path.join(SDK_PATH, 'lib', 'antlr3'),
+        os.path.join(SDK_PATH, 'lib', 'django'),
+        os.path.join(SDK_PATH, 'lib', 'webob'),
+        os.path.join(SDK_PATH, 'lib', 'yaml', 'lib'),
+    ]
+    # Add SDK paths at the start of sys.path, but after the local directory which
+    # was added to the start of sys.path on line 50 above. The local directory
+    # must come first to allow the local imports to override the SDK and
+    # site-packages directories.
+    sys.path = sys.path[0:1] + EXTRA_PATHS + sys.path[1:]
+
+
+def LoadDjango(version=None):
+  global have_django_zip
+
+  from google.appengine.dist import use_library
+  from google.appengine.dist._library import UnacceptableVersionError
+
+  # Must set this env var *before* importing any more of Django.
+  os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
+  # If we have set a version explicitly, force that
+  if version:
+    use_library('django', version)
+    return
+
+  if os.path.exists(django_zip_path):
+    have_django_zip = True
+    sys.path.insert(1, django_zip_path)
+
+  # Remove the standard version of Django if a local copy has been provided.
+  if have_django_zip or os.path.exists(os.path.join(PARENT_DIR, 'django')):
+    for k in [k for k in sys.modules if k.startswith('django')]:
+      del sys.modules[k]
+    return
+
+  # If we aren't loading from a zip or local copy then try for whichever
+  # supported version is highest and installed
+  for check_version in ('1.1', '1.0'):
+    try:
+      use_library('django', check_version)
+      return
+    except UnacceptableVersionError:
+      pass
+
+  raise UnacceptableVersionError()
+
+
 def LoadAppengineEnvironment():
   """Loads the appengine environment.
 
@@ -156,6 +186,8 @@ def LoadAppengineEnvironment():
         from within the appserver environment.
   """
   global appid, have_appserver
+  from google.appengine.api import yaml_errors
+  from google.appengine.api import apiproxy_stub_map
 
   # Detect if we are running under an appserver.
   have_appserver = False
@@ -200,7 +232,7 @@ def InstallGoogleMemcache():
   By default django tries to import standard memcache module.
   Because appengine memcache is API compatible with Python memcache module,
   we can trick Django to think it is installed and to use it.
-  
+
   Now you can use CACHE_BACKEND = 'memcached://' in settings.py. IP address
   and port number are not required.
   """
@@ -214,7 +246,7 @@ def InstallDjangoModuleReplacements():
 
   # Replace the session module with a partial replacement overlay using
   # __path__ so that portions not replaced will fall through to the original
-  # implementation. 
+  # implementation.
   try:
     from django.contrib import sessions
     orig_path = sessions.__path__[0]
@@ -250,7 +282,8 @@ def InstallDjangoModuleReplacements():
   except CheckedException, e:
     logging.debug("Django rollback handler appears to be already disabled.")
 
-def PatchDjangoSerializationModules():
+
+def PatchDjangoSerializationModules(settings):
   """Monkey patches the Django serialization modules.
 
   The standard Django serialization modules to not correctly handle the
@@ -266,6 +299,13 @@ def PatchDjangoSerializationModules():
   base_module = "appengine_django"
   settings.SERIALIZATION_MODULES["xml"] = "%s.serializer.xml" % base_module
   python.Deserializer = Deserializer
+  # This must be imported after the Deserializer has been mokey patched above.
+  from django.core.serializers import json
+  from appengine_django.serializer.json import DjangoJSONEncoder
+  json.DjangoJSONEncoder = DjangoJSONEncoder
+  from django.core.serializers import pyyaml
+  from appengine_django.serializer.pyyaml import DjangoSafeDumper
+  pyyaml.DjangoSafeDumper = DjangoSafeDumper
   PatchDeserializedObjectClass()
   DisableModelValidation()
   logging.debug("Installed appengine json and python serialization modules")
@@ -293,6 +333,7 @@ def PatchDeserializedObjectClass():
   base.DeserializedObject = NewDeserializedObject
   logging.debug("Replacement DeserializedObject class installed")
 
+
 def DisableModelValidation():
   """Disables Django's model validation routines.
 
@@ -306,7 +347,8 @@ def DisableModelValidation():
   validation.get_validation_errors = lambda x, y=0: 0
   logging.debug("Django SQL model validation disabled")
 
-def CleanupDjangoSettings():
+
+def CleanupDjangoSettings(settings):
   """Removes incompatible entries from the django settings module."""
 
   # Ensure this module is installed as an application.
@@ -446,12 +488,40 @@ def InstallReplacementImpModule():
   logging.debug("Installed replacement imp module")
 
 
-def InstallAppengineHelperForDjango():
+def InstallReplacementThreadingModule():
+  """Install a replacement for the python threading module.
+
+  This is only to deal with a bug in Django 1.1+
+  """
+  try:
+    from django.utils._threading_local import local
+    import threading
+    threading.local = local
+  except ImportError:
+    # We are in Django 1.0
+    pass
+  logging.debug("Installed replacement threading module")
+
+
+def InstallAppengineHelperForDjango(version=None):
   """Installs and Patches all of the classes/methods required for integration.
 
   If the variable DEBUG_APPENGINE_DJANGO is set in the environment verbose
   logging of the actions taken will be enabled.
   """
+
+  FixPython26Logging()
+  LoadSdk()
+  LoadDjango(version)
+
+  from django import VERSION
+  from django.conf import settings
+
+  # Adding this again here to solve a problem that happens when context
+  # switching from webapp.template to django.template.
+  # TODO(elsigh): Maybe there is a deeper, fixable problem somewhere?
+  os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
   if VERSION < (1, 0, None):
     logging.error("Django 1.0 or greater is required!")
     sys.exit(1)
@@ -467,15 +537,16 @@ def InstallAppengineHelperForDjango():
 
   LoadAppengineEnvironment()
   InstallReplacementImpModule()
+  InstallReplacementThreadingModule()
   InstallAppengineDatabaseBackend()
   InstallModelForm()
   InstallGoogleMemcache()
   InstallDjangoModuleReplacements()
-  PatchDjangoSerializationModules()
-  CleanupDjangoSettings()
+  PatchDjangoSerializationModules(settings)
+  CleanupDjangoSettings(settings)
   ModifyAvailableCommands()
   InstallGoogleSMTPConnection()
-  InstallAuthentication()
+  InstallAuthentication(settings)
 
   logging.debug("Successfully loaded the Google App Engine Helper for Django.")
 
@@ -489,7 +560,7 @@ def InstallGoogleSMTPConnection():
   mail.mail_managers = gmail.mail_managers
 
 
-def InstallAuthentication():
+def InstallAuthentication(settings):
   if "django.contrib.auth" not in settings.INSTALLED_APPS:
     return
   try:
