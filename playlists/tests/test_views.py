@@ -28,38 +28,43 @@ from django.core.urlresolvers import reverse
 import fudge
 from fudge.inspector import arg
 
+from common.testutil import FormTestCaseHelper
 from common import dbconfig
 import auth
 from auth import roles
 from auth.models import User
 import playlists.tasks
+from playlists import views as playlists_views
 from playlists.models import Playlist, PlaylistTrack, PlaylistBreak, ChirpBroadcast
 from djdb.models import Artist, Album, Track
 
 __all__ = ['TestPlaylistViews', 'TestPlaylistViewsWithLibrary', 
-           'TestDeleteTrackFromPlaylist']
+           'TestDeleteTrackFromPlaylist', 'TestPlaylistTasks']
 
 # stub that does nothing to handle tests 
 # that don't need to make assertions about URL fetches
 stub_fetch_url = fudge.Fake('_fetch_url', callable=True)
 
-class PlaylistViewsTest(TestCase):
+def setup_dbconfig():
+    dbconfig['chirpapi.url.create'] = 'http://testapi/playlist/create'
+    dbconfig['chirpapi.url.delete'] = 'http://testapi/playlist/delete'
+    dbconfig['live365.service_url'] = 'http://__dummylive365service__/cgi-bin/add_song.cgi'
+
+def clear_data():
+    for pl in Playlist.all():
+        for track in PlaylistTrack.all().filter('playlist =', pl):
+            track.delete()
+        pl.delete()
+
+class PlaylistViewsTest(FormTestCaseHelper, TestCase):
     
     def setUp(self):
         self.client.login(email="test@test.com", roles=[roles.DJ])
-        dbconfig['chirpapi.url.create'] = 'http://testapi/playlist/create'
-        dbconfig['chirpapi.url.delete'] = 'http://testapi/playlist/delete'
+        setup_dbconfig()
     
     def tearDown(self):
-        for pl in Playlist.all():
-            for track in PlaylistTrack.all().filter('playlist =', pl):
-                track.delete()
-            pl.delete()
+        clear_data()
         fudge.clear_expectations()
-
-    def assertNoFormErrors(self, response):
-        if response.context and response.context[0].get('form'):
-            self.assertEquals(response.context[0]['form'].errors.as_text(), "")
     
     def get_selector(self):
         return User.all().filter('email =', 'test@test.com')[0]
@@ -140,6 +145,7 @@ class TestPlaylistViews(PlaylistViewsTest):
         
         # when this user has created the entry she gets a link to delete it
         assert '[delete]' in resp.content
+        fudge.verify()
     
     def test_remote_api_errors_are_logged(self):
         
@@ -168,7 +174,7 @@ class TestPlaylistViews(PlaylistViewsTest):
             self.assertEqual(qs['track_name'], 'Port Rhombus')
             self.assertEqual(qs['track_album'], 'Port Rhombus EP')
             self.assertEqual(qs['track_label'], 'Warp Records')
-            # self.assertEqual(qs['track_notes'], "Dark melody. Really nice break down into half time.")
+            self.assertEqual(qs['track_notes'], "Dark melody. Really nice break down into half time.")
             assert 'time_played' in qs
             assert 'track_id' in qs
             return True
@@ -182,6 +188,8 @@ class TestPlaylistViews(PlaylistViewsTest):
                                 .provides('read')
                                 .returns("<service response>"))        
         
+        # TODO(kumar) grrrr, if there's an error here it will simply be LOGGED.
+        # it should raise an exception
         with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):
             resp = self.client.post(reverse('playlists_add_event'), {
                 'artist': "Squarepusher",
@@ -203,6 +211,7 @@ class TestPlaylistViews(PlaylistViewsTest):
         self.assertEquals(tracks[0].label, "Warp Records")
         self.assertEquals(tracks[0].notes, 
                 "Dark melody. Really nice break down into half time.")
+        fudge.verify()
     
     def test_add_tracks_to_existing_stream(self):
         # add several tracks:
@@ -502,3 +511,62 @@ class TestDeleteTrackFromPlaylist(PlaylistViewsTest):
         
         resp = self.client.get(reverse('playlists_landing_page'))
         assert '[delete]' not in resp.content
+
+class TestPlaylistTasks(TestCase):
+    
+    def get_selector(self):
+        user = User(email='test@test.com')
+        user.roles = [roles.DJ]
+        user.save()
+        return user
+    
+    def setUp(self):
+        setup_dbconfig()
+        self.playlist = ChirpBroadcast()
+        selector = self.get_selector()
+        self.track = PlaylistTrack(
+                    playlist=self.playlist, 
+                    selector=selector,
+                    freeform_artist_name="Steely Dan",
+                    freeform_album_title="Aja",
+                    freeform_track_title="Peg")
+        self.track.put()
+    
+    def tearDown(self):
+        clear_data()
+        fudge.clear_expectations()
+    
+    def test_create(self):
+        
+        fake_urlopen = (fudge.Fake('urlopen', expect_call=True))
+        
+        fake_response = (fake_urlopen
+                                .returns_fake()
+                                .has_attr(code='200')
+                                .provides('read')
+                                .returns("<service response>"))        
+        
+        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):        
+            self.client.post(reverse('playlists.send_track_to_live_site'), {
+                'id': self.track.key()
+            })
+        
+        fudge.verify()
+    
+    def test_delete(self):
+        
+        fake_urlopen = (fudge.Fake('urlopen', expect_call=True))
+        
+        fake_response = (fake_urlopen
+                                .returns_fake()
+                                .has_attr(code='200')
+                                .provides('read')
+                                .returns("<service response>"))        
+        
+        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):        
+            self.client.post(reverse('playlists.delete_track_from_live_site'), {
+                'id': self.track.key()
+            })
+        
+        fudge.verify()
+

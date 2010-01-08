@@ -10,16 +10,12 @@ $(document).ready(function() {
     //     $('#facebox table').width(700);
     // });
     
-    $(".show-text-for-reading").click(function() {
-        var id = $(this).attr("id");
-        var parts = id.split("spot-read__");
-        if (parts.length != 2) {
-            throw new Error("Unexpected id for input: " + id);
-        }
-        var key = parts[1];
+    $(".show-text-for-reading").click(function(e) {
+        e.preventDefault();
+        var url = $(this).attr("href");
         $.facebox(function() {
             $.ajax({
-                url: '/traffic_log/spot/text-for-reading/' + key,
+                url: url,
                 success: function(data, textStatus) {
                     $.facebox(data);
                 },
@@ -28,6 +24,20 @@ $(document).ready(function() {
                     $(document).trigger('close.facebox');
                 }
             });
+        });
+    });
+    
+    $(".finish-spot").click(function(e) {
+        e.preventDefault();
+        var url = $(this).attr("href");
+        $.ajax({
+            url: url,
+            success: function(data, textStatus) {
+                console.log("spot was finished, make it turn gray or something?");
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                alert("Whoops, there was an error on the server. An email has been sent to the admins so sit tight or try again.");
+            }
         });
     });
     

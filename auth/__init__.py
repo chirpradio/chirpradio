@@ -52,8 +52,10 @@ _FINAL_LOGOUT_URL = '/auth/hello/'
 # The name of the cookie used to store our security token.
 _CHIRP_SECURITY_TOKEN_COOKIE = 'chirp_security_token'
 
-# Our security tokens expire after two hours.
-_TOKEN_TIMEOUT_S = 2 * 60 * 60
+# Our security tokens expire after 24 hours.
+# TODO(kumar) set this back to two hours after 
+# all CHIRP volunteers have set initial password?
+_TOKEN_TIMEOUT_S = 24 * 60 * 60
 
 
 class UserNotAllowedError(Exception):

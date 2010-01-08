@@ -47,7 +47,7 @@ urlpatterns = patterns(
     # The volunteer management app.
     ('^volunteers/?', include('volunteers.urls')),
 
-    (r'^traffic_log/?', include('traffic_log.urls')),   
+    (r'^traffic_log/', include('traffic_log.urls')),   
     
     # Common.
     ('^common/', include('common.urls')),

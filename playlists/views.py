@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.shortcuts import render_to_response, get_object_or_404
+from django.template import loader, RequestContext
 
 from google.appengine.api.datastore_errors import BadKeyError
 
@@ -30,7 +31,7 @@ import auth
 from auth import roles
 from playlists.forms import PlaylistTrackForm
 from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast
-from playlists.tasks import url_track_create, url_track_delete
+from playlists.tasks import playlist_event_listeners
 
 
 common_context = {
@@ -89,7 +90,6 @@ def get_vars(request):
 
     vars = {
         'form': form,
-        'current_user': current_user,
         'playlist': form.playlist
     }
     vars.update(common_context)
@@ -106,7 +106,8 @@ def landing_page(request):
 
     vars['playlist_events'] = list(iter_playlist_events_for_view(pl))
 
-    return render_to_response('playlists/landing_page.html', vars)
+    return render_to_response('playlists/landing_page.html', vars,
+            context_instance=RequestContext(request))
 
 
 @require_role(roles.DJ)
@@ -122,10 +123,11 @@ def create_event(request):
 
         if vars['form'].is_valid():
             track = vars['form'].save()
-            url_track_create(track)
+            playlist_event_listeners.create(track)
             return HttpResponseRedirect(reverse('playlists_landing_page'))
 
-    return render_to_response('playlists/landing_page.html', vars)
+    return render_to_response('playlists/landing_page.html', vars,
+            context_instance=RequestContext(request))
 
 
 @require_role(roles.DJ)
@@ -138,6 +140,6 @@ def delete_event(request, event_key):
     else:
         if e and e.selector.key() == auth.get_current_user(request).key():
             e.delete()
-            url_track_delete(event_key)
+            playlist_event_listeners.delete(event_key)
 
     return HttpResponseRedirect(reverse('playlists_landing_page'))

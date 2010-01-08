@@ -18,10 +18,14 @@
 import logging
 import urllib, urllib2
 import wsgiref.handlers
+from django.http import HttpResponse, HttpResponseRedirect
+from django.core.urlresolvers import reverse
 from google.appengine.ext import webapp
 from google.appengine.api.labs import taskqueue
 from common import dbconfig, in_dev
 from playlists.models import PlaylistEvent
+
+log = logging.getLogger()
 
 """
 Publish Track being played to remote PHP server
@@ -43,6 +47,92 @@ URLs for PHP test server
 CHIRPAPI_USERNAME = dbconfig.get('chirpapi.username', 'chirpapi')
 CHIRPAPI_PASSWORD = dbconfig.get('chirpapi.password', 'chirpapi')
 
+class PlaylistEventListener(object):
+    """Listens to creations or deletions of playlist entries."""
+    
+    def create(self, track):
+        """This instance of PlaylistEvent was created."""
+        raise NotImplementedError
+    
+    def delete(self, track_key):
+        """The key of this PlaylistEvent was deleted."""
+        raise NotImplementedError
+
+class LiveSiteListener(PlaylistEventListener):
+    """Sends playlist events to the live CHIRP site (a Textpattern PHP site)."""
+    
+    def create(self, track):
+        """This instance of PlaylistEvent was created."""
+        url_track_create(track)
+    
+    def delete(self, track_key):
+        """The key of this PlaylistEvent was deleted."""
+        url_track_delete(track_key)
+
+class Live365Listener(PlaylistEventListener):
+    """Sends playlist events as metadata to the Live 365 player."""
+    
+    def create(self, track):
+        """This instance of PlaylistEvent was created.
+        
+        POST parameters and their meaning
+        
+        **member_name**
+        Live365 member name
+        
+        **password**
+        Live365 password
+        
+        **sessionid**
+        Unused.  This is an alternative to user password and looks like
+        membername:sessionkey as returned by api_login.cgi
+        
+        **version**
+        Version of API request.  Currently this must be 2
+        
+        **filename**
+        I think we can leave this blank because Live365 docs say they 
+        will use it to guess song and artist info if none was sent.
+        
+        **seconds**
+        Length of the track in seconds.  Live365 uses this to refresh its 
+        popup player window thing.  So really we should probably set this to 60 or 120 
+        because DJs might be submitting playlist entries out of sync with when 
+        they are actually playing the songs.
+        
+        **title**
+        Song title
+        
+        **album**
+        Album title
+        """
+        # in prod: http://www.live365.com/cgi-bin/add_song.cgi
+        service_url = dbconfig['live365.service_url']
+    
+    def delete(self, track_key):
+        """The key of this PlaylistEvent was deleted.
+        
+        I don't think this can be implemented for Live365
+        """
+        pass
+    
+class PlaylistEventDispatcher(object):
+    
+    def __init__(self, listeners):
+        self.listeners = listeners
+    
+    def create(self, *args, **kw):
+        for listener in self.listeners:
+            listener.create(*args, **kw)
+    
+    def delete(self, *args, **kw):
+        for listener in self.listeners:
+            listener.delete(*args, **kw)
+
+playlist_event_listeners = PlaylistEventDispatcher([
+    LiveSiteListener(),
+    Live365Listener()
+])
 
 def _urls(type='create'):
     urls = {
@@ -60,19 +150,20 @@ def url_track_create(track):
     if in_dev():
         _url_track_create(track)
     else:
-        taskqueue.add(url='/playlists/task_create', params={'id':str(track.key())})
+        taskqueue.add(url=reverse('playlists.send_track_to_live_site'), params={'id':str(track.key())})
 
 def url_track_delete(key):
     if in_dev():
         _url_track_delete(key)
     else:
-        taskqueue.add(url='/playlists/task_delete', params={'id':key})
+        taskqueue.add(url=reverse('playlists.delete_track_from_live_site'), params={'id':key})
 
 
 
 """ bluk of the remoting code
 """
 def _url_track_create(track=None):
+    log.info("chirpradio.org create track %s" % track.key())
     if track is None:
         return
 
@@ -93,9 +184,7 @@ def _url_track_create(track=None):
         qs['track_album'] = as_utf8_str(track.album_title)
     if track.label:
         qs['track_label'] = as_utf8_str(track.label)
-    # TODO(kumar) waiting until API supports this:
-    # if track.notes:
-    #     qs['track_notes'] = as_utf8_str(track.notes)
+        qs['track_notes'] = as_utf8_str(track.notes)
 
     data = urllib.urlencode(qs)
     headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "application/json"}
@@ -106,6 +195,7 @@ def _url_track_create(track=None):
     _fetch_url(url, data, 'POST', headers, 'digest', url)
 
 def _url_track_delete(id):
+    log.info("chirpradio.org delete track %s" % id)
     if not id:
         return
     #
@@ -142,10 +232,10 @@ def _fetch_url(url=None, data=None, method='GET', headers=None, auth_type=None, 
         # response
         res = urllib2.urlopen(req)
         d = {'code': res.code, 'content': res.read()}
-        logging.info(d)
+        log.info(d)
         return d
     except Exception, e:
-        logging.error(e)
+        log.error(e)
         pass
 
     return {}
@@ -165,35 +255,11 @@ def _auth_handler(username, password, auth_type=None, auth_url=None):
 
 """Thin wrapper for taskqueue actions mapped in playlists/urls.py
 """
-def _get_track(key):
-    return PlaylistEvent.get(key)
 
-def task_create(request):
-    _url_track_create(_get_track(request.POST['id']))
+def send_track_to_live_site(request):
+    _url_track_create(PlaylistEvent.get(request.POST['id']))
+    return HttpResponse("OK")
 
-def task_delete(request):
+def delete_track_from_live_site(request):
     _url_track_delete(request.POST['id'])
-
-
-"""WSGI Application  mapped in app.yaml
-Since want to restrict access to appengine tasks need to set a handler
-in app.yaml with 'login: admin' and script app handler tasks.py
-taskqueue urls only use HTTP POST and have to be manually excuted
-check admin console at http://HOST:PORT/_ah/admin/tasks?queue=default
-"""
-class TaskCreateHandler(webapp.RequestHandler):
-    def post(self):
-        _url_track_create(_get_track(self.request.get('id')))
-
-class TaskDeleteHandler(webapp.RequestHandler):
-    def post(self):
-        _url_track_delete(self.request.get('id'))
-
-def main():
-    wsgiref.handlers.CGIHandler().run(webapp.WSGIApplication([
-        ('/playlists/task_create', TaskCreateHandler),
-        ('/playlists/task_delete', TaskDeleteHandler),
-    ]))
-
-if __name__ == '__main__':
-    main()
+    return HttpResponse("OK")

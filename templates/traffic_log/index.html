@@ -1,4 +1,5 @@
 {% extends 'traffic_log/base.html' %}
+{% load traffic_log_extras %}
 
 {% block extrahead_for_page %}
 <link rel="stylesheet" type="text/css" href="/media/common/js/jquery-facebox/facebox.css" media="screen" />
@@ -36,10 +37,11 @@ Traffic Log Spots
     
     <td>{{ spot.title }}</td>
     <td>
-        <input class="show-text-for-reading" id="spot-read__{{ spot.key }}" type="button" 
-            value="Show text for reading" /> 
-        <input class="done-with-spot-from-main-view" id="spot-done__{{ spot.key }}" type="button" 
-            value="Done" />
+        <a class="show-text-for-reading" 
+            href="{% url traffic_log.spotTextForReading spot.key %}">Show text for reading</a>
+        -
+        <a class="finish-spot"
+            href="{% url_to_finish_spot slotted_spot spot %}">Finish</a>
     </td>
     
     {% endfor %}
