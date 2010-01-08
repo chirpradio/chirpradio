@@ -234,6 +234,11 @@ def _fetch_url(url=None, data=None, method='GET', headers=None, auth_type=None, 
         d = {'code': res.code, 'content': res.read()}
         log.info(d)
         return d
+    except AssertionError:
+        # short of listing every possible urllib2 exception, 
+        # this is the best I can think of to get the test suite to work 
+        # (i.e. mock assertions) -Kumar
+        raise
     except Exception, e:
         log.error(e)
         pass

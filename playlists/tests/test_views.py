@@ -108,6 +108,8 @@ class TestPlaylistViews(PlaylistViewsTest):
     def test_add_track_with_minimal_fields(self):
         
         def inspect_request(r):
+            # NOTE: due to URL fetching, you can only raise 
+            # AssertionError here
             self.assertEqual(r.get_full_url(), 'http://testapi/playlist/create')
             qs = dict(cgi.parse_qsl(r.data))
             self.assertEqual(qs['dj_name'], "None None")
@@ -167,6 +169,8 @@ class TestPlaylistViews(PlaylistViewsTest):
     def test_add_track_with_all_fields(self):
         
         def inspect_request(r):
+            # NOTE: due to URL fetching, you can only raise 
+            # AssertionError here
             self.assertEqual(r.get_full_url(), 'http://testapi/playlist/create')
             qs = dict(cgi.parse_qsl(r.data))
             self.assertEqual(qs['dj_name'], "None None")
@@ -236,6 +240,8 @@ class TestPlaylistViews(PlaylistViewsTest):
     def test_unicode_track_entry(self):
         
         def inspect_request(r):
+            # NOTE: due to URL fetching, you can only raise 
+            # AssertionError here
             self.assertEqual(r.get_full_url(), 'http://testapi/playlist/create')
             qs = dict(cgi.parse_qsl(r.data))
             self.assertEqual(qs['dj_name'], "None None")
