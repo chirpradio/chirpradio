@@ -44,9 +44,7 @@ class ChirpApi {
                // Check that API call has all the needed parameters
                $parameters = array(
                  'track_name',
-                 'track_album',
                  'track_artist',
-                 'track_label',
                  'dj_name',
                  'time_played',
                  'track_id'
@@ -168,8 +166,10 @@ class ChirpApi {
   private function create($track_id, $track_name, $track_album, $track_artist, $track_label, 
                           $dj_name, $time_played, $track_notes) {
 
+    global $txpcfg;
+
     // Convert the timestamp to the timezone of the server
-    $time_played = strftime("%Y-%m-%d %H:%M:%S", strtotime("$time_played"));
+    $time_played = strftime("%Y-%m-%d %H:%M:%S", strtotime("$time_played " . $txpcfg['api_adjust_time']));
 
     // Expiration time of "Article" should be one week after the date the song was played
     $expiration_time = strftime("%Y-%m-%d %H:%M:%S", strtotime("$time_played +1 week"));
@@ -188,7 +188,7 @@ class ChirpApi {
     $track_url_length = 157;
     $url_title = substr(sprintf("%s-%s",
                          str_replace(" ", "-", strtolower($track_artist)),
-                         str_replace(" ", "-", strtolower($track_album))
+                         str_replace(" ", "-", strtolower($track_name))
                          ),
                          0, $track_url_length);
 

@@ -14,11 +14,17 @@ So the entire rule looks like this:
 
 Add the following lines to the bottom of the file <textpattern_root>/textpattern/config.sql:
 
-  // API Authentication
-  $txpcfg['api_auth_realm'] = 'CHIRP API';
-  $txpcfg['api_auth_users'] = array(
-      'chirpapi' => 'chirpapi',
-  );
+// API Authentication
+$txpcfg['api_auth_realm'] = 'CHIRP API';
+$txpcfg['api_auth_users'] = array(
+    'chirpapiusername' => 'chirpapipassword',
+);
+
+// Amount to adjust the timestamps sent to the API.
+// This is needed to accomodate for different Timezones between the Textpatttern server
+// and the Appengine server.
+// This should be in a form parsable by PHP's 
+$txpcfg['api_adjust_time'] = "-8 hours";
 
 API Authentication
 
@@ -41,8 +47,8 @@ Parameters:
 * track_id. Required. Track ID from the Playlist app.
 * track_name. Required. Title of currently played track.
 * track_artist. Required. Artist name of currently played track
-* track_album. Required.  Album title of the currently played track.
-* track_label. Required. Name of record label that released the currently played track.
+* track_album. Optional.  Album title of the currently played track.
+* track_label. Optional. Name of record label that released the currently played track.
 * dj_name. Required. Name of the DJ who played the track.
 * time_played. Required. Time the track was played in the format "YYYY-MM-DD HH:MM:SS"
 * track_notes. Optional. Additional Notes (Such as "Playing at Schuba's on Saturday").
