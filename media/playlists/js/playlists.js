@@ -21,6 +21,7 @@ $(document).ready(function() {
                 song.autocompleter.setExtraParams({artist_key: entity_key});
                 song.autocompleter.flushCache();
                 $("#id_artist_key").attr("value", entity_key);
+                $("#id_artist").focus();
             }
         }, default_opt)
     );
@@ -30,6 +31,7 @@ $(document).ready(function() {
             onItemSelect: function(li) {
                 var entity_key = li.extra[0];
                 $("#id_album_key").attr("value", entity_key);
+                $("#id_album").focus();
             }
         }, default_opt)
     );
@@ -39,6 +41,7 @@ $(document).ready(function() {
             onItemSelect: function(li) {
                 var entity_key = li.extra[0];
                 $("#id_song_key").attr("value", entity_key);
+                $("#id_song").focus();
             }
         }, default_opt)
     );
