@@ -15,6 +15,7 @@
 ### limitations under the License.
 ###
 
+import sys
 import logging
 import urllib, urllib2
 import wsgiref.handlers
@@ -192,7 +193,7 @@ def _url_track_create(track=None):
     #
     url = _urls('create')
     #_fetch_url(url, data, 'POST', headers)
-    _fetch_url(url, data, 'POST', headers, 'digest', url)
+    return _fetch_url(url, data, 'POST', headers, 'digest', url)
 
 def _url_track_delete(id):
     log.info("chirpradio.org delete track %s" % id)
@@ -204,7 +205,7 @@ def _url_track_delete(id):
     #
     url = _urls('delete')
     #_fetch_url(url + str(id), {}, 'DELETE', headers)
-    _fetch_url(url + "/" + str(id), {}, 'DELETE', headers, 'digest', url)
+    return _fetch_url(url + "/" + str(id), {}, 'DELETE', headers, 'digest', url)
 
 
 """urllib2.Request only supports GET|POST, extend it to support any HTTP method type
@@ -231,7 +232,7 @@ def _fetch_url(url=None, data=None, method='GET', headers=None, auth_type=None, 
 
         # response
         res = urllib2.urlopen(req)
-        d = {'code': res.code, 'content': res.read()}
+        d = {'code': res.code, 'content': res.read(), 'success':True}
         log.info(d)
         return d
     except AssertionError:
@@ -240,10 +241,16 @@ def _fetch_url(url=None, data=None, method='GET', headers=None, auth_type=None, 
         # (i.e. mock assertions) -Kumar
         raise
     except Exception, e:
+        etype, val, tb = sys.exc_info()
         log.error(e)
-        pass
-
-    return {}
+        if hasattr(e, 'read'):
+            content = e.read()
+        else:
+            content = None
+        return {'success': False,
+                'exception_type': etype.__name__,
+                'exception': val,
+                'content': content}
 
 def _auth_handler(username, password, auth_type=None, auth_url=None):
     password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
@@ -262,9 +269,15 @@ def _auth_handler(username, password, auth_type=None, auth_url=None):
 """
 
 def send_track_to_live_site(request):
-    _url_track_create(PlaylistEvent.get(request.POST['id']))
-    return HttpResponse("OK")
+    result = _url_track_create(PlaylistEvent.get(request.POST['id']))
+    if not result['success']:
+        return HttpResponse("Task was unsuccessful", status=500)
+    else:
+        return HttpResponse("OK")
 
 def delete_track_from_live_site(request):
-    _url_track_delete(request.POST['id'])
-    return HttpResponse("OK")
+    result = _url_track_delete(request.POST['id'])
+    if not result['success']:
+        return HttpResponse("Task was unsuccessful", status=500)
+    else:
+        return HttpResponse("OK")

@@ -553,9 +553,24 @@ class TestPlaylistTasks(TestCase):
                                 .returns("<service response>"))        
         
         with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):        
-            self.client.post(reverse('playlists.send_track_to_live_site'), {
+            resp = self.client.post(reverse('playlists.send_track_to_live_site'), {
                 'id': self.track.key()
             })
+        
+        fudge.verify()
+    
+    def test_create_failure(self):
+        
+        fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
+                            .raises(IOError))
+        
+        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):        
+            resp = self.client.post(reverse('playlists.send_track_to_live_site'), {
+                'id': self.track.key()
+            })
+        
+        self.assertEqual(resp.status_code, 500)
+        # from django.utils import simplejson
         
         fudge.verify()
     
@@ -574,5 +589,18 @@ class TestPlaylistTasks(TestCase):
                 'id': self.track.key()
             })
         
+        fudge.verify()
+    
+    def test_delete_failure(self):
+        
+        fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
+                            .raises(IOError))
+        
+        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):        
+            resp = self.client.post(reverse('playlists.delete_track_from_live_site'), {
+                'id': self.track.key()
+            })
+        
+        self.assertEqual(resp.status_code, 500)
         fudge.verify()
 
