@@ -118,13 +118,16 @@ def create_event(request):
     vars = get_vars(request)
 
     if request.method == 'POST':
+
         # special case...
         if request.POST.get('submit') == 'Add Break':
             b = PlaylistBreak(playlist=vars['playlist'])
             b.put()
-            return HttpResponseRedirect(reverse('playlists_landing_page'))
+            # errors should not display on add break, reset internal hash
+            vars['form']._errors = {}
 
-        if vars['form'].is_valid():
+        # save a valid entry
+        elif vars['form'].is_valid():
             track = vars['form'].save()
             playlist_event_listeners.create(track)
             return HttpResponseRedirect(reverse('playlists_landing_page'))
