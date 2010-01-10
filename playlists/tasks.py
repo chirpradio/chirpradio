@@ -107,7 +107,7 @@ class Live365Listener(PlaylistEventListener):
         Album title
         """
         # in prod: http://www.live365.com/cgi-bin/add_song.cgi
-        service_url = dbconfig['live365.service_url']
+        service_url = dbconfig.get('live365.service_url', 'http://fake-live365-url/add_song.cgi')
     
     def delete(self, track_key):
         """The key of this PlaylistEvent was deleted.
