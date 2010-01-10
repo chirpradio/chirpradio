@@ -20,7 +20,7 @@ handlers:
 # restrict public access to task queue URL handlers
 - url: /playlists/task/.*
   script: main.py
-  #login: admin
+  login: admin
 
 # For everything else, we always want to use HTTPS.
 - url: /.*
