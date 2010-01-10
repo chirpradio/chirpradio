@@ -18,6 +18,7 @@ jQuery.extend({
                 break;
             default:
                 console.error("Unexpected URL: " + config.url);
+                break;
         }
 	}	
 });

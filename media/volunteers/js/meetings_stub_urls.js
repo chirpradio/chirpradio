@@ -23,8 +23,7 @@ jQuery.extend({
                     "Frida Fremont|3\n"+
                     "Farley Jackson|4\n"+
                     "Frederick Holmes|5\n"+
-                    "Fanzo Fananza|6"
-                );
+                    "Fanzo Fananza|6");
                 console.log("sent stub search results");
                 break;
             case '/chirp/meetings/' + cur_month + '/01/' + cur_year + '/track.json':
@@ -33,6 +32,7 @@ jQuery.extend({
                     meeting_id:1,
                     attendees:[]
                 });
+                break;
             case '/chirp/meetings/'  + cur_month + '/02/' + cur_year + '/track.json':
                 config.success({
                     success:true, 
@@ -62,6 +62,7 @@ jQuery.extend({
                 break;
             default:
                 console.error("Unexpected URL: " + config.url);
+                break;
         }
 	}	
 });
