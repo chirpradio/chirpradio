@@ -119,9 +119,11 @@ class TestPlaylistViews(PlaylistViewsTest):
             self.assertEqual(qs['dj_name'], "None None")
             self.assertEqual(qs['track_artist'], 'Squarepusher')
             self.assertEqual(qs['track_name'], 'Port Rhombus')
+            self.assertEqual(qs['track_album'], 'Port Rhombus EP')
+            self.assertEqual(qs['track_label'], 'Warp Records')
+            
             # left empty:
-            assert 'track_album' not in qs
-            assert 'track_label' not in qs
+            assert 'track_notes' in qs
             assert 'time_played' in qs
             assert 'track_id' in qs
             return True
@@ -138,7 +140,9 @@ class TestPlaylistViews(PlaylistViewsTest):
         with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):
             resp = self.client.post(reverse('playlists_add_event'), {
                 'artist': "Squarepusher",
-                'song': "Port Rhombus"
+                'song': "Port Rhombus",
+                "album": "Port Rhombus EP",
+                "label": "Warp Records"
             })
         self.assertNoFormErrors(resp)
         self.assertRedirects(resp, reverse('playlists_landing_page'))
@@ -148,6 +152,8 @@ class TestPlaylistViews(PlaylistViewsTest):
         tracks = [t for t in context['playlist_events']]
         self.assertEquals(tracks[0].artist_name, "Squarepusher")
         self.assertEquals(tracks[0].track_title, "Port Rhombus")
+        self.assertEquals(tracks[0].album_title, "Port Rhombus EP")
+        self.assertEquals(tracks[0].label, "Warp Records")
         
         # when this user has created the entry she gets a link to delete it
         assert '[delete]' in resp.content
@@ -167,7 +173,7 @@ class TestPlaylistViews(PlaylistViewsTest):
         with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):
             resp = self.client.post(reverse('playlists_add_event'), {
                 'artist': "Squarepusher",
-                'song': "Port Rhombus"
+                'song': "Port Rhombus",
             })
     
     def test_add_track_with_all_fields(self):
@@ -227,11 +233,15 @@ class TestPlaylistViews(PlaylistViewsTest):
             resp = self.client.post(reverse('playlists_add_event'), {
                 'artist': "Steely Dan",
                 'song': "Peg",
+                'album': "Aja",
+                'label': "ABC",
             })
             self.assertNoFormErrors(resp)
             resp = self.client.post(reverse('playlists_add_event'), {
                 'artist': "Hall & Oates",
                 'song': "M.E.T.H.O.D. of Love",
+                'album': "Big Bam Boom",
+                'label': 'RCA'
             })
             self.assertNoFormErrors(resp)
         
@@ -401,7 +411,7 @@ class TestPlaylistViewsWithLibrary(PlaylistViewsTest):
         stevie = Artist.all().filter("name =", "Stevie Wonder")[0]
         talking_book = Album.all().filter("title =", "Talking Book")[0]
         sunshine = Track.all().filter("title =", "You Are The Sunshine Of My Life")[0]
-        
+
         with fudge.patched_context(playlists.tasks, "_fetch_url", stub_fetch_url):
             resp = self.client.post(reverse('playlists_add_event'), {
                 'artist_key': stevie.key(),
@@ -409,7 +419,9 @@ class TestPlaylistViewsWithLibrary(PlaylistViewsTest):
                 'song': "You Are The Sunshine Of My Life",
                 'song_key': sunshine.key(),
                 'album_key': talking_book.key(),
-                'album': talking_book.title
+                'album': talking_book.title,
+                'label': "Tamla",
+                'label_key': 'Blah'
             })
         
         self.assertNoFormErrors(resp)
@@ -493,11 +505,13 @@ class TestDeleteTrackFromPlaylist(PlaylistViewsTest):
         other_user = User(email="other@elsewhere.com")
         other_user.roles.append(auth.roles.DJ)
         other_user.put()
+        time.sleep(0.4)
+        
         other_track = PlaylistTrack(
                     playlist=self.playlist, 
                     selector=other_user,
                     freeform_artist_name="Peaches",
-                    freeform_track_title="Rock Show")
+                    freeform_track_title="Rock Show",)
         other_track.put()
         
         with fudge.patched_context(playlists.tasks, "_fetch_url", stub_fetch_url):
