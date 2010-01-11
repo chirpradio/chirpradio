@@ -26,26 +26,36 @@
 <form method="post" id="playlist-form" action="{% url playlists_add_event %}">
 <fieldset>
 
+{% if not add_break %}
 {{ form.artist.errors }}
+{% endif %}
 <label for="artist">Artist</label>
 {{ form.artist }}
 {{ form.artist_key }}
 
+{% if not add_break %}
 {{ form.song.errors }}
+{% endif %}
 <label for="song">Song Title</label>
 {{ form.song }}
 {{ form.song_key }}
 
+{% if not add_break %}
 {{ form.album.errors }}
+{% endif %}
 <label for="album">Album</label>
 {{ form.album }}
 {{ form.album_key }}
 
+{% if not add_break %}
 {{ form.label.errors }}
+{% endif %}
 <label for="label">Label</label>
 {{ form.label }}
 
+{% if not add_break %}
 {{ form.song_notes.errors }}
+{% endif %}
 <label for="song_notes">Song Notes</label>
 {{ form.song_notes }}
 
