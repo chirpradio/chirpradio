@@ -6,15 +6,18 @@ $('body').prepend(
     // '<h2 id="banner"></h2>' +
     '<h2 id="userAgent"></h2>' +
     '<ol id="tests"></ol>' + 
-    '<div id="main"></div>'
-);
+    '<div id="main"></div>');
 
 });
 
 function _sleep(ms_delay) {
     // sort of CPU intensive and probably better to use deferred tests.
     var start = new Date().getTime();
-    while (new Date().getTime() < start + ms_delay);
+    var i;
+    while (new Date().getTime() < (start + ms_delay)) {
+        // lint-free empty statement:
+        i = 1;
+    }
 }
 
 $(document).ready(function() {
@@ -60,12 +63,11 @@ $(document).ready(function() {
             selectedInst = inst;        
         }
         
-         var inp = $('#meeting_date');
-         var date = new Date();
-         // onSelect
-         inp.val('').datepicker('show')
-             .simulate('keydown', {keyCode: $.simulate.VK_ENTER})
-                 ;
+        var inp = $('#meeting_date');
+        var date = new Date();
+        // onSelect
+        var i = inp.val('').datepicker('show');
+        i = i.simulate('keydown', {keyCode: $.simulate.VK_ENTER});
      
         // _sleep(1000);
     });
@@ -73,18 +75,17 @@ $(document).ready(function() {
     test("add attendee", function() {
         var input = $("#attendee_name");
         
-        input
-            .simulate('keydown', {keyCode: keys.F}) // trigger setTimeOut in autocomplete
-            .simulate('focus')
-            .val("fred") // type some stuff
+        var i = input.simulate('keydown', {keyCode: keys.F}); // trigger setTimeOut in autocomplete
+        i = i.simulate('focus');
+        i = i.val("fred"); // type some stuff
             // .simulate('keydown', {keyCode: keys.TAB})
-                ;
+        
         // _sleep(3000);
        
-       input
+       //input
             // .simulate('blur')
             // .simulate('keydown', {keyCode: keys.ENTER})
-                ; 
+        //        ; 
     });
     
 });

@@ -41,7 +41,8 @@ from djdb.models import Artist, Album, Track
 import time
 
 __all__ = ['TestPlaylistViews', 'TestPlaylistViewsWithLibrary', 
-           'TestDeleteTrackFromPlaylist', 'TestPlaylistTasks']
+           'TestDeleteTrackFromPlaylist', 'TestLiveSitePlaylistTasks',
+           'TestLive365PlaylistTasks']
 
 # stub that does nothing to handle tests 
 # that don't need to make assertions about URL fetches
@@ -51,6 +52,8 @@ def setup_dbconfig():
     dbconfig['chirpapi.url.create'] = 'http://testapi/playlist/create'
     dbconfig['chirpapi.url.delete'] = 'http://testapi/playlist/delete'
     dbconfig['live365.service_url'] = 'http://__dummylive365service__/cgi-bin/add_song.cgi'
+    dbconfig['live365.member_name'] = 'dummy_member'
+    dbconfig['live365.password'] = 'dummy_password'
 
 def clear_data():
     for pl in Playlist.all():
@@ -123,7 +126,8 @@ class TestPlaylistViews(PlaylistViewsTest):
             self.assertEqual(qs['track_label'], 'Warp Records')
             
             # left empty:
-            assert 'track_notes' in qs
+            assert 'track_label' not in qs
+            assert 'track_notes' not in qs
             assert 'time_played' in qs
             assert 'track_id' in qs
             return True
@@ -202,9 +206,17 @@ class TestPlaylistViews(PlaylistViewsTest):
                                 .provides('read')
                                 .returns("<service response>"))        
         
-        # TODO(kumar) grrrr, if there's an error here it will simply be LOGGED.
-        # it should raise an exception
-        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):
+        fake_taskqueue = (fudge.Fake('taskqueue')
+                                .expects('add')
+                                .with_args(
+                                    url=reverse('playlists.send_track_to_live365'),
+                                    params={'id': arg.any_value()}
+                                ))
+        patches = [
+            fudge.patch_object(playlists.tasks.urllib2, "urlopen", fake_urlopen),
+            fudge.patch_object(playlists.tasks, "taskqueue", fake_taskqueue)
+        ]
+        try:
             resp = self.client.post(reverse('playlists_add_event'), {
                 'artist': "Squarepusher",
                 'song': "Port Rhombus",
@@ -212,6 +224,9 @@ class TestPlaylistViews(PlaylistViewsTest):
                 "label": "Warp Records",
                 "song_notes": "Dark melody. Really nice break down into half time."
             })
+        finally:
+            for p in patches:
+                p.restore()
         
         self.assertNoFormErrors(resp)
         self.assertRedirects(resp, reverse('playlists_landing_page'))
@@ -547,7 +562,7 @@ class TestDeleteTrackFromPlaylist(PlaylistViewsTest):
         resp = self.client.get(reverse('playlists_landing_page'))
         assert '[delete]' not in resp.content
 
-class TestPlaylistTasks(TestCase):
+class TaskTest(object):
     
     def get_selector(self):
         user = User(email='test@test.com')
@@ -562,14 +577,16 @@ class TestPlaylistTasks(TestCase):
         self.track = PlaylistTrack(
                     playlist=self.playlist, 
                     selector=selector,
-                    freeform_artist_name="Steely Dan",
-                    freeform_album_title="Aja",
-                    freeform_track_title="Peg")
+                    freeform_artist_name=u"Ivan Krsti\u0107",
+                    freeform_album_title=u"Ivan Krsti\u0107 album",
+                    freeform_track_title=u"Ivan Krsti\u0107 song")
         self.track.put()
     
     def tearDown(self):
         clear_data()
         fudge.clear_expectations()
+
+class TestLiveSitePlaylistTasks(TaskTest, TestCase):
     
     def test_create(self):
         
@@ -582,9 +599,24 @@ class TestPlaylistTasks(TestCase):
                                 .returns("<service response>"))        
         
         with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):        
-            self.client.post(reverse('playlists.send_track_to_live_site'), {
+            resp = self.client.post(reverse('playlists.send_track_to_live_site'), {
                 'id': self.track.key()
             })
+        
+        fudge.verify()
+    
+    def test_create_failure(self):
+        
+        fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
+                            .raises(IOError))
+        
+        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):        
+            resp = self.client.post(reverse('playlists.send_track_to_live_site'), {
+                'id': self.track.key()
+            })
+        
+        self.assertEqual(resp.status_code, 500)
+        # from django.utils import simplejson
         
         fudge.verify()
     
@@ -604,4 +636,49 @@ class TestPlaylistTasks(TestCase):
             })
         
         fudge.verify()
+    
+    def test_delete_failure(self):
+        
+        fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
+                            .raises(IOError))
+        
+        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):        
+            resp = self.client.post(reverse('playlists.delete_track_from_live_site'), {
+                'id': self.track.key()
+            })
+        
+        self.assertEqual(resp.status_code, 500)
+        fudge.verify()
 
+class TestLive365PlaylistTasks(TaskTest, TestCase):
+    
+    def test_create(self):
+        
+        def inspect_request(r):
+            # NOTE: due to URL fetching, you can only raise 
+            # AssertionError here
+            self.assertEqual(r.get_full_url(), 'http://__dummylive365service__/cgi-bin/add_song.cgi')
+            qs = dict(cgi.parse_qsl(r.data))
+            self.assertEqual(qs['member_name'], "dummy_member")
+            self.assertEqual(qs['password'], "dummy_password")
+            self.assertEqual(qs['seconds'], '30')
+            self.assertEqual(qs['title'], 'Ivan Krsti\xc4\x87 song')
+            self.assertEqual(qs['album'], 'Ivan Krsti\xc4\x87 album')
+            self.assertEqual(qs['artist'], 'Ivan Krsti\xc4\x87')
+            return True
+        
+        fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
+                                .with_args(arg.passes_test(inspect_request)))
+        
+        fake_response = (fake_urlopen
+                                .returns_fake()
+                                .has_attr(code='200')
+                                .provides('read')
+                                .returns("<service response>"))        
+        
+        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):        
+            resp = self.client.post(reverse('playlists.send_track_to_live365'), {
+                'id': self.track.key()
+            })
+        
+        fudge.verify()

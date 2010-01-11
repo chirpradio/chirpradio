@@ -1,7 +1,8 @@
+
 // requires: chirp/chirp.js
 
 $(document).ready(function() {
-	// test test    
+    
     var attendee_list_ul, 
         meeting_id, 
         attendee_user_ids = [], 
@@ -61,12 +62,12 @@ $(document).ready(function() {
         if (!this.exists()) {
             this.add();   
         }
-    }
+    };
     
     Attendee.prototype.exists = function() {
         var that = this;
         return ($.inArray(that.user_id, attendee_user_ids) != -1) || false;
-    }
+    };
     
     Attendee.prototype.add = function() {
         var that = this;
@@ -76,13 +77,12 @@ $(document).ready(function() {
             $("#attendee_list").append(attendee_list_ul);
         }
         that.ul = attendee_list_ul;
-        var li = $(document.createElement("li"))
-            .attr("id", that.htmlId())
-            .html(
-                that.name + ' <a href="#">[x]</a>'
-		  );
+        var li;
+        li = $(document.createElement("li"));
+        li = li.attr("id", that.htmlId());
+        li = li.html(that.name + ' <a href="#">[x]</a>');
         $("a", li).click(function(e) {
-            that.delete();
+            that.remove();
             e.preventDefault();
         });
         attendee_list_ul.append(li);
@@ -91,7 +91,7 @@ $(document).ready(function() {
         if (that.do_save) {
             that.save();
         }
-    }
+    };
     
     Attendee.prototype.save = function() {
         var that = this;
@@ -100,9 +100,9 @@ $(document).ready(function() {
             success: function(response) {
             }
         });
-    }
+    };
     
-    Attendee.prototype.delete = function() {
+    Attendee.prototype.remove = function() {
         var that = this;
         chirp.request({
             url: chirp.url('chirp/meetings/'+that.meeting_id+'/attendee/delete/'+that.user_id+'.json'),
@@ -112,17 +112,17 @@ $(document).ready(function() {
                 attendee_user_ids.pop(i);
                 render_list_control();
             }
-        })
-    }
+        });
+    };
     
     Attendee.prototype.htmlId = function() {
         return "attendee_list-" + this.user_id;
-    }
+    };
     
     $("#attendee_name").autocomplete("/chirp/search_users", {
         selectFirst: true,
         onItemSelect: function(li) {
-            var user_id = parseInt(li.extra[0]);
+            var user_id = parseInt(li.extra[0], 10);
             var attendee = new Attendee({name: li.innerHTML, user_id: user_id, do_save:true});
             $("#attendee_name").attr("value", "").focus();
         }
@@ -138,11 +138,11 @@ $(document).ready(function() {
                     attendee_user_ids = [];
                     $("#attendee_list li").remove();
                     $.map(response.attendees, function(user) {
-                        var attendee = new Attendee({name:user.name, user_id:user.user_id})
+                        var attendee = new Attendee({name:user.name, user_id:user.user_id});
                     });
                     render_list_control();
                 }
-            })
+            });
         }
     });
 });
