@@ -23,8 +23,7 @@ $(document).ready(function() {
                 $("#id_artist_key").attr("value", entity_key);
                 $("#id_artist").focus();
             }
-        }, default_opt)
-    );
+        }, default_opt));
     
     $("#id_album").autocomplete("/djdb/album/search.txt", 
         $.extend({
@@ -33,8 +32,7 @@ $(document).ready(function() {
                 $("#id_album_key").attr("value", entity_key);
                 $("#id_album").focus();
             }
-        }, default_opt)
-    );
+        }, default_opt));
     
     $("#id_song").autocomplete("/djdb/track/search.txt", 
         $.extend({
@@ -43,8 +41,7 @@ $(document).ready(function() {
                 $("#id_song_key").attr("value", entity_key);
                 $("#id_song").focus();
             }
-        }, default_opt)
-    );
+        }, default_opt));
     
     // be sure that freeform entry always clears out any 
     // previously auto-completed keys :

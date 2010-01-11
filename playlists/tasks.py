@@ -15,6 +15,7 @@
 ### limitations under the License.
 ###
 
+import sys
 import logging
 import urllib, urllib2
 import wsgiref.handlers
@@ -47,6 +48,11 @@ URLs for PHP test server
 CHIRPAPI_USERNAME = dbconfig.get('chirpapi.username', 'chirpapi')
 CHIRPAPI_PASSWORD = dbconfig.get('chirpapi.password', 'chirpapi')
 
+def as_utf8_str(s):
+    if isinstance(s, unicode):
+        s = s.encode('utf8')
+    return s
+
 class PlaylistEventListener(object):
     """Listens to creations or deletions of playlist entries."""
     
@@ -74,40 +80,8 @@ class Live365Listener(PlaylistEventListener):
     
     def create(self, track):
         """This instance of PlaylistEvent was created.
-        
-        POST parameters and their meaning
-        
-        **member_name**
-        Live365 member name
-        
-        **password**
-        Live365 password
-        
-        **sessionid**
-        Unused.  This is an alternative to user password and looks like
-        membername:sessionkey as returned by api_login.cgi
-        
-        **version**
-        Version of API request.  Currently this must be 2
-        
-        **filename**
-        I think we can leave this blank because Live365 docs say they 
-        will use it to guess song and artist info if none was sent.
-        
-        **seconds**
-        Length of the track in seconds.  Live365 uses this to refresh its 
-        popup player window thing.  So really we should probably set this to 60 or 120 
-        because DJs might be submitting playlist entries out of sync with when 
-        they are actually playing the songs.
-        
-        **title**
-        Song title
-        
-        **album**
-        Album title
         """
-        # in prod: http://www.live365.com/cgi-bin/add_song.cgi
-        service_url = dbconfig.get('live365.service_url', 'http://fake-live365-url/add_song.cgi')
+        taskqueue.add(url=reverse('playlists.send_track_to_live365'), params={'id':str(track.key())})
     
     def delete(self, track_key):
         """The key of this PlaylistEvent was deleted.
@@ -166,11 +140,6 @@ def _url_track_create(track=None):
     log.info("chirpradio.org create track %s" % track.key())
     if track is None:
         return
-
-    def as_utf8_str(s):
-        if isinstance(s, unicode):
-            s = s.encode('utf8')
-        return s
     
     qs = {
         'track_name': as_utf8_str(track.track_title),
@@ -184,6 +153,7 @@ def _url_track_create(track=None):
         qs['track_album'] = as_utf8_str(track.album_title)
     if track.label:
         qs['track_label'] = as_utf8_str(track.label)
+    if track.notes:
         qs['track_notes'] = as_utf8_str(track.notes)
 
     data = urllib.urlencode(qs)
@@ -192,7 +162,7 @@ def _url_track_create(track=None):
     #
     url = _urls('create')
     #_fetch_url(url, data, 'POST', headers)
-    _fetch_url(url, data, 'POST', headers, 'digest', url)
+    return _fetch_url(url, data, 'POST', headers, 'digest', url)
 
 def _url_track_delete(id):
     log.info("chirpradio.org delete track %s" % id)
@@ -204,7 +174,7 @@ def _url_track_delete(id):
     #
     url = _urls('delete')
     #_fetch_url(url + str(id), {}, 'DELETE', headers)
-    _fetch_url(url + "/" + str(id), {}, 'DELETE', headers, 'digest', url)
+    return _fetch_url(url + "/" + str(id), {}, 'DELETE', headers, 'digest', url)
 
 
 """urllib2.Request only supports GET|POST, extend it to support any HTTP method type
@@ -219,6 +189,8 @@ class AnyRequest(urllib2.Request):
             return urllib2.Request.get_method(self)
 
 def _fetch_url(url=None, data=None, method='GET', headers=None, auth_type=None, auth_url=None):
+    if headers is None:
+        headers = {}
 
     # init auth hander if using http authentication
     if auth_type and auth_type in ('basic','digest'):
@@ -231,7 +203,7 @@ def _fetch_url(url=None, data=None, method='GET', headers=None, auth_type=None, 
 
         # response
         res = urllib2.urlopen(req)
-        d = {'code': res.code, 'content': res.read()}
+        d = {'code': res.code, 'content': res.read(), 'success':True}
         log.info(d)
         return d
     except AssertionError:
@@ -240,10 +212,17 @@ def _fetch_url(url=None, data=None, method='GET', headers=None, auth_type=None, 
         # (i.e. mock assertions) -Kumar
         raise
     except Exception, e:
+        # raise
+        etype, val, tb = sys.exc_info()
         log.error(e)
-        pass
-
-    return {}
+        if hasattr(e, 'read'):
+            content = e.read()
+        else:
+            content = None
+        return {'success': False,
+                'exception_type': etype.__name__,
+                'exception': val,
+                'content': content}
 
 def _auth_handler(username, password, auth_type=None, auth_url=None):
     password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
@@ -261,10 +240,78 @@ def _auth_handler(username, password, auth_type=None, auth_url=None):
 """Thin wrapper for taskqueue actions mapped in playlists/urls.py
 """
 
+def task_response(result):
+    if not result['success']:
+        return HttpResponse("Task was unsuccessful", status=500)
+    else:
+        return HttpResponse("OK")
+
 def send_track_to_live_site(request):
-    _url_track_create(PlaylistEvent.get(request.POST['id']))
-    return HttpResponse("OK")
+    result = _url_track_create(PlaylistEvent.get(request.POST['id']))
+    return task_response(result)
 
 def delete_track_from_live_site(request):
-    _url_track_delete(request.POST['id'])
-    return HttpResponse("OK")
+    result = _url_track_delete(request.POST['id'])
+    return task_response(result)
+
+def send_track_to_live365(request):
+    """Background Task URL to send playlist to Live 365 service.
+    
+    This view expects POST parameters:
+    
+    **id**
+    The Datastore key of the playlist entry
+    
+    When POSTing to Live 365 here are the parameters:
+    
+    **member_name**
+    Live365 member name
+    
+    **password**
+    Live365 password
+    
+    **sessionid**
+    Unused.  This is an alternative to user password and looks like
+    membername:sessionkey as returned by api_login.cgi
+    
+    **version**
+    Version of API request.  Currently this must be 2
+    
+    **filename**
+    I think we can leave this blank because Live365 docs say they 
+    will use it to guess song and artist info if none was sent.
+    
+    **seconds**
+    Length of the track in seconds.  Live365 uses this to refresh its 
+    popup player window thing.  So really we should probably set this to 60 or 120 
+    because DJs might be submitting playlist entries out of sync with when 
+    they are actually playing the songs.
+    
+    **title**
+    Song title
+    
+    **artist**
+    Artist name
+    
+    **album**
+    Album title
+    """
+    track = PlaylistEvent.get(request.POST['id'])
+    log.info("Live365 create track %s" % track.key())
+    
+    qs = {
+        'member_name': dbconfig['live365.member_name'],
+        'password': dbconfig['live365.password'],
+        'version': 2,
+        'seconds': 30,
+        'title': as_utf8_str(track.track_title),
+        'artist': as_utf8_str(track.artist_name),
+        'album': as_utf8_str(track.album_title)
+    }
+    data = urllib.urlencode(qs)
+    headers = {"Content-type": "application/x-www-form-urlencoded"}
+    # in prod: http://www.live365.com/cgi-bin/add_song.cgi
+    service_url = dbconfig['live365.service_url']
+    result = _fetch_url(url=service_url, method='POST', data=data, headers=headers)
+    return task_response(result)
+
