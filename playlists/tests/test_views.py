@@ -112,6 +112,30 @@ class TestPlaylistViews(PlaylistViewsTest):
         self.assertEquals(tracks[1].track_title, "Peg")
         self.assertEquals(len(tracks), 2, "tracks older than 3 hours were not hidden")
     
+    def test_incomplete_track(self):
+        selector = self.get_selector()
+        playlist = ChirpBroadcast()
+        track = PlaylistTrack(
+                    playlist=playlist, 
+                    selector=selector,
+                    freeform_artist_name="Squarepusher",
+                    freeform_track_title="Port Rhombus")
+        track.put()
+        
+        with fudge.patched_context(playlists.tasks, "_fetch_url", stub_fetch_url):
+            resp = self.client.post(reverse('playlists_add_event'), {
+                'artist': 'Julio Iglesias',
+                'album': 'Mi Amore'
+            })
+        # self.assertNoFormErrors(resp)
+        context = resp.context[0]
+        self.assertEqual(context['form'].errors.as_text(), 
+            "* song\n  * Please enter the song title.\n* label\n  * Please enter the label.")
+        assert 'Please enter the label.' in resp.content
+        tracks = [t for t in context['playlist_events']]
+        self.assertEquals(tracks[0].artist_name, "Squarepusher")
+        self.assertEquals(tracks[0].track_title, "Port Rhombus")
+    
     def test_add_track_with_minimal_fields(self):
         
         def inspect_request(r):
