@@ -24,6 +24,7 @@ from playlists.models import (
 import auth.roles
 from auth.models import User
 from google.appengine.api.datastore_errors import BadValueError
+import time
 
 __all__ = ['TestPlaylist', 'TestPlaylistTrack', 'TestPlaylistBreak']
 
@@ -228,6 +229,7 @@ class TestPlaylistTrack(PlaylistEventTest):
             freeform_track_title="Ember"
         )
         track.put()
+        time.sleep(0.4)
         track = PlaylistTrack(
             selector=selector,
             playlist=playlist,
@@ -257,6 +259,7 @@ class TestPlaylistBreak(PlaylistEventTest):
             freeform_track_title="Hand Clapping Song"
         )
         track.put()
+        time.sleep(0.4)
         
         pl_break = PlaylistBreak(playlist=playlist)
         pl_break.put()
