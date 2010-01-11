@@ -126,7 +126,6 @@ class TestPlaylistViews(PlaylistViewsTest):
             self.assertEqual(qs['track_label'], 'Warp Records')
             
             # left empty:
-            assert 'track_label' not in qs
             assert 'track_notes' not in qs
             assert 'time_played' in qs
             assert 'track_id' in qs
