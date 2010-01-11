@@ -38,6 +38,8 @@ from playlists import views as playlists_views
 from playlists.models import Playlist, PlaylistTrack, PlaylistBreak, ChirpBroadcast
 from djdb.models import Artist, Album, Track
 
+import time
+
 __all__ = ['TestPlaylistViews', 'TestPlaylistViewsWithLibrary', 
            'TestDeleteTrackFromPlaylist', 'TestPlaylistTasks']
 
@@ -81,6 +83,7 @@ class TestPlaylistViews(PlaylistViewsTest):
                     freeform_album_title="Aja",
                     freeform_track_title="Peg")
         track.put()
+        time.sleep(0.4)
         track = PlaylistTrack(
                     playlist=playlist,
                     selector=selector, 
@@ -88,6 +91,7 @@ class TestPlaylistViews(PlaylistViewsTest):
                     freeform_album_title="Pyromania",
                     freeform_track_title="Photograph")
         track.put()
+        time.sleep(0.4)
         track = PlaylistTrack(
                     playlist=playlist,
                     selector=selector, 
@@ -293,6 +297,7 @@ class TestPlaylistViews(PlaylistViewsTest):
                     freeform_album_title="Aja",
                     freeform_track_title="Peg")
         track.put()
+        time.sleep(0.4)
         track = PlaylistTrack(
                     playlist=playlist,
                     selector=selector, 
@@ -303,10 +308,20 @@ class TestPlaylistViews(PlaylistViewsTest):
         
         # add the break:
         resp = self.client.post(reverse('playlists_add_event'), {
-            'submit': "Add Break"
+            'submit': "Add Break",
+            'artist': "artist",
+            'song': "song",
+            'album': "album",
+            'label': "label",
+            'song_notes': "song notes"
         })
         self.assertNoFormErrors(resp)
-        self.assertRedirects(resp, reverse('playlists_landing_page'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context['form'].cleaned_data['artist'], 'artist')
+        self.assertEqual(resp.context['form'].cleaned_data['song'], 'song')
+        self.assertEqual(resp.context['form'].cleaned_data['album'], 'album')
+        self.assertEqual(resp.context['form'].cleaned_data['label'], 'label')
+        self.assertEqual(resp.context['form'].cleaned_data['song_notes'], 'song notes')
         
         # add one track after the break:
         track = PlaylistTrack(
