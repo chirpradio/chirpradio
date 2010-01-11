@@ -71,6 +71,14 @@ then you need to grab the pycrypto source and run:
 NOTE: The Google App Engine SDK currently does not run inside a virtualenv.
 This is a known bug.
 
+To run the JavaScript lint tests (which will fail otherwise) 
+you will need the jsl command line tool, aka javascript-lint.
+
+On mac ports you can get this with:
+% sudo port install javascript-lint
+
+(probably something similar for Linux)
+
 Running Locally
 ---------------
 	
