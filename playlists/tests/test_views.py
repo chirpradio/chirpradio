@@ -121,6 +121,7 @@ class TestPlaylistViews(PlaylistViewsTest):
             # left empty:
             assert 'track_album' not in qs
             assert 'track_label' not in qs
+            assert 'track_notes' not in qs
             assert 'time_played' in qs
             assert 'track_id' in qs
             return True

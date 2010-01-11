@@ -153,6 +153,7 @@ def _url_track_create(track=None):
         qs['track_album'] = as_utf8_str(track.album_title)
     if track.label:
         qs['track_label'] = as_utf8_str(track.label)
+    if track.notes:
         qs['track_notes'] = as_utf8_str(track.notes)
 
     data = urllib.urlencode(qs)
