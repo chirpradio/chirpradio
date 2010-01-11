@@ -119,16 +119,17 @@ def create_event(request):
         if request.POST.get('submit') == 'Add Break':
             b = PlaylistBreak(playlist=vars['playlist'])
             b.put()
-
-            pl = PlaylistEvent.all().filter('playlist =', vars['playlist'])
-            pl = pl.filter('established >=', datetime.now() - timedelta(hours=3))
-            pl = pl.order('-established')
-            vars['playlist_events'] = list(iter_playlist_events_for_view(pl))
+            vars['add_break'] = True
 
         elif vars['form'].is_valid():
             track = vars['form'].save()
             playlist_event_listeners.create(track)
             return HttpResponseRedirect(reverse('playlists_landing_page'))
+
+    pl = PlaylistEvent.all().filter('playlist =', vars['playlist'])
+    pl = pl.filter('established >=', datetime.now() - timedelta(hours=3))
+    pl = pl.order('-established')
+    vars['playlist_events'] = list(iter_playlist_events_for_view(pl))
 
     return render_to_response('playlists/landing_page.html', vars,
             context_instance=RequestContext(request))
