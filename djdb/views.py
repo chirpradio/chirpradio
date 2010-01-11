@@ -21,6 +21,7 @@ from google.appengine.ext import db
 from django import forms
 from django import http
 from django.template import loader, Context, RequestContext
+from django.shortcuts import render_to_response
 from auth.decorators import require_role
 from auth import roles
 from common import sanitize_html
@@ -28,6 +29,8 @@ from djdb import models
 from djdb import search
 from djdb import review
 import logging
+from djdb.models import Album
+import re
 
 log = logging.getLogger(__name__)
 
@@ -48,6 +51,10 @@ def landing_page(request):
                 ctx_vars["invalid_query"] = True
             else:
                 ctx_vars["query_results"] = matches
+
+    # Add categories.
+    ctx_vars["categories"] = ['core', 'local_current', 'local_classic', 'heavy', 'light']
+    
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
@@ -80,6 +87,18 @@ def album_search_for_autocomplete(request):
     for ent in matching_entities:
         response.write("%s|%s\n" % (ent.title, ent.key()))
     return response
+
+def album_change_categories(request) :
+    for name in request.POST.keys() :
+        if re.match('checkbox_', name) :
+            type, num = name.split('_')
+            category = request.POST.get('category_%s' % num)
+            album_key = request.POST.get('album_key_%s' % num)
+            album = Album.get(album_key)
+            album.category = category
+            album.save()
+
+    return landing_page(request)
 
 def track_search_for_autocomplete(request):
     matching_entities = _get_matches_for_partial_entity_search(

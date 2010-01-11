@@ -189,6 +189,7 @@ class Album(db.Model):
     An album consists of a series of numbered tracks.
 
     Attributes:
+      category: The category of the album. May be core, local_current, local_classic, heavy, light.
       title: The name of the album.  This is used in TALB tags.
       disc_number: If specified, this album is one part of a multi-disc
         set.
@@ -206,6 +207,8 @@ class Album(db.Model):
       image: An image associated with this album.  This is typically
         used for the album's cover art.
     """
+    category = db.StringProperty(required=False)
+    
     title = db.StringProperty(required=True)
 
     disc_number = db.IntegerProperty(required=False)
