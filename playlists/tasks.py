@@ -48,9 +48,9 @@ URLs for PHP test server
 CHIRPAPI_USERNAME = dbconfig.get('chirpapi.username', 'chirpapi')
 CHIRPAPI_PASSWORD = dbconfig.get('chirpapi.password', 'chirpapi')
 
-def as_utf8_str(s):
+def as_encoded_str(s, encoding='utf8', errors='strict'):
     if isinstance(s, unicode):
-        s = s.encode('utf8')
+        s = s.encode(encoding, errors)
     return s
 
 class PlaylistEventListener(object):
@@ -142,19 +142,19 @@ def _url_track_create(track=None):
         return
     
     qs = {
-        'track_name': as_utf8_str(track.track_title),
-        'track_artist': as_utf8_str(track.artist_name),
-        'dj_name': as_utf8_str("%s %s" % (track.selector.first_name, track.selector.last_name)),
+        'track_name': as_encoded_str(track.track_title),
+        'track_artist': as_encoded_str(track.artist_name),
+        'dj_name': as_encoded_str("%s %s" % (track.selector.first_name, track.selector.last_name)),
         'time_played': track.modified.strftime("%Y-%m-%d %H:%M:%S"),
         'track_id': str(track.key()),
     }
     # optional:
     if track.album_title:
-        qs['track_album'] = as_utf8_str(track.album_title)
+        qs['track_album'] = as_encoded_str(track.album_title)
     if track.label:
-        qs['track_label'] = as_utf8_str(track.label)
+        qs['track_label'] = as_encoded_str(track.label)
     if track.notes:
-        qs['track_notes'] = as_utf8_str(track.notes)
+        qs['track_notes'] = as_encoded_str(track.notes)
 
     data = urllib.urlencode(qs)
     headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "application/json"}
@@ -304,9 +304,9 @@ def send_track_to_live365(request):
         'password': dbconfig['live365.password'],
         'version': 2,
         'seconds': 30,
-        'title': as_utf8_str(track.track_title),
-        'artist': as_utf8_str(track.artist_name),
-        'album': as_utf8_str(track.album_title)
+        'title': as_encoded_str(track.track_title, encoding='latin-1', errors="ignore"),
+        'artist': as_encoded_str(track.artist_name, encoding='latin-1', errors="ignore"),
+        'album': as_encoded_str(track.album_title, encoding='latin-1', errors="ignore")
     }
     data = urllib.urlencode(qs)
     headers = {"Content-type": "application/x-www-form-urlencoded"}

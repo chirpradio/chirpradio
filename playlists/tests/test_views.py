@@ -676,7 +676,7 @@ class TestLiveSitePlaylistTasks(TaskTest, TestCase):
 
 class TestLive365PlaylistTasks(TaskTest, TestCase):
     
-    def test_create(self):
+    def test_create_not_latin_chars(self):
         
         def inspect_request(r):
             # NOTE: due to URL fetching, you can only raise 
@@ -686,9 +686,10 @@ class TestLive365PlaylistTasks(TaskTest, TestCase):
             self.assertEqual(qs['member_name'], "dummy_member")
             self.assertEqual(qs['password'], "dummy_password")
             self.assertEqual(qs['seconds'], '30')
-            self.assertEqual(qs['title'], 'Ivan Krsti\xc4\x87 song')
-            self.assertEqual(qs['album'], 'Ivan Krsti\xc4\x87 album')
-            self.assertEqual(qs['artist'], 'Ivan Krsti\xc4\x87')
+            # c should be replaced because latin-1 can't encode that and Live365 likes latin-1
+            self.assertEqual(qs['title'], 'Ivan Krsti song')
+            self.assertEqual(qs['album'], 'Ivan Krsti album')
+            self.assertEqual(qs['artist'], 'Ivan Krsti')
             return True
         
         fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
@@ -706,3 +707,89 @@ class TestLive365PlaylistTasks(TaskTest, TestCase):
             })
         
         fudge.verify()
+    
+    def test_create_latin_chars(self):
+        
+        self.playlist = ChirpBroadcast()
+        selector = self.get_selector()
+        self.track = PlaylistTrack(
+                    playlist=self.playlist, 
+                    selector=selector,
+                    freeform_artist_name=u'Bj\xf6rk',
+                    freeform_album_title=u'Bj\xf6rk album',
+                    freeform_track_title=u'Bj\xf6rk song')
+        self.track.put()
+        
+        def inspect_request(r):
+            # NOTE: due to URL fetching, you can only raise 
+            # AssertionError here
+            self.assertEqual(r.get_full_url(), 'http://__dummylive365service__/cgi-bin/add_song.cgi')
+            qs = dict(cgi.parse_qsl(r.data))
+            self.assertEqual(qs['member_name'], "dummy_member")
+            self.assertEqual(qs['password'], "dummy_password")
+            self.assertEqual(qs['seconds'], '30')
+            # c should be replaced because latin-1 can't encode that and Live365 likes latin-1
+            self.assertEqual(qs['title'], 'Bj\xf6rk song')
+            self.assertEqual(qs['album'], 'Bj\xf6rk album')
+            self.assertEqual(qs['artist'], 'Bj\xf6rk')
+            return True
+        
+        fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
+                                .with_args(arg.passes_test(inspect_request)))
+        
+        fake_response = (fake_urlopen
+                                .returns_fake()
+                                .has_attr(code='200')
+                                .provides('read')
+                                .returns("<service response>"))        
+        
+        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):        
+            resp = self.client.post(reverse('playlists.send_track_to_live365'), {
+                'id': self.track.key()
+            })
+        
+        fudge.verify()
+    
+    def test_create_ascii_chars(self):
+        
+        self.playlist = ChirpBroadcast()
+        selector = self.get_selector()
+        self.track = PlaylistTrack(
+                    playlist=self.playlist, 
+                    selector=selector,
+                    freeform_artist_name=u'artist',
+                    freeform_album_title=u'album',
+                    freeform_track_title=u'song')
+        self.track.put()
+        
+        def inspect_request(r):
+            # NOTE: due to URL fetching, you can only raise 
+            # AssertionError here
+            self.assertEqual(r.get_full_url(), 'http://__dummylive365service__/cgi-bin/add_song.cgi')
+            qs = dict(cgi.parse_qsl(r.data))
+            self.assertEqual(qs['member_name'], "dummy_member")
+            self.assertEqual(qs['password'], "dummy_password")
+            self.assertEqual(qs['seconds'], '30')
+            # c should be replaced because latin-1 can't encode that and Live365 likes latin-1
+            self.assertEqual(qs['title'], 'song')
+            self.assertEqual(qs['album'], 'album')
+            self.assertEqual(qs['artist'], 'artist')
+            return True
+        
+        fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
+                                .with_args(arg.passes_test(inspect_request)))
+        
+        fake_response = (fake_urlopen
+                                .returns_fake()
+                                .has_attr(code='200')
+                                .provides('read')
+                                .returns("<service response>"))        
+        
+        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):        
+            resp = self.client.post(reverse('playlists.send_track_to_live365'), {
+                'id': self.track.key()
+            })
+        
+        fudge.verify()
+
+
