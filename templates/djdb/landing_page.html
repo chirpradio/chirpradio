@@ -20,7 +20,7 @@ Landing page for DJDB app
 <ul>
 {% for rev in recent_reviews %}
   <li> <a href="{{ rev.subject.url }}">{{ rev.subject.title }},</a>
-reviewed by {{ rev.author }}:  <i>{{ rev.title }}</i>
+reviewed by {{ rev.author }}
 &nbsp;&nbsp;
   <small>Posted {{ rev.timestamp_display|date:"F j, Y P" }}</small> </li>
 {% endfor %}
@@ -30,6 +30,7 @@ reviewed by {{ rev.author }}:  <i>{{ rev.title }}</i>
 <form action="" method="post">
   <input type="text" name="query"/>
   <input type="submit" value="Search"/>
+  <input type="checkbox" name="reviewed"/>&nbsp;Reviewed
 </form>
 <p/>
 

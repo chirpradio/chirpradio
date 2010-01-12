@@ -42,14 +42,17 @@ It is still very primitive.
 <h3>Reviews</h3>
 {% if album.reviews %}
 <a href="new_review">Write another review</a> of this album.
-{% for doc in album.reviews %}
+  {% for doc in album.reviews %}
 <p>
-<b>{{ doc.title }}</b><br>
-<i>By {{ doc.author }}</i><br>
-<small>Added {{ doc.timestamp_display|date:"F j, Y P" }}</small><br>
+<blockquote>
 {{ doc.text|safe }}
+</blockquote>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author }} on {{ doc.timestamp_display|date:"F j, Y P" }}</small>
+  {% ifequal user.key doc.author.key %}
+[ <a href="edit_review/{{ doc.key.id }}">Edit</a> ]
+  {% endifequal %}
 </p>
-{% endfor %}
+  {% endfor %}
 {% else %}
 No reviews yet!  You could be the first to
 <a href="new_review">write a review</a> of this album.

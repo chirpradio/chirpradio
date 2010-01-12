@@ -46,7 +46,10 @@ def landing_page(request):
         query_str = request.POST.get("query")
         if query_str:
             ctx_vars["query_str"] = query_str
-            matches = search.simple_music_search(query_str)
+            reviewed = True
+            if request.POST.get("reviewed") is None :
+                reviewed = False
+            matches = search.simple_music_search(query_str, reviewed=reviewed)
             if matches is None:
                 ctx_vars["invalid_query"] = True
             else:
@@ -156,14 +159,28 @@ def _get_album_or_404(album_id_str):
         return http.HttpResponse(status=404)
     return album
 
+def _get_review_or_404(review_id_str):
+    if not review_id_str.isdigit():
+        return http.HttpResponse(status=404)
+    # XXX This does not seem to work. ???
+    #doc = models.Document.get_by_id(int(review_id_str))
+    # So for now, just search for id.
+    doc = None
+    for doc in models.Document.all() :
+        if int(review_id_str) == doc.key().id():
+            break
+    if doc is None :
+        return http.HttpResponse(status=404)
+    return doc
+
 def album_info_page(request, album_id_str):
     album = _get_album_or_404(album_id_str)
     template = loader.get_template("djdb/album_info_page.html")
     ctx_vars = { "title": u"%s / %s" % (album.title, album.artist_name),
-                 "album": album }
+                 "album": album,
+                 "user": request.user }
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
-
 
 def album_new_review(request, album_id_str):
     album = _get_album_or_404(album_id_str)
@@ -182,7 +199,6 @@ def album_new_review(request, album_id_str):
                     form.cleaned_data["text"])
             elif "save" in request.POST:
                 doc = review.new(album, request.user)
-                doc.title = form.cleaned_data["title"]
                 doc.unsafe_text = form.cleaned_data["text"]
                 # Increment the number of reviews.
                 album.num_reviews += 1
@@ -196,6 +212,33 @@ def album_new_review(request, album_id_str):
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
+def album_edit_review(request, album_id_str, review_id_str):
+    album = _get_album_or_404(album_id_str)
+    doc = _get_review_or_404(review_id_str)
+    template = loader.get_template("djdb/album_edit_review.html")
+    ctx_vars = { "title": u"Edit Review",
+                 "album": album,
+                 "review": doc }
+
+    form = None
+    if request.method == "GET":
+        form = review.Form({'text': doc.text})
+    else:
+        form = review.Form(request.POST)
+        if form.is_valid():
+            if "preview" in request.POST:
+                ctx_vars["valid_html_tags"] = (
+                    sanitize_html.valid_tags_description())
+                ctx_vars["preview"] = sanitize_html.sanitize_html(
+                    form.cleaned_data["text"])
+            elif "save" in request.POST:
+                doc.unsafe_text = form.cleaned_data["text"]
+                doc.save()
+                # Redirect back to the album info page.
+                return http.HttpResponseRedirect(album.url)
+    ctx_vars["form"] = form
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
 
 def image(request):
     img = models.DjDbImage.get_by_url(request.path)
