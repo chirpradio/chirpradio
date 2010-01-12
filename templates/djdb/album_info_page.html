@@ -40,19 +40,25 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update_tracks">Explicit</a>
 <input type="hidden" name="mark_as"/>
 <table>
 {% for track in album.sorted_tracks %}
-<tr
-{% if track.is_explicit %}style="color: red;"{% endif %}
->
+<tr>
 <td><input type="checkbox"
             class="checkbox{% if track.is_explicit %} explicit{% endif %}{% if track.is_recommended %} recommended{% endif %}"
             name="checkbox_{{ forloop.counter }}"/></td>
+<td>
+{% if track.is_explicit %}<img height="16" width="16" src="/media/common/img/bomb.png"/>{% endif %}
+{% if track.is_recommended %}<img height="16" width="16" src="/media/common/img/thumbsup.jpg"/>{% endif %}
+</td>
 <td>{{ track.track_num }}.</td>
 <td>{{ track.title }}</td>
 <td>{{ track.duration }}</td>
 <td><small>{{ track.bit_rate_kbps }} kbps</small></td>
 <td>
 {% for tag in track.sorted_current_tags %}
+  {% ifnotequal tag 'explicit' %}
+    {% ifnotequal tag 'recommended' %}
 [{{tag}}]
+    {% endifnotequal %}
+  {% endifnotequal %}
 {% endfor %}
 </td>
 </tr>
