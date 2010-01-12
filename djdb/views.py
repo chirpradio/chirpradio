@@ -103,6 +103,45 @@ def album_change_categories(request) :
 
     return landing_page(request)
 
+def _add_track_tags(track, user, tags) :
+    tag_edit = models.TagEdit(subject=track,
+                              author=user,
+                              added=tags)
+    tag_edit.put()
+
+def _remove_track_tags(track, user, tags) :
+    tag_edit = models.TagEdit(subject=track,
+                              author=user,
+                              removed=tags);
+    tag_edit.put()
+
+def album_update_tracks(request, album_id_str):
+    album = _get_album_or_404(album_id_str)
+    mark_as = request.POST.get('mark_as')
+    for name in request.POST.keys() :
+        if re.match('checkbox_', name) :
+            type, num = name.split('_')
+            track = album.sorted_tracks[int(num) - 1]
+            if mark_as == 'explicit' :
+                if models.EXPLICIT_TAG in models.TagEdit.fetch_and_merge(track) :
+                    _remove_track_tags(track, request.user, [models.EXPLICIT_TAG])
+                else :
+                    _add_track_tags(track, request.user, [models.EXPLICIT_TAG])
+            elif mark_as == 'recommended' :
+                if models.RECOMMENDED_TAG in models.TagEdit.fetch_and_merge(track) :
+                    _remove_track_tags(track, request.user, [models.RECOMMENDED_TAG])
+                else :
+                    _add_track_tags(track, request.user, [models.RECOMMENDED_TAG])
+            # Update current_tags.
+            models.TagEdit.fetch_and_merge(track)
+            
+    template = loader.get_template("djdb/album_info_page.html")
+    ctx_vars = { "title": u"%s / %s" % (album.title, album.artist_name),
+                 "album": album,
+                 "user": request.user }
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
 def track_search_for_autocomplete(request):
     matching_entities = _get_matches_for_partial_entity_search(
                                             request.GET.get('q', ''),

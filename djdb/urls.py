@@ -50,6 +50,9 @@ urlpatterns = patterns(
     # Change album categories.
     (r'album/change_categories', 'djdb.views.album_change_categories'),
     
+    # Update tracks.
+    (r'album/(.*)/update_tracks', 'djdb.views.album_update_tracks'),
+    
     # Track search for jquery.autocomplete
     (r'track/search\.txt', 'djdb.views.track_search_for_autocomplete'),
 

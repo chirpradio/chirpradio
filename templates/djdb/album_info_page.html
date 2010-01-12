@@ -7,6 +7,13 @@
 
 {% block content %}
 
+{% block extrahead %}
+<script type="text/javascript" 
+    src="/media/common/js/jquery/jquery-1.3.1.js"></script>
+<script type="text/javascript" 
+    src="/media/djdb/js/djdb.js"></script>
+{% endblock %}
+
 <p>
 This is the album information page for <b>{{ album.title }}</b> by
 <a href="{{ album.artist_url }}">{{ album.artist_name }}</a>.
@@ -21,11 +28,24 @@ It is still very primitive.
 {% endif %}
 
 <h3>Tracks</h3>
+<form method="post" name="djdbTracksForm" action="update_tracks">
+<p>
+Select: <a id="checkbox_all" href="">All</a>, 
+        <a id="checkbox_none" href="">None</a>, 
+        <a id="checkbox_explicit" href="">Explicit</a>, 
+        <a id="checkbox_recommended" href=" ">Recommended</a><br/>
+Mark/Unmark selected as: <a id="mark_explicit" href="update_tracks">Explicit</a>, 
+                         <a id="mark_recommended" href="update_tracks">Recommended</a>
+</p>
+<input type="hidden" name="mark_as"/>
 <table>
 {% for track in album.sorted_tracks %}
 <tr
 {% if track.is_explicit %}style="color: red;"{% endif %}
 >
+<td><input type="checkbox"
+            class="checkbox{% if track.is_explicit %} explicit{% endif %}{% if track.is_recommended %} recommended{% endif %}"
+            name="checkbox_{{ forloop.counter }}"/></td>
 <td>{{ track.track_num }}.</td>
 <td>{{ track.title }}</td>
 <td>{{ track.duration }}</td>
@@ -38,6 +58,7 @@ It is still very primitive.
 </tr>
 {% endfor %}
 </table>
+</form>
 
 <h3>Reviews</h3>
 {% if album.reviews %}

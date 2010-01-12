@@ -83,6 +83,18 @@ $(document).ready(function() {
         });
         return false;
     });
+	$("#checkbox_explicit").click(function() {
+		$("input.explicit").each(function() {
+			this.checked = true;
+		});
+        return false;
+	});		
+	$("#checkbox_recommended").click(function() {
+		$("input.recommended").each(function() {
+			this.checked = true;
+		});
+        return false;
+	});		
     
     $("#mark_nocat").click(function() {
         $("input.checkbox").each(function() {
@@ -154,6 +166,16 @@ $(document).ready(function() {
                 }
             }
         });
+        return false;
+    });
+    $("#mark_explicit").click(function() {
+        $("input[name=mark_as]").val('explicit');
+        $(this).parents("form").submit();
+        return false;
+    });
+    $("#mark_recommended").click(function() {
+        $("input[name=mark_as]").val('recommended');
+        $(this).parents("form").submit();
         return false;
     });
 });

@@ -562,6 +562,8 @@ class TagEdit(db.Model):
         for edit in edit_query.fetch(999):
             current_tags.difference_update(edit.removed)
             current_tags.update(edit.added)
+        obj.current_tags = list(current_tags)
+        obj.save()
         return current_tags
 
 
