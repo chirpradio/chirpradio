@@ -70,7 +70,7 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update_tracks">Explicit</a>
 </blockquote>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author }} on {{ doc.timestamp_display|date:"F j, Y P" }}</small>
   {% ifequal user.key doc.author.key %}
-[ <a href="edit_review/{{ doc.key.id }}">Edit</a> ]
+[ <a href="edit_review/{{ doc.key }}">Edit</a> ]
   {% endifequal %}
 </p>
   {% endfor %}

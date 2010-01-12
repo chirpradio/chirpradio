@@ -198,16 +198,8 @@ def _get_album_or_404(album_id_str):
         return http.HttpResponse(status=404)
     return album
 
-def _get_review_or_404(review_id_str):
-    if not review_id_str.isdigit():
-        return http.HttpResponse(status=404)
-    # XXX This does not seem to work. ???
-    #doc = models.Document.get_by_id(int(review_id_str))
-    # So for now, just search for id.
-    doc = None
-    for doc in models.Document.all() :
-        if int(review_id_str) == doc.key().id():
-            break
+def _get_review_or_404(review_key):
+    doc = db.get(review_key)
     if doc is None :
         return http.HttpResponse(status=404)
     return doc
@@ -251,9 +243,9 @@ def album_new_review(request, album_id_str):
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
-def album_edit_review(request, album_id_str, review_id_str):
+def album_edit_review(request, album_id_str, review_key):
     album = _get_album_or_404(album_id_str)
-    doc = _get_review_or_404(review_id_str)
+    doc = _get_review_or_404(review_key)
     template = loader.get_template("djdb/album_edit_review.html")
     ctx_vars = { "title": u"Edit Review",
                  "album": album,
