@@ -29,7 +29,7 @@ from google.appengine.api.datastore_errors import BadKeyError
 from auth.decorators import require_role
 import auth
 from auth import roles
-from playlists.forms import PlaylistTrackForm
+from playlists.forms import PlaylistTrackForm, PlaylistReportForm
 from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast
 from playlists.tasks import playlist_event_listeners
 
@@ -148,3 +148,127 @@ def delete_event(request, event_key):
             playlist_event_listeners.delete(event_key)
 
     return HttpResponseRedirect(reverse('playlists_landing_page'))
+
+
+
+@require_role(roles.MUSIC_DIRECTOR)
+def report_playlist(request):
+    vars = {}
+
+    # report vars
+    items = None
+    fields = ['from_date', 'to_date', 'album_title', 'artist_name', 'track_title', 'label', 'play_count']
+
+    # default report
+    if request.method == 'GET':
+        to_date = datetime.now().date()
+        from_date = to_date - timedelta(days=7)
+        items = query_group_by_track_key(from_date, to_date)
+
+        # default form
+        form = PlaylistReportForm({'from_date':from_date, 'to_date':to_date})
+
+    # check form data post
+    elif request.method == 'POST':
+
+        # generic search form
+        form = PlaylistReportForm(data=request.POST)
+        if form.is_valid():
+            from_date = form.cleaned_data['from_date']
+            to_date = form.cleaned_data['to_date']
+
+            # special case to download report
+            if request.POST.get('download') == 'Download':
+                fname = str(from_date) + '_' + str(to_date)
+                return http_send_csv_file(fname, fields, query_group_by_track_key(from_date, to_date))
+
+            # generate report from date range
+            if request.POST.get('search') == 'Search':
+                items = query_group_by_track_key(from_date, to_date)
+
+    # template vars
+    vars['form'] = form
+
+    if items:
+        vars['fields'] = fields
+        vars['tracks'] = query_group_by_track_key(from_date, to_date)
+
+    return render_to_response('playlists/reports.html', vars,
+            context_instance=RequestContext(request))
+
+def http_send_csv_file(fname, fields, items):
+    import csv
+
+    # dump item using key fields
+    def item2row(i):
+        return [i[key] for key in fields]
+
+    # use response obj to set filename of downloaded file
+    response = HttpResponse(mimetype='text/csv')
+    response['Content-Disposition'] = "attachment; filename=%s.csv" % (fname)
+
+    # write data out
+    out = csv.writer(response)
+    out.writerow(fields)
+    for item in items:
+        out.writerow(item2row(item))
+    #
+    return response
+
+# TODO: move following funcs to models
+def filter_tracks_by_date_range(from_date, to_date, playlist=ChirpBroadcast()):
+    pl = PlaylistTrack.all().filter('playlist =', playlist)
+    pl = pl.filter('established >=', from_date)
+    pl = pl.filter('established <=', to_date)
+    pl = pl.order('-established')
+    return pl
+
+def query_group_by_track_key(from_date, to_date):
+    ''' app engine Query and GqlQuery do not support SQL group by
+    manually count each record and group them by some unique key
+    '''
+
+    query = filter_tracks_by_date_range(from_date, to_date)
+    fields = ['album_title', 'artist_name', 'track_title', 'label']
+
+    #
+    key_item = 'group_by_key'
+    key_counter = 'play_count'
+
+    # group by key/fields
+    def item_key(item):
+        return ','.join([getattr(item, key, None) for key in fields])
+
+    # dict version of db rec
+    def item2hash(item):
+        d = {}
+        for key in fields:
+            d[key] = getattr(item, key, None)
+
+        # init additional props
+        d[key_counter] = 0
+        d['from_date'] = from_date
+        d['to_date'] = to_date
+
+        return d
+
+    # unique list of tracks with order
+    items = []
+
+    # hash of seen tracks
+    seen = {}
+
+    #
+    for item in query:
+        key = item_key(item)
+
+        if not seen.has_key(key):
+            x = item2hash(item)
+            seen[key] = x
+            items.append(x)
+
+        # inc counter
+        seen[key][key_counter] += 1
+
+    return items
+

@@ -28,32 +28,32 @@ class PlaylistTrackForm(forms.Form):
     """
     Manage a track in a DJ playlist
     """
-    artist = forms.CharField(label=_("Artist"), 
-                required=True, 
+    artist = forms.CharField(label=_("Artist"),
+                required=True,
                 widget=forms.TextInput(attrs={'class':'text'}),
                 error_messages={'required':'Please enter the artist name.'})
-    artist_key = forms.Field(label=_("Artist Key"), 
+    artist_key = forms.Field(label=_("Artist Key"),
                 required=False,
                 widget=forms.HiddenInput())
-    album = forms.CharField(label=_("Album"), 
+    album = forms.CharField(label=_("Album"),
                 required=True,
                 widget=forms.TextInput(attrs={'class':'text'}),
                 error_messages={'required':'Please enter the album.'})
-    album_key = forms.Field(label=_("Album Key"), 
+    album_key = forms.Field(label=_("Album Key"),
                 required=False,
                 widget=forms.HiddenInput())
-    label = forms.CharField(label=_("Label"), 
+    label = forms.CharField(label=_("Label"),
                 required=True,
                 widget=forms.TextInput(attrs={'class':'text'}),
                 error_messages={'required':'Please enter the label.'})
-    song = forms.CharField(label=_("Song Title"), 
+    song = forms.CharField(label=_("Song Title"),
                 required=True,
                 widget=forms.TextInput(attrs={'class':'text'}),
                 error_messages={'required':'Please enter the song title.'})
-    song_key = forms.Field(label=_("Song Key"), 
+    song_key = forms.Field(label=_("Song Key"),
                 required=False,
                 widget=forms.HiddenInput())
-    song_notes = forms.CharField(label=_("Song Notes"), 
+    song_notes = forms.CharField(label=_("Song Notes"),
                 required=False,
                 widget=forms.Textarea(attrs={'class':'text'}))
 
@@ -65,11 +65,11 @@ class PlaylistTrackForm(forms.Form):
     def save(self):
         if not self.current_user:
             raise ValueError("Cannot save() without a current_user")
-              
+
         playlist_track = PlaylistTrack(
-                            playlist=self.playlist, 
+                            playlist=self.playlist,
                             selector=self.current_user)
-        
+
         if self.cleaned_data['artist_key']:
             playlist_track.artist = Artist.get(self.cleaned_data['artist_key'])
         else:
@@ -87,6 +87,11 @@ class PlaylistTrackForm(forms.Form):
         if self.cleaned_data['song_notes']:
             playlist_track.notes = self.cleaned_data['song_notes']
         playlist_track.save()
-        
+
         return playlist_track
-        
+
+
+
+class PlaylistReportForm(forms.Form):
+    from_date = forms.DateField(required=True)
+    to_date = forms.DateField(required=True)
