@@ -237,7 +237,7 @@ def query_group_by_track_key(from_date, to_date):
 
     # group by key/fields
     def item_key(item):
-        return ','.join([getattr(item, key, None) for key in fields])
+        return ','.join([getattr(item, key, '').lower() for key in fields])
 
     # dict version of db rec
     def item2hash(item):
