@@ -33,9 +33,12 @@ class SpotConstraint(search.SearchableModel):
         for spot in Spot.get(self.spots):
             yield spot
     
+    def as_query_string(self):
+        return "hour=%d&dow=%d&slot=%d" % (self.hour, self.dow, self.slot)
+    
     def url_to_finish_spot(self, spot):
         url = reverse('traffic_log.finishSpot', args=(spot.key(),))
-        url = "%s?hour=%d&dow=%d&slot=%d" % (url, self.hour, self.dow, self.slot)
+        url = "%s?%s" % (url, self.as_query_string())
         return url
     
     @property

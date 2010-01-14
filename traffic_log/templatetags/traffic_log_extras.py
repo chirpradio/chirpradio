@@ -23,6 +23,7 @@ Load this at the top of a template file with the following code::
     
 """
 from django import template
+from django.core.urlresolvers import reverse
 from django.template import resolve_variable
 from django.template import Node, NodeList, Template, Context, Variable
 from django.template import TemplateSyntaxError, VariableDoesNotExist
@@ -38,15 +39,36 @@ def url_to_finish_spot(parser, token):
             "url_to_finish_spot requires a spot_constraint and spot as argument")
     node = URLToFinishNode(args[1:])
     return node
+    
+@register.tag
+def url_to_read_spot(parser, token):
+    """gets the URL to the popover for reading a spot at the given constraint."""
+    args = token.split_contents()
+    if len(args) != 3:
+        raise TemplateSyntaxError(
+            "url_to_read_spot requires a spot_constraint and spot as argument")
+    node = URLToReadSpotNode(args[1:])
+    return node
 
-class URLToFinishNode(Node):
+class SpotURLNode(Node):
     
     def __init__(self, vars):
         vars = [Variable(v) for v in vars]
         self.constraint_var, self.spot_var = vars
 
+class URLToFinishNode(SpotURLNode):
+
     def render(self, context):
         constraint = self.constraint_var.resolve(context)
         spot = self.spot_var.resolve(context)
         return constraint.url_to_finish_spot(spot)
+
+class URLToReadSpotNode(SpotURLNode):
+
+    def render(self, context):
+        constraint = self.constraint_var.resolve(context)
+        spot = self.spot_var.resolve(context)
+        url = reverse('traffic_log.spotTextForReading', args=(spot.key(),))
+        url = "%s?%s" % (url, constraint.as_query_string())
+        return url
 

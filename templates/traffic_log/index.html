@@ -38,7 +38,7 @@ Traffic Log Spots
     <td>{{ spot.title }}</td>
     <td>
         <a class="show-text-for-reading" 
-            href="{% url traffic_log.spotTextForReading spot.key %}">Show text for reading</a>
+            href="{% url_to_read_spot slotted_spot spot %}">Show text for reading</a>
         -
         <a class="finish-spot"
             href="{% url_to_finish_spot slotted_spot spot %}">Finish</a>
