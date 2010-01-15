@@ -23,7 +23,7 @@ Traffic Log Spots
 {% block contents %}
 <p/>
 
-<table>
+<table id="traffic_log">
 <tr>
     <th>Time slot</th>
     <th>Spot</th>
@@ -32,7 +32,7 @@ Traffic Log Spots
 {% for slotted_spot in slotted_spots %}
 
 {% for spot in slotted_spot.iter_spots  %}
-<tr>
+<tr class="new">
     <td>{% ifchanged %}<b>{{ slotted_spot.readable_slot_time }}</b>{% endifchanged %}</td>
     <td>{{ spot.title }}</td>
     <td>
