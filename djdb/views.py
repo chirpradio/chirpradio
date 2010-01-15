@@ -31,9 +31,11 @@ from djdb import review
 import logging
 from djdb.models import Album
 import re
+import tag_util
 
 log = logging.getLogger(__name__)
 
+CATEGORIES = ['core', 'local_current', 'local_classic', 'heavy', 'light']
 
 def landing_page(request):
     template = loader.get_template('djdb/landing_page.html')
@@ -56,7 +58,7 @@ def landing_page(request):
                 ctx_vars["query_results"] = matches
 
     # Add categories.
-    ctx_vars["categories"] = ['core', 'local_current', 'local_classic', 'heavy', 'light']
+    ctx_vars["categories"] = CATEGORIES
     
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
@@ -69,7 +71,7 @@ def artist_info_page(request, artist_name):
     template = loader.get_template("djdb/artist_info_page.html")
     ctx_vars = { "title": artist.pretty_name,
                  "artist": artist,
-                 }
+                 "categories": CATEGORIES }
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
@@ -101,19 +103,10 @@ def album_change_categories(request) :
             album.category = category
             album.save()
 
-    return landing_page(request)
-
-def _add_track_tags(track, user, tags) :
-    tag_edit = models.TagEdit(subject=track,
-                              author=user,
-                              added=tags)
-    tag_edit.put()
-
-def _remove_track_tags(track, user, tags) :
-    tag_edit = models.TagEdit(subject=track,
-                              author=user,
-                              removed=tags);
-    tag_edit.put()
+    if request.POST.get('page') == 'artist' :
+        return artist_info_page(request, request.POST.get('artist_name'))
+    else :
+        return landing_page(request)
 
 def album_update_tracks(request, album_id_str):
     album = _get_album_or_404(album_id_str)
@@ -124,21 +117,29 @@ def album_update_tracks(request, album_id_str):
             track = album.sorted_tracks[int(num) - 1]
             if mark_as == 'explicit' :
                 if models.EXPLICIT_TAG in models.TagEdit.fetch_and_merge(track) :
-                    _remove_track_tags(track, request.user, [models.EXPLICIT_TAG])
+                    tag_util.remove_tag_and_save(request.user, track, models.EXPLICIT_TAG)
                 else :
-                    _add_track_tags(track, request.user, [models.EXPLICIT_TAG])
+                    tag_util.add_tag_and_save(request.user, track, models.EXPLICIT_TAG)
             elif mark_as == 'recommended' :
                 if models.RECOMMENDED_TAG in models.TagEdit.fetch_and_merge(track) :
-                    _remove_track_tags(track, request.user, [models.RECOMMENDED_TAG])
+                    tag_util.remove_tag_and_save(request.user, track, models.RECOMMENDED_TAG)
                 else :
-                    _add_track_tags(track, request.user, [models.RECOMMENDED_TAG])
-            # Update current_tags.
-            models.TagEdit.fetch_and_merge(track)
+                    tag_util.add_tag_and_save(request.user, track, models.RECOMMENDED_TAG)
             
     template = loader.get_template("djdb/album_info_page.html")
     ctx_vars = { "title": u"%s / %s" % (album.title, album.artist_name),
                  "album": album,
                  "user": request.user }
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+def category_page(request, category):
+    query = models.Album.all().filter("category =", category)
+    albums = query.fetch(query.count())
+    template = loader.get_template("djdb/category_page.html")
+    ctx_vars = { "category": category,
+                 "user": request.user,
+                 "albums": albums }
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 

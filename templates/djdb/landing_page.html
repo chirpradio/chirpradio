@@ -16,6 +16,15 @@
 
 Landing page for DJDB app
 
+<p/><p>
+<h2>Categories: [
+{% for category in categories %}
+  {% if not forloop.first %} | {% endif %}
+<a href="category/{{ category }}">{{ category|replace:"/_/ "|capfirst }}</a>
+{% endfor %}
+]</h2>
+</o>
+
 <h2>Recent Reviews</h2>
 <ul>
 {% for rev in recent_reviews %}
@@ -58,6 +67,7 @@ matching artist{{ query_results.Artist|pluralize }}</i><br/>
 <i>{{ query_results.Album|length }}
 matching album{{ query_results.Album|pluralize }}</i>
   {% if query_results.Album %}
+
 <p/>
 Select: <a id="checkbox_all" href="">All</a>,
         <a id="checkbox_none" href="">None</a>,
