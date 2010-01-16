@@ -1,6 +1,10 @@
 {% extends "common/internal_page.html" %}
 {% load common_extras %}
 
+{% block extrastyle %}
+<link rel="stylesheet" href="/media/djdb/djdb.css" />
+{% endblock %}
+
 {% block breadcrumbs %}
 <a href="/">chipradio home</a>
 {% endblock %}
@@ -10,6 +14,8 @@
 {% block extrahead %}
 <script type="text/javascript" 
     src="/media/common/js/jquery/jquery-1.3.1.js"></script>
+<script type="text/javascript" 
+    src="/media/common/js/jquery-autocomplete/jquery.autocomplete.js"></script>
 <script type="text/javascript" 
     src="/media/djdb/js/djdb.js"></script>
 {% endblock %}
@@ -40,6 +46,9 @@ reviewed by {{ rev.author }}
   <input type="text" name="query"/>
   <input type="submit" value="Search"/>
   <input type="checkbox" name="reviewed"/>&nbsp;Reviewed
+  By
+  <input id="id_user" type="text" class="text" name="user"/>
+  <input id="id_user_key" type="hidden" name="user_key"/>
 </form>
 <p/>
 
@@ -83,11 +92,12 @@ Mark selected as: <a id="mark_nocat" href="">No category</a>,
   {% endfor %}
 <p/>
 
+  {% if query_results.Album %}
 <form method="post" name="djdbForm" action="/djdb/album/change_categories">
   <input type="hidden" name="query" value="{{ query_str }}"/>
   <input type="submit" value="Update Categories"/>
   <table>
-  {% for album in query_results.Album %}
+    {% for album in query_results.Album %}
     <tr>
       <td>
         <input type="checkbox" class="checkbox {{ album.category|lower}}"
@@ -97,24 +107,25 @@ Mark selected as: <a id="mark_nocat" href="">No category</a>,
         <input type="hidden" name="album_key_{{ forloop.counter }}" value="{{ album.key }}"/>
         <select name="category_{{ forloop.counter }}">
           <option value="none" {% ifequal album.category "none" %}selected="selected"{% endifequal %}>None</option>
-    {% for category in categories %}
+      {% for category in categories %}
           <option value="{{ category }}" {% ifequal album.category category %}selected="selected"{% endifequal %}>{{ category|replace:"/_/ "|capfirst }}</option>
-    {% endfor %}
+      {% endfor %}
         </select>
       </td>
       <td><a href="{{ album.artist_url}}">{{ album.artist_name }}</a></td>
       <td><a href="{{ album.url }}">{{ album.title }}</a></td>
       <td>
-    {% if album.num_reviews %}
+      {% if album.num_reviews %}
 {{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
-    {% endif %}
+      {% endif %}
       </td>
     </tr>
-    {% endfor %}
+      {% endfor %}
   </table>
-  {% endif %}
+    {% endif %}
   <input type="submit" value="Update Categories"/>
 </form>
+  {% endif %}
 
 <h3>Tracks</h3>
 <i>{{ query_results.Track|length }}

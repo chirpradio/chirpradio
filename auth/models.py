@@ -37,6 +37,9 @@ class User(db.Model):
     first_name = db.StringProperty()
     last_name = db.StringProperty()
 
+    # This is an index of searchable terms for the user. Used by autocomplete.
+    index = db.StringListProperty()
+    
     # This is the SHA1 hash of the user's password.
     password = db.StringProperty()
     # We omit Django's is_staff property.

@@ -496,8 +496,7 @@ def load_and_segment_keys(fetched_keys):
         val.sort(key=lambda x: x.sort_key)
     return segmented
 
-
-def simple_music_search(query_str, max_num_results=None, entity_kind=None, reviewed=True):
+def simple_music_search(query_str, max_num_results=None, entity_kind=None, reviewed=True, user_key=None):
     """A simple free-form search well-suited for the music library.
 
     Args:
@@ -530,18 +529,37 @@ def simple_music_search(query_str, max_num_results=None, entity_kind=None, revie
             album = db.get(key).album
             if reviewed and len(album.reviews) == 0:
                 filter = False
+            elif reviewed and user_key:
+                filter = False
+                for review in album.reviews :
+                    if str(review.author.key()) == user_key :
+                        filter = True
+                        break
+                        
         elif key.kind() == "Album" :
             album = db.get(key)
             if reviewed and len(album.reviews) == 0:
                 filter = False
+            elif reviewed and user_key:
+                filter = False
+                for review in album.reviews :
+                    if str(review.author.key()) == user_key :
+                        filter = True
+                        break
+            
         elif key.kind() == "Artist" :
             artist = db.get(key)
             if reviewed:
                 filter = False
                 for album in models.Album.all().filter("album_artist =", artist) :
-                    if reviewed and len(album.reviews) == 0:
-                        filter = True
-                        break
+                    if len(album.reviews) != 0:
+                        if user_key:
+                            for review in album.reviews:
+                                if str(review.author.key()) == user_key:
+                                    filter = True
+                                    break
+                        else:
+                            filter = True
                 
         if filter and (key.kind() != "Track" or "title" in fields):
             recordcount += 1

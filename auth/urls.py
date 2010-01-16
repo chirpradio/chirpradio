@@ -39,6 +39,10 @@ urlpatterns = patterns(
     # Add a user.
     (r'^add_user/?', 'auth.views.add_user'),
 
+    # User search for jquery.autocomplete
+    (r'index_users', 'auth.views.index_users'),
+    (r'search\.txt', 'auth.views.user_search_for_autocomplete'),
+    
     (r'^token', 'auth.views.token'),
 
     # Bootstrap a test account from a Google account.

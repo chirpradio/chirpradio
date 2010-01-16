@@ -58,7 +58,7 @@ urlpatterns = patterns(
     
     # Track search for jquery.autocomplete
     (r'track/search\.txt', 'djdb.views.track_search_for_autocomplete'),
-
+    
     (r'update/artists/bulk_add', 'djdb.views.artists_bulk_add'),
     
     # Images

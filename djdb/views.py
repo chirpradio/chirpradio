@@ -51,7 +51,7 @@ def landing_page(request):
             reviewed = True
             if request.POST.get("reviewed") is None :
                 reviewed = False
-            matches = search.simple_music_search(query_str, reviewed=reviewed)
+            matches = search.simple_music_search(query_str, reviewed=reviewed, user_key=request.POST.get('user_key'))
             if matches is None:
                 ctx_vars["invalid_query"] = True
             else:
