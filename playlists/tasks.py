@@ -55,50 +55,81 @@ def as_encoded_str(s, encoding='utf8', errors='strict'):
 
 class PlaylistEventListener(object):
     """Listens to creations or deletions of playlist entries."""
-    
+
     def create(self, track):
         """This instance of PlaylistEvent was created."""
         raise NotImplementedError
-    
+
     def delete(self, track_key):
         """The key of this PlaylistEvent was deleted."""
         raise NotImplementedError
 
 class LiveSiteListener(PlaylistEventListener):
     """Sends playlist events to the live CHIRP site (a Textpattern PHP site)."""
-    
+
     def create(self, track):
         """This instance of PlaylistEvent was created."""
         url_track_create(track)
-    
+
     def delete(self, track_key):
         """The key of this PlaylistEvent was deleted."""
         url_track_delete(track_key)
 
 class Live365Listener(PlaylistEventListener):
     """Sends playlist events as metadata to the Live 365 player."""
-    
+
     def create(self, track):
         """This instance of PlaylistEvent was created.
+
+        POST parameters and their meaning
+
+        **member_name**
+        Live365 member name
+
+        **password**
+        Live365 password
+
+        **sessionid**
+        Unused.  This is an alternative to user password and looks like
+        membername:sessionkey as returned by api_login.cgi
+
+        **version**
+        Version of API request.  Currently this must be 2
+
+        **filename**
+        I think we can leave this blank because Live365 docs say they
+        will use it to guess song and artist info if none was sent.
+
+        **seconds**
+        Length of the track in seconds.  Live365 uses this to refresh its
+        popup player window thing.  So really we should probably set this to 60 or 120
+        because DJs might be submitting playlist entries out of sync with when
+        they are actually playing the songs.
+
+        **title**
+        Song title
+
+        **album**
+        Album title
         """
         taskqueue.add(url=reverse('playlists.send_track_to_live365'), params={'id':str(track.key())})
     
     def delete(self, track_key):
         """The key of this PlaylistEvent was deleted.
-        
+
         I don't think this can be implemented for Live365
         """
         pass
-    
+
 class PlaylistEventDispatcher(object):
-    
+
     def __init__(self, listeners):
         self.listeners = listeners
-    
+
     def create(self, *args, **kw):
         for listener in self.listeners:
             listener.create(*args, **kw)
-    
+
     def delete(self, *args, **kw):
         for listener in self.listeners:
             listener.delete(*args, **kw)
@@ -110,10 +141,10 @@ playlist_event_listeners = PlaylistEventDispatcher([
 
 def _urls(type='create'):
     urls = {
-        #'create': dbconfig.get('chirpapi.url.create','http://192.168.58.128:8101/api/track/'),
-        #'delete': dbconfig.get('chirpapi.url.delete','http://192.168.58.128:8101/api/track/'),
-        'create': dbconfig.get('chirpapi.url.create','http://geoff.terrorware.com/hacks/chirpapi/playlist/create'),
-        'delete': dbconfig.get('chirpapi.url.delete','http://geoff.terrorware.com/hacks/chirpapi/playlist/delete')
+        'create': dbconfig.get('chirpapi.url.create','http://192.168.58.128:8101/api/track/'),
+        'delete': dbconfig.get('chirpapi.url.delete','http://192.168.58.128:8101/api/track/'),
+        #'create': dbconfig.get('chirpapi.url.create','http://geoff.terrorware.com/hacks/chirpapi/playlist/create'),
+        #'delete': dbconfig.get('chirpapi.url.delete','http://geoff.terrorware.com/hacks/chirpapi/playlist/delete')
     }
     return urls[type]
 
@@ -207,8 +238,8 @@ def _fetch_url(url=None, data=None, method='GET', headers=None, auth_type=None, 
         log.info(d)
         return d
     except AssertionError:
-        # short of listing every possible urllib2 exception, 
-        # this is the best I can think of to get the test suite to work 
+        # short of listing every possible urllib2 exception,
+        # this is the best I can think of to get the test suite to work
         # (i.e. mock assertions) -Kumar
         raise
     except Exception, e:
