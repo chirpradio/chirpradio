@@ -110,6 +110,9 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         # check with Sunday 12:00pm
         self.assertEqual(constraint_map[(1L, 12L, 0L)].url_to_finish_spot(spot), 
             "/traffic_log/spot/%s/finish?hour=12&dow=1&slot=0" % spot.key())
+            
+        self.assertEqual(constraint_map[(1L, 12L, 0L)].as_query_string(), 
+            "hour=12&dow=1&slot=0")
 
 class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
     

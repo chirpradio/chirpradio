@@ -73,23 +73,19 @@ def index(request):
 @require_role(DJ)
 def spotTextForReading(request, spot_key=None):
     spot = models.Spot.get(spot_key)
+    dow, hour, slot = _get_slot_from_request(request)
     
+    url = reverse('traffic_log.finishSpot', args=(spot.key(),))
+    url = "%s?hour=%d&dow=%d&slot=%d" % (url, hour, dow, slot)
     return render_to_response('traffic_log/spot_detail_for_reading.html', dict(
-            spot=spot
+            spot=spot,
+            url_to_finish_spot=url
         ), context_instance=RequestContext(request))
 
 @require_role(DJ)
 @as_json
 def finishSpot(request, spot_key=None):
-    dow = int(request.GET['dow'])
-    if dow not in constants.DOW:
-        raise ValueError("dow value %r is out of range" % dow)
-    hour = int(request.GET['hour'])
-    if hour not in constants.HOUR:
-        raise ValueError("hour value %r is out of range" % hour)
-    slot = int(request.GET['slot'])
-    if slot not in constants.SLOT:
-        raise ValueError("dow value %r is out of range" % slot)
+    dow, hour, slot = _get_slot_from_request(request)
         
     q = (models.SpotConstraint.all()
                     .filter("dow =", dow)
@@ -350,4 +346,16 @@ def box(thing):
         return thing
     else:
         return [thing]
-    
+
+def _get_slot_from_request(request):
+    dow = int(request.GET['dow'])
+    if dow not in constants.DOW:
+        raise ValueError("dow value %r is out of range" % dow)
+    hour = int(request.GET['hour'])
+    if hour not in constants.HOUR:
+        raise ValueError("hour value %r is out of range" % hour)
+    slot = int(request.GET['slot'])
+    if slot not in constants.SLOT:
+        raise ValueError("dow value %r is out of range" % slot)
+    return dow, hour, slot
+

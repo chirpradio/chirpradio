@@ -23,29 +23,27 @@ Traffic Log Spots
 {% block contents %}
 <p/>
 
-<table>
+<table id="traffic_log">
 <tr>
     <th>Time slot</th>
     <th>Spot</th>
     <th>Actions</th>
 </tr>
 {% for slotted_spot in slotted_spots %}
-<tr>
-    <td><b>{{ slotted_spot.readable_slot_time }}</b></td>
-    {# hmmm, I think there won't ever be multiple spots even though this is a list (kumar) #}
-    {% for spot in slotted_spot.iter_spots  %}
-    
+
+{% for spot in slotted_spot.iter_spots  %}
+<tr class="new">
+    <td>{% ifchanged %}<b>{{ slotted_spot.readable_slot_time }}</b>{% endifchanged %}</td>
     <td>{{ spot.title }}</td>
     <td>
         <a class="show-text-for-reading" 
-            href="{% url traffic_log.spotTextForReading spot.key %}">Show text for reading</a>
+            href="{% url_to_read_spot slotted_spot spot %}">Show text for reading</a>
         -
         <a class="finish-spot"
             href="{% url_to_finish_spot slotted_spot spot %}">Finish</a>
     </td>
-    
-    {% endfor %}
 </tr>
+{% endfor %}
 
 {# <input type="checkbox" name="readtime" value="readtime" /> #}
 {# Hour:Slot #}

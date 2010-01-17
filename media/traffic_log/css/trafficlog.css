@@ -16,3 +16,11 @@
 /*#facebox .content {
     width: 75%;
 }*/
+
+table#traffic_log tr.new {
+    background: #FFADF7;
+}
+
+table#traffic_log tr.finished {
+    background: none;
+}

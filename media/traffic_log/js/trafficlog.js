@@ -1,7 +1,26 @@
 // requires: chirp/chirp.js
 //           
 
+chirp.traffic_log = {};
+
 $(document).ready(function() {
+    
+    var ns = chirp.traffic_log;
+    
+    ns.handle_finish_spot = function(anchor, tr) {
+        var url = $(anchor).attr("href");
+        $.ajax({
+            url: url,
+            success: function(data, textStatus) {
+                tr.removeClass("new");
+                tr.addClass("finished");
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                alert("Whoops, there was an error on the server. An email has been sent to the admins so sit tight or try again.");
+            }
+        });
+    };
+    
     $("#refresh-button").click(function() {
         window.location = "/traffic_log/?t=" + Math.random().toString();
     });
@@ -13,11 +32,20 @@ $(document).ready(function() {
     $(".show-text-for-reading").click(function(e) {
         e.preventDefault();
         var url = $(this).attr("href");
+        var tr = $(this).parent().parent(); // a->td->tr
         $.facebox(function() {
             $.ajax({
                 url: url,
                 success: function(data, textStatus) {
                     $.facebox(data);
+                    var onclick = function(e) {
+                        e.preventDefault();
+                        var anchor = this;
+                        ns.handle_finish_spot(anchor, tr);
+                        $(document).trigger('close.facebox');
+                        $(this).unbind("click", onclick);
+                    };
+                    $('.finish-spot-after-reading').click(onclick);
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
                     alert("Whoops, there was an error on the server. An email has been sent to the admins so sit tight or try again.");
@@ -29,16 +57,9 @@ $(document).ready(function() {
     
     $(".finish-spot").click(function(e) {
         e.preventDefault();
-        var url = $(this).attr("href");
-        $.ajax({
-            url: url,
-            success: function(data, textStatus) {
-                console.log("spot was finished, make it turn gray or something?");
-            },
-            error: function (XMLHttpRequest, textStatus, errorThrown) {
-                alert("Whoops, there was an error on the server. An email has been sent to the admins so sit tight or try again.");
-            }
-        });
+        var anchor = this;
+        var tr = $(anchor).parent().parent(); // a->td->tr
+        ns.handle_finish_spot(anchor, tr);
     });
     
     // sigh. this is all necessary to override the image paths:
