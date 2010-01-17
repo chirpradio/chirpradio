@@ -205,10 +205,11 @@ def http_send_csv_file(fname, fields, items):
 
     # dump item using key fields
     def item2row(i):
-        return [i[key] for key in fields]
+        return [as_encoded_str(i[key], encoding='utf8') for key in fields]
 
     # use response obj to set filename of downloaded file
     response = HttpResponse(mimetype='text/csv')
+    # TODO(Kumar) mark encoding as UTF-8?
     response['Content-Disposition'] = "attachment; filename=%s.csv" % (fname)
 
     # write data out
@@ -241,12 +242,15 @@ def query_group_by_track_key(from_date, to_date):
 
     # group by key/fields
     def item_key(item):
-        stub = as_encoded_str(getattr(item, key, ''))
-        if stub is None:
-            # for existing None-type attributes
-            stub = ''
-        stub = stub.lower()
-        return ','.join([stub for key in fields])
+        key_parts = []
+        for key in fields:
+            stub = as_encoded_str(getattr(item, key, ''))
+            if stub is None:
+                # for existing None-type attributes
+                stub = ''
+            stub = stub.lower()
+            key_parts.append(stub)
+        return ','.join(key_parts)
 
     # dict version of db rec
     def item2hash(item):
