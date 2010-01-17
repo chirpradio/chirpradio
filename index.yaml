@@ -52,6 +52,13 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
+- kind: PlaylistEvent
+  properties:
+  - name: class
+  - name: playlist
+  - name: established
+    direction: desc
+
 - kind: SpotConstraint
   properties:
   - name: dow
