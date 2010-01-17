@@ -32,6 +32,7 @@ from auth import roles
 from playlists.forms import PlaylistTrackForm, PlaylistReportForm
 from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast
 from playlists.tasks import playlist_event_listeners
+from common.utilities import as_encoded_str
 
 
 common_context = {
@@ -240,7 +241,12 @@ def query_group_by_track_key(from_date, to_date):
 
     # group by key/fields
     def item_key(item):
-        return ','.join([getattr(item, key, '').lower() for key in fields])
+        stub = as_encoded_str(getattr(item, key, ''))
+        if stub is None:
+            # for existing None-type attributes
+            stub = ''
+        stub = stub.lower()
+        return ','.join([stub for key in fields])
 
     # dict version of db rec
     def item2hash(item):

@@ -25,6 +25,7 @@ from google.appengine.ext import webapp
 from google.appengine.api.labs import taskqueue
 from common import dbconfig, in_dev
 from playlists.models import PlaylistEvent
+from common.utilities import as_encoded_str
 
 log = logging.getLogger()
 
@@ -47,11 +48,6 @@ URLs for PHP test server
 # TODO(selizondo): bootstrap dbconfig production datastore
 CHIRPAPI_USERNAME = dbconfig.get('chirpapi.username', 'chirpapi')
 CHIRPAPI_PASSWORD = dbconfig.get('chirpapi.password', 'chirpapi')
-
-def as_encoded_str(s, encoding='utf8', errors='strict'):
-    if isinstance(s, unicode):
-        s = s.encode(encoding, errors)
-    return s
 
 class PlaylistEventListener(object):
     """Listens to creations or deletions of playlist entries."""
