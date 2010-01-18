@@ -18,7 +18,10 @@
 
 from __future__ import with_statement
 
+import csv
+from StringIO import StringIO
 import datetime
+from datetime import timedelta
 import unittest
 # future: urlparse
 import cgi
@@ -42,7 +45,7 @@ import time
 
 __all__ = ['TestPlaylistViews', 'TestPlaylistViewsWithLibrary', 
            'TestDeleteTrackFromPlaylist', 'TestLiveSitePlaylistTasks',
-           'TestLive365PlaylistTasks']
+           'TestLive365PlaylistTasks', 'TestPlaylistReport']
 
 # stub that does nothing to handle tests 
 # that don't need to make assertions about URL fetches
@@ -61,6 +64,36 @@ def clear_data():
             track.delete()
         pl.delete()
 
+def create_stevie_wonder_album_data():
+    stevie = Artist.create(name="Stevie Wonder")
+    stevie.put()
+    talking_book = Album(
+        album_id=1, # faux
+        artist=stevie, 
+        title="Talking Book",
+        import_timestamp=datetime.datetime.now(),
+        num_tracks=10)
+    talking_book.put()
+    tracks = {}
+    for idx, title in enumerate([
+            'You Are The Sunshine Of My Life',
+            'Maybe Your Baby',
+            'You And I (We Can Conquer The World)'
+            # ...etc...
+            ]):
+        track = Track(
+                    album=talking_book,
+                    title=title,
+                    sampling_rate_hz=44000,
+                    bit_rate_kbps=256,
+                    channels='stereo',
+                    duration_ms=60*60*3, # faux
+                    track_num=idx+1)
+        tracks[title] = track
+        track.put()
+    
+    return stevie, talking_book, tracks
+
 class PlaylistViewsTest(FormTestCaseHelper, TestCase):
     
     def setUp(self):
@@ -74,6 +107,81 @@ class PlaylistViewsTest(FormTestCaseHelper, TestCase):
     def get_selector(self):
         return User.all().filter('email =', 'test@test.com')[0]
 
+class TestPlaylistReport(PlaylistViewsTest):
+    
+    def setUp(self):
+        super(TestPlaylistReport, self).setUp()
+        self.client.login(email="test@test.com", roles=[roles.DJ, roles.MUSIC_DIRECTOR])
+    
+    def test_report_csv(self):
+        selector = self.get_selector()
+        playlist = ChirpBroadcast()
+        stevie, talking_book, tracks = create_stevie_wonder_album_data()
+        track = PlaylistTrack(
+                    playlist=playlist, 
+                    selector=selector,
+                    artist=stevie,
+                    album=talking_book,
+                    track=tracks['You Are The Sunshine Of My Life'],
+                    freeform_label='Motown')
+        track.put()
+        # sleep to workaround microtime issues in Windows App Engine SDK
+        time.sleep(0.4)
+        track = PlaylistTrack(
+                    playlist=playlist,
+                    selector=selector, 
+                    freeform_artist_name="Def Leoppard",
+                    freeform_album_title="Pyromania",
+                    freeform_track_title="Photograph",
+                    freeform_label="Geffen")
+        track.put()
+        time.sleep(0.4)
+        track = PlaylistTrack(
+                    playlist=playlist,
+                    selector=selector, 
+                    freeform_artist_name="Def Leoppard",
+                    freeform_album_title="Pyromania",
+                    freeform_track_title="Photograph",
+                    freeform_label="Geffen")
+        track.put()
+        time.sleep(0.4)
+        track = PlaylistTrack(
+                    playlist=playlist,
+                    selector=selector, 
+                    freeform_artist_name=u'Ivan Krsti\u0107',
+                    freeform_album_title=u'Ivan Krsti\u0107',
+                    freeform_track_title=u'Ivan Krsti\u0107',
+                    freeform_label=u'Ivan Krsti\u0107')
+        track.put()
+        
+        from_date = datetime.date.today() - timedelta(days=1)
+        to_date = datetime.date.today() + timedelta(days=1)
+        
+        response = self.client.post(reverse('playlists_report'), {
+            'from_date': from_date,
+            'to_date': to_date,
+            'download': 'Download'
+        })
+        
+        self.assertEquals(response['Content-Type'], 'text/csv')
+        
+        report = csv.reader(StringIO(response.content))
+        self.assertEquals(
+            ['from_date', 'to_date', 'album_title', 'artist_name', 'track_title', 'label', 'play_count'],
+            report.next())
+        self.assertEquals(
+            [str(from_date), str(to_date), 
+            'Ivan Krsti\xc4\x87', 'Ivan Krsti\xc4\x87', 'Ivan Krsti\xc4\x87', 'Ivan Krsti\xc4\x87', '1'],
+            report.next())
+        self.assertEquals(
+            [str(from_date), str(to_date), 
+            'Pyromania', 'Def Leoppard', 'Photograph', 'Geffen', '2'],
+            report.next())
+        self.assertEquals(
+            [str(from_date), str(to_date), 
+            'Talking Book', 'Stevie Wonder', 'You Are The Sunshine Of My Life', 'Motown', '1'],
+            report.next())
+
 class TestPlaylistViews(PlaylistViewsTest):
     
     def test_view_shows_3_hours_of_tracks(self):
@@ -86,6 +194,7 @@ class TestPlaylistViews(PlaylistViewsTest):
                     freeform_album_title="Aja",
                     freeform_track_title="Peg")
         track.put()
+        # sleep to workaround microtime issues in Windows App Engine SDK
         time.sleep(0.4)
         track = PlaylistTrack(
                     playlist=playlist,
@@ -410,34 +519,7 @@ class TestPlaylistViewsWithLibrary(PlaylistViewsTest):
     
     def setUp(self):
         super(TestPlaylistViewsWithLibrary, self).setUp()
-                
-        # some data to work with:
-        self.stevie = Artist.create(name="Stevie Wonder")
-        self.stevie.put()
-        self.talking_book = Album(
-            album_id=1, # faux
-            artist=self.stevie, 
-            title="Talking Book",
-            import_timestamp=datetime.datetime.now(),
-            num_tracks=10)
-        self.talking_book.put()
-        self.tracks = {}
-        for idx, title in enumerate([
-                'You Are The Sunshine Of My Life',
-                'Maybe Your Baby',
-                'You And I (We Can Conquer The World)'
-                # ...etc...
-                ]):
-            track = Track(
-                        album=self.talking_book,
-                        title=title,
-                        sampling_rate_hz=44000,
-                        bit_rate_kbps=256,
-                        channels='stereo',
-                        duration_ms=60*60*3, # faux
-                        track_num=idx+1)
-            self.tracks[title] = track
-            track.put()
+        self.stevie, self.talking_book, self.tracks = create_stevie_wonder_album_data()
     
     def tearDown(self):
         for model in (

@@ -180,10 +180,11 @@ def report_playlist(request):
         if form.is_valid():
             from_date = form.cleaned_data['from_date']
             to_date = form.cleaned_data['to_date']
+            
 
             # special case to download report
             if request.POST.get('download') == 'Download':
-                fname = str(from_date) + '_' + str(to_date)
+                fname = "chirp-play-count_%s_%s" % (from_date, to_date)
                 return http_send_csv_file(fname, fields, query_group_by_track_key(from_date, to_date))
 
             # generate report from date range
@@ -221,7 +222,8 @@ def http_send_csv_file(fname, fields, items):
     return response
 
 # TODO: move following funcs to models
-def filter_tracks_by_date_range(from_date, to_date, playlist=ChirpBroadcast()):
+def filter_tracks_by_date_range(from_date, to_date):
+    playlist = ChirpBroadcast()
     pl = PlaylistTrack.all().filter('playlist =', playlist)
     pl = pl.filter('established >=', from_date)
     pl = pl.filter('established <=', to_date)
