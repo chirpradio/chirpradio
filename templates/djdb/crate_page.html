@@ -50,7 +50,10 @@ This is the crate page for <b>{{ user }}</b>.
         {% endifequal %}
       {% endifequal %}
     {% endifequal %}
-    <span><a href="/djdb/crate/remove_item?response_page=crate&item_key={{ item.key }}"><img src="/media/common/img/remove.png" alt="Remove Item from Crate" title="Remove Item from Crate"/></a></span>
+    <span>
+      <a href=""><img src="/media/common/img/play.png" alt="Send to Playlist" title="Send to Playlist"/></a>
+      <a href="/djdb/crate/remove_item?response_page=crate&item_key={{ item.key }}"><img src="/media/common/img/remove.png" alt="Remove Item from Crate" title="Remove Item from Crate"/></a>
+    </span>
   </li>
   {% endfor %}
 </ul>
