@@ -59,6 +59,15 @@ urlpatterns = patterns(
     # Track search for jquery.autocomplete
     (r'track/search\.txt', 'djdb.views.track_search_for_autocomplete'),
     
+    # Crate page.
+    (r'^crate/?$', 'djdb.views.crate_page'),
+    # Add crate item.
+    (r'crate/add_item', 'djdb.views.add_crate_item'),
+    # Remove crate item.
+    (r'crate/remove_item', 'djdb.views.remove_crate_item'),
+    # Reorder crate items.
+    (r'crate/reorder', 'djdb.views.reorder'),
+    
     (r'update/artists/bulk_add', 'djdb.views.artists_bulk_add'),
     
     # Images

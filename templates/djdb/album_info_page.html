@@ -1,5 +1,7 @@
 {% extends "common/internal_page.html" %}
 
+{% load djdb_extras %}
+
 {% block breadcrumbs %}
 <a href="/">chipradio home</a> /
 <a href="/djdb/">DJ Database home</a>
@@ -18,6 +20,16 @@
 This is the album information page for <b>{{ album.title }}</b> by
 <a href="{{ album.artist_url }}">{{ album.artist_name }}</a>.
 It is still very primitive.
+</p>
+
+<p>
+{% if msg %}
+{{ msg }}
+{% endif %}
+</p>
+
+<p>
+<a href="/djdb/crate">Go to your crate.</a>
 </p>
 
 {% if album.current_tags %}
@@ -60,6 +72,13 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update_tracks">Explicit</a>
     {% endifnotequal %}
   {% endifnotequal %}
 {% endfor %}
+</td>
+<td>
+{% ifincrate user track %}
+<a href="/djdb/crate/remove_item?response_page=album&item_key={{ track.key }}"><img src="/media/common/img/remove.png" alt="Remove Track from Crate" title="Remove Track from Crate"/></a>
+{% else %}
+<a href="/djdb/crate/add_item?response_page=album&item_key={{ track.key }}"><img src="/media/common/img/add.png" alt="Add Track to Crate" title="Add Track to Crate"/></a>
+{% endifincrate %}
 </td>
 </tr>
 {% endfor %}

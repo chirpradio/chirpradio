@@ -44,3 +44,7 @@
 	background-color: Highlight;
 	color: HighlightText;
 }
+
+#sortable { list-style-type: none; margin: 0; padding: 0; width: 90%; }
+#sortable li { list-style-type:none; margin: 0 0 -1px 0; padding: 0.2em; font-size: 1.3em; height: 18px; border: solid 1px}
+#sortable li span { position: relative; float: right; }

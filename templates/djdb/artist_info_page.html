@@ -1,5 +1,7 @@
 {% extends "common/internal_page.html" %}
+
 {% load common_extras %}
+{% load djdb_extras %}
 
 {% block breadcrumbs %}
 <a href="/">chipradio home</a> /
@@ -18,6 +20,16 @@
 <p>
 This is the artist information page for <b>{{ artist.pretty_name }}</b>.
 It is still very primitive.
+</p>
+
+<p>
+{% if msg %}
+{{ msg }}
+{% endif %}
+</p>
+
+<p>
+<a href="/djdb/crate">Go to your crate.</a>
 </p>
 
 <h3>Albums by {{ artist.pretty_name }}</h3>
@@ -65,6 +77,13 @@ Mark selected as: <a id="mark_nocat" href="">No category</a>,
 {% if album.num_reviews %}
 {{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
 {% endif %}
+    </td>
+    <td>
+{% ifincrate user album %}
+<a href="/djdb/crate/remove_item?response_page=artist&user_key={{ user.key }}&item_key={{ album.key }}"><img src="/media/common/img/remove.png" alt="Remove Album from Crate" title="Remove from Crate"/></a>
+{% else %}
+<a href="/djdb/crate/add_item?response_page=artist&user_key={{ user.key }}&item_key={{ album.key }}"><img src="/media/common/img/add.png" alt="Add Album to Crate" title="Add to Crate"/></a>
+{% endifincrate %}
     </td>
   </tr>
 {% endfor %}

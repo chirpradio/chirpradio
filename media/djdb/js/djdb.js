@@ -178,7 +178,15 @@ $(document).ready(function() {
         $(this).parents("form").submit();
         return false;
     });
-    
+
+    $("#sortable").sortable({
+        update : function() {
+            var order = $("#sortable").sortable('serialize');
+            $("#reorder").load("/djdb/crate/reorder?" + order);
+        }
+    });
+//	$("#sortable").disableSelection();
+
     var default_opt = {
     };
     

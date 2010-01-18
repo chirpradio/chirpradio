@@ -89,7 +89,6 @@ class DjDbImage(db.Model):
         key_name = cls.get_key_name(sha1)
         return cls.get_by_key_name(key_name)
 
-
 class Artist(db.Model):
     """An individual musician, or a band.
 
@@ -566,4 +565,30 @@ class TagEdit(db.Model):
         obj.save()
         return current_tags
 
+class Crate(db.Model):
+    """Mode for a crate, which contains artists, albums, or tracks.
+    """
+    # The user who owns the crate item.
+    user = db.ReferenceProperty(User, required=True)
 
+    # List of keys to items.
+    items = db.ListProperty(db.Key)
+    
+    # List of positions for ordering.
+    # When the crate page is shown and reorders take place, you can't reorder the list directly each
+    # time since the original positions are referenced in the list item id's, which do not change.
+    # So you have to keep track of the order separately. When the crate page is reloaded, then the
+    # actual item list should be reordered.
+    # I suppose some javascript could be added to update the list item id's when reordering
+    # takes place...
+    order = db.ListProperty(int)
+    
+class CrateItem(db.Model):
+    """Model for crate items that represent artists/albums/tracks entered by hand.
+    """
+    artist = db.StringProperty()
+    album = db.StringProperty()
+    track = db.StringProperty()
+    label = db.StringProperty()
+
+#    @classmethod
