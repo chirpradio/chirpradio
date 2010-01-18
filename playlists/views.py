@@ -161,7 +161,7 @@ def report_playlist(request):
 
     # report vars
     items = None
-    fields = ['from_date', 'to_date', 'album_title', 'artist_name', 'track_title', 'label', 'play_count']
+    fields = ['from_date', 'to_date', 'album_title', 'artist_name', 'label', 'play_count']
 
     # default report
     if request.method == 'GET':
@@ -236,7 +236,7 @@ def query_group_by_track_key(from_date, to_date):
     '''
 
     query = filter_tracks_by_date_range(from_date, to_date)
-    fields = ['album_title', 'artist_name', 'track_title', 'label']
+    fields = ['album_title', 'artist_name', 'label']
 
     #
     key_item = 'group_by_key'
@@ -270,7 +270,7 @@ def query_group_by_track_key(from_date, to_date):
     # unique list of tracks with order
     items = []
 
-    # hash of seen tracks
+    # hash of seen keys
     seen = {}
 
     #

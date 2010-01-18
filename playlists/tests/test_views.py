@@ -167,19 +167,19 @@ class TestPlaylistReport(PlaylistViewsTest):
         
         report = csv.reader(StringIO(response.content))
         self.assertEquals(
-            ['from_date', 'to_date', 'album_title', 'artist_name', 'track_title', 'label', 'play_count'],
+            ['from_date', 'to_date', 'album_title', 'artist_name', 'label', 'play_count'],
             report.next())
         self.assertEquals(
             [str(from_date), str(to_date), 
-            'Ivan Krsti\xc4\x87', 'Ivan Krsti\xc4\x87', 'Ivan Krsti\xc4\x87', 'Ivan Krsti\xc4\x87', '1'],
+            'Ivan Krsti\xc4\x87', 'Ivan Krsti\xc4\x87', 'Ivan Krsti\xc4\x87', '1'],
             report.next())
         self.assertEquals(
             [str(from_date), str(to_date), 
-            'Pyromania', 'Def Leoppard', 'Photograph', 'Geffen', '2'],
+            'Pyromania', 'Def Leoppard', 'Geffen', '2'],
             report.next())
         self.assertEquals(
             [str(from_date), str(to_date), 
-            'Talking Book', 'Stevie Wonder', 'You Are The Sunshine Of My Life', 'Motown', '1'],
+            'Talking Book', 'Stevie Wonder', 'Motown', '1'],
             report.next())
 
 class TestPlaylistViews(PlaylistViewsTest):
