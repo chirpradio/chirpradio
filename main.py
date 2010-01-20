@@ -44,7 +44,7 @@ import django.core.handlers.wsgi
 
 # Ensure the Django zipfile is in the path if required.
 if have_django_zip and django_zip_path not in sys.path:
-sys.path.insert(1, django_zip_path)
+  sys.path.insert(1, django_zip_path)
 
 # Map the contents of the django-extras tree into the django
 # module's namespace.
