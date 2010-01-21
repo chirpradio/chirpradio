@@ -37,43 +37,48 @@ log = logging.getLogger(__name__)
 
 CATEGORIES = ['core', 'local_current', 'local_classic', 'heavy', 'light']
 
-def landing_page(request, msg=None):
+def landing_page(request, ctx_vars=None):
     template = loader.get_template('djdb/landing_page.html')
-    ctx_vars = { 'title': 'DJ Database' }
+    if ctx_vars is None : ctx_vars = {}
+    ctx_vars['title'] = 'DJ Database'
 
     # Grab recent reviews.
     ctx_vars["recent_reviews"] = review.fetch_recent()
 
     if request.method == "POST":
         query_str = request.POST.get("query")
-        if query_str:
-            ctx_vars["query_str"] = query_str
-            reviewed = True
-            if request.POST.get("reviewed") is None :
-                reviewed = False
-            matches = search.simple_music_search(query_str, reviewed=reviewed, user_key=request.POST.get('user_key'))
-            if matches is None:
-                ctx_vars["invalid_query"] = True
-            else:
-                ctx_vars["query_results"] = matches
+        reviewed = request.POST.get("reviewed")
+        user_key = request.POST.get("user_key")
+    else:
+        query_str = request.GET.get("query")
+        reviewed = request.GET.get("reviewed")
+        user_key = request.GET.get("user_key")
+
+    if query_str:
+        ctx_vars["query_str"] = query_str
+        if reviewed is None: reviewed = False
+        else: reviewed = True
+        matches = search.simple_music_search(query_str, reviewed=reviewed, user_key=user_key)
+        if matches is None:
+            ctx_vars["invalid_query"] = True
+        else:
+            ctx_vars["query_results"] = matches
 
     # Add categories.
     ctx_vars["categories"] = CATEGORIES
     
-    ctx_vars["msg"] = msg
-    
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
-def artist_info_page(request, artist_name, msg=None):
+def artist_info_page(request, artist_name, ctx_vars=None):
     artist = models.Artist.fetch_by_name(artist_name)
     if artist is None:
         return http.HttpResponse(status=404)
     template = loader.get_template("djdb/artist_info_page.html")
-    ctx_vars = { "title": artist.pretty_name,
-                 "artist": artist,
-                 "categories": CATEGORIES,
-                 "msg": msg }
+    if ctx_vars is None : ctx_vars = {}
+    ctx_vars["title"] = artist.pretty_name
+    ctx_vars["artist"] = artist
+    ctx_vars["categories"] = CATEGORIES
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
@@ -95,6 +100,7 @@ def album_search_for_autocomplete(request):
         response.write("%s|%s\n" % (ent.title, ent.key()))
     return response
 
+@require_role(roles.MUSIC_DIRECTOR)
 def album_change_categories(request) :
     for name in request.POST.keys() :
         if re.match('checkbox_', name) :
@@ -207,13 +213,13 @@ def _get_review_or_404(review_key):
         return http.HttpResponse(status=404)
     return doc
 
-def album_info_page(request, album_id_str, msg=None):
+def album_info_page(request, album_id_str, ctx_vars=None):
     album = _get_album_or_404(album_id_str)
     template = loader.get_template("djdb/album_info_page.html")
-    ctx_vars = { "title": u"%s / %s" % (album.title, album.artist_name),
-                 "album": album,
-                 "user": request.user,
-                 "msg": msg}
+    if ctx_vars is None : ctx_vars = {}
+    ctx_vars["title"] = u"%s / %s" % (album.title, album.artist_name)
+    ctx_vars["album"] = album
+    ctx_vars["user"] = request.user
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
@@ -285,13 +291,13 @@ def image(request):
 def _get_crate(user):
     crate = models.Crate.all().filter("user =", user).fetch(1)
     if len(crate) == 0:
-        crate = models.Crate(user=request.user)
+        crate = models.Crate(user=user)
         db.put(crate)
     else:
         crate = crate[0]
     return crate
 
-def crate_page(request, msg=None):
+def crate_page(request, ctx_vars=None):
     crate_items = models.CrateItem.all().filter("user =", request.user).fetch(999)
     template = loader.get_template("djdb/crate_page.html")
     crate = _get_crate(request.user)
@@ -307,9 +313,10 @@ def crate_page(request, msg=None):
     crate.items = new_crate_items
     crate.order = range(1, len(crate.items)+1)
     crate.save()
-    ctx_vars = { "crate_items": crate_items,
-                 "user": request.user,
-                 "msg": msg }
+    
+    if ctx_vars is None : ctx_vars = {}
+    ctx_vars["crate_items"] = crate_items
+    ctx_vars["user"] = request.user
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
@@ -339,14 +346,16 @@ def add_crate_item(request):
             msg = 'Track added to crate.'
 
     response_page = request.GET.get('response_page')
+    ctx_vars = { 'msg': msg }
     if response_page == 'landing':
-        return landing_page(request, msg)
+        ctx_vars = { 'query': request.GET.get('query') }
+        return landing_page(request, ctx_vars)
     elif response_page == 'artist':
-        return artist_info_page(request, item.album_artist.name, msg)
+        return artist_info_page(request, item.album_artist.name, ctx_vars)
     elif response_page == 'album':
-        return album_info_page(request, str(item.album.album_id), msg)
+        return album_info_page(request, str(item.album.album_id), ctx_vars)
     elif response_page == 'crate':
-        return crate_page(request, msg)
+        return crate_page(request, ctx_vars)
     else:
         return http.HttpResponse(status=404)
 
@@ -381,14 +390,16 @@ def remove_crate_item(request):
             msg = 'Track removed from crate.'
 
     response_page = request.GET.get('response_page')
+    ctx_vars = { 'msg': msg }
     if response_page == 'landing':
-        return landing_page(request, msg)
+        ctx_vars['query'] = request.GET.get('query')
+        return landing_page(request, ctx_vars)
     elif response_page == 'artist':
-        return artist_info_page(request, item.album_artist.name, msg)
+        return artist_info_page(request, item.album_artist.name, ctx_vars)
     elif response_page == 'album':
-        return album_info_page(request, str(item.album.album_id), msg)
+        return album_info_page(request, str(item.album.album_id), ctx_vars)
     elif response_page == 'crate':
-        return crate_page(request, msg)
+        return crate_page(request, ctx_vars)
     else:
         return http.HttpResponse(status=404)
 

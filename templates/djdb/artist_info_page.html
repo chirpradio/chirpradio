@@ -34,6 +34,7 @@ It is still very primitive.
 
 <h3>Albums by {{ artist.pretty_name }}</h3>
 
+{% if user.is_music_director %}
 <p>
 Select: <a id="checkbox_all" href="">All</a>,
         <a id="checkbox_none" href="">None</a>,
@@ -53,9 +54,11 @@ Mark selected as: <a id="mark_nocat" href="">No category</a>,
 <input type="hidden" name="page" value="artist"/>
 <input type="hidden" name="artist_name" value="{{ artist.name }}"/>
 <input type="submit" value="Update Categories"/>
+{% endif %}
 <table>
 {% for album in artist.sorted_albums %}
   <tr>
+  {% if user.is_music_director %}
     <td>
       <input type="checkbox" class="checkbox {{ album.category|lower}}"
              name="checkbox_{{ forloop.counter }}"/>
@@ -64,31 +67,34 @@ Mark selected as: <a id="mark_nocat" href="">No category</a>,
       <input type="hidden" name="album_key_{{ forloop.counter }}" value="{{ album.key }}"/>
       <select name="category_{{ forloop.counter }}">
         <option value="none" {% ifequal album.category "none" %}selected="selected"{% endifequal %}>None</option>
-{% for category in categories %}
+    {% for category in categories %}
         <option value="{{ category }}" {% ifequal album.category category %}selected="selected"{% endifequal %}>{{ category|replace:"/_/ "|capfirst }}</option>
-{% endfor %}
+    {% endfor %}
       </select>
     </td>
+  {% endif %}
     <td><a href="{{ album.url }}">{{ album.title }}</a></td>
     <td>
-{{ album.num_tracks }} track{{ album.num_tracks|pluralize }}
+      {{ album.num_tracks }} track{{ album.num_tracks|pluralize }}
     </td>
     <td>
-{% if album.num_reviews %}
-{{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
-{% endif %}
+  {% if album.num_reviews %}
+    {{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
+  {% endif %}
     </td>
     <td>
-{% ifincrate user album %}
-<a href="/djdb/crate/remove_item?response_page=artist&user_key={{ user.key }}&item_key={{ album.key }}"><img src="/media/common/img/remove.png" alt="Remove Album from Crate" title="Remove from Crate"/></a>
-{% else %}
-<a href="/djdb/crate/add_item?response_page=artist&user_key={{ user.key }}&item_key={{ album.key }}"><img src="/media/common/img/add.png" alt="Add Album to Crate" title="Add to Crate"/></a>
-{% endifincrate %}
+  {% ifincrate user album %}
+      <a href="/djdb/crate/remove_item?response_page=artist&user_key={{ user.key }}&item_key={{ album.key }}"><img src="/media/common/img/remove.png" alt="Remove Album from Crate" title="Remove from Crate"/></a>
+  {% else %}
+      <a href="/djdb/crate/add_item?response_page=artist&user_key={{ user.key }}&item_key={{ album.key }}"><img src="/media/common/img/add.png" alt="Add Album to Crate" title="Add to Crate"/></a>
+  {% endifincrate %}
     </td>
   </tr>
 {% endfor %}
 </table>
+{% if user.is_music_director %}
 <input type="submit" value="Update Categories"/>
 </form>
+{% endif %}
 
 {% endblock %}
