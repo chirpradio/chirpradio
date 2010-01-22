@@ -321,12 +321,25 @@ def crate_page(request, ctx_vars=None):
     return http.HttpResponse(template.render(ctx))
 
 def add_crate_item(request):
-    item_key = request.GET.get('item_key')
-    if not item_key:
-        return http.HttpResponse(status=404)
-    item = db.get(item_key)
-    if not item:
-        return http.HttpResponse(status=404)
+    if request.method == 'POST':
+        artist = request.POST.get('artist')
+        album = request.POST.get('album')
+        track = request.POST.get('track')
+        label = request.POST.get('label')
+        notes = request.POST.get('notes')
+        item = models.CrateItem(artist=artist,
+                                album=album,
+                                track=track,
+                                label=label,
+                                notes=notes)
+        db.put(item)
+    else:
+        item_key = request.GET.get('item_key')
+        if not item_key:
+            return http.HttpResponse(status=404)
+        item = db.get(item_key)
+        if not item:
+            return http.HttpResponse(status=404)
 
     msg = ''
     crate = _get_crate(request.user)
@@ -354,10 +367,8 @@ def add_crate_item(request):
         return artist_info_page(request, item.album_artist.name, ctx_vars)
     elif response_page == 'album':
         return album_info_page(request, str(item.album.album_id), ctx_vars)
-    elif response_page == 'crate':
-        return crate_page(request, ctx_vars)
     else:
-        return http.HttpResponse(status=404)
+        return crate_page(request, ctx_vars)
 
 def remove_crate_item(request):
     item_key = request.GET.get('item_key')

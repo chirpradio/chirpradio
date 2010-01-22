@@ -590,5 +590,6 @@ class CrateItem(db.Model):
     album = db.StringProperty()
     track = db.StringProperty()
     label = db.StringProperty()
+    notes = db.StringProperty()
 
 #    @classmethod
