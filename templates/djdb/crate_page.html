@@ -31,17 +31,14 @@ This is the crate page for <b>{{ user }}</b>.
     <form method="post" action="/djdb/crate/add_item">
       <label for="artist">Artist</label>
       <input id="id_artist" type="text" name="artist" />
-      <input type="hidden" name="artist_key" id="id_artist_key" />
 
       <p/>
       <label for="song">Song Title</label>
-      <input id="id_song" type="text" name="song" />
-      <input type="hidden" name="song_key" id="id_song_key" />
+      <input id="id_song" type="text" name="track" />
 
       <p/>
       <label for="album">Album</label>
       <input id="id_album" type="text" name="album" />
-      <input type="hidden" name="album_key" id="id_album_key" />
 
       <p/>
       <label for="label">Label</label>
@@ -79,7 +76,6 @@ This is the crate page for <b>{{ user }}</b>.
           {% ifequal item.kind 'CrateItem' %}
         <img src="/media/common/img/track.png" alt="A track" title="A track"/>
         {{ item.artist }} / {{ item.album }} / {{ item.track }}
-        <a href="{{ item.album.url }}" alt="Go to track." title="Go to track."><img src="/media/common/img/link.png"/></a>
           {% else %}
         Unrecognized item.
           {% endifequal %}
