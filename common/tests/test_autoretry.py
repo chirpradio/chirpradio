@@ -21,25 +21,53 @@ from auth.models import User
 from google.appengine.ext import db
 from common.autoretry import AutoRetry
 
-__all__ = ['TestAutoRetry']
+__all__ = ['TestAutoRetryQueryInterface']
 
-class TestAutoRetry(unittest.TestCase):
+class TestAutoRetryQueryInterface(unittest.TestCase):
     
     def setUp(self):
         for u in User.all():
             u.delete()
     
-    def test_basic_query_functionality(self):
-        # We should be able to pass in a model object or a queryset to AutoRetry and get the expected result.
-
+    def put_user(self):
+        dj = User(email="test")
+        dj.roles.append(auth.roles.DJ)
+        dj.put()
+    
+    def test_put(self):
         dj = User(email="test")
         dj.roles.append(auth.roles.DJ)
         AutoRetry(dj).put()
         self.assertTrue(dj)
-
+        q = db.Query(User).filter("email =", "test")
+        self.assertEqual([u.email for u in q], ['test'])
+    
+    def test_query_fetch(self):
+        self.put_user()
         q = db.Query(User).filter("email =", "test")
         count = AutoRetry(q).count(1)
         self.assertEqual(count, 1)
         record_set = AutoRetry(q).fetch(1000)
         self.assertEqual([u.email for u in record_set], ['test'])
+    
+    def test_iterate_query(self):
+        self.put_user()
+        q = db.Query(User).filter("email =", "test")
+        count = AutoRetry(q).count(1)
+        self.assertEqual(count, 1)
+        self.assertEqual([u.email for u in AutoRetry(q)], ['test'])
+    
+    def test_fetch_query_by_index(self):
+        self.put_user()
+        q = db.Query(User).filter("email =", "test")
+        count = AutoRetry(q).count(1)
+        self.assertEqual(count, 1)
+        self.assertEqual([AutoRetry(q)[0].email], ['test'])
+    
+    def test_fetch_query_by_slice(self):
+        self.put_user()
+        q = db.Query(User).filter("email =", "test")
+        count = AutoRetry(q).count(1)
+        self.assertEqual(count, 1)
+        self.assertEqual([u.email for u in AutoRetry(q)[0:15]], ['test'])
 

@@ -29,12 +29,18 @@ class AutoRetry(object):
     
     def __init__(self, obj):
         self.__obj = obj
-
-    def __getattr__(self, attr):
+    
+    def __make_dispatcher(self, attr):
         method = getattr(self.__obj, attr)
         def dispatcher(*args, **kw):
             return self.__run_in_retry_loop(method, args, kw)
         return dispatcher
+    
+    __getitem__ = property(fget=lambda self: self.__make_dispatcher('__getitem__'))
+    __iter__ = property(fget=lambda self: self.__make_dispatcher('__iter__'))
+
+    def __getattr__(self, attr):
+        return self.__make_dispatcher(attr)
     
     def __run_in_retry_loop(self, method, args, kw, attempts=5.0, interval=0.1, exponent=2.0):
         count = 0.0
