@@ -139,3 +139,13 @@ class TestAutoRetryExceptionHandling(unittest.TestCase):
             self.assertEquals([u for u in record_set], ['<user>'])
         
         fudge.verify()
+    
+    def test_cannot_wrap_an_autory_object(self):
+        class Bob(object):
+            pass
+        
+        def wrap_twice():
+            a = AutoRetry(Bob())
+            b = AutoRetry(a)
+        self.assertRaises(ValueError, wrap_twice)
+        

@@ -45,6 +45,12 @@ class AutoRetry(object):
     """
     
     def __init__(self, obj):
+        if isinstance(obj, self.__class__):
+            # This technically isn't a problem but 
+            # it will increase the retry times and probably 
+            # is a programming error that can be fixed
+            raise ValueError("Cannot re-wrap in %r (with %r)" % (
+                                self.__class__.__name__, obj))
         self.__obj = obj
     
     def __make_dispatcher(self, attr):
