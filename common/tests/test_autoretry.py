@@ -15,27 +15,22 @@
 ### limitations under the License.
 ###
 
-import unittest, auth
+import unittest
+import auth
+from auth.models import User
 from google.appengine.ext import db
 from common.autoretry import AutoRetry
 
 __all__ = ['TestAutoRetry']
 
-def create_dj():
-    dj = auth.models.User(email="test")
-    dj.roles.append(auth.roles.DJ)
-    dj.put()
-    return dj
-
 class TestAutoRetry(unittest.TestCase):
     
     def setUp(self):
-        pass
+        for u in User.all():
+            u.delete()
     
-    def test_api(self):
-        """We should be able to pass in a model object or a queryset to AutoRetry and get the expected result."""
-
-        User = auth.models.User
+    def test_basic_query_functionality(self):
+        # We should be able to pass in a model object or a queryset to AutoRetry and get the expected result.
 
         dj = User(email="test")
         dj.roles.append(auth.roles.DJ)
@@ -44,6 +39,7 @@ class TestAutoRetry(unittest.TestCase):
 
         q = db.Query(User).filter("email =", "test")
         count = AutoRetry(q).count(1)
+        self.assertEqual(count, 1)
         record_set = AutoRetry(q).fetch(1000)
-        self.assertEqual(record_set, 1)
+        self.assertEqual([u.email for u in record_set], ['test'])
 

@@ -15,7 +15,8 @@
 ### limitations under the License.
 ###
 
-import time, logging
+import time
+import logging
 from google.appengine.runtime import apiproxy_errors
 from google.appengine.datastore import datastore_pb
 
@@ -30,32 +31,26 @@ class AutoRetry(object):
         self.__obj = obj
 
     def __getattr__(self, attr):
-
         method = getattr(self.__obj, attr)
-
         def dispatcher(*args, **kw):
-            self.__run_in_retry_loop(method, *args, **kw)
-
+            return self.__run_in_retry_loop(method, args, kw)
         return dispatcher
     
-    def __run_in_retry_loop(self, method, attempts=5.0, interval=0.1, exponent=2.0, *args, **kw):
-
+    def __run_in_retry_loop(self, method, args, kw, attempts=5.0, interval=0.1, exponent=2.0):
         count = 0.0
-
         while 1:
-
             try:
-
                 return method(*args, **kw)
-
             except apiproxy_errors.ApplicationError, e:
 
                 errno = e.application_error
-                if errno not in ERRORS: raise
+                if errno not in ERRORS: 
+                    raise
 
                 sleep = (exponent ** count) * interval
                 count += 1.0
-                if count > attempts: raise
+                if count > attempts: 
+                    raise
 
                 msg = "Datastore %s: retry #%d in %s seconds.\n%s"
                 vals = ''
