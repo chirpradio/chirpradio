@@ -23,6 +23,7 @@ from django.template import loader
 from django import forms
 from djdb.models import Artist, Album, Track
 from playlists.models import Playlist, PlaylistTrack, ChirpBroadcast
+from common.autoretry import AutoRetry
 
 class PlaylistTrackForm(forms.Form):
     """
@@ -86,7 +87,7 @@ class PlaylistTrackForm(forms.Form):
             playlist_track.freeform_label = self.cleaned_data['label']
         if self.cleaned_data['song_notes']:
             playlist_track.notes = self.cleaned_data['song_notes']
-        playlist_track.save()
+        AutoRetry(playlist_track).save()
 
         return playlist_track
 

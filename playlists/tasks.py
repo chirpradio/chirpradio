@@ -26,6 +26,7 @@ from google.appengine.api.labs import taskqueue
 from common import dbconfig, in_dev
 from playlists.models import PlaylistEvent
 from common.utilities import as_encoded_str
+from common.autoretry import AutoRetry
 
 log = logging.getLogger()
 
@@ -274,7 +275,7 @@ def task_response(result):
         return HttpResponse("OK")
 
 def send_track_to_live_site(request):
-    result = _url_track_create(PlaylistEvent.get(request.POST['id']))
+    result = _url_track_create(AutoRetry(PlaylistEvent).get(request.POST['id']))
     return task_response(result)
 
 def delete_track_from_live_site(request):
@@ -323,7 +324,7 @@ def send_track_to_live365(request):
     **album**
     Album title
     """
-    track = PlaylistEvent.get(request.POST['id'])
+    track = AutoRetry(PlaylistEvent).get(request.POST['id'])
     log.info("Live365 create track %s" % track.key())
     
     qs = {

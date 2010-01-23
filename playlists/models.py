@@ -23,6 +23,7 @@ from djdb.models import Artist, Album, Track
 from google.appengine.ext import db
 from google.appengine.api.datastore_types import Key
 from common import time_util
+from common.autoretry import AutoRetry
 from google.appengine.ext.db import polymodel
 
 class Playlist(polymodel.PolyModel):
@@ -94,11 +95,11 @@ def ChirpBroadcast():
     # If it doesn't exist, create it once for all time
     
     query = BroadcastPlaylist.all().filter('channel =', 'CHIRP')
-    if query.count(1):
-        playlist = query[0]
+    if AutoRetry(query).count(1):
+        playlist = AutoRetry(query)[0]
     else:
         playlist = BroadcastPlaylist(channel='CHIRP')
-        playlist.put()
+        AutoRetry(playlist).put()
     
     return playlist
     

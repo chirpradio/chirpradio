@@ -33,6 +33,7 @@ from playlists.forms import PlaylistTrackForm, PlaylistReportForm
 from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast
 from playlists.tasks import playlist_event_listeners
 from common.utilities import as_encoded_str
+from common.autoretry import AutoRetry
 
 
 common_context = {
@@ -69,7 +70,7 @@ def iter_playlist_events_for_view(query):
     which contain some extra attributes for the view.
     """
     first_break = False
-    for playlist_event in query:
+    for playlist_event in AutoRetry(query):
         pl_view = PlaylistEventView(playlist_event)
         if pl_view.is_break:
             first_break = True
@@ -143,7 +144,7 @@ def create_event(request):
 def delete_event(request, event_key):
     e = None
     try:
-        e = PlaylistEvent.get(event_key)
+        e = AutoRetry(PlaylistEvent).get(event_key)
     except BadKeyError:
         pass
     else:
@@ -274,7 +275,7 @@ def query_group_by_track_key(from_date, to_date):
     seen = {}
 
     #
-    for item in query:
+    for item in AutoRetry(query):
         key = item_key(item)
 
         if not seen.has_key(key):

@@ -19,6 +19,8 @@
 
 from google.appengine.ext import db
 
+from common.autoretry import AutoRetry
+
 class DBConfig(object):
     """A datastore config dictionary.
     
@@ -35,21 +37,21 @@ class DBConfig(object):
     
     def __getitem__(self, varname):
         q = Config.all().filter("varname =", varname)
-        if q.count(1) == 0:
+        if AutoRetry(q).count(1) == 0:
             raise KeyError("No config value with varname %r" % varname)
         else:
-            return q.fetch(1)[0].value
+            return AutoRetry(q).fetch(1)[0].value
             
     def __setitem__(self, varname, value):
         q = Config.all().filter("varname =", varname)
         if q.count(1) == 1:
-            cfg = q.fetch(1)[0]
+            cfg = AutoRetry(q).fetch(1)[0]
         else:
             cfg = Config()
             
         cfg.varname = varname
         cfg.value = value
-        cfg.put()
+        AutoRetry(cfg).put()
 
 
 class Config(db.Model):
