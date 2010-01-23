@@ -34,6 +34,7 @@ from auth.decorators import require_role, require_signed_in_user
 from auth import forms as auth_forms
 from auth.models import User
 from common import email
+from common.autoretry import AutoRetry
 
 # Require this role in order to access any management tasks.
 USER_MANAGEMENT_ROLE = roles.VOLUNTEER_COORDINATOR
@@ -62,7 +63,7 @@ def hello(request):
             auth.attach_credentials(response, form.user)
             # Update the last login time in the User record.
             form.user.last_login = datetime.datetime.now()
-            form.user.save()
+            AutoRetry(form.user).save()
             return response
             
     ctx = RequestContext(request, {'form': form})
@@ -97,7 +98,7 @@ def change_password(request):
             ctx_vars['form'] = form
         else:
             request.user.set_password(form.cleaned_data['new_password'])
-            request.user.save()
+            AutoRetry(request.user).save()
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(tmpl.render(ctx))
 
@@ -185,7 +186,7 @@ def reset_password(request):
             # We are also logging the user in automatically, so record
             # the time.
             user.last_login = datetime.datetime.now()
-            user.save()
+            AutoRetry(user).save()
             # Attach the user to the request so that our page will
             # display the chrome shown to logged-in users.
             request.user = user
@@ -236,9 +237,9 @@ def main_page(request):
              
 
     """Lists all users."""
-    num_active_users = sum(u.is_active for u in all_users)
-    active = [u for u in all_users if u.is_active]
-    inactive = [u for u in all_users if not u.is_active]
+    num_active_users = sum(u.is_active for u in AutoRetry(all_users))
+    active = [u for u in AutoRetry(all_users) if u.is_active]
+    inactive = [u for u in AutoRetry(all_users) if not u.is_active]
     ctx = RequestContext(request, {
             'title': 'User Management',
             'all_users': active + inactive,
@@ -259,7 +260,7 @@ def edit_user(request):
         user_form = auth_forms.UserForm(request.POST)
         if user_form.is_valid():
             user_to_edit = user_form.to_user()
-            user_to_edit.save()
+            AutoRetry(user_to_edit).save()
             # When finished, redirect user back to the user list.
             return http.HttpResponseRedirect('/auth/')
     ctx = RequestContext(request, {
@@ -329,6 +330,6 @@ def bootstrap(request):
                 'User %s already exists' % user.email)
         user = User(email=g_user.email(), is_superuser=True)
         user.set_password("test")
-        user.save()
+        AutoRetry(user).save()
         return http.HttpResponseRedirect(auth.create_login_url('/'))
     return http.HttpResponseForbidden("Already logged in")
