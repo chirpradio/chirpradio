@@ -20,8 +20,11 @@
 import hashlib
 import logging
 import time
+
 from google.appengine.ext import db
+
 from auth import roles
+from common.autoretry import AutoRetry
 
 
 class User(db.Model):
@@ -94,9 +97,9 @@ class User(db.Model):
     def get_by_email(cls, email):
         query = db.Query(cls)
         query.filter('email =', email)
-        if query.count() == 0:
+        if AutoRetry(query).count() == 0:
             return None
-        elif query.count() == 1:
+        elif AutoRetry(query).count() == 1:
             return query.get()
         else:
             raise LookupError('User email collision for %s' % email)
@@ -143,7 +146,7 @@ class KeyStorage(db.Model):
         # operation.
         ks, timestamp = getattr(cls, '_cached', (None, None))
         if ks is None or time.time() - timestamp > _KEY_STORAGE_TIMEOUT_S:
-            ks = cls.get_by_key_name(_KEY_STORAGE_DATASTORE_KEY)
+            ks = AutoRetry(cls).get_by_key_name(_KEY_STORAGE_DATASTORE_KEY)
             if ks is None:
                 ks = cls(key_name=_KEY_STORAGE_DATASTORE_KEY,
                          hmac_key=_TEST_HMAC_KEY,

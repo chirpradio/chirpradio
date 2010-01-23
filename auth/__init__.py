@@ -23,6 +23,7 @@ import os
 import time
 
 from common import in_prod
+from common.autoretry import AutoRetry
 
 # TODO(trow): This is a work-around for problems with PyCrypto on the Mac.
 # For more information, see

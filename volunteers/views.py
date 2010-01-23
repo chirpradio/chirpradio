@@ -18,7 +18,7 @@ from google.appengine.ext import db
 from auth.models import User
 from auth import roles
 from auth.decorators import require_role
-from common.decorators import respond_with_json
+from common.utilities import as_json
 from volunteers import models
 
 
@@ -35,7 +35,7 @@ def meetings(request):
 
 # TODO(trow): This is totally broken.
 @require_role(roles.VOLUNTEER_COORDINATOR)
-@respond_with_json
+@as_json
 def add_meeting_attendee(request, meeting_id, user_id):
     m = Meeting.objects.get(id=meeting_id)
     m.attendees.add(User.objects.get(id=user_id))
@@ -45,7 +45,7 @@ def add_meeting_attendee(request, meeting_id, user_id):
 
 # TODO(trow): This is totally broken.
 @require_role(roles.VOLUNTEER_COORDINATOR)
-@respond_with_json
+@as_json
 def delete_meeting_attendee(request, meeting_id, user_id):
     m = Meeting.objects.get(id=meeting_id)
     m.attendees.remove(User.objects.get(id=user_id))
@@ -55,7 +55,7 @@ def delete_meeting_attendee(request, meeting_id, user_id):
 
 # TODO(trow): This is totally broken.
 @require_role(roles.VOLUNTEER_COORDINATOR)
-@respond_with_json
+@as_json
 # TODO(trow): Should be YYYY MM DD
 def track_meeting(request, mon, day, year):
     # this should add or edit a meeting:
@@ -100,7 +100,7 @@ def show_tasks_for_claiming(request):
 
 # TODO(trow): This is totally broken.
 @transaction.commit_manually
-@respond_with_json
+@as_json
 def claim_task(request, task_id):
     try:
         task = get_object_or_404(Task, id=task_id)

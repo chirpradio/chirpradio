@@ -28,6 +28,7 @@ def as_json(handler):
             r = handler(*args, **kwargs)
             status = 200
         except Exception, err:
+            # @TODO(kumar) really REALLY need to hook into Django's email mailer here
             log.exception("in JSON response")
             r = {
                 'success':False,
