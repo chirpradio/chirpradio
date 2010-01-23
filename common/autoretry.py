@@ -25,7 +25,22 @@ ERRORS = {datastore_pb.Error.TIMEOUT:'Timeout',
                 
 
 class AutoRetry(object):
-    """Autoretry is a workaround for GAE datastore timeout issues.  See http://code.google.com/p/chirpradio/issues/detail?id=78 or search the GAE group discussion list for "datastore timeout" for more information."""
+    """Wrapper around any object that proxies methods and retries on failure.
+    
+    It is intended to workaround random GAE datastore timeout errors that 
+    happen when executing queries.  While you can wrap any object you only 
+    need to wrap a query object before calling a method that actually 
+    executes a query.  Note that methods which return objects (e.g. chained calls) 
+    do not automatically rewrap the returned object in AutoRetry for you.
+    
+    Example::
+        
+        query = User.all().filter('email =', email)
+        all_users = AutoRetry(query).fetch(1000)
+    
+    See http://code.google.com/p/chirpradio/issues/detail?id=78 
+    or search the GAE group discussion list for "datastore timeout" for more information.
+    """
     
     def __init__(self, obj):
         self.__obj = obj
