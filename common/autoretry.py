@@ -16,7 +16,9 @@
 ###
 
 import time
+import inspect
 import logging
+from functools import wraps
 from google.appengine.runtime import apiproxy_errors
 from google.appengine.datastore import datastore_pb
 
@@ -47,6 +49,11 @@ class AutoRetry(object):
     
     def __make_dispatcher(self, attr):
         method = getattr(self.__obj, attr)
+        if not hasattr(method, '__name__'):
+            # well, hmm, it seems that wraps() will raise an 
+            # exception if a method does not have __name__
+            method.__name__ = 'unnamed'
+        @wraps(method)
         def dispatcher(*args, **kw):
             return self.__run_in_retry_loop(method, args, kw)
         return dispatcher
@@ -69,15 +76,17 @@ class AutoRetry(object):
                     raise
 
                 sleep = (exponent ** count) * interval
-                count += 1.0
+                count += 0.8
                 if count > attempts: 
                     raise
 
                 msg = "Datastore %s: retry #%d in %s seconds.\n%s"
-                vals = ''
-                if count == 1.0:
-                    vals = '\n'.join([str(a) for a in args])
-                logging.warning(msg % (ERRORS[errno], count, sleep, vals))
+                if hasattr(method, '__name__'):
+                    call_name = method.__name__
+                else:
+                    call_name = 'unknown'
+                call = '%s(%s)' % (call_name, ', '.join([repr(a) for a in args]))
+                logging.warning(msg % (ERRORS[errno], count, sleep, call))
 
                 time.sleep(sleep)
 
