@@ -16,7 +16,9 @@
 ###
 
 from django import forms
+
 from djdb import models
+from common.autoretry import AutoRetry
 
 
 def new(album, user):
@@ -45,4 +47,4 @@ def fetch_recent(max_num_returned=10):
     rev_query = models.Document.all()
     rev_query.filter("doctype =", models.DOCTYPE_REVIEW)
     rev_query.order("-timestamp")
-    return rev_query.fetch(max_num_returned)
+    return AutoRetry(rev_query).fetch(max_num_returned)

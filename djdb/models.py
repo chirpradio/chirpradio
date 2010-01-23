@@ -18,10 +18,13 @@
 """Data model for CHIRP's DJ database."""
 
 import hashlib
+
 from google.appengine.ext import db
+
 from auth.models import User
 from common import sanitize_html
 from common import time_util
+from common.autoretry import AutoRetry
 
 
 # A list of standard doctypes.
@@ -87,7 +90,7 @@ class DjDbImage(db.Model):
             return None
         sha1 = url[i + len(cls.URL_PREFIX):]
         key_name = cls.get_key_name(sha1)
-        return cls.get_by_key_name(key_name)
+        return AutoRetry(cls).get_by_key_name(key_name)
 
 
 class Artist(db.Model):
@@ -122,7 +125,7 @@ class Artist(db.Model):
         name = name and name.strip()
         if not name:
             return None
-        for art in cls.all().filter("name =", name).fetch(1):
+        for art in AutoRetry(cls.all().filter("name =", name)).fetch(1):
             return art
         return None
 
@@ -180,7 +183,7 @@ class Artist(db.Model):
         """Returns the number of albums by this artist."""
         # This should be a bit more efficient than looking at the
         # length of set.album_set.
-        return Album.all().filter("album_artist =", self).count()
+        return AutoRetry(Album.all().filter("album_artist =", self)).count()
 
 
 class Album(db.Model):
@@ -556,7 +559,7 @@ class TagEdit(db.Model):
         edit_query.order("timestamp")
         # TODO(trow): We should angrily complain if the number of tag
         # edits is too high.
-        for edit in edit_query.fetch(999):
+        for edit in AutoRetry(edit_query).fetch(999):
             current_tags.difference_update(edit.removed)
             current_tags.update(edit.added)
         return current_tags

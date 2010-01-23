@@ -16,7 +16,9 @@
 ###
 
 from google.appengine.ext import db
+
 from djdb import models
+from common.autoretry import AutoRetry
 
 
 def modify_tags_and_save(user, obj, to_add, to_remove):
@@ -43,7 +45,7 @@ def modify_tags_and_save(user, obj, to_add, to_remove):
                               added=to_add, removed=to_remove)
     # The two objects are in the same entity group, so saving them
     # is an all-or-nothing operation.
-    db.save([obj, tag_edit])
+    AutoRetry(db).save([obj, tag_edit])
     return True
 
 

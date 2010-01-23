@@ -17,17 +17,20 @@
 
 """Views for the DJ Database."""
 
+import logging
+
 from google.appengine.ext import db
 from django import forms
 from django import http
 from django.template import loader, Context, RequestContext
+
 from auth.decorators import require_role
 from auth import roles
 from common import sanitize_html
+from common.autoretry import AutoRetry
 from djdb import models
 from djdb import search
 from djdb import review
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -131,7 +134,7 @@ def _get_album_or_404(album_id_str):
         return http.HttpResponse(status=404)
     q = models.Album.all().filter("album_id =", int(album_id_str))
     album = None
-    for album in q.fetch(1):
+    for album in AutoRetry(q).fetch(1):
         pass
     if album is None:
         return http.HttpResponse(status=404)
@@ -170,7 +173,7 @@ def album_new_review(request, album_id_str):
                 # Now save both the modified album and the document.
                 # They are both in the same entity group, so this write
                 # is atomic.
-                db.put([album, doc])
+                AutoRetry(db).put([album, doc])
                 # Redirect back to the album info page.
                 return http.HttpResponseRedirect("info")
     ctx_vars["form"] = form

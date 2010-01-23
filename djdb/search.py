@@ -21,8 +21,11 @@ import logging
 import re
 import time
 import unicodedata
+
 from google.appengine.ext import db
+
 from djdb import models
+from common.autoretry import AutoRetry
 
 # All search data used by this code is marked with this generation.
 _GENERATION = 1
@@ -190,7 +193,7 @@ class Indexer(object):
         # the same entity group.  This ensures that db.save is an
         # atomic operation --- either all of the objects are
         # successfully saved or none are.
-        db.save(self._txn_objects_to_save)
+        AutoRetry(db).save(self._txn_objects_to_save)
         self._matches = {}
         self._txn_objects_to_save
 
@@ -214,7 +217,7 @@ def optimize_index(term):
     # First we iterate over all of the SearchMatches associated with
     # particular term and segment them by entity kind and field.
     segmented = {}
-    for sm in query.fetch(999):
+    for sm in AutoRetry(query).fetch(999):
         # Skip anything outside the current generation.
         if sm.generation != _GENERATION:
             continue
@@ -273,7 +276,7 @@ def create_artists(all_artist_names):
         art = models.Artist.create(name=name,
                                    parent=idx.transaction)
         idx.add_artist(art)
-    idx.save()
+    AutoRetry(idx).save()
 
 
 ###
@@ -359,7 +362,7 @@ def _fetch_all(query):
     # results we can gather from the first 999 match objects.
     # That should always be enough.
     all_matches = set()
-    for sm in query.fetch(limit=999):
+    for sm in AutoRetry(query).fetch(limit=999):
         # Ignore objects that are not in the current generation.
         if sm.generation != _GENERATION:
             continue
@@ -486,7 +489,7 @@ def load_and_segment_keys(fetched_keys):
       lists of entities of that type.
     """
     segmented = {}
-    for entity in db.get(fetched_keys):
+    for entity in AutoRetry(db).get(fetched_keys):
         if entity:
             by_kind = segmented.get(entity.kind())
             if by_kind is None:
