@@ -28,6 +28,7 @@ from django.utils import simplejson
 
 from common.utilities import as_json
 from common import time_util
+from common.autoretry import AutoRetry
 import auth
 from auth.models import User
 from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
@@ -63,7 +64,7 @@ def index(request):
     def hour_position(s):
         return hours_to_show.index(s.hour)
         
-    slotted_spots = sorted([s for s in current_spots.fetch(10)], key=hour_position) 
+    slotted_spots = sorted([s for s in AutoRetry(current_spots).fetch(10)], key=hour_position) 
     
     return render_to_response('traffic_log/index.html', dict(
             date=today,
@@ -72,7 +73,7 @@ def index(request):
 
 @require_role(DJ)
 def spotTextForReading(request, spot_key=None):
-    spot = models.Spot.get(spot_key)
+    spot = AutoRetry(models.Spot).get(spot_key)
     dow, hour, slot = _get_slot_from_request(request)
     
     url = reverse('traffic_log.finishSpot', args=(spot.key(),))
@@ -91,7 +92,7 @@ def finishSpot(request, spot_key=None):
                     .filter("dow =", dow)
                     .filter("hour =", hour)
                     .filter("slot =", slot))
-    count = q.count(1) 
+    count = AutoRetry(q).count(1) 
     if count == 0:
         raise ValueError("No spot constraint found for dow=%r, hour=%r, slot=%r" % (
                                                                     dow, hour, slot))
@@ -100,8 +101,8 @@ def finishSpot(request, spot_key=None):
         raise ValueError("Multiple spot constraints found for dow=%r, hour=%r, slot=%r" % (
                                                                     dow, hour, slot))
     
-    constraint = q.fetch(1)[0]
-    spot = models.Spot.get(spot_key)
+    constraint = AutoRetry(q).fetch(1)[0]
+    spot = AutoRetry(models.Spot).get(spot_key)
     
     today = time_util.chicago_now().date()
     q = (models.TrafficLogEntry.all()
@@ -109,8 +110,8 @@ def finishSpot(request, spot_key=None):
                     .filter("spot =", spot)
                     .filter("hour =", hour)
                     .filter("slot =", slot))
-    if q.count(1):
-        existing_logged_spot = q.fetch(1)[0]
+    if AutoRetry(q).count(1):
+        existing_logged_spot = AutoRetry(q).fetch(1)[0]
         raise RuntimeError("This spot %r at %r has already been read %s" % (
                     spot, constraint, existing_logged_spot.reader))
     
@@ -142,7 +143,7 @@ def createSpot(request):
             constraint_keys = saveConstraint(constraint_form.cleaned_data)
             spot = spot_form.save()
             spot.author = user
-            spot.put()
+            AutoRetry(spot).put()
             connectConstraintsAndSpot(constraint_keys, spot.key())
             all_clear = True
     else:
@@ -162,7 +163,7 @@ def createSpot(request):
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def editSpot(request, spot_key=None):
-    spot = models.Spot.get(spot_key)
+    spot = AutoRetry(models.Spot).get(spot_key)
     user = auth.get_current_user(request)
     if request.method ==  'POST':
         spot_form = forms.SpotForm(request.POST)
@@ -173,7 +174,7 @@ def editSpot(request, spot_key=None):
             for field in spot_form.fields.keys():
                 setattr(spot,field,spot_form.cleaned_data[field])
                 spot.author = user
-                models.Spot.put(spot)
+                AutoRetry(models.Spot).put(spot)
 
         if constraint_form.is_valid():
             connectConstraintsAndSpot(
@@ -195,14 +196,15 @@ def editSpot(request, spot_key=None):
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def deleteSpot(request, spot_key=None):
-    models.Spot.get(spot_key).delete()
+    o = AutoRetry(models.Spot).get(spot_key)
+    AutoRetry(o).delete()
     return HttpResponseRedirect('/traffic_log/spot')
 
 
 @require_role(DJ)
 def spotDetail(request, spot_key=None):
-    spot = models.Spot.get(spot_key)
-    constraints = [forms.SpotConstraintForm(instance=x) for x in spot.constraints]
+    spot = AutoRetry(models.Spot).get(spot_key)
+    constraints = [forms.SpotConstraintForm(instance=x) for x in AutoRetry(spot.constraints)]
     form = forms.SpotForm(instance=spot)
     return render_to_response('traffic_log/spot_detail.html', {
             'spot':spot,
@@ -213,14 +215,14 @@ def spotDetail(request, spot_key=None):
 
 @require_role(DJ)
 def listSpots(request):
-    spots = models.Spot.all().order('-created').fetch(20)
+    spots = AutoRetry(models.Spot.all().order('-created')).fetch(20)
     return render_to_response('traffic_log/spot_list.html', 
         {'spots':spots}, 
         context_instance=RequestContext(request))
 
 
 def connectConstraintsAndSpot(constraint_keys,spot_key):
-    for constraint in map(models.SpotConstraint.get, box(constraint_keys)):
+    for constraint in map(AutoRetry(models.SpotConstraint).get, box(constraint_keys)):
         #sys.stderr.write(",".join(constraint.spots))
         if spot_key not in constraint.spots:
             constraint.spots.append(spot_key)
@@ -241,9 +243,9 @@ def saveConstraint(constraint):
     for d in dows:
         for h in hours:
             name = ":".join([constants.DOW_DICT[d],str(h), str(slot)])
-            obj  = models.SpotConstraint.get_or_insert(name,dow=d,hour=h,slot=slot)
+            obj  = AutoRetry(models.SpotConstraint).get_or_insert(name,dow=d,hour=h,slot=slot)
             if not obj.is_saved():
-                obj.put()
+                AutoRetry(obj).put()
             keys.append(obj.key())
     return keys
 
@@ -255,12 +257,12 @@ def deleteSpotConstraint(request, spot_constraint_key=None, spot_key=None):
     constraint = models.SpotConstraint.get(spot_constraint_key)
     if spot_key:
         constraint.spots.remove(models.Spot.get(spot_key).key())
-        constraint.save()
+        AutoRetry(constraint).save()
     else:
         ## XXX but will this ever really be needed (since you can't
         ## just create a constraint on it's own right now)?
         ## should just raise exception
-        constraint.delete()
+        AutoRetry(constraint).delete()
 
     return HttpResponseRedirect('/traffic_log/spot/edit/%s'%spot_key)
 
@@ -292,15 +294,15 @@ def getOrCreateTrafficLogEntry(date, hour, slot):
         date, hour, slot
         )
     
-    if entry.count():
-        return entry.get()
+    if AutoRetry(entry).count():
+        return AutoRetry(entry).get()
     else:
         constraint = models.SpotConstraint.gql(
             "where dow = :1 and hour = :2 and slot = :3",
             date.isoweekday(), hour, slot
             )
-        if constraint.count():
-            constraint = constraint.get()
+        if AutoRetry(constraint).count():
+            constraint = AutoRetry(constraint).get()
             spot = randomSpot(constraint.spots)
             if spot:
                 new_entry = models.TrafficLogEntry(
@@ -310,7 +312,7 @@ def getOrCreateTrafficLogEntry(date, hour, slot):
                     slot      = slot,
                     scheduled = constraint
                     )
-                new_entry.put()
+                AutoRetry(new_entry).put()
                 return new_entry
             else:
                 return

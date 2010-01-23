@@ -1,7 +1,9 @@
 from django import forms
 from google.appengine.ext.webapp import template
 from google.appengine.ext.db import djangoforms
+
 from traffic_log import constants, models
+from common.autoretry import AutoRetry
 
 
 class SpotForm(djangoforms.ModelForm):

@@ -21,6 +21,7 @@ from django.core.urlresolvers import reverse
 
 from auth.models import User
 from traffic_log import constants
+from common.autoretry import AutoRetry
 
 
 class SpotConstraint(search.SearchableModel):
@@ -30,7 +31,7 @@ class SpotConstraint(search.SearchableModel):
     spots    = db.ListProperty(db.Key)
     
     def iter_spots(self):
-        for spot in Spot.get(self.spots):
+        for spot in AutoRetry(Spot).get(self.spots):
             yield spot
     
     def as_query_string(self):
