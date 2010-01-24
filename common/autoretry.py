@@ -16,14 +16,14 @@
 ###
 
 import time
+import sys
 import inspect
 import logging
 from functools import wraps
 from google.appengine.runtime import apiproxy_errors
 from google.appengine.datastore import datastore_pb
-
-ERRORS = {datastore_pb.Error.TIMEOUT:'Timeout',
-          datastore_pb.Error.CONCURRENT_TRANSACTION:'TransactionFailedError'}
+from google.appengine.api.datastore_errors import Timeout
+from google.appengine.api.datastore_errors import TransactionFailedError
                 
 
 class AutoRetry(object):
@@ -75,16 +75,14 @@ class AutoRetry(object):
         while 1:
             try:
                 return method(*args, **kw)
-            except apiproxy_errors.ApplicationError, e:
-
-                errno = e.application_error
-                if errno not in ERRORS: 
-                    raise
+            except (TransactionFailedError, Timeout), exc:
+                etype, val, tb = sys.exc_info()
+                exc_type = etype.__name__
 
                 sleep = (exponent ** count) * interval
                 count += 0.8
                 if count > attempts: 
-                    raise
+                    raise exc, None, tb
 
                 msg = "Datastore %s: retry #%d in %s seconds.\n%s"
                 if hasattr(method, '__name__'):
@@ -92,7 +90,7 @@ class AutoRetry(object):
                 else:
                     call_name = 'unknown'
                 call = '%s(%s)' % (call_name, ', '.join([repr(a) for a in args]))
-                logging.warning(msg % (ERRORS[errno], count, sleep, call))
+                logging.warning(msg % (exc_type, count, sleep, call))
 
                 time.sleep(sleep)
 

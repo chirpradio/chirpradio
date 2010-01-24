@@ -22,6 +22,8 @@ import fudge
 from google.appengine.ext import db
 from google.appengine.datastore import datastore_pb
 from google.appengine.runtime import apiproxy_errors
+from google.appengine.api.datastore_errors import Timeout
+from google.appengine.api.datastore_errors import TransactionFailedError
 
 import auth
 from auth.models import User
@@ -87,10 +89,8 @@ class TestAutoRetryExceptionHandling(unittest.TestCase):
         fudge.clear_expectations()
     
     def test_timeout(self):
-        
-        timeout = apiproxy_errors.ApplicationError(
-                                        datastore_pb.Error.TIMEOUT,
-                                        error_detail='just timed out, ur f**cked')
+                
+        timeout = Timeout()
         FakeUser = (fudge.Fake('User')
                         .expects('fetch')
                         .raises(timeout)
@@ -115,9 +115,7 @@ class TestAutoRetryExceptionHandling(unittest.TestCase):
     
     def test_transaction_failed(self):
         
-        failed_transaction = apiproxy_errors.ApplicationError(
-                                        datastore_pb.Error.CONCURRENT_TRANSACTION,
-                                        error_detail='dude, that transaction was bunk')
+        failed_transaction = TransactionFailedError()
         FakeUser = (fudge.Fake('User')
                         .expects('fetch')
                         .raises(failed_transaction)
