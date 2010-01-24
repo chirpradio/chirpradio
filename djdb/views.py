@@ -110,9 +110,9 @@ def album_change_categories(request) :
             type, num = name.split('_')
             category = request.POST.get('category_%s' % num)
             album_key = request.POST.get('album_key_%s' % num)
-            album = Album.get(album_key)
+            album = AutoRetry(Album).get(album_key)
             album.category = category
-            album.save()
+            AutoRetry(album).save()
 
     if request.POST.get('page') == 'artist' :
         return artist_info_page(request, request.POST.get('artist_name'))
@@ -146,7 +146,7 @@ def album_update_tracks(request, album_id_str):
 
 def category_page(request, category):
     query = models.Album.all().filter("category =", category)
-    albums = query.fetch(query.count())
+    albums = AutoRetry(query).fetch(AutoRetry(query).count())
     template = loader.get_template("djdb/category_page.html")
     ctx_vars = { "category": category,
                  "user": request.user,
@@ -277,7 +277,7 @@ def album_edit_review(request, album_id_str, review_key):
                     form.cleaned_data["text"])
             elif "save" in request.POST:
                 doc.unsafe_text = form.cleaned_data["text"]
-                doc.save()
+                AutoRetry(doc).save()
                 # Redirect back to the album info page.
                 return http.HttpResponseRedirect(album.url)
     ctx_vars["form"] = form
@@ -292,27 +292,24 @@ def image(request):
                              mimetype=img.image_mimetype)
 
 def _get_crate(user):
-    crate = models.Crate.all().filter("user =", user).fetch(1)
+    crate = AutoRetry(models.Crate.all().filter("user =", user)).fetch(1)
     if len(crate) == 0:
         crate = models.Crate(user=user)
-        db.put(crate)
+        AutoRetry(db).put(crate)
     else:
         crate = crate[0]
     return crate
 
 def crate_page(request, ctx_vars=None):
-    crate_items = models.CrateItem.all().filter("user =", request.user).fetch(999)
+    crate_items = AutoRetry(models.CrateItem.all().filter("user =", request.user)).fetch(999)
     template = loader.get_template("djdb/crate_page.html")
     crate = _get_crate(request.user)
-#    crate.items = []
-#    crate.order = []
-#    crate.save()
     new_crate_items = []
     crate_items = []
     if crate.items :
         for pos in crate.order:
             new_crate_items.append(crate.items[pos-1])
-            crate_items.append(db.get(crate.items[pos-1]))
+            crate_items.append(AutoRetry(db).get(crate.items[pos-1]))
     crate.items = new_crate_items
     crate.order = range(1, len(crate.items)+1)
     crate.save()
@@ -335,12 +332,12 @@ def add_crate_item(request):
                                 track=track,
                                 label=label,
                                 notes=notes)
-        db.put(item)
+        AutoRetry(db).put(item)
     else:
         item_key = request.GET.get('item_key')
         if not item_key:
             return http.HttpResponse(status=404)
-        item = db.get(item_key)
+        item = AutoRetry(db).get(item_key)
         if not item:
             return http.HttpResponse(status=404)
 
@@ -352,7 +349,7 @@ def add_crate_item(request):
             crate.order.append(max(crate.order) + 1)
         else:
             crate.order = [1]
-        crate.save()
+        AutoRetry(crate).save()
 
         if item.kind() == 'Artist':
             msg = 'Artist added to crate,'
@@ -377,7 +374,7 @@ def remove_crate_item(request):
     item_key = request.GET.get('item_key')
     if not item_key:
         return http.HttpResponse(status=404)
-    item = db.get(item_key)
+    item = AutoRetry(db).get(item_key)
     if not item:
         return http.HttpResponse(status=404)
 
@@ -394,7 +391,7 @@ def remove_crate_item(request):
                 else:
                     new_order.append(pos)
         crate.order = new_order
-        crate.save()
+        AutoRetry(crate).save()
 
         if item.kind() == 'Artist':
             msg = 'Artist removed from crate,'
@@ -421,7 +418,7 @@ def reorder(request):
     item = request.GET.getlist('item[]')
     crate = _get_crate(request.user)
     crate.order = [int(u) for u in item]
-    crate.save()
+    AutoRetry(crate).save()
     return http.HttpResponse(mimetype="text/plain")
 
 # Only the music director has the power to add new artists.

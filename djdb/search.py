@@ -529,7 +529,7 @@ def simple_music_search(query_str, max_num_results=None, entity_kind=None, revie
     for key, fields in all_matches.iteritems():
         filter = True
         if key.kind() == "Track" :
-            album = db.get(key).album
+            album = AutoRetry(db).get(key).album
             if reviewed and len(album.reviews) == 0:
                 filter = False
             elif reviewed and user_key:
@@ -540,7 +540,7 @@ def simple_music_search(query_str, max_num_results=None, entity_kind=None, revie
                         break
                         
         elif key.kind() == "Album" :
-            album = db.get(key)
+            album = AutoRetry(db).get(key)
             if reviewed and len(album.reviews) == 0:
                 filter = False
             elif reviewed and user_key:
@@ -551,7 +551,7 @@ def simple_music_search(query_str, max_num_results=None, entity_kind=None, revie
                         break
             
         elif key.kind() == "Artist" :
-            artist = db.get(key)
+            artist = AutoRetry(db).get(key)
             if reviewed:
                 filter = False
                 for album in models.Album.all().filter("album_artist =", artist) :

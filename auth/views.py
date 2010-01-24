@@ -339,7 +339,7 @@ def user_search_for_autocomplete(request):
     for term in terms:
         query = User.all()
         query.filter("index =", term)
-        users = query.fetch(999)
+        users = AutoRetry(query).fetch(999)
         if (len(users) > 0):
             for user in users:
                 match_users.append(user)
