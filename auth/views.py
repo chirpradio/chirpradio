@@ -34,6 +34,7 @@ from auth.decorators import require_role, require_signed_in_user
 from auth import forms as auth_forms
 from auth.models import User
 from common import email
+from djdb import search
 from common.autoretry import AutoRetry
 
 # Require this role in order to access any management tasks.
@@ -285,7 +286,16 @@ def add_user(request):
             ctx_vars['form'] = form
         if form.is_valid():
             user = form.to_user()
+            
+            # Set name index for autocomplete searching.
+            index = []
+            for term in search.scrub(unicode(user)).split():
+                for i in range(len(term) + 1) :
+                    index.append(term[0:i])
+            user.index = index
+            
             user.save()
+            
             # Send out the welcome email:
             msg_tmpl = loader.get_template("auth/welcome_email.txt")
             msg_ctx = Context({'user': user})
@@ -300,6 +310,43 @@ def add_user(request):
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(tmpl.render(ctx))
 
+def index_users(request):
+    for user in User.all() :
+        index = []
+        for term in search.scrub(unicode(user)).split():
+            for i in range(len(term) + 1) :
+                index.append(term[0:i])
+        user.index = index
+        user.save()
+
+    tmpl = loader.get_template('auth/main_page.html')
+    all_users = list(User.all().order('last_name').order('first_name'))
+    num_active_users = sum(u.is_active for u in all_users)
+    active = [u for u in all_users if u.is_active]
+    inactive = [u for u in all_users if not u.is_active]
+    ctx = RequestContext(request, {
+            'title': 'User Management',
+            'all_users': active + inactive,
+            'num_active_users': num_active_users,
+            'msg' : 'Users indexed.'
+          })
+    return http.HttpResponse(tmpl.render(ctx))
+
+def user_search_for_autocomplete(request):
+    match_users = []
+    response = http.HttpResponse(mimetype="text/plain")
+    terms = [term for term in search.scrub(request.GET.get('q', '')).split()]
+    for term in terms:
+        query = User.all()
+        query.filter("index =", term)
+        users = query.fetch(999)
+        if (len(users) > 0):
+            for user in users:
+                match_users.append(user)
+            break
+    for user in match_users :
+        response.write("%s|%s\n" % (user, user.key()))
+    return response
 
 def token(request):
     token = request.COOKIES.get(auth._CHIRP_SECURITY_TOKEN_COOKIE)
@@ -330,6 +377,6 @@ def bootstrap(request):
                 'User %s already exists' % user.email)
         user = User(email=g_user.email(), is_superuser=True)
         user.set_password("test")
-        AutoRetry(user).save()
+        user.save()
         return http.HttpResponseRedirect(auth.create_login_url('/'))
     return http.HttpResponseForbidden("Already logged in")

@@ -1,0 +1,49 @@
+{% extends "common/internal_page.html" %}
+
+{% block breadcrumbs %}
+<a href="/">chipradio home</a> /
+<a href="/djdb/">DJ Database home</a>
+{% endblock %}
+
+{% block content %}
+
+You are editing your review of
+<a href="{{ album.url }}"><b>{{ album.title }}</b></a>
+by
+<a href="{{ album.artist_url }}">{{ album.artist_name }}</a>.
+
+<p>
+Please proofread your review carefully before you submit it.
+</p>
+
+<form action="{{ review.key }}" method="post">
+{% if preview %}
+<p>
+Your text of your review will look like this when it is displayed:
+</p>
+<div style="BACKGROUND-COLOR: #f0f0f0; PADDING: 10px; BORDER: black 10px solid">
+
+<p>
+{{ preview|safe }}
+</p>
+</div>
+
+<p>
+If this looks good to you, click on "Save".  Otherwise you can
+continue to edit the post in the form below.
+</p>
+<input type="submit" name="save" value="Save">
+<hr><br><br>
+{% endif %}
+
+<p>
+You can use basic HTML markup in the body of your review; unsupported
+HTML will be stripped out automatically.
+No HTML is allowed in the title of the review; is always treated as plain text.
+</p>
+<table>
+  {{ form.as_table }}
+</table>
+<input type="submit" name="preview" value="Preview">
+
+{% endblock %}

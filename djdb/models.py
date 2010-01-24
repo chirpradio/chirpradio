@@ -92,7 +92,6 @@ class DjDbImage(db.Model):
         key_name = cls.get_key_name(sha1)
         return AutoRetry(cls).get_by_key_name(key_name)
 
-
 class Artist(db.Model):
     """An individual musician, or a band.
 
@@ -192,6 +191,7 @@ class Album(db.Model):
     An album consists of a series of numbered tracks.
 
     Attributes:
+      category: The category of the album. May be core, local_current, local_classic, heavy, light.
       title: The name of the album.  This is used in TALB tags.
       disc_number: If specified, this album is one part of a multi-disc
         set.
@@ -209,6 +209,8 @@ class Album(db.Model):
       image: An image associated with this album.  This is typically
         used for the album's cover art.
     """
+    category = db.StringProperty(required=False)
+    
     title = db.StringProperty(required=True)
 
     disc_number = db.IntegerProperty(required=False)
@@ -562,6 +564,35 @@ class TagEdit(db.Model):
         for edit in AutoRetry(edit_query).fetch(999):
             current_tags.difference_update(edit.removed)
             current_tags.update(edit.added)
+        obj.current_tags = list(current_tags)
+        obj.save()
         return current_tags
 
+class Crate(db.Model):
+    """Mode for a crate, which contains artists, albums, or tracks.
+    """
+    # The user who owns the crate item.
+    user = db.ReferenceProperty(User, required=True)
 
+    # List of keys to items.
+    items = db.ListProperty(db.Key)
+    
+    # List of positions for ordering.
+    # When the crate page is shown and reorders take place, you can't reorder the list directly each
+    # time since the original positions are referenced in the list item id's, which do not change.
+    # So you have to keep track of the order separately. When the crate page is reloaded, then the
+    # actual item list should be reordered.
+    # I suppose some javascript could be added to update the list item id's when reordering
+    # takes place...
+    order = db.ListProperty(int)
+    
+class CrateItem(db.Model):
+    """Model for crate items that represent artists/albums/tracks entered by hand.
+    """
+    artist = db.StringProperty()
+    album = db.StringProperty()
+    track = db.StringProperty()
+    label = db.StringProperty()
+    notes = db.StringProperty()
+
+#    @classmethod

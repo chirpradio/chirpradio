@@ -37,7 +37,6 @@ def new(album, user):
 
 
 class Form(forms.Form):
-    title = forms.CharField(required=True, min_length=2, max_length=250)
     text = forms.CharField(required=True, widget=forms.Textarea,
                            min_length=10, max_length=20000)
 

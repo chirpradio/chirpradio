@@ -42,13 +42,32 @@ urlpatterns = patterns(
     (r'album/(.*)/info', 'djdb.views.album_info_page'),
 
     (r'album/(.*)/new_review', 'djdb.views.album_new_review'),
-
+    (r'album/(.*)/edit_review/(.*)', 'djdb.views.album_edit_review'),
+    
     # Album search for jquery.autocomplete
     (r'album/search\.txt', 'djdb.views.album_search_for_autocomplete'),
 
+    # Change album categories.
+    (r'album/change_categories', 'djdb.views.album_change_categories'),
+    
+    # Update tracks.
+    (r'album/(.*)/update_tracks', 'djdb.views.album_update_tracks'),
+    
+    # Album category page.
+    (r'category/(.*)', 'djdb.views.category_page'),
+    
     # Track search for jquery.autocomplete
     (r'track/search\.txt', 'djdb.views.track_search_for_autocomplete'),
-
+    
+    # Crate page.
+    (r'^crate/?$', 'djdb.views.crate_page'),
+    # Add crate item.
+    (r'crate/add_item', 'djdb.views.add_crate_item'),
+    # Remove crate item.
+    (r'crate/remove_item', 'djdb.views.remove_crate_item'),
+    # Reorder crate items.
+    (r'crate/reorder', 'djdb.views.reorder'),
+    
     (r'update/artists/bulk_add', 'djdb.views.artists_bulk_add'),
     
     # Images
