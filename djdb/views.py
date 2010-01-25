@@ -31,6 +31,7 @@ from common.autoretry import AutoRetry
 from djdb import models
 from djdb import search
 from djdb import review
+from djdb import comment
 
 from djdb.models import Album
 import re
@@ -210,12 +211,6 @@ def _get_album_or_404(album_id_str):
         return http.HttpResponse(status=404)
     return album
 
-def _get_review_or_404(review_key):
-    doc = db.get(review_key)
-    if doc is None :
-        return http.HttpResponse(status=404)
-    return doc
-
 def album_info_page(request, album_id_str, ctx_vars=None):
     album = _get_album_or_404(album_id_str)
     template = loader.get_template("djdb/album_info_page.html")
@@ -258,7 +253,7 @@ def album_new_review(request, album_id_str):
 
 def album_edit_review(request, album_id_str, review_key):
     album = _get_album_or_404(album_id_str)
-    doc = _get_review_or_404(review_key)
+    doc = review.get_or_404(review_key)
     template = loader.get_template("djdb/album_edit_review.html")
     ctx_vars = { "title": u"Edit Review",
                  "album": album,
@@ -269,6 +264,64 @@ def album_edit_review(request, album_id_str, review_key):
         form = review.Form({'text': doc.text})
     else:
         form = review.Form(request.POST)
+        if form.is_valid():
+            if "preview" in request.POST:
+                ctx_vars["valid_html_tags"] = (
+                    sanitize_html.valid_tags_description())
+                ctx_vars["preview"] = sanitize_html.sanitize_html(
+                    form.cleaned_data["text"])
+            elif "save" in request.POST:
+                doc.unsafe_text = form.cleaned_data["text"]
+                AutoRetry(doc).save()
+                # Redirect back to the album info page.
+                return http.HttpResponseRedirect(album.url)
+    ctx_vars["form"] = form
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+def album_new_comment(request, album_id_str):
+    album = _get_album_or_404(album_id_str)
+    template = loader.get_template("djdb/album_new_comment.html")
+    ctx_vars = { "title": u"New Comment", "album": album }
+    form = None
+    if request.method == "GET":
+        form = comment.Form()
+    else:
+        form = comment.Form(request.POST)
+        if form.is_valid():
+            if "preview" in request.POST:
+                ctx_vars["valid_html_tags"] = (
+                    sanitize_html.valid_tags_description())
+                ctx_vars["preview"] = sanitize_html.sanitize_html(
+                    form.cleaned_data["text"])
+            elif "save" in request.POST:
+                doc = comment.new(album, request.user)
+                doc.unsafe_text = form.cleaned_data["text"]
+                # Increment the number of commentss.
+                album.num_comments += 1
+                # Now save both the modified album and the document.
+                # They are both in the same entity group, so this write
+                # is atomic.
+                AutoRetry(db).put([album, doc])
+                # Redirect back to the album info page.
+                return http.HttpResponseRedirect("info")
+    ctx_vars["form"] = form
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+def album_edit_comment(request, album_id_str, comment_key):
+    album = _get_album_or_404(album_id_str)
+    doc = comment.get_or_404(comment_key)
+    template = loader.get_template("djdb/album_edit_comment.html")
+    ctx_vars = { "title": u"Edit Comment",
+                 "album": album,
+                 "comment": doc }
+
+    form = None
+    if request.method == "GET":
+        form = comment.Form({'text': doc.text})
+    else:
+        form = comment.Form(request.POST)
         if form.is_valid():
             if "preview" in request.POST:
                 ctx_vars["valid_html_tags"] = (

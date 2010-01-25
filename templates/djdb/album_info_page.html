@@ -104,5 +104,25 @@ No reviews yet!  You could be the first to
 <a href="new_review">write a review</a> of this album.
 {% endif %}
 
+{% if album.reviews %}
+<h3>Comments</h3>
+  {% if album.comments %}
+<a href="new_comment">Write another comment</a> about this album.
+    {% for doc in album.comments %}
+<p>
+<blockquote>
+{{ doc.text|safe }}
+</blockquote>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author }} on {{ doc.timestamp_display|date:"F j, Y P" }}</small>
+    {% ifequal user.key doc.author.key %}
+[ <a href="edit_comment/{{ doc.key }}">Edit</a> ]
+    {% endifequal %}
+</p>
+    {% endfor %}
+  {% else %}
+No comments yet!  You could be the first to
+<a href="new_comment">write a comment</a> about this album.
+  {% endif %}
+{% endif %}
 
 {% endblock %}

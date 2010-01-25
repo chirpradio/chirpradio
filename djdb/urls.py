@@ -41,8 +41,13 @@ urlpatterns = patterns(
     # Album information page
     (r'album/(.*)/info', 'djdb.views.album_info_page'),
 
+    # Album reviews.
     (r'album/(.*)/new_review', 'djdb.views.album_new_review'),
     (r'album/(.*)/edit_review/(.*)', 'djdb.views.album_edit_review'),
+    
+    # Album comments.
+    (r'album/(.*)/new_comment', 'djdb.views.album_new_comment'),
+    (r'album/(.*)/edit_comment/(.*)', 'djdb.views.album_edit_comment'),
     
     # Album search for jquery.autocomplete
     (r'album/search\.txt', 'djdb.views.album_search_for_autocomplete'),
