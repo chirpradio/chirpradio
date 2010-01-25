@@ -100,7 +100,7 @@ class User(db.Model):
         if AutoRetry(query).count() == 0:
             return None
         elif AutoRetry(query).count() == 1:
-            return query.get()
+            return AutoRetry(query).get()
         else:
             raise LookupError('User email collision for %s' % email)
 
