@@ -51,7 +51,7 @@ Mark selected as: <a id="mark_nocat" href="">No category</a>,
 </p>
 
 <form method="post" name="djdbForm" action="/djdb/album/change_categories">
-<input type="hidden" name="page" value="artist"/>
+<input type="hidden" name="response_page" value="artist"/>
 <input type="hidden" name="artist_name" value="{{ artist.name }}"/>
 <input type="submit" value="Update Categories"/>
 {% endif %}

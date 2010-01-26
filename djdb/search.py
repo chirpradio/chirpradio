@@ -499,7 +499,7 @@ def load_and_segment_keys(fetched_keys):
         val.sort(key=lambda x: x.sort_key)
     return segmented
 
-def simple_music_search(query_str, max_num_results=None, entity_kind=None, reviewed=True, user_key=None):
+def simple_music_search(query_str, max_num_results=None, entity_kind=None, reviewed=False, user_key=None):
     """A simple free-form search well-suited for the music library.
 
     Args:

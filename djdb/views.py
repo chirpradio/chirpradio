@@ -39,8 +39,6 @@ import tag_util
 
 log = logging.getLogger(__name__)
 
-CATEGORIES = ['core', 'local_current', 'local_classic', 'heavy', 'light']
-
 def landing_page(request, ctx_vars=None):
     template = loader.get_template('djdb/landing_page.html')
     if ctx_vars is None : ctx_vars = {}
@@ -69,7 +67,7 @@ def landing_page(request, ctx_vars=None):
             ctx_vars["query_results"] = matches
 
     # Add categories.
-    ctx_vars["categories"] = CATEGORIES
+    ctx_vars["categories"] = models.ALBUM_CATEGORIES
     
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
@@ -82,7 +80,7 @@ def artist_info_page(request, artist_name, ctx_vars=None):
     if ctx_vars is None : ctx_vars = {}
     ctx_vars["title"] = artist.pretty_name
     ctx_vars["artist"] = artist
-    ctx_vars["categories"] = CATEGORIES
+    ctx_vars["categories"] = models.ALBUM_CATEGORIES
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
@@ -115,7 +113,7 @@ def album_change_categories(request) :
             album.category = category
             AutoRetry(album).save()
 
-    if request.POST.get('page') == 'artist' :
+    if request.POST.get('response_page') == 'artist' :
         return artist_info_page(request, request.POST.get('artist_name'))
     else :
         return landing_page(request)
@@ -462,10 +460,8 @@ def remove_crate_item(request):
         return artist_info_page(request, item.album_artist.name, ctx_vars)
     elif response_page == 'album':
         return album_info_page(request, str(item.album.album_id), ctx_vars)
-    elif response_page == 'crate':
-        return crate_page(request, ctx_vars)
     else:
-        return http.HttpResponse(status=404)
+        return crate_page(request, ctx_vars)
 
 def reorder(request):
     item = request.GET.getlist('item[]')

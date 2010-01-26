@@ -34,6 +34,8 @@ DOCTYPE_COMMENT = "comment" # An album comment, subject must be an Album object.
 EXPLICIT_TAG = "explicit"
 RECOMMENDED_TAG = "recommended"
 
+# List of album categories.
+ALBUM_CATEGORIES = ['core', 'local_current', 'local_classic', 'heavy', 'light']
 
 class DjDbImage(db.Model):
     """An image (usually a JPEG or PNG) associated with an artist or album.
