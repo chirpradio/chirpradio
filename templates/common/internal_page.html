@@ -2,14 +2,23 @@
 
 {% block page_content %}
   <div id="header">
-      <a href="/">
-	<img src="/media/common/img/chirp-logo-small.gif" style="float:left;">
-      </a>
-      <h1>chirpradio: CHIRP internal applications</h1>
-      <small>(Know HTML and CSS?  Have good taste?  If so, 
-      please volunteer to make this page look better!)</small>
+    <a href="/">
+      <img src="/media/common/img/chirpradio-logo-small.png" style="float:left;margin-right:10px;" width="255px" height="55px">
+    </a>
+    <h1>CHIRP Radio internal applications</h1>
+      <!-- <small>(Know HTML and CSS?  Have good taste?  If so, 
+      please volunteer to make this page look better!)</small> -->
+    <div id="auth">
+      {% if user %}
+      {{ user }} <a href="{{ logout_url }}">Sign Out</a>
+      {% else %}
+      <a href="{{ login_url }}">Sign In</a>
+      {% endif %}
+    </div> {# end of auth #}
+    <div class="breadcrumbs"><strong>App Trail:</strong> {% block breadcrumbs %}{% endblock %}</div>
+    <div class="clear"></div>
   </div> {# end of header #}
-  <div class="breadcrumbs">{% block breadcrumbs %}{% endblock %}</div>
+
   <div id="content">
     {% if title %}<h1>{{ title }}</h1>{% endif %}
     {% block content %}{% endblock %}

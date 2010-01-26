@@ -1,4 +1,4 @@
-{% extends "common/base.html" %}
+{% extends 'common/internal_page.html' %}
 {% load playlists_extras %}
 
 {% block extrastyle %}
@@ -16,12 +16,10 @@
     src="/media/playlists/js/playlists.js"></script>
 {% endblock %}
 
-{% block page_content %}
+{% block content %}
 
 <div id="playlist"> <!-- site wrapper -->
 <div id="form-column"> <!-- form column -->
-
-<h1>CHIRPradio DJ Playlist Tracking Application</h1>
 
 <form method="post" id="playlist-form" action="{% url playlists_add_event %}">
 <fieldset>
