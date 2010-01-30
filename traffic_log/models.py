@@ -15,8 +15,9 @@
 ### limitations under the License.
 ###
 
-from google.appengine.ext import db, search
+import random
 
+from google.appengine.ext import db, search
 from django.core.urlresolvers import reverse
 
 from auth.models import User
@@ -38,7 +39,7 @@ class SpotConstraint(search.SearchableModel):
         return "hour=%d&dow=%d&slot=%d" % (self.hour, self.dow, self.slot)
     
     def url_to_finish_spot(self, spot):
-        url = reverse('traffic_log.finishSpot', args=(spot.key(),))
+        url = reverse('traffic_log.finishReadingSpotCopy', args=(spot.key(),))
         url = "%s?%s" % (url, self.as_query_string())
         return url
     
@@ -68,12 +69,20 @@ class Spot(search.SearchableModel):
     """
     """
     title     = db.StringProperty(verbose_name="Spot Title", required=True)
-    body      = db.TextProperty(verbose_name="Spot Copy",  required=False)
     type      = db.StringProperty(verbose_name="Spot Type", required=True, choices=constants.SPOT_TYPE)
-    expire_on = db.DateTimeProperty(verbose_name="Expire Date", required=False)
     created   = db.DateTimeProperty(auto_now_add=True)
     updated   = db.DateTimeProperty(auto_now=True)
-    author    = db.ReferenceProperty(User)
+    
+    @property
+    def copy_at_random(self):
+        possible_copy = [
+            c for c in AutoRetry(SpotCopy.all().filter("spot =", self))
+        ]
+        # TODO(kumar) filter out expired copy
+        if len(possible_copy) == 0:
+            raise ValueError("Spot %r of type %r does not have any copy associated with it" % (
+                                                                            self.title, self.type))
+        return random.choice(possible_copy)
     
     @property
     def constraints(self):
@@ -82,10 +91,23 @@ class Spot(search.SearchableModel):
     def get_absolute_url(self):
         return '/traffic_log/spot/%s/' % self.key()
 
+class SpotCopy(search.SearchableModel):
+    
+    spot      = db.ReferenceProperty(Spot)
+    body      = db.TextProperty(verbose_name="Spot Copy",  required=False)
+    expire_on = db.DateTimeProperty(verbose_name="Expire Date", required=False, default=None)
+    author    = db.ReferenceProperty(User)
+    created   = db.DateTimeProperty(auto_now_add=True)
+    updated   = db.DateTimeProperty(auto_now=True)
+
+    def get_absolute_url(self):
+        return '/traffic_log/spot-copy/%s/' % self.key()
+
 ## there can only be one entry per date, hour, slot
 class TrafficLogEntry(search.SearchableModel):
     log_date  = db.DateProperty()
     spot      = db.ReferenceProperty(Spot)
+    spot_copy = db.ReferenceProperty(SpotCopy)
     hour      = db.IntegerProperty()
     slot      = db.IntegerProperty()
     scheduled = db.ReferenceProperty(SpotConstraint)

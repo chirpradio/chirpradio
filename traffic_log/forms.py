@@ -9,7 +9,7 @@ from common.autoretry import AutoRetry
 class SpotForm(djangoforms.ModelForm):
     class Meta:
         model  = models.Spot
-        fields = ('title','type','body','expire_on')
+        fields = ('title','type')
     
 
 class SpotConstraintForm(djangoforms.ModelForm):
