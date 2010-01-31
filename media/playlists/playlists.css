@@ -47,6 +47,7 @@ p.links a:hover { color: #fff; background: #ec3005; }
 #playlist-form input.text, #playlist-form textarea { margin-bottom: 15px; border: 1px solid #5ed4f3; width: 293px; font-size: 1.2em; line-height: 1.5em; color: #4a4a4a; padding: 3px; }
 #playlist-form input:focus.text, #playlist-form textarea:focus { background: #ddf8ff; }
 #playlist-form input.button { width: 200px; display: block; margin-bottom: 15px; }
+#playlist-form input.freeform, #playlist-form input.freeform:focus  { border-color: #ff0000; background: #f08080; }
 
 /* ERRORS */
 
