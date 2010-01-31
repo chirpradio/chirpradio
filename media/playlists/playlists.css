@@ -72,7 +72,7 @@ p.playlist-event-management {
 
 /* AUTOCOMPLETE */
 .ac_loading {
-	background: Window url('/media/common/img/indicator.gif') right center no-repeat;
+	background: Window url('/media/common/img/playlist-loader.gif') right center no-repeat;
 }
 .ac_over {
     font-weight: bold;
