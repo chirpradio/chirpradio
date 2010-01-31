@@ -192,9 +192,26 @@ class ChirpApi {
                          ),
                          0, $track_url_length);
     
-	// HACK ALERT: Force UTF-8
-	mysql_query("SET NAMES utf8");
-
+  	// HACK ALERT: Force UTF-8
+  	mysql_query("SET NAMES utf8");
+    
+    
+    // Check to make sure this same exact track has not already been inserted.
+    // This could happen if urlfetch on App Engine times out when sending a PHP request in 
+    // which case the task queue would re-queue the request.  Note also that a duplicate 
+    // track is returning a successful response so that the task queue does not re-queue.
+    $query = sprintf("SELECT * FROM textpattern WHERE Section='playlists' AND custom_3='%s' LIMIT 1",
+                        $track_id);
+    $result = mysql_query($query);
+    if (mysql_fetch_row($result)) {      
+      $response = json_encode(
+                        array('track_id' => $track_id,
+                              'message' => "This track already exists",
+                              'article_id' => 0,
+                              'url_title' => "")
+                      ) . "\n";
+      return $response;
+    }
 
     // Insert information about the track into the Textpattern database as an article.
     // See http://code.google.com/p/chirpradio/issues/detail?id=44#c4 for more on
