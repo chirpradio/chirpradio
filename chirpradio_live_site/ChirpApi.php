@@ -172,7 +172,7 @@ class ChirpApi {
     $time_played = strftime("%Y-%m-%d %H:%M:%S", strtotime("$time_played " . $txpcfg['api_adjust_time']));
 
     // Expiration time of "Article" should be one week after the date the song was played
-    $expiration_time = strftime("%Y-%m-%d %H:%M:%S", strtotime("$time_played +1 week"));
+    $expiration_time = strftime("%Y-%m-%d %H:%M:%S", strtotime("$time_played +1 month"));
     $author_id = 'lovehasnologic'; // TODO: Make this configurable
 
     $this->db_connect();
@@ -191,6 +191,10 @@ class ChirpApi {
                          str_replace(" ", "-", strtolower($track_name))
                          ),
                          0, $track_url_length);
+    
+	// HACK ALERT: Force UTF-8
+	mysql_query("SET NAMES utf8");
+
 
     // Insert information about the track into the Textpattern database as an article.
     // See http://code.google.com/p/chirpradio/issues/detail?id=44#c4 for more on
