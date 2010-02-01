@@ -274,13 +274,16 @@ class ChirpApi {
   }
 
   private function delete($track_id) {
-    $select_query = sprintf("SELECT ID AS article_id, custom_3 AS track_id FROM textpattern WHERE custom_3 = '%s'", $track_id);
-    $delete_query = sprintf("DELETE FROM textpattern WHERE custom_3 = '%s'", $track_id);
+    // Unfortunately track keys are not guaranteed to be unique.  
+    // Here we do the safest thing which is delete the most recently posted track by the given key.
+    // This is not 100% safe.
+    $select_query = sprintf("SELECT ID AS article_id, custom_3 AS track_id FROM textpattern WHERE custom_3 = '%s' ORDER BY Posted DESC LIMIT 1", $track_id);
 
     $this->db_connect();
 
     if ($result = mysql_query($select_query)) {
       $track_to_delete = mysql_fetch_object($result);
+      $delete_query = sprintf("DELETE FROM textpattern WHERE ID = %d", $track_to_delete->article_id);
 
       if ($result = mysql_query($delete_query)) {
         $response = json_encode($track_to_delete) . "\n";
