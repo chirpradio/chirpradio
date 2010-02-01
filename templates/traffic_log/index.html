@@ -2,10 +2,7 @@
 {% load traffic_log_extras %}
 
 {% block extrahead_for_page %}
-<link rel="stylesheet" type="text/css" href="/media/common/js/jquery-facebox/facebox.css" media="screen" />
-<script type="text/javascript" src="/media/common/js/jquery-facebox/facebox.js"></script>
-<link rel="stylesheet" type="text/css" href="/media/traffic_log/css/trafficlog.css" media="screen" />
-<script type="text/javascript" src="/media/traffic_log/js/trafficlog.js"></script>
+<script type="text/javascript" src="/media/common/js/jqModal/jqModal.js"></script>
 {% endblock %}
 
 {% block title %}
@@ -15,7 +12,6 @@ Traffic Log Spots
 
 {% block nav %}
 {{ block.super }}
-<br/>
 
 <input id="refresh-button" type="button" value="Refresh time slots" />
 
@@ -34,11 +30,10 @@ Traffic Log Spots
 {% for spot in slotted_spot.iter_spots  %}
 <tr class="new">
     <td>{% ifchanged %}<b>{{ slotted_spot.readable_slot_time }}</b>{% endifchanged %}</td>
-    <td>{{ spot.title }}</td>
+    <td><span class="to-do">To-Do</span> {{ spot.title }}</td>
     <td>
         <a class="show-text-for-reading" 
             href="{% url_to_read_spot slotted_spot spot %}">Show text for reading</a>
-        -
         <a class="finish-spot"
             href="{% url_to_finish_spot slotted_spot spot %}">Finish</a>
     </td>
@@ -49,4 +44,10 @@ Traffic Log Spots
 {# Hour:Slot #}
     
 {% endfor %}
+</table>
+
+{% block modal %}
+<div id="modal-container"></div>
+{% endblock %}
+
 {% endblock %}
