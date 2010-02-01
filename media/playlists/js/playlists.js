@@ -72,4 +72,49 @@ $(document).ready(function() {
         $("#id_song_key").attr("value", "");
     });
     
+    $('#lookup-on-musicbrainz').click(function(e) {
+        var url = 'http://musicbrainz.org/search/textsearch.html';
+        var qs = 'limit=25&adv=on&handlearguments=1';
+        var artist = $('#id_artist').val();
+        var album = $('#id_album').val();
+        var song = $('#id_song').val();
+        if ( !artist ) {
+            e.preventDefault();
+            return;
+        }
+        if (artist && album) {
+            qs += '&type=release';
+            qs += '&query=' + escape('"' + album + '" AND artist:' + artist);
+        } else if (artist && song) {
+            qs += '&type=track';
+            qs += '&query=' + escape('"' + song + '" AND artist:' + artist);
+        } else {
+            qs += '&type=artist';
+            qs += '&query=' + escape(artist);
+        }
+        // console.log(qs);
+        
+        this.href = url + '?' + qs;
+    });
+    
+    $('#lookup-album-on-google').click(function(e) {
+        var url = 'http://google.com/search';
+        var artist = $('#id_artist').val();
+        var album = $('#id_album').val();
+        if ( !artist && !album ) {
+            e.preventDefault();
+            return;
+        }
+        this.href = url + '?q=' + escape(artist + " " + album);
+    });
+    
+    $('#pronounce-artist').click(function(e) {
+        var url = 'http://google.com/search';
+        var artist = $('#id_artist').val();
+        if ( !artist ) {
+            e.preventDefault();
+            return;
+        }
+        this.href = url + '?q=' + escape(artist + " pronounced");
+    });
 });

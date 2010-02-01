@@ -172,7 +172,7 @@ class ChirpApi {
     $time_played = strftime("%Y-%m-%d %H:%M:%S", strtotime("$time_played " . $txpcfg['api_adjust_time']));
 
     // Expiration time of "Article" should be one week after the date the song was played
-    $expiration_time = strftime("%Y-%m-%d %H:%M:%S", strtotime("$time_played +1 week"));
+    $expiration_time = strftime("%Y-%m-%d %H:%M:%S", strtotime("$time_played +1 month"));
     $author_id = 'lovehasnologic'; // TODO: Make this configurable
 
     $this->db_connect();
@@ -191,6 +191,31 @@ class ChirpApi {
                          str_replace(" ", "-", strtolower($track_name))
                          ),
                          0, $track_url_length);
+    
+  	// HACK ALERT: Force UTF-8
+  	mysql_query("SET NAMES utf8");
+    
+    
+    // Check to make sure this same exact track has not already been inserted.
+    // This could happen if urlfetch on App Engine times out when sending a PHP request in 
+    // which case the task queue would re-queue the request.  Note also that a duplicate 
+    // track is returning a successful response so that the task queue does not re-queue.
+    // NOTE: App Engine datastore keys are not unique.
+    $query = sprintf("SELECT * FROM textpattern WHERE Section='playlists' AND custom_3='%s' AND Keywords='%s' AND Title='%s' AND custom_2='%s' LIMIT 1",
+                        $track_id,
+                        $track_artist,
+                        $track_name,
+                        $dj_name);
+    $result = mysql_query($query);
+    if (mysql_fetch_row($result)) {      
+      $response = json_encode(
+                        array('track_id' => $track_id,
+                              'message' => "This track already exists",
+                              'article_id' => 0,
+                              'url_title' => "")
+                      ) . "\n";
+      return $response;
+    }
 
     // Insert information about the track into the Textpattern database as an article.
     // See http://code.google.com/p/chirpradio/issues/detail?id=44#c4 for more on
@@ -250,13 +275,16 @@ class ChirpApi {
   }
 
   private function delete($track_id) {
-    $select_query = sprintf("SELECT ID AS article_id, custom_3 AS track_id FROM textpattern WHERE custom_3 = '%s'", $track_id);
-    $delete_query = sprintf("DELETE FROM textpattern WHERE custom_3 = '%s'", $track_id);
+    // Unfortunately track keys are not guaranteed to be unique.  
+    // Here we do the safest thing which is delete the most recently posted track by the given key.
+    // This is not 100% safe.
+    $select_query = sprintf("SELECT ID AS article_id, custom_3 AS track_id FROM textpattern WHERE custom_3 = '%s' ORDER BY Posted DESC LIMIT 1", $track_id);
 
     $this->db_connect();
 
     if ($result = mysql_query($select_query)) {
       $track_to_delete = mysql_fetch_object($result);
+      $delete_query = sprintf("DELETE FROM textpattern WHERE ID = %d", $track_to_delete->article_id);
 
       if ($result = mysql_query($delete_query)) {
         $response = json_encode($track_to_delete) . "\n";

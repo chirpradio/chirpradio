@@ -75,17 +75,18 @@ def index(request):
 def spotTextForReading(request, spot_key=None):
     spot = AutoRetry(models.Spot).get(spot_key)
     dow, hour, slot = _get_slot_from_request(request)
+    spot_copy = spot.copy_at_random
     
-    url = reverse('traffic_log.finishSpot', args=(spot.key(),))
+    url = reverse('traffic_log.finishReadingSpotCopy', args=(spot_copy.key(),))
     url = "%s?hour=%d&dow=%d&slot=%d" % (url, hour, dow, slot)
     return render_to_response('traffic_log/spot_detail_for_reading.html', dict(
-            spot=spot,
+            spot_copy=spot_copy,
             url_to_finish_spot=url
         ), context_instance=RequestContext(request))
 
 @require_role(DJ)
 @as_json
-def finishSpot(request, spot_key=None):
+def finishReadingSpotCopy(request, spot_copy_key=None):
     dow, hour, slot = _get_slot_from_request(request)
         
     q = (models.SpotConstraint.all()
@@ -102,22 +103,23 @@ def finishSpot(request, spot_key=None):
                                                                     dow, hour, slot))
     
     constraint = AutoRetry(q).fetch(1)[0]
-    spot = AutoRetry(models.Spot).get(spot_key)
+    spot_copy = AutoRetry(models.SpotCopy).get(spot_copy_key)
     
     today = time_util.chicago_now().date()
     q = (models.TrafficLogEntry.all()
                     .filter("log_date =", today)
-                    .filter("spot =", spot)
+                    .filter("spot =", spot_copy.spot)
                     .filter("hour =", hour)
                     .filter("slot =", slot))
     if AutoRetry(q).count(1):
         existing_logged_spot = AutoRetry(q).fetch(1)[0]
         raise RuntimeError("This spot %r at %r has already been read %s" % (
-                    spot, constraint, existing_logged_spot.reader))
+                    spot_copy.spot, constraint, existing_logged_spot.reader))
     
     logged_spot = models.TrafficLogEntry(
         log_date = today,
-        spot = spot,
+        spot = spot_copy.spot,
+        spot_copy = spot_copy,
         hour = hour,
         slot = slot,
         scheduled = constraint,
@@ -127,7 +129,7 @@ def finishSpot(request, spot_key=None):
     logged_spot.put()
     
     return {
-        'spot_key': str(spot.key()), 
+        'spot_copy_key': str(spot_copy.key()), 
         'spot_constraint_key': str(constraint.key()),
         'logged_spot': str(logged_spot.key())
     }
