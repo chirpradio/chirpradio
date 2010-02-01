@@ -201,10 +201,11 @@ class ChirpApi {
     // which case the task queue would re-queue the request.  Note also that a duplicate 
     // track is returning a successful response so that the task queue does not re-queue.
     // NOTE: App Engine datastore keys are not unique.
-    $query = sprintf("SELECT * FROM textpattern WHERE Section='playlists' AND custom_3='%s' AND Keywords='%s' AND Title='%s' LIMIT 1",
+    $query = sprintf("SELECT * FROM textpattern WHERE Section='playlists' AND custom_3='%s' AND Keywords='%s' AND Title='%s' AND custom_2='%s' LIMIT 1",
                         $track_id,
                         $track_artist,
-                        $track_name);
+                        $track_name,
+                        $dj_name);
     $result = mysql_query($query);
     if (mysql_fetch_row($result)) {      
       $response = json_encode(
