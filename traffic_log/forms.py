@@ -15,7 +15,7 @@ class SpotCopyForm(djangoforms.ModelForm):
     
     spot_key = djangoforms.forms.ChoiceField(label="Spot", 
                                              required=True)
-    underwriter = djangoforms.forms.CharField()
+    underwriter = djangoforms.forms.CharField(required=False)
     
     def __init__(self, *args, **kw):
         super(SpotCopyForm, self).__init__(*args, **kw)

@@ -200,16 +200,21 @@ class TestObjects(DjangoTestCase):
                         title='Legal ID',
                         type='Station ID')
         spot.put()
+        self.assertEqual(spot.get_add_copy_url(), 
+                            reverse('traffic_log.views.addCopyForSpot', args=(spot.key(),)))
+        
         constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
         constraint.put()
         
         spot_copy = models.SpotCopy(
-                        body='You are listening to chirpradio.org',
+                        body=(
+                            'You are now and forever listening to a killer '
+                            'radio station called chirpradio.org'),
                         spot=spot,
                         author=author)
         spot_copy.put()
         
-        self.assertEqual(str(spot_copy), "You are listening to...")
+        self.assertEqual(str(spot_copy), "You are now and forever listening to a killer radio...")
         self.assertEqual(spot_copy.get_edit_url(), 
                             reverse('traffic_log.editSpotCopy', args=(spot_copy.key(),)))
         self.assertEqual(spot_copy.get_delete_url(), 

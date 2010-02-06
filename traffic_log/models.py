@@ -91,6 +91,9 @@ class Spot(search.SearchableModel):
     def constraints(self):
         return SpotConstraint.gql("where spots =:1 order by dow, hour, slot", self.key())
 
+    def get_add_copy_url(self):
+        return reverse('traffic_log.views.addCopyForSpot', args=(self.key(),))
+
     def get_absolute_url(self):
         return '/traffic_log/spot/%s/' % self.key()
 
@@ -98,7 +101,7 @@ class SpotCopy(search.SearchableModel):
     
     spot        = db.ReferenceProperty(Spot)
     underwriter = db.TextProperty(required=False)
-    body        = db.TextProperty(verbose_name="Spot Copy",  required=False)
+    body        = db.TextProperty(verbose_name="Spot Copy",  required=True)
     expire_on   = db.DateTimeProperty(verbose_name="Expire Date", required=False, default=None)
     author      = db.ReferenceProperty(User)
     created     = db.DateTimeProperty(auto_now_add=True)
@@ -106,7 +109,7 @@ class SpotCopy(search.SearchableModel):
     
     def __unicode__(self):
         body_words = self.body.split(" ")
-        def shorten(words, maxlen=25):
+        def shorten(words, maxlen=55):
             s = ' '.join(words)
             if len(s) > maxlen:
                 words.pop()
