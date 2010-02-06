@@ -1,11 +1,19 @@
 <table cellpadding="5" cellspacing="0" border="1">
-<tr align="center"><td>Title</td><td>Type</td><td>Created</td><td>Updated</td><td>Expire</td><td>Last Author</td></tr>
+<tr align="center"><td>Title</td><td>Type</td><td>Created</td><td>Updated</td><td>Expire</td><td>Copy</td></tr>
 {% for spot in spots %}
 <tr><td><a href="{{spot.get_absolute_url}}">{{spot.title}}</a></td>
 <td>{{spot.type}}</td>
 <td>{{spot.created}}</td>
 <td>{{spot.updated}}</td>
 <td>{{spot.expire_on}}</td>
-<td>{{spot.author}}&nbsp;</td></tr>
+<td>
+{% for copy in spot.all_spot_copy %}
+<p>
+{{ copy }}
+<a href="{{copy.get_edit_url}}">[Edit]</a>
+<a href="{{copy.get_delete_url}}">[Delete]</a>
+</p>
+{% endfor %}
+</td>
 {% endfor %}
 </table>

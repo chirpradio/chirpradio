@@ -134,6 +134,86 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         self.assertEqual(spot_copy.body, 'You are listening to chirprario.odg')
         self.assertEqual(spot_copy.underwriter, 'pretend this is an underwriter')
         self.assertEqual(spot_copy.author.email, 'test@test.com')
+    
+    def test_edit_spot_copy(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        author = User(email='test')
+        author.put()
+        spot_copy = models.SpotCopy(
+                        body='First',
+                        spot=spot,
+                        author=author)
+        spot_copy.put()
+        spot_copy2 = models.SpotCopy(
+                        body='You are listening to chirpradio.org',
+                        spot=spot,
+                        author=author)
+        spot_copy2.put()
+        
+        # now edit the second one:
+        resp = self.client.post(reverse('traffic_log.editSpotCopy', args=(spot_copy2.key(),)), {
+            'spot_key': spot.key(),
+            'body': 'Something else entirely',
+            'underwriter': 'another underwriter',
+            'expire_on': ''
+        })
+        self.assertNoFormErrors(resp)
+        
+        spot_copy = [c for c in spot.all_spot_copy()]
+        self.assertEqual([c.body for c in spot_copy], ['First','Something else entirely'])
+        self.assertEqual([c.underwriter for c in spot_copy], [None, 'another underwriter'])
+        self.assertEqual([c.author.email for c in spot_copy], ['test', 'test@test.com'])
+    
+    def test_delete_spot_copy(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        author = User(email='test')
+        author.put()
+        spot_copy = models.SpotCopy(
+                        body='First',
+                        spot=spot,
+                        author=author)
+        spot_copy.put()
+        
+        # now edit the second one:
+        resp = self.client.get(reverse('traffic_log.deleteSpotCopy', args=(spot_copy.key(),)))
+        
+        self.assertEqual([c for c in spot.all_spot_copy()], [])
+
+class TestObjects(DjangoTestCase):
+    
+    def test_spot_copy(self):
+        author = User(email='test')
+        author.save()
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        spot_copy = models.SpotCopy(
+                        body='You are listening to chirpradio.org',
+                        spot=spot,
+                        author=author)
+        spot_copy.put()
+        
+        self.assertEqual(str(spot_copy), "You are listening to...")
+        self.assertEqual(spot_copy.get_edit_url(), 
+                            reverse('traffic_log.editSpotCopy', args=(spot_copy.key(),)))
+        self.assertEqual(spot_copy.get_delete_url(), 
+                            reverse('traffic_log.deleteSpotCopy', args=(spot_copy.key(),)))
 
 class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
     

@@ -18,6 +18,7 @@
 import sys
 import random
 import datetime
+import logging
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
@@ -34,6 +35,8 @@ from auth.models import User
 from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
 from auth.decorators import require_role
 from traffic_log import models, forms, constants
+
+log = logging.getLogger()
 
 def add_hour(base_hour):
     """Adds an hour to base_hour and ensures it's in range.
@@ -163,10 +166,17 @@ def createSpot(request):
                        ), context_instance=RequestContext(request))
 
 @require_role(TRAFFIC_LOG_ADMIN)
-def createSpotCopy(request):
+def createEditSpotCopy(request, spot_copy_key=None):
+    if spot_copy_key:
+        spot_copy = AutoRetry(models.SpotCopy).get(spot_copy_key)
+        formaction = reverse('traffic_log.editSpotCopy', args=(spot_copy_key,))
+    else:
+        formaction = reverse('traffic_log.createSpotCopy')
+        spot_copy = None
+    log.info("SPOT: %s" % spot_copy)
     user = auth.get_current_user(request)
     if request.method == 'POST':
-        spot_copy_form = forms.SpotCopyForm(request.POST, {'author':user})
+        spot_copy_form = forms.SpotCopyForm(request.POST, {'author':user}, instance=spot_copy)
         if spot_copy_form.is_valid():
             spot_copy = spot_copy_form.save()
             spot_copy.author = user
@@ -175,13 +185,18 @@ def createSpotCopy(request):
             
             return HttpResponseRedirect('/traffic_log/spot/%s' % spot_copy.spot.key())
     else:
-        spot_copy_form = forms.SpotCopyForm()
+        spot_copy_form = forms.SpotCopyForm(instance=spot_copy)
 
     return render_to_response('traffic_log/create_edit_spot_copy.html', 
                   dict(spot_copy=spot_copy_form,
-                       formaction=reverse('traffic_log.createSpotCopy')
+                       formaction=formaction
                        ), context_instance=RequestContext(request))
 
+@require_role(TRAFFIC_LOG_ADMIN)
+def deleteSpotCopy(request, spot_copy_key=None):
+    spot_copy = AutoRetry(models.SpotCopy).get(spot_copy_key)
+    spot_copy.delete()
+    return HttpResponseRedirect(reverse('traffic_log.views.listSpots'))
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def editSpot(request, spot_key=None):

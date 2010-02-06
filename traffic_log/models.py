@@ -73,12 +73,15 @@ class Spot(search.SearchableModel):
     created   = db.DateTimeProperty(auto_now_add=True)
     updated   = db.DateTimeProperty(auto_now=True)
     
-    @property
-    def copy_at_random(self):
-        possible_copy = [
+    def all_spot_copy(self):
+        # TODO(kumar) filter out expired copy
+        return [
             c for c in AutoRetry(SpotCopy.all().filter("spot =", self))
         ]
-        # TODO(kumar) filter out expired copy
+    
+    @property
+    def copy_at_random(self):
+        possible_copy = self.all_spot_copy()
         if len(possible_copy) == 0:
             raise ValueError("Spot %r of type %r does not have any copy associated with it" % (
                                                                             self.title, self.type))
@@ -100,9 +103,29 @@ class SpotCopy(search.SearchableModel):
     author      = db.ReferenceProperty(User)
     created     = db.DateTimeProperty(auto_now_add=True)
     updated     = db.DateTimeProperty(auto_now=True)
+    
+    def __unicode__(self):
+        body_words = self.body.split(" ")
+        def shorten(words, maxlen=25):
+            s = ' '.join(words)
+            if len(s) > maxlen:
+                words.pop()
+                return shorten(words)
+            else:
+                return s
+        shortened_body = shorten([w for w in body_words])
+        return u"%s..." % shortened_body
+    
+    __str__ = __unicode__
 
     def get_absolute_url(self):
         return '/traffic_log/spot-copy/%s/' % self.key()
+
+    def get_delete_url(self):
+        return reverse('traffic_log.deleteSpotCopy', args=(self.key(),))
+
+    def get_edit_url(self):
+        return reverse('traffic_log.editSpotCopy', args=(self.key(),))
 
 ## there can only be one entry per date, hour, slot
 class TrafficLogEntry(search.SearchableModel):
