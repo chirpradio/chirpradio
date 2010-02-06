@@ -42,7 +42,7 @@ class SpotAtConstraint(object):
         else:
             self.finished = False
 
-class SpotConstraint(search.SearchableModel):
+class SpotConstraint(db.Model):
     dow      = db.IntegerProperty(verbose_name="Day of Week", choices=constants.DOW)
     hour     = db.IntegerProperty(verbose_name="Hour", choices=constants.HOUR)
     slot     = db.IntegerProperty(verbose_name="Spot", choices=constants.SLOT)
@@ -83,10 +83,10 @@ class SpotConstraint(search.SearchableModel):
 
     def __init__(self, *args, **kw):
         key_name = "%d:%d:%d" % (kw['dow'], kw['hour'], kw['slot']) 
-        search.SearchableModel.__init__(self, *args, **kw)
+        super(SpotConstraint, self).__init__(*args, **kw)
 
 
-class Spot(search.SearchableModel):
+class Spot(db.Model):
     """
     """
     title     = db.StringProperty(verbose_name="Spot Title", required=True)
@@ -118,7 +118,7 @@ class Spot(search.SearchableModel):
     def get_absolute_url(self):
         return '/traffic_log/spot/%s/' % self.key()
 
-class SpotCopy(search.SearchableModel):
+class SpotCopy(db.Model):
     
     spot        = db.ReferenceProperty(Spot)
     underwriter = db.TextProperty(required=False)
@@ -152,7 +152,7 @@ class SpotCopy(search.SearchableModel):
         return reverse('traffic_log.editSpotCopy', args=(self.key(),))
 
 ## there can only be one entry per date, hour, slot
-class TrafficLogEntry(search.SearchableModel):
+class TrafficLogEntry(db.Model):
     log_date  = db.DateProperty()
     spot      = db.ReferenceProperty(Spot)
     spot_copy = db.ReferenceProperty(SpotCopy)
