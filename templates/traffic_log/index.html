@@ -31,22 +31,19 @@ Traffic Log Spots
 </tr>
 {% for slotted_spot in slotted_spots %}
 
-{% for spot in slotted_spot.iter_spots  %}
-<tr class="new">
+{% for spot_view in slotted_spot.iter_spots_at_constraint %}
+<tr class="{% if spot_view.finished %}finished{% else %}new{% endif %}">
     <td>{% ifchanged %}<b>{{ slotted_spot.readable_slot_time }}</b>{% endifchanged %}</td>
-    <td>{{ spot.title }}</td>
+    <td>{{ spot_view.spot.title }}</td>
     <td>
         <a class="show-text-for-reading" 
-            href="{% url_to_read_spot slotted_spot spot %}">Show text for reading</a>
+            href="{% url_to_read_spot slotted_spot spot_view.spot %}">Show text for reading</a>
         -
         <a class="finish-spot"
-            href="{% url_to_finish_spot slotted_spot spot %}">Finish</a>
+            href="{% url_to_finish_spot slotted_spot spot_view.spot %}">Finish</a>
     </td>
 </tr>
 {% endfor %}
-
-{# <input type="checkbox" name="readtime" value="readtime" /> #}
-{# Hour:Slot #}
     
 {% endfor %}
 {% endblock %}

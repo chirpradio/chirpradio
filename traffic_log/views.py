@@ -112,6 +112,7 @@ def finishReadingSpotCopy(request, spot_copy_key=None):
     q = (models.TrafficLogEntry.all()
                     .filter("log_date =", today)
                     .filter("spot =", spot_copy.spot)
+                    .filter("dow =", dow)
                     .filter("hour =", hour)
                     .filter("slot =", slot))
     if AutoRetry(q).count(1):
@@ -123,6 +124,7 @@ def finishReadingSpotCopy(request, spot_copy_key=None):
         log_date = today,
         spot = spot_copy.spot,
         spot_copy = spot_copy,
+        dow = dow,
         hour = hour,
         slot = slot,
         scheduled = constraint,

@@ -264,7 +264,13 @@ class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
                         type='Station ID', 
                         author=author)
         spot.put()
-        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        
+        # make a constraint closest to now:
+        now = time_util.chicago_now()
+        today = now.date()
+        current_hour = now.hour
+        constraint = models.SpotConstraint(
+            dow=today.isoweekday(), hour=current_hour, slot=0, spots=[spot.key()])
         constraint.put()
         
         spot_copy = models.SpotCopy(
@@ -272,6 +278,10 @@ class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
                         spot=spot,
                         author=author)
         spot_copy.put()
+        
+        resp = self.client.get(reverse('traffic_log.index'))
+        # unfinished spot should have been marked in static HTML:
+        assert '<tr class="new">' in resp.content
         
         resp = self.client.get(reverse('traffic_log.finishReadingSpotCopy', args=(spot_copy.key(),)), {
             'hour': constraint.hour,
@@ -286,6 +296,11 @@ class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
         self.assertEqual(logged.spot_copy.key(), spot_copy.key())
         self.assertEqual(logged.scheduled.key(), constraint.key())
         self.assertEqual(logged.hour, constraint.hour)
+        self.assertEqual(logged.dow, constraint.dow)
+        
+        resp = self.client.get(reverse('traffic_log.index'))
+        # finished spot should have been marked in static HTML:
+        assert '<tr class="finished">' in resp.content
     
 class TrafficLogTestCase(unittest.TestCase):
     

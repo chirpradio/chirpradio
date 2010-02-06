@@ -23,7 +23,24 @@ from django.core.urlresolvers import reverse
 from auth.models import User
 from traffic_log import constants
 from common.autoretry import AutoRetry
+from common import time_util
 
+class SpotAtConstraint(object):
+    """A spot within its constraint."""
+    
+    def __init__(self, spot_constraint, spot):
+        self.spot = spot
+        
+        q = (TrafficLogEntry.all()
+                .filter("log_date =", time_util.chicago_now().date())
+                .filter("spot =", spot)
+                .filter("hour =", spot_constraint.hour)
+                .filter("slot =", spot_constraint.slot)
+                .filter("dow =", spot_constraint.dow))
+        if AutoRetry(q).count(1):
+            self.finished = True
+        else:
+            self.finished = False
 
 class SpotConstraint(search.SearchableModel):
     dow      = db.IntegerProperty(verbose_name="Day of Week", choices=constants.DOW)
@@ -34,6 +51,10 @@ class SpotConstraint(search.SearchableModel):
     def iter_spots(self):
         for spot in AutoRetry(Spot).get(self.spots):
             yield spot
+    
+    def iter_spots_at_constraint(self):
+        for spot in self.iter_spots():
+            yield SpotAtConstraint(self, spot)
     
     def as_query_string(self):
         return "hour=%d&dow=%d&slot=%d" % (self.hour, self.dow, self.slot)
@@ -135,6 +156,7 @@ class TrafficLogEntry(search.SearchableModel):
     log_date  = db.DateProperty()
     spot      = db.ReferenceProperty(Spot)
     spot_copy = db.ReferenceProperty(SpotCopy)
+    dow       = db.IntegerProperty()
     hour      = db.IntegerProperty()
     slot      = db.IntegerProperty()
     scheduled = db.ReferenceProperty(SpotConstraint)
