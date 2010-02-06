@@ -93,12 +93,13 @@ class Spot(search.SearchableModel):
 
 class SpotCopy(search.SearchableModel):
     
-    spot      = db.ReferenceProperty(Spot)
-    body      = db.TextProperty(verbose_name="Spot Copy",  required=False)
-    expire_on = db.DateTimeProperty(verbose_name="Expire Date", required=False, default=None)
-    author    = db.ReferenceProperty(User)
-    created   = db.DateTimeProperty(auto_now_add=True)
-    updated   = db.DateTimeProperty(auto_now=True)
+    spot        = db.ReferenceProperty(Spot)
+    underwriter = db.TextProperty(required=False)
+    body        = db.TextProperty(verbose_name="Spot Copy",  required=False)
+    expire_on   = db.DateTimeProperty(verbose_name="Expire Date", required=False, default=None)
+    author      = db.ReferenceProperty(User)
+    created     = db.DateTimeProperty(auto_now_add=True)
+    updated     = db.DateTimeProperty(auto_now=True)
 
     def get_absolute_url(self):
         return '/traffic_log/spot-copy/%s/' % self.key()

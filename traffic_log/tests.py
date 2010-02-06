@@ -90,7 +90,6 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
     def test_create_spot(self):
         resp = self.client.post(reverse('traffic_log.createSpot'), {
             'title': 'Legal ID',
-            'body': 'You are listening to chirpradio.org',
             'type': 'Station ID',
             'hourbucket': '0,24',
             'dow_list': [str(d) for d in range(1,8)],
@@ -108,14 +107,33 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         self.assertEqual(sorted(dow), range(1,8))
         self.assertEqual(sorted(hours), range(0,24))
         
-        # TODO(kumar) incoporate with spot copy
-        
         # check with Sunday 12:00pm
-        # self.assertEqual(constraint_map[(1L, 12L, 0L)].url_to_finish_spot(spot), 
-        #     "/traffic_log/spot-copy/%s/finish?hour=12&dow=1&slot=0" % spot.key())
-        #     
-        # self.assertEqual(constraint_map[(1L, 12L, 0L)].as_query_string(), 
-        #     "hour=12&dow=1&slot=0")
+        self.assertEqual(constraint_map[(1L, 12L, 0L)].url_to_finish_spot(spot), 
+            "/traffic_log/spot-copy/%s/finish?hour=12&dow=1&slot=0" % spot.key())
+            
+        self.assertEqual(constraint_map[(1L, 12L, 0L)].as_query_string(), 
+            "hour=12&dow=1&slot=0")
+    
+    def test_create_spot_copy(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        resp = self.client.post(reverse('traffic_log.createSpotCopy'), {
+            'spot_key': spot.key(),
+            'body': 'You are listening to chirprario.odg',
+            'underwriter': 'pretend this is an underwriter',
+            'expire_on': ''
+        })
+        self.assertNoFormErrors(resp)
+        
+        spot_copy = spot.copy_at_random
+        self.assertEqual(spot_copy.body, 'You are listening to chirprario.odg')
+        self.assertEqual(spot_copy.underwriter, 'pretend this is an underwriter')
+        self.assertEqual(spot_copy.author.email, 'test@test.com')
 
 class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
     

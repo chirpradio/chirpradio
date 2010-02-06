@@ -1,0 +1,16 @@
+{% extends 'traffic_log/base_spots.html' %}
+{% load traffic_log_filters %}
+
+{% block contents %}
+<p/>
+<table border="1" cellpadding="5" cellspacing="0">
+<form action="{{ formaction }}" method="post">
+{{ spot_copy.as_table }}
+<tr><td>*</td><td>
+<tr><td colspan="2" align="center"><input type="submit" name="Save Spot" value="Save Spot"/></td></tr>
+<tr><td colspan=2>
+</td></tr>
+
+</table>
+</form>
+{% endblock %}

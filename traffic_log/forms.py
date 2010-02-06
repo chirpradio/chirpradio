@@ -9,8 +9,27 @@ from common.autoretry import AutoRetry
 class SpotForm(djangoforms.ModelForm):
     class Meta:
         model  = models.Spot
-        fields = ('title','type')
+        fields = ('title', 'type')
+        
+class SpotCopyForm(djangoforms.ModelForm):
     
+    spot_key = djangoforms.forms.ChoiceField(label="Spot", 
+                                             required=True)
+    underwriter = djangoforms.forms.CharField()
+    
+    def __init__(self, *args, **kw):
+        super(SpotCopyForm, self).__init__(*args, **kw)
+        self['spot_key'].field.choices = [choice for choice in self._generate_spot_choices()]
+    
+    def _generate_spot_choices(self):
+        q = models.Spot.all().order("title")
+        for spot in AutoRetry(q):
+            yield ( spot.key(),
+                    "%s (%s)" % (spot.title, spot.type))
+        
+    class Meta:
+        model  = models.SpotCopy
+        fields = ('underwriter', 'body', 'expire_on')
 
 class SpotConstraintForm(djangoforms.ModelForm):
     hourbucket = djangoforms.forms.ChoiceField(label="Hour Bucket",
