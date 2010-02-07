@@ -401,9 +401,6 @@ def report(request):
                         .filter('log_date <= ', report_form.cleaned_data['end_date']))
             entries_tmp = AutoRetry(query).fetch(999)
             
-            search = request.POST.get('Search') == 'Search'
-            download = request.POST.get('Download') == 'Download'
-            
             filter_type = report_form.cleaned_data['type'] != "Spot Type"
             filter_underwriter = report_form.cleaned_data['underwriter'] != ""
             if filter_type or filter_underwriter:
