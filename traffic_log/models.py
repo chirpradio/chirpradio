@@ -16,6 +16,7 @@
 ###
 
 import random
+import datetime
 
 from google.appengine.ext import db, search
 from django.core.urlresolvers import reverse
@@ -99,7 +100,7 @@ class Spot(db.Model):
         # One for copy that does not expire and one for not-yet-expired copy
         q = SpotCopy.all().filter("spot =", self).filter("expire_on =", None)
         active_spots = [c for c in AutoRetry(q)]
-        q = SpotCopy.all().filter("spot =", self).filter("expire_on >", time_util.chicago_now())
+        q = SpotCopy.all().filter("spot =", self).filter("expire_on >", datetime.datetime.now())
         for c in AutoRetry(q):
             active_spots.append(c)
         return active_spots
