@@ -78,3 +78,8 @@ indexes:
   - name: dow
   - name: hour
   - name: slot
+
+- kind: SpotCopy
+  properties:
+  - name: spot
+  - name: expire_on

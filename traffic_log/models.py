@@ -95,10 +95,14 @@ class Spot(db.Model):
     updated   = db.DateTimeProperty(auto_now=True)
     
     def all_spot_copy(self):
-        # TODO(kumar) filter out expired copy
-        return [
-            c for c in AutoRetry(SpotCopy.all().filter("spot =", self))
-        ]
+        # two queries (since there is no OR statement).  
+        # One for copy that does not expire and one for not-yet-expired copy
+        q = SpotCopy.all().filter("spot =", self).filter("expire_on =", None)
+        active_spots = [c for c in AutoRetry(q)]
+        q = SpotCopy.all().filter("spot =", self).filter("expire_on >", time_util.chicago_now())
+        for c in AutoRetry(q):
+            active_spots.append(c)
+        return active_spots
     
     @property
     def copy_at_random(self):
