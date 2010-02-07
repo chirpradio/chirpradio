@@ -170,6 +170,33 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         self.assertEqual([c.underwriter for c in spot_copy], [None, 'another underwriter'])
         self.assertEqual([c.author.email for c in spot_copy], ['test', 'test@test.com'])
     
+    def test_make_spot_copy_expire(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        author = User(email='test')
+        author.put()
+        spot_copy = models.SpotCopy(
+                        body='First',
+                        spot=spot,
+                        author=author)
+        spot_copy.put()
+        
+        resp = self.client.post(reverse('traffic_log.editSpotCopy', args=(spot_copy.key(),)), {
+            'spot_key': spot.key(),
+            'body': 'Something else entirely',
+            'underwriter': 'another underwriter',
+            'expire_on': '2/5/2010' # any date in the past
+        })
+        self.assertNoFormErrors(resp)
+        
+        spot_copy = [c for c in spot.all_spot_copy()]
+        self.assertEqual(spot_copy, [])
+    
     def test_delete_spot_copy(self):
         spot = models.Spot(
                         title='Legal ID',

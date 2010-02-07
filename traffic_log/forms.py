@@ -16,6 +16,8 @@ class SpotCopyForm(djangoforms.ModelForm):
     spot_key = djangoforms.forms.ChoiceField(label="Spot", 
                                              required=True)
     underwriter = djangoforms.forms.CharField(required=False)
+    expire_on = djangoforms.forms.DateTimeField(required=False,
+                help_text="The following formats are recognized: MM/DD/YYYY, MM/DD/YYYY 00:00, YYYY-MM-DD")
     
     def __init__(self, *args, **kw):
         super(SpotCopyForm, self).__init__(*args, **kw)
