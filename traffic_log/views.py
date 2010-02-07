@@ -18,6 +18,7 @@
 import sys
 import random
 import datetime
+import calendar
 import logging
 
 from django.http import HttpResponse, HttpResponseRedirect
@@ -27,7 +28,9 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils import simplejson
 
-from common.utilities import as_json
+import django.forms
+
+from common.utilities import as_json, http_send_csv_file
 from common import time_util
 from common.autoretry import AutoRetry
 import auth
@@ -154,7 +157,7 @@ def createSpot(request):
             connectConstraintsAndSpot(constraint_keys, spot.key())
             all_clear = True
     else:
-        spot_form = forms.SpotForm()
+        spot_form = django.forms.SpotForm()
         constraint_form = forms.SpotConstraintForm()
 
     if all_clear:
@@ -386,6 +389,57 @@ def traffic_log(request, date):
     return render_to_response('traffic_log/spot_list.html', 
         dict(spots=spots_for_date), 
         context_instance=RequestContext(request))
+
+@require_role(TRAFFIC_LOG_ADMIN)
+def report(request):
+    entries = []
+    if request.method == 'POST':
+        report_form = forms.ReportForm(request.POST)
+        if report_form.is_valid():
+            query = (models.TrafficLogEntry.all()
+                        .filter('log_date >= ', report_form.cleaned_data['start_date'])
+                        .filter('log_date <= ', report_form.cleaned_data['end_date']))
+            entries_tmp = AutoRetry(query).fetch(999)
+            
+            search = request.POST.get('Search') == 'Search'
+            download = request.POST.get('Download') == 'Download'
+            
+            filter_type = report_form.cleaned_data['type'] != "Spot Type"
+            filter_underwriter = report_form.cleaned_data['underwriter'] != ""
+            if filter_type or filter_underwriter:
+                for entry in entries_tmp:
+                    if (not filter_type or entry.spot.type == report_form.cleaned_data['type']) \
+                       and (not filter_underwriter or entry.spot_copy.underwriter == report_form.cleaned_data['underwriter']):
+                       entries.append({'readtime': entry.readtime,
+                                       'dow': constants.DOW_DICT[entry.dow],
+                                       'slot_time': entry.scheduled.readable_slot_time,
+                                       'type': entry.spot.type,
+                                       'underwriter': entry.spot_copy.underwriter})
+            else:
+                for entry in entries_tmp:
+                    entries.append({'readtime': entry.readtime,
+                                    'dow': constants.DOW_DICT[entry.dow],
+                                    'slot_time': entry.scheduled.readable_slot_time,
+                                    'type': entry.spot.type,
+                                    'underwriter': entry.spot_copy.underwriter})
+            if request.POST.get('Download'):
+                fields = ['readtime', 'dow', 'slot_time', 'type', 'underwriter']
+                fname = "chirp-traffic_log_%s_%s" % (report_form.cleaned_data['start_date'],
+                                                     report_form.cleaned_data['end_date'])
+                return http_send_csv_file(fname, fields, entries)
+                entries = []
+                
+    else :
+        end_date = datetime.datetime.now().date()
+        start_date = end_date - datetime.timedelta(days=30)
+        report_form = forms.ReportForm({'start_date': start_date, 'end_date': end_date})
+    return render_to_response('traffic_log/report.html', 
+                              {'months': calendar.month_name[1:],
+                               'days': range(1, 32),
+                               'years': range(2009, 2021),
+                               'report_form': report_form,
+                               'entries': entries},
+                              context_instance=RequestContext(request))
 
 def box(thing):
     if isinstance(thing,list):

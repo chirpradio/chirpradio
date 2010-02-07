@@ -32,7 +32,7 @@ from auth import roles
 from playlists.forms import PlaylistTrackForm, PlaylistReportForm
 from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast
 from playlists.tasks import playlist_event_listeners
-from common.utilities import as_encoded_str
+from common.utilities import as_encoded_str, http_send_csv_file
 from common.autoretry import AutoRetry
 
 
@@ -201,26 +201,6 @@ def report_playlist(request):
 
     return render_to_response('playlists/reports.html', vars,
             context_instance=RequestContext(request))
-
-def http_send_csv_file(fname, fields, items):
-    import csv
-
-    # dump item using key fields
-    def item2row(i):
-        return [as_encoded_str(i[key], encoding='utf8') for key in fields]
-
-    # use response obj to set filename of downloaded file
-    response = HttpResponse(mimetype='text/csv')
-    # TODO(Kumar) mark encoding as UTF-8?
-    response['Content-Disposition'] = "attachment; filename=%s.csv" % (fname)
-
-    # write data out
-    out = csv.writer(response)
-    out.writerow(fields)
-    for item in items:
-        out.writerow(item2row(item))
-    #
-    return response
 
 # TODO: move following funcs to models
 def filter_tracks_by_date_range(from_date, to_date):

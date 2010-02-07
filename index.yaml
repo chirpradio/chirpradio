@@ -78,3 +78,13 @@ indexes:
   - name: dow
   - name: hour
   - name: slot
+
+- kind: TrafficLogEntry
+  properties:
+  - name: spot.type
+  - name: log_date
+
+- kind: TrafficLogEntry
+  properties:
+  - name: type
+  - name: log_date

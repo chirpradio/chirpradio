@@ -5,7 +5,6 @@ from google.appengine.ext.db import djangoforms
 from traffic_log import constants, models
 from common.autoretry import AutoRetry
 
-
 class SpotForm(djangoforms.ModelForm):
     class Meta:
         model  = models.Spot
@@ -63,3 +62,10 @@ class SpotConstraintForm(djangoforms.ModelForm):
 class TrafficLogForm(djangoforms.ModelForm):
     class Meta:
         model = models.TrafficLogEntry
+
+class ReportForm(djangoforms.ModelForm):
+    start_date = djangoforms.forms.DateField(label="Start Date", required=True)
+    end_date = djangoforms.forms.DateField(label="End Date", required=True)
+    type = djangoforms.forms.ChoiceField(label="Spot Type", required=False,
+                                         choices=zip(constants.SPOT_TYPE_CHOICES, constants.SPOT_TYPE_CHOICES))
+    underwriter = djangoforms.forms.CharField(label="Underwriter", required=False)
