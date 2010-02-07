@@ -424,17 +424,12 @@ def report(request):
                 fname = "chirp-traffic_log_%s_%s" % (report_form.cleaned_data['start_date'],
                                                      report_form.cleaned_data['end_date'])
                 return http_send_csv_file(fname, fields, entries)
-                entries = []
-                
     else :
         end_date = datetime.datetime.now().date()
         start_date = end_date - datetime.timedelta(days=30)
         report_form = forms.ReportForm({'start_date': start_date, 'end_date': end_date})
     return render_to_response('traffic_log/report.html', 
-                              {'months': calendar.month_name[1:],
-                               'days': range(1, 32),
-                               'years': range(2009, 2021),
-                               'report_form': report_form,
+                              {'report_form': report_form,
                                'entries': entries},
                               context_instance=RequestContext(request))
 
