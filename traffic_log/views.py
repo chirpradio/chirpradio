@@ -72,7 +72,7 @@ def index(request):
     def hour_position(s):
         return hours_to_show.index(s.hour)
         
-    slotted_spots = sorted([s for s in AutoRetry(current_spots).fetch(20)], key=hour_position) 
+    slotted_spots = sorted([s for s in AutoRetry(current_spots).fetch(10)], key=hour_position) 
     
     return render_to_response('traffic_log/index.html', dict(
             date=today,
