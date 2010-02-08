@@ -60,8 +60,10 @@ class SpotConstraint(db.Model):
         return "hour=%d&dow=%d&slot=%d" % (self.hour, self.dow, self.slot)
     
     def url_to_finish_spot(self, spot):
-        url = reverse('traffic_log.finishReadingSpotCopy', args=(spot.key(),))
-        url = "%s?%s" % (url, self.as_query_string())
+        url = ""
+        if len(spot.random_spot_copies) > 0:
+            url = reverse('traffic_log.finishReadingSpotCopy', args=(spot.random_spot_copies[0],))
+            url = "%s?%s" % (url, self.as_query_string())
         return url
     
     @property
@@ -93,7 +95,8 @@ class Spot(db.Model):
     type      = db.StringProperty(verbose_name="Spot Type", required=True, choices=constants.SPOT_TYPE)
     created   = db.DateTimeProperty(auto_now_add=True)
     updated   = db.DateTimeProperty(auto_now=True)
-    
+    random_spot_copies = db.ListProperty(db.Key)
+
     def all_spot_copy(self):
         # TODO(kumar) filter out expired copy
         return [

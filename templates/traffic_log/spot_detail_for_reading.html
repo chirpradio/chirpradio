@@ -1,8 +1,12 @@
 {# this is rendered in a popover window via Ajax #}
 <div class="spot_detail_for_reading">
+{% if spot_copy %}
 {{ spot_copy.body }}
-<div id="spot-reading-buttons">
+  <div id="spot-reading-buttons">
     <a class="finish-spot-after-reading"
         href="{{ url_to_finish_spot }}">Finish</a>
-</div>
+  </div>
+{% else %}
+No spot copies have been associated with this spot.
+{% endif %}
 </div>

@@ -21,6 +21,8 @@ import datetime
 import calendar
 import logging
 
+from google.appengine.ext import db
+
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.conf import settings
@@ -70,7 +72,7 @@ def index(request):
     def hour_position(s):
         return hours_to_show.index(s.hour)
         
-    slotted_spots = sorted([s for s in AutoRetry(current_spots).fetch(10)], key=hour_position) 
+    slotted_spots = sorted([s for s in AutoRetry(current_spots).fetch(20)], key=hour_position) 
     
     return render_to_response('traffic_log/index.html', dict(
             date=today,
@@ -81,10 +83,26 @@ def index(request):
 def spotTextForReading(request, spot_key=None):
     spot = AutoRetry(models.Spot).get(spot_key)
     dow, hour, slot = _get_slot_from_request(request)
-    spot_copy = spot.copy_at_random
-    
-    url = reverse('traffic_log.finishReadingSpotCopy', args=(spot_copy.key(),))
-    url = "%s?hour=%d&dow=%d&slot=%d" % (url, hour, dow, slot)
+    spot_copy = None
+    url = None
+    if len(spot.random_spot_copies) == 0:
+        _shuffle_spot_copies(spot)
+        AutoRetry(spot).save()
+    if len(spot.random_spot_copies) > 0:
+        today = time_util.chicago_now().date()
+        q = (models.TrafficLogEntry.all()
+                    .filter("log_date =", today)
+                    .filter("spot =", spot)
+                    .filter("dow =", dow)
+                    .filter("hour =", hour)
+                    .filter("slot =", slot))
+        if AutoRetry(q).count(1):
+            existing_logged_spot = AutoRetry(q).fetch(1)[0]
+            spot_copy = existing_logged_spot.spot_copy
+        else:
+            spot_copy = AutoRetry(db).get(spot.random_spot_copies[0])
+        url = reverse('traffic_log.finishReadingSpotCopy', args=(spot_copy.key(),))
+        url = "%s?hour=%d&dow=%d&slot=%d" % (url, hour, dow, slot)
     return render_to_response('traffic_log/spot_detail_for_reading.html', dict(
             spot_copy=spot_copy,
             url_to_finish_spot=url
@@ -123,6 +141,15 @@ def finishReadingSpotCopy(request, spot_copy_key=None):
         raise RuntimeError("This spot %r at %r has already been read %s" % (
                     spot_copy.spot, constraint, existing_logged_spot.reader))
     
+    # Pop off spot copy from spot's shuffled list of spot copies.
+    spot_copy.spot.random_spot_copies.pop(0)
+    
+    # If shuffled spot copy list is empty, regenerate.
+    if len(spot_copy.spot.random_spot_copies) == 0:
+        _shuffle_spot_copies(spot_copy.spot, spot_copy)
+        
+    AutoRetry(spot_copy.spot).save()
+    
     logged_spot = models.TrafficLogEntry(
         log_date = today,
         spot = spot_copy.spot,
@@ -134,7 +161,7 @@ def finishReadingSpotCopy(request, spot_copy_key=None):
         readtime = time_util.chicago_now(), 
         reader = auth.get_current_user(request)
     )
-    logged_spot.put()
+    AutoRetry(logged_spot).put()
     
     return {
         'spot_copy_key': str(spot_copy.key()), 
@@ -157,7 +184,7 @@ def createSpot(request):
             connectConstraintsAndSpot(constraint_keys, spot.key())
             all_clear = True
     else:
-        spot_form = django.forms.SpotForm()
+        spot_form = forms.SpotForm()
         constraint_form = forms.SpotConstraintForm()
 
     if all_clear:
@@ -191,6 +218,10 @@ def createEditSpotCopy(request, spot_copy_key=None, spot_key=None):
             spot_copy = spot_copy_form.save()
             spot_copy.author = user
             spot_copy.spot = AutoRetry(models.Spot).get(spot_copy_form['spot_key'].data)
+            
+            # Add spot copy to spot's list of shuffled spot copies.
+            spot_copy.spot.random_spot_copies.append(spot_copy.key())
+            AutoRetry(spot_copy.spot).save()
             AutoRetry(spot_copy).put()
             
             return HttpResponseRedirect(reverse('traffic_log.listSpots'))
@@ -398,29 +429,31 @@ def report(request):
         if report_form.is_valid():
             query = (models.TrafficLogEntry.all()
                         .filter('log_date >= ', report_form.cleaned_data['start_date'])
-                        .filter('log_date <= ', report_form.cleaned_data['end_date']))
-            entries_tmp = AutoRetry(query).fetch(999)
-            
+                        .filter('log_date <= ', report_form.cleaned_data['end_date']))            
             filter_type = report_form.cleaned_data['type'] != "Spot Type"
             filter_underwriter = report_form.cleaned_data['underwriter'] != ""
             if filter_type or filter_underwriter:
-                for entry in entries_tmp:
+                for entry in AutoRetry(query):
                     if (not filter_type or entry.spot.type == report_form.cleaned_data['type']) \
                        and (not filter_underwriter or entry.spot_copy.underwriter == report_form.cleaned_data['underwriter']):
                        entries.append({'readtime': entry.readtime,
-                                       'dow': constants.DOW_DICT[entry.dow],
+                                       'dow': constants.DOW_DICT[entry.dow],                                       
+                                       'underwriter': entry.spot_copy.underwriter,
                                        'slot_time': entry.scheduled.readable_slot_time,
+                                       'title': entry.spot.title,
                                        'type': entry.spot.type,
-                                       'underwriter': entry.spot_copy.underwriter})
+                                       'exerpt': entry.spot_copy.body[:140]})
             else:
-                for entry in entries_tmp:
+                for entry in AutoRetry(query):
                     entries.append({'readtime': entry.readtime,
                                     'dow': constants.DOW_DICT[entry.dow],
                                     'slot_time': entry.scheduled.readable_slot_time,
+                                    'underwriter': entry.spot_copy.underwriter,
+                                    'title': entry.spot.title,
                                     'type': entry.spot.type,
-                                    'underwriter': entry.spot_copy.underwriter})
+                                    'exerpt': entry.spot_copy.body[:140]})
             if request.POST.get('Download'):
-                fields = ['readtime', 'dow', 'slot_time', 'type', 'underwriter']
+                fields = ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'exerpt']
                 fname = "chirp-traffic_log_%s_%s" % (report_form.cleaned_data['start_date'],
                                                      report_form.cleaned_data['end_date'])
                 return http_send_csv_file(fname, fields, entries)
@@ -451,3 +484,27 @@ def _get_slot_from_request(request):
         raise ValueError("dow value %r is out of range" % slot)
     return dow, hour, slot
 
+def _shuffle_spot_copies(spot, prev_spot_copy=None):
+    # Shuffle list of spot copy keys associates with the spot.
+    spot_copies = [spot_copy.key() for spot_copy in spot.all_spot_copy()]
+    random.shuffle(spot_copies)
+
+    # Get spot copies that have been read in the last period (two hours).
+    date = datetime.datetime.now().date() - datetime.timedelta(hours=2)
+    query = models.TrafficLogEntry.all().filter('log_date >=', date)
+    recent_spot_copies = []
+    for entry in query:
+        recent_spot_copies.append(entry.spot_copy.key())
+    
+    # Iterate through list, moving spot copies that have been read in the past period to the
+    # end of the list.
+    for i in range(len(spot_copies)):
+        if spot_copies[0] in recent_spot_copies:
+            spot_copies.append(spot_copies.pop(0))
+    
+    # If all spot copies were read in the last period, the first item in the new shuffled list
+    # may by chance be the last one read. If so, move to the end.
+    if prev_spot_copy and spot_copies[0] == prev_spot_copy.key():
+        spot_copies.append(spot_copies.pop(0))
+        
+    spot.random_spot_copies = spot_copies
