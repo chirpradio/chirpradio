@@ -79,6 +79,11 @@ indexes:
   - name: hour
   - name: slot
 
+- kind: SpotCopy
+  properties:
+  - name: spot
+  - name: expire_on
+
 - kind: TrafficLogEntry
   properties:
   - name: spot.type

@@ -236,7 +236,8 @@ def createEditSpotCopy(request, spot_copy_key=None, spot_key=None):
 @require_role(TRAFFIC_LOG_ADMIN)
 def deleteSpotCopy(request, spot_copy_key=None):
     spot_copy = AutoRetry(models.SpotCopy).get(spot_copy_key)
-    spot_copy.delete()
+    spot_copy.expire_on = time_util.chicago_now()
+    AutoRetry(spot_copy).put()
     return HttpResponseRedirect(reverse('traffic_log.views.listSpots'))
 
 @require_role(TRAFFIC_LOG_ADMIN)

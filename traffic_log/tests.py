@@ -170,6 +170,66 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         self.assertEqual([c.underwriter for c in spot_copy], [None, 'another underwriter'])
         self.assertEqual([c.author.email for c in spot_copy], ['test', 'test@test.com'])
     
+    def test_make_spot_copy_expire(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        author = User(email='test')
+        author.put()
+        spot_copy = models.SpotCopy(
+                        body='First',
+                        spot=spot,
+                        author=author)
+        spot_copy.put()
+        
+        resp = self.client.post(reverse('traffic_log.editSpotCopy', args=(spot_copy.key(),)), {
+            'spot_key': spot.key(),
+            'body': 'Something else entirely',
+            'underwriter': 'another underwriter',
+            'expire_on': '2/5/2010' # any date in the past
+        })
+        self.assertNoFormErrors(resp)
+        
+        spot_copy = [c for c in spot.all_spot_copy()]
+        self.assertEqual(spot_copy, [])
+    
+    def test_create_edit_spot_copy_expiry(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        now = time_util.chicago_now() + datetime.timedelta(hours=2)
+        resp = self.client.post(reverse('traffic_log.views.addCopyForSpot', args=(spot.key(),)), {
+            'spot_key': spot.key(),
+            'body': 'You are listening to chirprario.odg',
+            'underwriter': 'pretend this is an underwriter',
+            'expire_on': now.strftime("%m/%d/%Y %H:%M:%S") # no timezone info
+        })
+        self.assertNoFormErrors(resp)
+        
+        spot_copy = spot.copy_at_random
+        converted_expire_on = time_util.convert_utc_to_chicago(spot_copy.expire_on)
+        self.assertEqual(converted_expire_on.timetuple(), now.timetuple())
+        
+        resp = self.client.post(reverse('traffic_log.editSpotCopy', args=(spot_copy.key(),)), {
+            'spot_key': spot.key(),
+            'body': 'You are listening to chirprario.odg',
+            'underwriter': 'pretend this is an underwriter',
+            'expire_on': spot_copy.expire_on.strftime("%m/%d/%Y %H:%M:%S") # no timezone info
+        })
+        self.assertNoFormErrors(resp)
+        
+        spot_copy = spot.copy_at_random
+        converted_expire_on = time_util.convert_utc_to_chicago(spot_copy.expire_on)
+        self.assertEqual(converted_expire_on.timetuple(), now.timetuple())
+    
     def test_delete_spot_copy(self):
         spot = models.Spot(
                         title='Legal ID',
