@@ -171,6 +171,7 @@ def createSpot(request):
 def createEditSpotCopy(request, spot_copy_key=None, spot_key=None):
     if spot_copy_key:
         spot_copy = AutoRetry(models.SpotCopy).get(spot_copy_key)
+        spot_key = spot_copy.spot.key() # so that dropdown box is selected when editing
         formaction = reverse('traffic_log.editSpotCopy', args=(spot_copy_key,))
     else:
         if spot_key:
