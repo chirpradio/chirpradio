@@ -74,10 +74,6 @@ class TestTrafficLogViews(DjangoTestCase):
                 'Legal ID')
         self.assertEqual(spot_map[(now + datetime.timedelta(hours=2)).hour].title, 
                 'Legal ID')
-        
-        constraint = constraint_map[now.hour]
-        spot = list(constraint.iter_spots())[0]
-        assert constraint.url_to_finish_spot(spot) in resp.content
 
 class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
     
