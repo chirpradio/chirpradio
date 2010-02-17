@@ -97,6 +97,7 @@ class SpotConstraint(db.Model):
 class Spot(db.Model):
     """
     """
+    active    = db.BooleanProperty(default=True)
     title     = db.StringProperty(verbose_name="Spot Title", required=True)
     type      = db.StringProperty(verbose_name="Spot Type", required=True, choices=constants.SPOT_TYPE)
     created   = db.DateTimeProperty(auto_now_add=True)

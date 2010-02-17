@@ -78,7 +78,7 @@ class TestTrafficLogViews(DjangoTestCase):
 class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
     
     def setUp(self):
-        self.client.login(email="test@test.com", roles=[roles.TRAFFIC_LOG_ADMIN])
+        self.client.login(email="test@test.com", roles=[roles.TRAFFIC_LOG_ADMIN, roles.DJ])
     
     def tearDown(self):
         clear_data()
@@ -109,6 +109,65 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             
         self.assertEqual(constraint_map[(1L, 12L, 0L)].as_query_string(), 
             "hour=12&dow=1&slot=0")
+        
+        # spot shows up in DJ view:
+        resp = self.client.get(reverse('traffic_log.index'))
+        context = resp.context[0]
+        slotted_spots = [c for c in context['slotted_spots']]
+        spots = [s.title for s in slotted_spots[0].iter_spots()]
+        self.assertEqual(spots[0], spot.title)
+        
+        # spot shows up in admin view:
+        resp = self.client.get(reverse('traffic_log.listSpots'))
+        context = resp.context[0]
+        spots = [c.title for c in context['spots']]
+        self.assertEqual(spots, ['Legal ID'])
+    
+    def test_delete_spot(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        self.assertEqual(spot.active, True)
+        
+        # assign it to every day of the week at the top of the hour:
+        constraint_keys = views.saveConstraint(dict(hourbucket="0,24", dow_list=range(1,8), slot=0))
+        views.connectConstraintsAndSpot(constraint_keys, spot.key())
+        
+        resp = self.client.get(reverse('traffic_log.index'))
+        context = resp.context[0]
+        slotted_spots = [c for c in context['slotted_spots']]
+        spots = [s.title for s in slotted_spots[0].iter_spots()]
+        self.assertEqual(spots[0], spot.title)
+                            
+        resp = self.client.get(reverse('traffic_log.deleteSpot', args=[spot.key()]))
+        
+        # datastore was cleaned up:
+        saved_spot = models.Spot.get(spot.key())
+        self.assertEqual(saved_spot.active, False)
+        
+        saved_constaints = [s for s in models.SpotConstraint.get(constraint_keys)]
+        active_spots = []
+        for constraint in saved_constaints:
+            for spot in constraint.iter_spots():
+                active_spots.append(spot)
+        self.assertEqual(len(active_spots), 0)
+        
+        # spot is hidden from landing page:
+        resp = self.client.get(reverse('traffic_log.index'))
+        context = resp.context[0]
+        slotted_spots = [c for c in context['slotted_spots']]
+        active_spots = []
+        for slot in slotted_spots:
+            for spot in slot.iter_spots_at_constraint():
+                active_spots.append(spot)
+        self.assertEqual(active_spots, [])
+        
+        # spot is hidden from admin view:
+        resp = self.client.get(reverse('traffic_log.listSpots'))
+        context = resp.context[0]
+        spots = [c.title for c in context['spots']]
+        self.assertEqual(spots, [])
     
     def test_create_spot_copy(self):
         spot = models.Spot(
