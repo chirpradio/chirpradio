@@ -178,18 +178,15 @@ class SerializationTest(unittest.TestCase):
       string cannot be deserialized correctly or the resulting object is not an
       instance of ModelA with a key named 'test'.
     """
-    # TODO(kumar) this was failing
-    # See http://code.google.com/p/google-app-engine-django/issues/detail?id=154
-    
-    # if format not in lookup_dict:
-    #   # Check not valid for this format.
-    #   return
-    # s = lookup_dict[format]
-    # result = list(serializers.deserialize(format, StringIO(s)))
-    # self.assertEqual(1, len(result), "expected 1 object from %s" % format)
-    # result[0].save()
-    # self.assert_(isinstance(result[0].object, ModelA))
-    # self.assertEqual("test", result[0].object.key().name())
+    if format not in lookup_dict:
+      # Check not valid for this format.
+      return
+    s = lookup_dict[format]
+    result = list(serializers.deserialize(format, StringIO(s)))
+    self.assertEqual(1, len(result), "expected 1 object from %s" % format)
+    result[0].save()
+    self.assert_(isinstance(result[0].object, ModelA))
+    self.assertEqual("test", result[0].object.key().name())
 
   # Lookup dicts for the above (doLookupDeserialisationReferenceTest) function.
   SERIALIZED_WITH_KEY_AS_LIST = {
@@ -285,10 +282,8 @@ class SerializationTest(unittest.TestCase):
 
   def runObjectWithNonExistantParentTest(self, format):
     """Test deserialization of an object referencing a non-existant parent."""
-    # TODO(kumar) this was failing
-    # See http://code.google.com/p/google-app-engine-django/issues/detail?id=154
-    # self.doModelKeyDeserialisationReferenceTest(
-    #     self.SERIALIZED_WITH_NON_EXISTANT_PARENT, format)
+    self.doModelKeyDeserialisationReferenceTest(
+        self.SERIALIZED_WITH_NON_EXISTANT_PARENT, format)
 
   def runCreateKeyReferenceFromListTest(self, format):
     """Tests that a reference specified as a list in json/yaml can be loaded OK."""
