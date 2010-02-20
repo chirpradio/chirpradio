@@ -55,6 +55,7 @@ def add_hour(base_hour):
 
 @require_role(DJ)
 def index(request):
+#    db.delete(models.TrafficLogEntry.all())
     now = time_util.chicago_now()
     today = now.date()
     current_hour = now.hour
@@ -82,27 +83,17 @@ def index(request):
 @require_role(DJ)
 def spotTextForReading(request, spot_key=None):
     spot = AutoRetry(models.Spot).get(spot_key)
+
+    # Get random spot copy.
     dow, hour, slot = _get_slot_from_request(request)
-    spot_copy = None
+    spot_copy, is_logged = spot.get_spot_copy(dow, hour, slot)
+
+    # If spot copy has not already been read, construct url to finish.
     url = None
-    if len(spot.random_spot_copies) == 0:
-        _shuffle_spot_copies(spot)
-        AutoRetry(spot).save()
-    if len(spot.random_spot_copies) > 0:
-        today = time_util.chicago_now().date()
-        q = (models.TrafficLogEntry.all()
-                    .filter("log_date =", today)
-                    .filter("spot =", spot)
-                    .filter("dow =", dow)
-                    .filter("hour =", hour)
-                    .filter("slot =", slot))
-        if AutoRetry(q).count(1):
-            existing_logged_spot = AutoRetry(q).fetch(1)[0]
-            spot_copy = existing_logged_spot.spot_copy
-        else:
-            spot_copy = AutoRetry(db).get(spot.random_spot_copies[0])
+    if spot_copy and not is_logged:
         url = reverse('traffic_log.finishReadingSpotCopy', args=(spot_copy.key(),))
         url = "%s?hour=%d&dow=%d&slot=%d" % (url, hour, dow, slot)
+
     return render_to_response('traffic_log/spot_detail_for_reading.html', dict(
             spot_copy=spot_copy,
             url_to_finish_spot=url
@@ -112,7 +103,8 @@ def spotTextForReading(request, spot_key=None):
 @as_json
 def finishReadingSpotCopy(request, spot_copy_key=None):
     dow, hour, slot = _get_slot_from_request(request)
-        
+    
+    # Check if a single spot constraint exists for the dow, hour, slot.
     q = (models.SpotConstraint.all()
                     .filter("dow =", dow)
                     .filter("hour =", hour)
@@ -127,8 +119,10 @@ def finishReadingSpotCopy(request, spot_copy_key=None):
                                                                     dow, hour, slot))
     
     constraint = AutoRetry(q).fetch(1)[0]
+
     spot_copy = AutoRetry(models.SpotCopy).get(spot_copy_key)
-    
+
+    # Check if spot has already been read (i.e., logged).
     today = time_util.chicago_now().date()
     q = (models.TrafficLogEntry.all()
                     .filter("log_date =", today)
@@ -140,16 +134,11 @@ def finishReadingSpotCopy(request, spot_copy_key=None):
         existing_logged_spot = AutoRetry(q).fetch(1)[0]
         raise RuntimeError("This spot %r at %r has already been read %s" % (
                     spot_copy.spot, constraint, existing_logged_spot.reader))
-    
-    # Pop off spot copy from spot's shuffled list of spot copies.
-    spot_copy.spot.random_spot_copies.pop(0)
-    
-    # If shuffled spot copy list is empty, regenerate.
-    if len(spot_copy.spot.random_spot_copies) == 0:
-        _shuffle_spot_copies(spot_copy.spot, spot_copy)
-        
-    AutoRetry(spot_copy.spot).save()
-    
+
+    # Remove spot copy from the spot's list.
+    spot_copy.spot.finish_spot_copy()
+	
+    # Log spot read.
     logged_spot = models.TrafficLogEntry(
         log_date = today,
         spot = spot_copy.spot,
@@ -220,8 +209,7 @@ def createEditSpotCopy(request, spot_copy_key=None, spot_key=None):
             spot_copy.spot = AutoRetry(models.Spot).get(spot_copy_form['spot_key'].data)
             
             # Add spot copy to spot's list of shuffled spot copies.
-            spot_copy.spot.random_spot_copies.append(spot_copy.key())
-            AutoRetry(spot_copy.spot).save()
+            spot_copy.spot.add_spot_copy(spot_copy)
             AutoRetry(spot_copy).put()
             
             return HttpResponseRedirect(reverse('traffic_log.listSpots'))
@@ -484,28 +472,3 @@ def _get_slot_from_request(request):
     if slot not in constants.SLOT:
         raise ValueError("dow value %r is out of range" % slot)
     return dow, hour, slot
-
-def _shuffle_spot_copies(spot, prev_spot_copy=None):
-    # Shuffle list of spot copy keys associates with the spot.
-    spot_copies = [spot_copy.key() for spot_copy in spot.all_spot_copy()]
-    random.shuffle(spot_copies)
-
-    # Get spot copies that have been read in the last period (two hours).
-    date = datetime.datetime.now().date() - datetime.timedelta(hours=2)
-    query = models.TrafficLogEntry.all().filter('log_date >=', date)
-    recent_spot_copies = []
-    for entry in query:
-        recent_spot_copies.append(entry.spot_copy.key())
-    
-    # Iterate through list, moving spot copies that have been read in the past period to the
-    # end of the list.
-    for i in range(len(spot_copies)):
-        if spot_copies[0] in recent_spot_copies:
-            spot_copies.append(spot_copies.pop(0))
-    
-    # If all spot copies were read in the last period, the first item in the new shuffled list
-    # may by chance be the last one read. If so, move to the end.
-    if prev_spot_copy and spot_copies[0] == prev_spot_copy.key():
-        spot_copies.append(spot_copies.pop(0))
-        
-    spot.random_spot_copies = spot_copies

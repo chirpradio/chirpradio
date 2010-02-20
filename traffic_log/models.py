@@ -107,15 +107,77 @@ class Spot(db.Model):
         for c in AutoRetry(q):
             active_spots.append(c)
         return active_spots
-    
-    @property
-    def copy_at_random(self):
-        possible_copy = self.all_spot_copy()
-        if len(possible_copy) == 0:
-            raise ValueError("Spot %r of type %r does not have any copy associated with it" % (
-                                                                            self.title, self.type))
-        return random.choice(possible_copy)
-    
+
+    def add_spot_copy(self, spot_copy):
+        self.random_spot_copies.append(spot_copy.key())
+        AutoRetry(self).save()
+
+    def shuffle_spot_copies(self, prev_spot_copy=None):
+        # Shuffle list of spot copy keys associated with this spot.
+        spot_copies = [spot_copy.key() for spot_copy in self.all_spot_copy()]
+        random.shuffle(spot_copies)
+
+        # Get spot copies that have been read in the last period (two hours).
+        date = datetime.datetime.now().date() - datetime.timedelta(hours=2)
+        query = TrafficLogEntry.all().filter('log_date >=', date)
+        recent_spot_copies = []
+        for entry in query:
+            recent_spot_copies.append(entry.spot_copy.key())
+		
+        # Iterate through list, moving spot copies that have been read in the past period to the
+        # end of the list.
+        for i in range(len(spot_copies)):
+            if spot_copies[0] in recent_spot_copies:
+                spot_copies.append(spot_copies.pop(0))
+		
+        # If all spot copies were read in the last period, the first item in the new shuffled list
+        # may by chance be the last one read. If so, move to the end.
+        if prev_spot_copy and spot_copies[0] == prev_spot_copy:
+            spot_copies.append(spot_copies.pop(0))
+            
+        self.random_spot_copies = spot_copies
+
+    def get_spot_copy(self, dow, hour, slot):
+        spot_copy = None
+        is_logged = False
+
+        # If random spot copy list for this spot is empty, fill and shuffle.
+        if len(self.random_spot_copies) == 0:
+            self.shuffle_spot_copies()
+            AutoRetry(self).save()
+        
+        # Return previous spot copy, or next random one.
+        if len(self.random_spot_copies) > 0:
+            today = time_util.chicago_now().date()
+            q = (TrafficLogEntry.all()
+                    .filter("log_date =", today)
+                    .filter("spot =", self)
+                    .filter("dow =", dow)
+                    .filter("hour =", hour)
+                    .filter("slot =", slot))
+                    
+            # Spot copy exists for dow, hour, and slot. Return it.
+            if AutoRetry(q).count(1):
+                existing_logged_spot = AutoRetry(q).fetch(1)[0]
+                spot_copy = existing_logged_spot.spot_copy
+                is_logged = True
+                
+            # Return next random spot copy.
+            else:
+                spot_copy = AutoRetry(db).get(self.random_spot_copies[0])
+                
+        return spot_copy, is_logged
+
+    def finish_spot_copy(self):
+        # Pop off spot copy from this spot's shuffled list of spot copies.
+        spot_copy = self.random_spot_copies.pop(0)
+        
+        # If shuffled spot copy list is empty, regenerate.
+        if len(self.random_spot_copies) == 0:
+            self.shuffle_spot_copies(spot_copy)
+            
+        AutoRetry(self).save()
+
     @property
     def constraints(self):
         return SpotConstraint.gql("where spots =:1 order by dow, hour, slot", self.key())
