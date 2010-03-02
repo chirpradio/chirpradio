@@ -1,4 +1,4 @@
-{% extends "common/base.html" %}
+{% extends 'common/internal_page.html' %}
 {% load playlists_extras %}
 
 {% block extrastyle %}
@@ -16,12 +16,10 @@
     src="/media/playlists/js/playlists.js"></script>
 {% endblock %}
 
-{% block page_content %}
+{% block content %}
 
 <div id="playlist"> <!-- site wrapper -->
 <div id="form-column"> <!-- form column -->
-
-<h1>CHIRPradio DJ Playlist Tracking Application</h1>
 
 <form method="post" id="playlist-form" action="{% url playlists_add_event %}">
 <fieldset>
@@ -63,11 +61,7 @@
 <input type="submit" class="button" name="submit" value="Add Break" />
 <!--<input type="submit" class="button" name="populate" value="Fill form via Traktor" />-->
 
-<ul>
-    <li><a id="lookup-on-musicbrainz" href="http://musicbrainz.org/search/textsearch.html" target="_blank">Look this song or album up on MusicBrainz</a></li>
-    <li><a id="lookup-album-on-google" href="http://google.com/search" target="_blank">Search for this album on Google</a></li>
-    <li><a id="pronounce-artist" href="http://google.com/search" target="_blank">See how to pronounce artist name</a></li>
-</ul>
+<a id="lookup-on-musicbrainz" href="http://musicbrainz.org/search/textsearch.html" target="_blank">Look this up on MusicBrainz</a>
 
 </fieldset>
 </form>

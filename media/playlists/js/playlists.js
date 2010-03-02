@@ -83,25 +83,4 @@ $(document).ready(function() {
         
         this.href = url + '?' + qs;
     });
-    
-    $('#lookup-album-on-google').click(function(e) {
-        var url = 'http://google.com/search';
-        var artist = $('#id_artist').val();
-        var album = $('#id_album').val();
-        if ( !artist && !album ) {
-            e.preventDefault();
-            return;
-        }
-        this.href = url + '?q=' + escape(artist + " " + album);
-    });
-    
-    $('#pronounce-artist').click(function(e) {
-        var url = 'http://google.com/search';
-        var artist = $('#id_artist').val();
-        if ( !artist ) {
-            e.preventDefault();
-            return;
-        }
-        this.href = url + '?q=' + escape(artist + " pronounced");
-    });
 });
