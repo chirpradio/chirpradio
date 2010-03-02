@@ -1,4 +1,4 @@
-#content { width: 960px; margin: 10px auto; position: relative; }
+#content { width: 800px; margin: 10px auto; position: relative; }
 
 ul#nav { padding: 0; }
 ul#nav li { float: left; display: inline; }
@@ -10,7 +10,7 @@ ul#nav li.new a { -webkit-border-top-right-radius:3px; -webkit-border-bottom-rig
 input#refresh-button { background: #009438 url(../../common/img/gradient-white-small.png) left top repeat-x; padding: 3px; color: #fff; border: 1px solid #009438; -webkit-border-radius:3px; -moz-border-radius:3px; border-radius:3px; font-weight: bold; font-size: 1.2em; position: absolute; top: 24px; right: 0; }
 input#refresh-button:hover { cursor: pointer; background-color: #2a2a2a; border-color: #2a2a2a; color: #ff0; }
 
-table { width: 960px; }
+table { width: 800px; }
 tr.new { background: #fff; }
 th, td { border-bottom: none; padding: 8px 10px; }
 th, tr.new td { font-size: 1.1em; padding: 12px 10px 11px; }
@@ -29,11 +29,11 @@ a.finish-spot:hover, tr.new a.show-text-for-reading:hover { background-color: #2
 
 .jqmOverlay { background-color: #000; }
 
-.spot_detail_for_reading { width: 900px; font-size: 3.5em; line-height: 1.4em; padding-top: 10px; font-family: Georgia; }
+.spot_detail_for_reading { width: 740px; font-size: 3.5em; line-height: 1.4em; padding-top: 10px; font-family: Georgia; }
 
 a.jqmClose { position: absolute; top: 0; right: 0; font-size: .35em; line-height: 1em; margin: 15px 15px 0 0; background: #ec0035 url(../../common/img/gradient-white-small.png) left top repeat-x; border: 1px solid #ec0035; font-weight: bold; color: #fff; padding: 2px 5px 3px; -webkit-border-radius:2px; -moz-border-radius:2px; border-radius:2px; font-family: "Lucida Grande",Verdana,Arial,sans-serif; }
 
 a.jqmClose:hover { background-color: #2a2a2a; border-color: #2a2a2a; color: #ff0; }
 
-#modal-container { background: #fff; padding: 30px; display: none; position: absolute; top: 0; width: 900px; margin: 0 auto 100px; -webkit-border-
+#modal-container { background: #fff; padding: 30px; display: none; position: absolute; top: 0; width: 740px; margin: 0 auto 100px; -webkit-border-
 radius:10px; -moz-border-radius:10px; border-radius:10px; box-shadow: 0px 0px 35px #000; -moz-box-shadow: 0px 0px 35px #000; -webkit-box-shadow: 0px 0px 35px #000; }

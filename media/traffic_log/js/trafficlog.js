@@ -69,6 +69,7 @@ $(document).ready(function() {
         var anchor = this;
         var tr = $(anchor).parent().parent(); // a->td->tr
         ns.handle_finish_spot(anchor, tr);
+        $(this).remove();
     });
     
     // sigh. this is all necessary to override the image paths:
