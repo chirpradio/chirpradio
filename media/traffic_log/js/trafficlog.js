@@ -64,12 +64,12 @@ $(document).ready(function() {
         
 //    });
     
-    $(".finish-spot").click(function(e) {
+    $(".finish-spot-after-reading").click(function(e) {
         e.preventDefault();
         var anchor = this;
-        var tr = $(anchor).parent().parent(); // a->td->tr
         ns.handle_finish_spot(anchor, tr);
-        $(this).remove();
+        $("#modal-container").jqmClose();
+        $(this).unbind("click", onclick);
     });
     
     // sigh. this is all necessary to override the image paths:
