@@ -30,9 +30,24 @@ $(document).ready(function() {
     // });
     
     $('#modal-container').jqm({
-      ajax: '@href',
-      overlay: 75,
-      trigger: '.show-text-for-reading'
+        ajax: '@href',
+        overlay: 75,
+        modal: true,
+        trigger: '.show-text-for-reading',
+        onLoad: function(hash) {
+            var tr = $(hash.t).parent().parent(); // a->td->tr
+            // temporarily bind this function to the 
+            // anchor in the popover window. then unbind it 
+            // after it fires.
+            var onclick = function(e) {
+                e.preventDefault();
+                var anchor = this;
+                ns.handle_finish_spot(anchor, tr);
+                hash.w.jqmHide();
+                $(this).unbind("click", onclick);
+            };
+            $(".finish-spot-after-reading").click(onclick);
+        }
     });
     
 //    $(".show-text-for-reading").click(function(e) {
@@ -64,13 +79,6 @@ $(document).ready(function() {
         
 //    });
     
-    $(".finish-spot-after-reading").click(function(e) {
-        e.preventDefault();
-        var anchor = this;
-        ns.handle_finish_spot(anchor, tr);
-        $("#modal-container").jqmClose();
-        $(this).unbind("click", onclick);
-    });
     
     // sigh. this is all necessary to override the image paths:
 //    $.extend($.facebox.settings, {
