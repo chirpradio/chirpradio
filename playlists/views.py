@@ -167,7 +167,7 @@ def report_playlist(request):
     # default report
     if request.method == 'GET':
         to_date = datetime.now().date()
-        from_date = to_date - timedelta(days=7)
+        from_date = to_date - timedelta(days=1)
         items = query_group_by_track_key(from_date, to_date)
 
         # default form
