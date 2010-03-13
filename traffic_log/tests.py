@@ -533,7 +533,7 @@ class TestTrafficLogReport(FormTestCaseHelper, DjangoTestCase):
         })
         self.assertNoFormErrors(response)
         
-        self.assertEquals(response['Content-Type'], 'text/csv')
+        self.assertEquals(response['Content-Type'], 'text/csv; charset=utf-8')
         
         report = csv.reader(StringIO(response.content))
         self.assertEquals(

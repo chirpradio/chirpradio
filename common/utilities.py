@@ -59,8 +59,7 @@ def http_send_csv_file(fname, fields, items):
         return [as_encoded_str(i[key], encoding='utf8') for key in fields]
 
     # use response obj to set filename of downloaded file
-    response = HttpResponse(mimetype='text/csv')
-    # TODO(Kumar) mark encoding as UTF-8?
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = "attachment; filename=%s.csv" % (fname)
 
     # write data out
