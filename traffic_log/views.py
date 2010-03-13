@@ -447,7 +447,7 @@ def report(request):
                 for entry in AutoRetry(query):
                     entries.append(report_entry_to_csv_dict(entry))
             if request.POST.get('download'):
-                fields = ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'exerpt']
+                fields = ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'excerpt']
                 fname = "chirp-traffic_log_%s_%s" % (report_form.cleaned_data['start_date'],
                                                      report_form.cleaned_data['end_date'])
                 return http_send_csv_file(fname, fields, entries)
@@ -467,7 +467,7 @@ def report_entry_to_csv_dict(entry):
         'slot_time': entry.scheduled.readable_slot_time,
         'title': entry.spot.title,
         'type': entry.spot.type,
-        'exerpt': entry.spot_copy.body[:140]
+        'excerpt': entry.spot_copy.body[:140]
     }
 
 def box(thing):

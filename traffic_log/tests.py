@@ -602,7 +602,7 @@ class TestTrafficLogReport(FormTestCaseHelper, DjangoTestCase):
         
         report = csv.reader(StringIO(response.content))
         self.assertEquals(
-            ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'exerpt'],
+            ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'excerpt'],
             report.next())
         row = report.next()
         
