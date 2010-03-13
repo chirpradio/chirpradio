@@ -29,6 +29,6 @@ urlpatterns = patterns('',
      'traffic_log.views.deleteSpotConstraint'),
     # kumar: commenting this out for now since the view function doesn't exist 
     # (r'^generate/(\d{4})/(\d{2})/(\d{2})','traffic_log.views.generateTrafficLog'),
-    (r'^report/?$', 'traffic_log.views.report')
+    url(r'^report/?$', 'traffic_log.views.report', name='traffic_log.report')
     )
 

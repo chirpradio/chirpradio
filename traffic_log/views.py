@@ -458,7 +458,7 @@ def report(request):
                                     'title': entry.spot.title,
                                     'type': entry.spot.type,
                                     'exerpt': entry.spot_copy.body[:140]})
-            if request.POST.get('Download'):
+            if request.POST.get('download'):
                 fields = ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'exerpt']
                 fname = "chirp-traffic_log_%s_%s" % (report_form.cleaned_data['start_date'],
                                                      report_form.cleaned_data['end_date'])
@@ -468,8 +468,7 @@ def report(request):
         start_date = end_date - datetime.timedelta(days=30)
         report_form = forms.ReportForm({'start_date': start_date, 'end_date': end_date})
     return render_to_response('traffic_log/report.html', 
-                              {'report_form': report_form,
-                               'entries': entries},
+                              {'form': report_form},
                               context_instance=RequestContext(request))
 
 def box(thing):

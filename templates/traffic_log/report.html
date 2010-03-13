@@ -1,0 +1,19 @@
+{% extends 'traffic_log/base.html' %}
+{% load traffic_log_extras %}
+
+{% block title %}
+Traffic Log Report
+{% endblock %}
+
+{% block contents %}
+<p>Download report of Traffic Log activity</p>
+<table>
+<form action="{% url traffic_log.report %}" method="post">
+{{ form.as_table }}
+<tr>
+  <td></td>
+  <td><input type="submit" name="download" id="download" value="Download CSV" /></td>
+</tr>
+</form>
+</table>
+{% endblock %}
