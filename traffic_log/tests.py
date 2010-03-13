@@ -18,6 +18,9 @@ import os
 import time
 import unittest
 import datetime
+from datetime import timedelta
+import csv
+from StringIO import StringIO
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase as DjangoTestCase
@@ -466,4 +469,80 @@ class TrafficLogTestCase(unittest.TestCase):
     def test_spot_constraint_delete(self):
         pass
 
+    
+class TestTrafficLogReport(FormTestCaseHelper, DjangoTestCase):
+    
+    def setUp(self):
+        self.client.login(email="test@test.com", roles=[roles.TRAFFIC_LOG_ADMIN])
+        
+        author = User(email='test')
+        author.save()
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID', 
+                        author=author)
+        self.spot = spot
+        spot.put()
+        
+        # make a constraint closest to now:
+        now = time_util.chicago_now()
+        today = now.date()
+        current_hour = now.hour
+        
+        dow = today.isoweekday()
+        self.dow = dow
+        hour = current_hour
+        slot = 0
+        
+        constraint = models.SpotConstraint(
+            dow=dow, hour=hour, slot=slot, spots=[spot.key()])
+        constraint.put()
+        spot_copy = models.SpotCopy(
+                        body='You are listening to chirpradio.org',
+                        spot=spot,
+                        author=author)
+        self.spot_copy = spot_copy
+        spot_copy.put()
+        spot.random_spot_copies = [spot_copy.key()]
+        spot.save()
+        
+        logged_spot = models.TrafficLogEntry(
+            log_date = today,
+            spot = spot_copy.spot,
+            spot_copy = spot_copy,
+            dow = dow,
+            hour = hour,
+            slot = slot,
+            scheduled = constraint,
+            readtime = time_util.chicago_now(), 
+            reader = author
+        )
+        logged_spot.put()
+    
+    def test_download_report_of_all_spots(self):
+        
+        from_date = datetime.date.today() - timedelta(days=1)
+        to_date = datetime.date.today() + timedelta(days=1)
+        
+        response = self.client.post(reverse('traffic_log.report'), {
+            'start_date': from_date,
+            'end_date': to_date,
+            'type': constants.SPOT_TYPE_CHOICES[0], # all
+            'underwriter': '',
+            'download': 'Download'
+        })
+        self.assertNoFormErrors(response)
+        
+        self.assertEquals(response['Content-Type'], 'text/csv')
+        
+        report = csv.reader(StringIO(response.content))
+        self.assertEquals(
+            ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'exerpt'],
+            report.next())
+        row = report.next()
+        
+        self.assertEquals(row[1], constants.DOW_DICT[self.dow])
+        self.assertEquals(row[4], self.spot.title)
+        self.assertEquals(row[5], self.spot.type)
+        self.assertEquals(row[6], self.spot_copy.body)
 
