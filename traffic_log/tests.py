@@ -437,6 +437,16 @@ class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
         resp = self.client.get(reverse('traffic_log.index'))
         # finished spot should have been marked in static HTML:
         assert '<tr class="finished">' in resp.content
+        
+        resp = self.client.get(reverse('traffic_log.spotTextForReading', args=(spot.key(),)), {
+            'hour': constraint.hour,
+            'dow': constraint.dow,
+            'slot': constraint.slot
+        })
+        context = resp.context
+        # already finished, no need for finish URL:
+        self.assertEqual(context['url_to_finish_spot'], None)
+        assert '(already finished)' in resp.content
     
 class TrafficLogTestCase(unittest.TestCase):
     
