@@ -240,6 +240,61 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         self.assertEqual([c.underwriter for c in spot_copy], [None, 'another underwriter'])
         self.assertEqual([c.author.email for c in spot_copy], ['test', 'test@test.com'])
     
+    def test_random_spot_copy_during_creation_and_after_finishing(self):
+        author = User(email='test')
+        author.save()
+        spot = models.Spot(
+                        title='PSA',
+                        type='Live Read PSA')
+        spot.put()
+        first_constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        first_constraint.put()
+        second_constraint = models.SpotConstraint(dow=1, hour=1, slot=0, spots=[spot.key()])
+        second_constraint.put()
+        
+        psa_copy = ['check out our store', 'turn off the stream', 'sharkula is the greatest']
+        for body in psa_copy:
+            resp = self.client.post(spot.get_add_copy_url(), {
+                'underwriter': '',
+                'expire_on': '',
+                'body': body,
+                'spot_key': spot.key()
+            })
+            self.assertNoFormErrors(resp)
+            self.assertEqual(resp.status_code, 302)
+        
+        def get_read_context(constraint):
+            resp = self.client.get(reverse('traffic_log.spotTextForReading', args=(spot.key(),)), {
+                'hour': constraint.hour,
+                'dow': constraint.dow,
+                'slot': constraint.slot
+            })
+            self.assertEqual(resp.status_code, 200)
+            context = resp.context
+            return context
+        
+        first_random_copy = get_read_context(first_constraint)['spot_copy'].body
+        assert first_random_copy in psa_copy
+        # each subsequent reading should show the same:
+        self.assertEqual(get_read_context(first_constraint)['spot_copy'].body, first_random_copy)
+        self.assertEqual(get_read_context(first_constraint)['spot_copy'].body, first_random_copy)
+        
+        resp = self.client.get(get_read_context(first_constraint)['url_to_finish_spot'])
+        self.assertEqual(resp.status_code, 200)
+        logged = models.TrafficLogEntry.all().fetch(1)[0]
+        self.assertEqual(logged.spot.key(), spot.key())
+        
+        # after finishing, copy should be the same for the first slot:
+        next_random_copy = get_read_context(first_constraint)['spot_copy'].body
+        self.assertEqual(next_random_copy, first_random_copy)
+        # but cannot be finished:
+        self.assertEqual(get_read_context(first_constraint)['url_to_finish_spot'], None)
+        
+        # after finishing, copy should be DIFFERENT for the next slot:
+        next_random_copy = get_read_context(second_constraint)['spot_copy'].body
+        self.assertNotEqual(next_random_copy, first_random_copy)
+        self.assertNotEqual(get_read_context(second_constraint)['url_to_finish_spot'], None)
+    
     def test_make_spot_copy_expire(self):
         spot = models.Spot(
                         title='Legal ID',
@@ -361,7 +416,7 @@ class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
     def tearDown(self):
         clear_data()
     
-    def test_view_spot_for_reading(self):
+    def test_view_spot_for_reading_basic(self):
         author = User(email='test')
         author.save()
         spot = models.Spot(
