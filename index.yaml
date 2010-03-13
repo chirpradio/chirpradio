@@ -83,3 +83,13 @@ indexes:
   properties:
   - name: spot
   - name: expire_on
+
+- kind: TrafficLogEntry
+  properties:
+  - name: spot.type
+  - name: log_date
+
+- kind: TrafficLogEntry
+  properties:
+  - name: type
+  - name: log_date

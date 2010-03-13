@@ -14,6 +14,7 @@ $(document).ready(function() {
             success: function(data, textStatus) {
                 tr.removeClass("new");
                 tr.addClass("finished");
+                window.location = "/traffic_log/";
             },
             error: function (XMLHttpRequest, textStatus, errorThrown) {
                 alert("Whoops, there was an error on the server. An email has been sent to the admins so sit tight or try again.");
