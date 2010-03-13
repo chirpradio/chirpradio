@@ -442,22 +442,10 @@ def report(request):
                 for entry in AutoRetry(query):
                     if (not filter_type or entry.spot.type == report_form.cleaned_data['type']) \
                        and (not filter_underwriter or entry.spot_copy.underwriter == report_form.cleaned_data['underwriter']):
-                       entries.append({'readtime': entry.readtime,
-                                       'dow': constants.DOW_DICT[entry.dow],                                       
-                                       'underwriter': entry.spot_copy.underwriter,
-                                       'slot_time': entry.scheduled.readable_slot_time,
-                                       'title': entry.spot.title,
-                                       'type': entry.spot.type,
-                                       'exerpt': entry.spot_copy.body[:140]})
+                       entries.append(report_entry_to_csv_dict(entry))
             else:
                 for entry in AutoRetry(query):
-                    entries.append({'readtime': entry.readtime,
-                                    'dow': constants.DOW_DICT[entry.dow],
-                                    'slot_time': entry.scheduled.readable_slot_time,
-                                    'underwriter': entry.spot_copy.underwriter,
-                                    'title': entry.spot.title,
-                                    'type': entry.spot.type,
-                                    'exerpt': entry.spot_copy.body[:140]})
+                    entries.append(report_entry_to_csv_dict(entry))
             if request.POST.get('download'):
                 fields = ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'exerpt']
                 fname = "chirp-traffic_log_%s_%s" % (report_form.cleaned_data['start_date'],
@@ -470,6 +458,17 @@ def report(request):
     return render_to_response('traffic_log/report.html', 
                               {'form': report_form},
                               context_instance=RequestContext(request))
+
+def report_entry_to_csv_dict(entry):
+    return {    
+        'readtime': time_util.convert_utc_to_chicago(entry.readtime),
+        'dow': constants.DOW_DICT[entry.dow],                                       
+        'underwriter': entry.spot_copy.underwriter,
+        'slot_time': entry.scheduled.readable_slot_time,
+        'title': entry.spot.title,
+        'type': entry.spot.type,
+        'exerpt': entry.spot_copy.body[:140]
+    }
 
 def box(thing):
     if isinstance(thing,list):
