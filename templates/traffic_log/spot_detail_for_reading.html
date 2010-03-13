@@ -2,12 +2,14 @@
 <div class="spot_detail_for_reading">
 {% if spot_copy %}
 {{ spot_copy.body }}
-  {% if url_to_finish_spot %}
   <div id="spot-reading-buttons">
+    {% if url_to_finish_spot %}
     <a class="finish-spot-after-reading"
         href="{{ url_to_finish_spot }}">Finish</a>
+    {% else %}
+    (already finished)
+    {% endif %}
   </div>
-  {% endif %}
 {% else %}
 No spot copies have been associated with this spot.
 {% endif %}
