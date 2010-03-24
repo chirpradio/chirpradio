@@ -16,23 +16,24 @@
 ###
 
 from django import forms
+
 from djdb import models
 from common.autoretry import AutoRetry
 
 
 def new(album, user):
-    """Returns a new partially-initialized Document object for a review.
+    """Returns a new partially-initialized Document object for a comment.
 
-    The new Document is in the same entity group as the album being
-    reviewed.
+    The new Document is in the same entity group as the album for which a
+    comment is being written.
 
     Args:
-      album: The album being reviews.
-      user: The user writing the review.
+      album: The album being commented on.
+      user: The user writing the comment.
     """
     return models.Document(parent=album,
                            subject=album, author=user,
-                           doctype=models.DOCTYPE_REVIEW)
+                           doctype=models.DOCTYPE_COMMENT)
 
 
 class Form(forms.Form):
@@ -41,9 +42,9 @@ class Form(forms.Form):
 
 
 def fetch_recent(max_num_returned=10):
-    """Returns the most recent reviews, in reverse chronological order."""
+    """Returns the most recent comments, in reverse chronological order."""
     rev_query = models.Document.all()
-    rev_query.filter("doctype =", models.DOCTYPE_REVIEW)
+    rev_query.filter("doctype =", models.DOCTYPE_COMMENT)
     rev_query.order("-timestamp")
     return AutoRetry(rev_query).fetch(max_num_returned)
 

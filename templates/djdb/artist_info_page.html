@@ -1,5 +1,8 @@
 {% extends "common/internal_page.html" %}
 
+{% load common_extras %}
+{% load djdb_extras %}
+
 {% block breadcrumbs %}
 <a href="/">chipradio home</a> /
 <a href="/djdb/">DJ Database home</a>
@@ -7,26 +10,91 @@
 
 {% block content %}
 
+{% block extrahead %}
+<script type="text/javascript" 
+    src="/media/common/js/jquery/jquery-1.3.1.js"></script>
+<script type="text/javascript" 
+    src="/media/djdb/js/djdb.js"></script>
+{% endblock %}
+
 <p>
 This is the artist information page for <b>{{ artist.pretty_name }}</b>.
 It is still very primitive.
 </p>
 
+<p>
+{% if msg %}
+{{ msg }}
+{% endif %}
+</p>
+
+<p>
+<a href="/djdb/crate">Go to your crate.</a>
+</p>
+
 <h3>Albums by {{ artist.pretty_name }}</h3>
+
+{% if user.is_music_director %}
+<p>
+Select: <a id="checkbox_all" href="">All</a>,
+        <a id="checkbox_none" href="">None</a>,
+        <a id="checkbox_nocat" href="">No category</a>,
+  {% for category in categories %}
+    {% if not forloop.first %}, {% endif %}
+        <a id="checkbox_{{ category }}" href="">{{ category|replace:"/_/ "|capfirst }}</a>
+  {% endfor %}<br/>
+Mark selected as: <a id="mark_nocat" href="">No category</a>,
+  {% for category in categories %}
+    {% if not forloop.first %}, {% endif %}
+                  <a id="mark_{{ category }}" href="">{{ category|replace:"/_/ "|capfirst }}</a>
+  {% endfor %}
+</p>
+
+<form method="post" name="djdbForm" action="/djdb/album/change_categories">
+<input type="hidden" name="response_page" value="artist"/>
+<input type="hidden" name="artist_name" value="{{ artist.name }}"/>
+<input type="submit" value="Update Categories"/>
+{% endif %}
 <table>
 {% for album in artist.sorted_albums %}
-<tr>
-<td><a href="{{ album.url }}">{{ album.title }}</a></td>
-<td>
-{{ album.num_tracks }} track{{ album.num_tracks|pluralize }}
-</td>
-<td>
-{% if album.num_reviews %}
-{{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
-{% endif %}
-</td>
-</tr>
+  <tr>
+  {% if user.is_music_director %}
+    <td>
+      <input type="checkbox" class="checkbox {{ album.category|lower}}"
+             name="checkbox_{{ forloop.counter }}"/>
+    </td>
+    <td>
+      <input type="hidden" name="album_key_{{ forloop.counter }}" value="{{ album.key }}"/>
+      <select name="category_{{ forloop.counter }}">
+        <option value="none" {% ifequal album.category "none" %}selected="selected"{% endifequal %}>None</option>
+    {% for category in categories %}
+        <option value="{{ category }}" {% ifequal album.category category %}selected="selected"{% endifequal %}>{{ category|replace:"/_/ "|capfirst }}</option>
+    {% endfor %}
+      </select>
+    </td>
+  {% endif %}
+    <td><a href="{{ album.url }}">{{ album.title }}</a></td>
+    <td>
+      {{ album.num_tracks }} track{{ album.num_tracks|pluralize }}
+    </td>
+    <td>
+  {% if album.num_reviews %}
+    {{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
+  {% endif %}
+    </td>
+    <td>
+  {% ifincrate user album %}
+      <a href="/djdb/crate/remove_item?response_page=artist&user_key={{ user.key }}&item_key={{ album.key }}"><img src="/media/common/img/remove.png" alt="Remove Album from Crate" title="Remove from Crate"/></a>
+  {% else %}
+      <a href="/djdb/crate/add_item?response_page=artist&user_key={{ user.key }}&item_key={{ album.key }}"><img src="/media/common/img/add.png" alt="Add Album to Crate" title="Add to Crate"/></a>
+  {% endifincrate %}
+    </td>
+  </tr>
 {% endfor %}
 </table>
+{% if user.is_music_director %}
+<input type="submit" value="Update Categories"/>
+</form>
+{% endif %}
 
 {% endblock %}

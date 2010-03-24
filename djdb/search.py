@@ -499,8 +499,7 @@ def load_and_segment_keys(fetched_keys):
         val.sort(key=lambda x: x.sort_key)
     return segmented
 
-
-def simple_music_search(query_str, max_num_results=None, entity_kind=None):
+def simple_music_search(query_str, max_num_results=None, entity_kind=None, reviewed=False, user_key=None):
     """A simple free-form search well-suited for the music library.
 
     Args:
@@ -510,6 +509,8 @@ def simple_music_search(query_str, max_num_results=None, entity_kind=None):
         If None, all matches will be returned.
       entity_kind: An optional string.  If given, the returned keys are
         restricted to entities of that kind.
+      reviewed: Boolean indicating whether to return albums and tracks associated with albums that
+        have been reviewed.
 
     Returns:
       A dict mapping object types to lists of entities.
@@ -522,10 +523,48 @@ def simple_music_search(query_str, max_num_results=None, entity_kind=None):
         return None
 
     # Next, filter out all tracks that do not have a title match.
+    # Also filter reviewed albums.
     filtered = []
     recordcount = 0
     for key, fields in all_matches.iteritems():
-        if key.kind() != "Track" or "title" in fields:
+        filter = True
+        if key.kind() == "Track" :
+            album = AutoRetry(db).get(key).album
+            if reviewed and len(album.reviews) == 0:
+                filter = False
+            elif reviewed and user_key:
+                filter = False
+                for review in album.reviews :
+                    if str(review.author.key()) == user_key :
+                        filter = True
+                        break
+                        
+        elif key.kind() == "Album" :
+            album = AutoRetry(db).get(key)
+            if reviewed and len(album.reviews) == 0:
+                filter = False
+            elif reviewed and user_key:
+                filter = False
+                for review in album.reviews :
+                    if str(review.author.key()) == user_key :
+                        filter = True
+                        break
+            
+        elif key.kind() == "Artist" :
+            artist = AutoRetry(db).get(key)
+            if reviewed:
+                filter = False
+                for album in models.Album.all().filter("album_artist =", artist) :
+                    if len(album.reviews) != 0:
+                        if user_key:
+                            for review in album.reviews:
+                                if str(review.author.key()) == user_key:
+                                    filter = True
+                                    break
+                        else:
+                            filter = True
+                
+        if filter and (key.kind() != "Track" or "title" in fields):
             recordcount += 1
             # If we got too many matches, throw some away.
             if max_num_results and recordcount > max_num_results:

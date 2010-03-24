@@ -1,5 +1,7 @@
 {% extends "common/internal_page.html" %}
 
+{% load djdb_extras %}
+
 {% block breadcrumbs %}
 <a href="/">chipradio home</a> /
 <a href="/djdb/">DJ Database home</a>
@@ -7,10 +9,27 @@
 
 {% block content %}
 
+{% block extrahead %}
+<script type="text/javascript" 
+    src="/media/common/js/jquery/jquery-1.3.1.js"></script>
+<script type="text/javascript" 
+    src="/media/djdb/js/djdb.js"></script>
+{% endblock %}
+
 <p>
 This is the album information page for <b>{{ album.title }}</b> by
 <a href="{{ album.artist_url }}">{{ album.artist_name }}</a>.
 It is still very primitive.
+</p>
+
+<p>
+{% if msg %}
+{{ msg }}
+{% endif %}
+</p>
+
+<p>
+<a href="/djdb/crate">Go to your crate.</a>
 </p>
 
 {% if album.current_tags %}
@@ -21,39 +40,89 @@ It is still very primitive.
 {% endif %}
 
 <h3>Tracks</h3>
+<form method="post" name="djdbTracksForm" action="update_tracks">
+<p>
+Select: <a id="checkbox_all" href="">All</a>, 
+        <a id="checkbox_none" href="">None</a>, 
+        <a id="checkbox_explicit" href="">Explicit</a>, 
+        <a id="checkbox_recommended" href=" ">Recommended</a><br/>
+Mark/Unmark selected as: <a id="mark_explicit" href="update_tracks">Explicit</a>, 
+                         <a id="mark_recommended" href="update_tracks">Recommended</a>
+</p>
+<input type="hidden" name="mark_as"/>
 <table>
 {% for track in album.sorted_tracks %}
-<tr
-{% if track.is_explicit %}style="color: red;"{% endif %}
->
+<tr>
+<td><input type="checkbox"
+            class="checkbox{% if track.is_explicit %} explicit{% endif %}{% if track.is_recommended %} recommended{% endif %}"
+            name="checkbox_{{ forloop.counter }}"/></td>
+<td>
+{% if track.is_explicit %}<img height="16" width="16" src="/media/common/img/bomb.png"/>{% endif %}
+{% if track.is_recommended %}<img height="16" width="16" src="/media/common/img/thumbsup.jpg"/>{% endif %}
+</td>
 <td>{{ track.track_num }}.</td>
 <td>{{ track.title }}</td>
 <td>{{ track.duration }}</td>
 <td><small>{{ track.bit_rate_kbps }} kbps</small></td>
 <td>
 {% for tag in track.sorted_current_tags %}
+  {% ifnotequal tag 'explicit' %}
+    {% ifnotequal tag 'recommended' %}
 [{{tag}}]
+    {% endifnotequal %}
+  {% endifnotequal %}
 {% endfor %}
+</td>
+<td>
+{% ifincrate user track %}
+<a href="/djdb/crate/remove_item?response_page=album&item_key={{ track.key }}"><img src="/media/common/img/remove.png" alt="Remove Track from Crate" title="Remove Track from Crate"/></a>
+{% else %}
+<a href="/djdb/crate/add_item?response_page=album&item_key={{ track.key }}"><img src="/media/common/img/add.png" alt="Add Track to Crate" title="Add Track to Crate"/></a>
+{% endifincrate %}
 </td>
 </tr>
 {% endfor %}
 </table>
+</form>
 
 <h3>Reviews</h3>
 {% if album.reviews %}
 <a href="new_review">Write another review</a> of this album.
-{% for doc in album.reviews %}
+  {% for doc in album.reviews %}
 <p>
-<b>{{ doc.title }}</b><br>
-<i>By {{ doc.author }}</i><br>
-<small>Added {{ doc.timestamp_display|date:"F j, Y P" }}</small><br>
+<blockquote>
 {{ doc.text|safe }}
+</blockquote>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author }} on {{ doc.timestamp_display|date:"F j, Y P" }}</small>
+  {% ifequal user.key doc.author.key %}
+[ <a href="edit_review/{{ doc.key }}">Edit</a> ]
+  {% endifequal %}
 </p>
-{% endfor %}
+  {% endfor %}
 {% else %}
 No reviews yet!  You could be the first to
 <a href="new_review">write a review</a> of this album.
 {% endif %}
 
+{% if album.reviews %}
+<h3>Comments</h3>
+  {% if album.comments %}
+<a href="new_comment">Write another comment</a> about this album.
+    {% for doc in album.comments %}
+<p>
+<blockquote>
+{{ doc.text|safe }}
+</blockquote>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author }} on {{ doc.timestamp_display|date:"F j, Y P" }}</small>
+    {% ifequal user.key doc.author.key %}
+[ <a href="edit_comment/{{ doc.key }}">Edit</a> ]
+    {% endifequal %}
+</p>
+    {% endfor %}
+  {% else %}
+No comments yet!  You could be the first to
+<a href="new_comment">write a comment</a> about this album.
+  {% endif %}
+{% endif %}
 
 {% endblock %}

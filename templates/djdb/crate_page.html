@@ -1,0 +1,115 @@
+{% extends "common/internal_page.html" %}
+
+{% load djdb_extras %}
+
+{% block breadcrumbs %}
+<a href="/">chipradio home</a> /
+<a href="/djdb/">DJ Database home</a>
+{% endblock %}
+
+{% block content %}
+
+{% block extrastyle %}
+<link rel="stylesheet" href="/media/djdb/djdb.css"/>
+{% endblock %}
+
+{% block extrahead %}
+<script type="text/javascript" src="/media/common/js/jquery-ui/jquery-1.3.2.min.js"></script>
+<script type="text/javascript" src="/media/common/js/jquery-ui/jquery-ui-1.7.2.custom.min.js"></script>
+<script type="text/javascript" src="/media/djdb/js/djdb.js"></script>
+<script type="text/javascript" src="/media/djdb/js/djdb_crate.js"></script>
+{% endblock %}
+
+<p>
+This is the crate page for <b>{{ user }}</b>.
+</p>
+
+<div id="reorder"></div>
+
+<div id="crate">
+  <div id="add-crate-item-column">
+    <form method="post" action="/djdb/crate/add_item">
+      <label for="artist">Artist</label>
+      <input id="id_artist" type="text" name="artist" />
+
+      <p/>
+      <label for="song">Song Title</label>
+      <input id="id_song" type="text" name="track" />
+
+      <p/>
+      <label for="album">Album</label>
+      <input id="id_album" type="text" name="album" />
+
+      <p/>
+      <label for="label">Label</label>
+      <input id="id_label" type="text" name="label" />
+
+      <p/>
+      <label for="song_notes">Song Notes</label>
+      <textarea id="id_song_notes" rows="10" cols="40" name="song_notes"></textarea>
+
+      <p/>
+      <input type="submit" class="button" name="save" value="Save To Crate" />
+    </form>
+  </div>
+  
+  <div id="crate-items-column">
+{% if crate_items %}
+    <ul id="sortable">
+  {% for item in crate_items %}
+      <li id="item_{{ forloop.counter }}" class="ui-state-default">
+    {% ifequal item.kind 'Artist' %}
+        <img src="/media/common/img/artist.png" alt="An artist" title="An artist"/>
+        {{ item }}
+        <a href="{{ item.url }}" alt="Go to artist." title="Go to artist."><img src="/media/common/img/link.png"/></a>
+    {% else %}
+      {% ifequal item.kind 'Album' %}
+        <img src="/media/common/img/album.png" alt="An album" title="An album"/>
+        {{ item.album_artist }} / {{ item }}
+        <a href="{{ item.url }}" alt="Go to album." title="Go to album."><img src="/media/common/img/link.png"/></a>
+      {% else %}
+        {% ifequal item.kind 'Track' %}
+        <img src="/media/common/img/track.png" alt="A track" title="A track"/>
+        {{ item.album.album_artist }} / {{ item.album }} / {{ item }}
+        <a href="{{ item.album.url }}" alt="Go to track." title="Go to track."><img src="/media/common/img/link.png"/></a>
+        {% else %}
+          {% ifequal item.kind 'CrateItem' %}
+        <img src="/media/common/img/track.png" alt="A track" title="A track"/>
+        {{ item.artist }} / {{ item.album }} / {{ item.track }}
+          {% else %}
+        Unrecognized item.
+          {% endifequal %}
+        {% endifequal %}
+      {% endifequal %}
+    {% endifequal %}
+        <span>
+          <a href=""><img src="/media/common/img/play.png" alt="Send to Playlist" title="Send to Playlist"/></a>
+          <a href="/djdb/crate/remove_item?response_page=crate&item_key={{ item.key }}"><img src="/media/common/img/remove.png" alt="Remove Item from Crate" title="Remove Item from Crate"/></a>
+        </span>
+      </li>
+  {% endfor %}
+    </ul>
+{% else %}
+    There are no items in your crate.
+{% endif %}
+  </div>
+</div>
+
+<div id="dialog" title="Add Crate Item">
+	<p id="validateTips">Please fill in at least one field.</p>
+
+	<form>
+	<fieldset>
+		<label for="artist">Artist</label>
+		<input type="text" name="artist" id="id_artist" class="text ui-widget-content ui-corner-all"/>
+		<label for="album">Album</label>
+		<input type="text" name="album" id="id_album" value="" class="text ui-widget-content ui-corner-all"/>
+		<label for="track">Track</label>
+		<input type="text" name="track" id="id_track" value="" class="text ui-widget-content ui-corner-all"/>
+		<label for="label">Label</label>
+		<input type="text" name="label" id="id_label" value="" class="text ui-widget-content ui-corner-all"/>
+	</fieldset>
+	</form>
+</div>
+
+{% endblock %}

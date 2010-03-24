@@ -1,0 +1,67 @@
+.ac_results {
+	padding: 0px;
+	border: 1px solid WindowFrame;
+	background-color: Window;
+	overflow: hidden;
+}
+
+.ac_results ul {
+	width: 100%;
+	list-style-position: outside;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.ac_results iframe {
+	display:none;/*sorry for IE5*/
+	display/**/:block;/*sorry for IE5*/
+	position:absolute;
+	top:0;
+	left:0;
+	z-index:-1;
+	filter:mask();
+	width:3000px;
+	height:3000px;
+}
+
+.ac_results li {
+	margin: 0px;
+	padding: 2px 5px;
+	cursor: pointer;
+	display: block;
+	width: 100%;
+	font: menu;
+	font-size: 12px;
+	overflow: hidden;
+}
+
+.ac_loading {
+	background : Window url('/media/common/img/indicator.gif') right center no-repeat;
+}
+
+.ac_over {
+	background-color: Highlight;
+	color: HighlightText;
+}
+
+#sortable { list-style-type: none; margin: 0; padding: 0; width: 90%; }
+#sortable li { list-style-type:none; margin: 0 0 -1px 0; padding: 0.2em; font-size: 1.3em; border: solid 1px}
+#sortable li span { position: relative; float: right; }
+input.text { margin-bottom:12px; width:95%; padding: .4em; }
+fieldset { padding:0; border:0; margin-top:25px; }
+.ui-button { outline: 0; margin:0; text-decoration:none; !important; cursor:pointer; position: relative; text-align: center; }
+.ui-dialog .ui-state-highlight, .ui-dialog .ui-state-error { padding: .3em;  }
+
+#crate {
+  width: 100%;
+  margin: 0 auto;
+}
+#add-crate-item-column {
+  float: left;
+  width: 500px;
+}
+#crate-items-column {
+  float: right;
+  width: 500px;
+}
