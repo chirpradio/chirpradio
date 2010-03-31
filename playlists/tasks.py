@@ -232,7 +232,7 @@ def _fetch_url(url=None, data=None, method='GET', headers=None, auth_type=None, 
         # response
         res = urllib2.urlopen(req)
         d = {'code': res.code, 'content': res.read(), 'success':True}
-        log.info(d)
+        log.info("URL success output: %s" % d)
         return d
     except AssertionError:
         # short of listing every possible urllib2 exception,
@@ -247,6 +247,7 @@ def _fetch_url(url=None, data=None, method='GET', headers=None, auth_type=None, 
             content = e.read()
         else:
             content = None
+        log.info("URL error output: %s" % content)
         return {'success': False,
                 'exception_type': etype.__name__,
                 'exception': val,

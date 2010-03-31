@@ -1,8 +1,8 @@
 {# this is rendered in a popover window via Ajax #}
 <div class="spot_detail_for_reading">
-{{ spot.body }}
+{{ spot_copy.body }}
 <div id="spot-reading-buttons">
-    <a class="jqmClose"
-        href="#">&times; Close Script</a>
+    <a class="finish-spot-after-reading"
+        href="{{ url_to_finish_spot }}">Finish</a>
 </div>
 </div>

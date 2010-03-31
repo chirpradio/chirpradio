@@ -31,11 +31,13 @@ from auth.models import User
 from traffic_log import views, models, constants
 
 def clear_data():
-    for x in models.TrafficLogEntry.all().fetch(1000):
+    for x in models.TrafficLogEntry.all():
         x.delete()
-    for s in models.Spot.all().fetch(1000):
+    for c in models.SpotCopy.all():
+        c.delete()
+    for s in models.Spot.all():
         s.delete()
-    for c in models.SpotConstraint.all().fetch(1000):
+    for c in models.SpotConstraint.all():
         c.delete()
 
 class TestTrafficLogViews(DjangoTestCase):
@@ -49,11 +51,10 @@ class TestTrafficLogViews(DjangoTestCase):
     def test_landing_page_shows_spots(self):
         user = User(email='test')
         user.save()
-        spot_key = models.Spot(
+        spot = models.Spot(
                         title='Legal ID',
-                        body='You are listening to chirpradio.org',
-                        type='Station ID', 
-                        author=user).put()
+                        type='Station ID')
+        spot_key = spot.put()
         # assign it to every day of the week at the top of the hour:
         constraint_keys = views.saveConstraint(dict(hourbucket="0,24", dow_list=range(1,8), slot=0))
         views.connectConstraintsAndSpot(constraint_keys, spot_key)
@@ -68,20 +69,16 @@ class TestTrafficLogViews(DjangoTestCase):
         
         now = time_util.chicago_now()
         
-        self.assertEqual(spot_map[now.hour].body, 'You are listening to chirpradio.org')
-        self.assertEqual(spot_map[(now + datetime.timedelta(hours=1)).hour].body, 
-                'You are listening to chirpradio.org')
-        self.assertEqual(spot_map[(now + datetime.timedelta(hours=2)).hour].body, 
-                'You are listening to chirpradio.org')
-        
-        constraint = constraint_map[now.hour]
-        spot = list(constraint.iter_spots())[0]
-        assert constraint.url_to_finish_spot(spot) in resp.content
+        self.assertEqual(spot_map[now.hour].title, 'Legal ID')
+        self.assertEqual(spot_map[(now + datetime.timedelta(hours=1)).hour].title, 
+                'Legal ID')
+        self.assertEqual(spot_map[(now + datetime.timedelta(hours=2)).hour].title, 
+                'Legal ID')
 
 class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
     
     def setUp(self):
-        self.client.login(email="test@test.com", roles=[roles.TRAFFIC_LOG_ADMIN])
+        self.client.login(email="test@test.com", roles=[roles.TRAFFIC_LOG_ADMIN, roles.DJ])
     
     def tearDown(self):
         clear_data()
@@ -89,7 +86,6 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
     def test_create_spot(self):
         resp = self.client.post(reverse('traffic_log.createSpot'), {
             'title': 'Legal ID',
-            'body': 'You are listening to chirpradio.org',
             'type': 'Station ID',
             'hourbucket': '0,24',
             'dow_list': [str(d) for d in range(1,8)],
@@ -109,10 +105,235 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         
         # check with Sunday 12:00pm
         self.assertEqual(constraint_map[(1L, 12L, 0L)].url_to_finish_spot(spot), 
-            "/traffic_log/spot/%s/finish?hour=12&dow=1&slot=0" % spot.key())
+            "/traffic_log/spot-copy/%s/finish?hour=12&dow=1&slot=0" % spot.key())
             
         self.assertEqual(constraint_map[(1L, 12L, 0L)].as_query_string(), 
             "hour=12&dow=1&slot=0")
+        
+        # spot shows up in DJ view:
+        resp = self.client.get(reverse('traffic_log.index'))
+        context = resp.context[0]
+        slotted_spots = [c for c in context['slotted_spots']]
+        spots = [s.title for s in slotted_spots[0].iter_spots()]
+        self.assertEqual(spots[0], spot.title)
+        
+        # spot shows up in admin view:
+        resp = self.client.get(reverse('traffic_log.listSpots'))
+        context = resp.context[0]
+        spots = [c.title for c in context['spots']]
+        self.assertEqual(spots, ['Legal ID'])
+    
+    def test_delete_spot(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        self.assertEqual(spot.active, True)
+        
+        # assign it to every day of the week at the top of the hour:
+        constraint_keys = views.saveConstraint(dict(hourbucket="0,24", dow_list=range(1,8), slot=0))
+        views.connectConstraintsAndSpot(constraint_keys, spot.key())
+        
+        resp = self.client.get(reverse('traffic_log.index'))
+        context = resp.context[0]
+        slotted_spots = [c for c in context['slotted_spots']]
+        spots = [s.title for s in slotted_spots[0].iter_spots()]
+        self.assertEqual(spots[0], spot.title)
+                            
+        resp = self.client.get(reverse('traffic_log.deleteSpot', args=[spot.key()]))
+        
+        # datastore was cleaned up:
+        saved_spot = models.Spot.get(spot.key())
+        self.assertEqual(saved_spot.active, False)
+        
+        saved_constaints = [s for s in models.SpotConstraint.get(constraint_keys)]
+        active_spots = []
+        for constraint in saved_constaints:
+            for spot in constraint.iter_spots():
+                active_spots.append(spot)
+        self.assertEqual(len(active_spots), 0)
+        
+        # spot is hidden from landing page:
+        resp = self.client.get(reverse('traffic_log.index'))
+        context = resp.context[0]
+        slotted_spots = [c for c in context['slotted_spots']]
+        active_spots = []
+        for slot in slotted_spots:
+            for spot in slot.iter_spots_at_constraint():
+                active_spots.append(spot)
+        self.assertEqual(active_spots, [])
+        
+        # spot is hidden from admin view:
+        resp = self.client.get(reverse('traffic_log.listSpots'))
+        context = resp.context[0]
+        spots = [c.title for c in context['spots']]
+        self.assertEqual(spots, [])
+    
+    def test_create_spot_copy(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        resp = self.client.post(reverse('traffic_log.createSpotCopy'), {
+            'spot_key': spot.key(),
+            'body': 'You are listening to chirprario.odg',
+            'underwriter': 'pretend this is an underwriter',
+            'expire_on': ''
+        })
+        self.assertNoFormErrors(resp)
+        
+        spot_copy = spot.copy_at_random
+        self.assertEqual(spot_copy.body, 'You are listening to chirprario.odg')
+        self.assertEqual(spot_copy.underwriter, 'pretend this is an underwriter')
+        self.assertEqual(spot_copy.author.email, 'test@test.com')
+    
+    def test_edit_spot_copy(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        author = User(email='test')
+        author.put()
+        spot_copy = models.SpotCopy(
+                        body='First',
+                        spot=spot,
+                        author=author)
+        spot_copy.put()
+        spot_copy2 = models.SpotCopy(
+                        body='You are listening to chirpradio.org',
+                        spot=spot,
+                        author=author)
+        spot_copy2.put()
+        
+        # now edit the second one:
+        resp = self.client.post(reverse('traffic_log.editSpotCopy', args=(spot_copy2.key(),)), {
+            'spot_key': spot.key(),
+            'body': 'Something else entirely',
+            'underwriter': 'another underwriter',
+            'expire_on': ''
+        })
+        self.assertNoFormErrors(resp)
+        
+        spot_copy = [c for c in spot.all_spot_copy()]
+        self.assertEqual([c.body for c in spot_copy], ['First','Something else entirely'])
+        self.assertEqual([c.underwriter for c in spot_copy], [None, 'another underwriter'])
+        self.assertEqual([c.author.email for c in spot_copy], ['test', 'test@test.com'])
+    
+    def test_make_spot_copy_expire(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        author = User(email='test')
+        author.put()
+        spot_copy = models.SpotCopy(
+                        body='First',
+                        spot=spot,
+                        author=author)
+        spot_copy.put()
+        
+        resp = self.client.post(reverse('traffic_log.editSpotCopy', args=(spot_copy.key(),)), {
+            'spot_key': spot.key(),
+            'body': 'Something else entirely',
+            'underwriter': 'another underwriter',
+            'expire_on': '2/5/2010' # any date in the past
+        })
+        self.assertNoFormErrors(resp)
+        
+        spot_copy = [c for c in spot.all_spot_copy()]
+        self.assertEqual(spot_copy, [])
+    
+    def test_create_edit_spot_copy_expiry(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        now = time_util.chicago_now() + datetime.timedelta(hours=2)
+        resp = self.client.post(reverse('traffic_log.views.addCopyForSpot', args=(spot.key(),)), {
+            'spot_key': spot.key(),
+            'body': 'You are listening to chirprario.odg',
+            'underwriter': 'pretend this is an underwriter',
+            'expire_on': now.strftime("%m/%d/%Y %H:%M:%S") # no timezone info
+        })
+        self.assertNoFormErrors(resp)
+        
+        spot_copy = spot.copy_at_random
+        converted_expire_on = time_util.convert_utc_to_chicago(spot_copy.expire_on)
+        self.assertEqual(converted_expire_on.timetuple(), now.timetuple())
+        
+        resp = self.client.post(reverse('traffic_log.editSpotCopy', args=(spot_copy.key(),)), {
+            'spot_key': spot.key(),
+            'body': 'You are listening to chirprario.odg',
+            'underwriter': 'pretend this is an underwriter',
+            'expire_on': spot_copy.expire_on.strftime("%m/%d/%Y %H:%M:%S") # no timezone info
+        })
+        self.assertNoFormErrors(resp)
+        
+        spot_copy = spot.copy_at_random
+        converted_expire_on = time_util.convert_utc_to_chicago(spot_copy.expire_on)
+        self.assertEqual(converted_expire_on.timetuple(), now.timetuple())
+    
+    def test_delete_spot_copy(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        author = User(email='test')
+        author.put()
+        spot_copy = models.SpotCopy(
+                        body='First',
+                        spot=spot,
+                        author=author)
+        spot_copy.put()
+        
+        # now edit the second one:
+        resp = self.client.get(reverse('traffic_log.deleteSpotCopy', args=(spot_copy.key(),)))
+        
+        self.assertEqual([c for c in spot.all_spot_copy()], [])
+
+class TestObjects(DjangoTestCase):
+    
+    def test_spot_copy(self):
+        author = User(email='test')
+        author.save()
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        self.assertEqual(spot.get_add_copy_url(), 
+                            reverse('traffic_log.views.addCopyForSpot', args=(spot.key(),)))
+        
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        spot_copy = models.SpotCopy(
+                        body=(
+                            'You are now and forever listening to a killer '
+                            'radio station called chirpradio.org'),
+                        spot=spot,
+                        author=author)
+        spot_copy.put()
+        
+        self.assertEqual(str(spot_copy), "You are now and forever listening to a killer radio...")
+        self.assertEqual(spot_copy.get_edit_url(), 
+                            reverse('traffic_log.editSpotCopy', args=(spot_copy.key(),)))
+        self.assertEqual(spot_copy.get_delete_url(), 
+                            reverse('traffic_log.deleteSpotCopy', args=(spot_copy.key(),)))
 
 class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
     
@@ -121,6 +342,32 @@ class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
     
     def tearDown(self):
         clear_data()
+    
+    def test_view_spot_for_reading(self):
+        author = User(email='test')
+        author.save()
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        constraint.put()
+        
+        spot_copy = models.SpotCopy(
+                        body='You are listening to chirpradio.org',
+                        spot=spot,
+                        author=author)
+        spot_copy.put()
+        
+        resp = self.client.get(reverse('traffic_log.spotTextForReading', args=(spot.key(),)), {
+            'hour': constraint.hour,
+            'dow': constraint.dow,
+            'slot': constraint.slot
+        })
+        context = resp.context
+        self.assertEqual(context['spot_copy'].body, 'You are listening to chirpradio.org')
+        self.assertEqual(context['url_to_finish_spot'], 
+            "/traffic_log/spot-copy/%s/finish?hour=0&dow=1&slot=0" % spot_copy.key())
 
     def test_finish_spot(self):
         self.assertEqual(list(models.TrafficLogEntry.all().fetch(5)), [])
@@ -129,14 +376,29 @@ class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
         author.save()
         spot = models.Spot(
                         title='Legal ID',
-                        body='You are listening to chirpradio.org',
                         type='Station ID', 
                         author=author)
         spot.put()
-        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
+        
+        # make a constraint closest to now:
+        now = time_util.chicago_now()
+        today = now.date()
+        current_hour = now.hour
+        constraint = models.SpotConstraint(
+            dow=today.isoweekday(), hour=current_hour, slot=0, spots=[spot.key()])
         constraint.put()
         
-        resp = self.client.get(reverse('traffic_log.finishSpot', args=(spot.key(),)), {
+        spot_copy = models.SpotCopy(
+                        body='You are listening to chirpradio.org',
+                        spot=spot,
+                        author=author)
+        spot_copy.put()
+        
+        resp = self.client.get(reverse('traffic_log.index'))
+        # unfinished spot should have been marked in static HTML:
+        assert '<tr class="new">' in resp.content
+        
+        resp = self.client.get(reverse('traffic_log.finishReadingSpotCopy', args=(spot_copy.key(),)), {
             'hour': constraint.hour,
             'dow': constraint.dow,
             'slot': constraint.slot
@@ -146,8 +408,14 @@ class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
         self.assertEqual(logged.readtime.timetuple()[0:5], datetime.datetime.now().timetuple()[0:5])
         self.assertEqual(logged.log_date, time_util.chicago_now().date())
         self.assertEqual(logged.spot.key(), spot.key())
+        self.assertEqual(logged.spot_copy.key(), spot_copy.key())
         self.assertEqual(logged.scheduled.key(), constraint.key())
         self.assertEqual(logged.hour, constraint.hour)
+        self.assertEqual(logged.dow, constraint.dow)
+        
+        resp = self.client.get(reverse('traffic_log.index'))
+        # finished spot should have been marked in static HTML:
+        assert '<tr class="finished">' in resp.content
     
 class TrafficLogTestCase(unittest.TestCase):
     
@@ -180,19 +448,4 @@ class TrafficLogTestCase(unittest.TestCase):
     def test_spot_constraint_delete(self):
         pass
 
-# """
-# >>> import views, models, constants
-# >>> from chirpradio.auth import User, KeyStorage, roles
-# >>> from google.appengine.ext import db
 
-# >>> user = User(email='test')
-# >>> user.save()
-# datastore_types.Key.from_path(u'User', 1, _app=u'chirpradio')
-
-# 1
-# """
-# # delete constraint
-# # expiration
-# # get spots for time
-# # delete spot
-# # admin rol

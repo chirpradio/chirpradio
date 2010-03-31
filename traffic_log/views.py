@@ -18,6 +18,7 @@
 import sys
 import random
 import datetime
+import logging
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
@@ -34,6 +35,8 @@ from auth.models import User
 from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
 from auth.decorators import require_role
 from traffic_log import models, forms, constants
+
+log = logging.getLogger()
 
 def add_hour(base_hour):
     """Adds an hour to base_hour and ensures it's in range.
@@ -75,17 +78,18 @@ def index(request):
 def spotTextForReading(request, spot_key=None):
     spot = AutoRetry(models.Spot).get(spot_key)
     dow, hour, slot = _get_slot_from_request(request)
+    spot_copy = spot.copy_at_random
     
-    url = reverse('traffic_log.finishSpot', args=(spot.key(),))
+    url = reverse('traffic_log.finishReadingSpotCopy', args=(spot_copy.key(),))
     url = "%s?hour=%d&dow=%d&slot=%d" % (url, hour, dow, slot)
     return render_to_response('traffic_log/spot_detail_for_reading.html', dict(
-            spot=spot,
+            spot_copy=spot_copy,
             url_to_finish_spot=url
         ), context_instance=RequestContext(request))
 
 @require_role(DJ)
 @as_json
-def finishSpot(request, spot_key=None):
+def finishReadingSpotCopy(request, spot_copy_key=None):
     dow, hour, slot = _get_slot_from_request(request)
         
     q = (models.SpotConstraint.all()
@@ -102,22 +106,25 @@ def finishSpot(request, spot_key=None):
                                                                     dow, hour, slot))
     
     constraint = AutoRetry(q).fetch(1)[0]
-    spot = AutoRetry(models.Spot).get(spot_key)
+    spot_copy = AutoRetry(models.SpotCopy).get(spot_copy_key)
     
     today = time_util.chicago_now().date()
     q = (models.TrafficLogEntry.all()
                     .filter("log_date =", today)
-                    .filter("spot =", spot)
+                    .filter("spot =", spot_copy.spot)
+                    .filter("dow =", dow)
                     .filter("hour =", hour)
                     .filter("slot =", slot))
     if AutoRetry(q).count(1):
         existing_logged_spot = AutoRetry(q).fetch(1)[0]
         raise RuntimeError("This spot %r at %r has already been read %s" % (
-                    spot, constraint, existing_logged_spot.reader))
+                    spot_copy.spot, constraint, existing_logged_spot.reader))
     
     logged_spot = models.TrafficLogEntry(
         log_date = today,
-        spot = spot,
+        spot = spot_copy.spot,
+        spot_copy = spot_copy,
+        dow = dow,
         hour = hour,
         slot = slot,
         scheduled = constraint,
@@ -127,7 +134,7 @@ def finishSpot(request, spot_key=None):
     logged_spot.put()
     
     return {
-        'spot_key': str(spot.key()), 
+        'spot_copy_key': str(spot_copy.key()), 
         'spot_constraint_key': str(constraint.key()),
         'logged_spot': str(logged_spot.key())
     }
@@ -151,7 +158,7 @@ def createSpot(request):
         constraint_form = forms.SpotConstraintForm()
 
     if all_clear:
-        return HttpResponseRedirect('/traffic_log/spot/%s'%spot.key())          
+        return HttpResponseRedirect(reverse('traffic_log.listSpots'))
 
     return render_to_response('traffic_log/create_edit_spot.html', 
                   dict(spot=spot_form,
@@ -160,6 +167,45 @@ def createSpot(request):
                        formaction="/traffic_log/spot/create/"
                        ), context_instance=RequestContext(request))
 
+@require_role(TRAFFIC_LOG_ADMIN)
+def createEditSpotCopy(request, spot_copy_key=None, spot_key=None):
+    if spot_copy_key:
+        spot_copy = AutoRetry(models.SpotCopy).get(spot_copy_key)
+        spot_key = spot_copy.spot.key() # so that dropdown box is selected when editing
+        formaction = reverse('traffic_log.editSpotCopy', args=(spot_copy_key,))
+    else:
+        if spot_key:
+            formaction = reverse('traffic_log.views.addCopyForSpot', args=(spot_key,))
+        else:
+            formaction = reverse('traffic_log.createSpotCopy')
+        spot_copy = None
+    user = auth.get_current_user(request)
+    if request.method == 'POST':
+        spot_copy_form = forms.SpotCopyForm(request.POST, {
+                                'author':user, 
+                                'spot_key':spot_key
+                            }, instance=spot_copy)
+        if spot_copy_form.is_valid():
+            spot_copy = spot_copy_form.save()
+            spot_copy.author = user
+            spot_copy.spot = AutoRetry(models.Spot).get(spot_copy_form['spot_key'].data)
+            AutoRetry(spot_copy).put()
+            
+            return HttpResponseRedirect(reverse('traffic_log.listSpots'))
+    else:
+        spot_copy_form = forms.SpotCopyForm(initial={'spot_key':spot_key}, instance=spot_copy)
+
+    return render_to_response('traffic_log/create_edit_spot_copy.html', 
+                  dict(spot_copy=spot_copy_form,
+                       formaction=formaction
+                       ), context_instance=RequestContext(request))
+
+@require_role(TRAFFIC_LOG_ADMIN)
+def deleteSpotCopy(request, spot_copy_key=None):
+    spot_copy = AutoRetry(models.SpotCopy).get(spot_copy_key)
+    spot_copy.expire_on = time_util.chicago_now()
+    AutoRetry(spot_copy).put()
+    return HttpResponseRedirect(reverse('traffic_log.views.listSpots'))
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def editSpot(request, spot_key=None):
@@ -196,8 +242,19 @@ def editSpot(request, spot_key=None):
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def deleteSpot(request, spot_key=None):
-    o = AutoRetry(models.Spot).get(spot_key)
-    AutoRetry(o).delete()
+    spot = AutoRetry(models.Spot).get(spot_key)
+    spot.active = False
+    AutoRetry(spot).save()
+    
+    # remove the spot from its constraints:
+    for constraint in AutoRetry(models.SpotConstraint.all().filter("spots IN", [spot.key()])):
+        active_spots = []
+        for spot_key in constraint.spots:
+            if spot_key != spot.key():
+                active_spots.append(spot_key)
+        constraint.spots = active_spots
+        AutoRetry(constraint).save()
+        
     return HttpResponseRedirect('/traffic_log/spot')
 
 
@@ -215,7 +272,12 @@ def spotDetail(request, spot_key=None):
 
 @require_role(DJ)
 def listSpots(request):
-    spots = AutoRetry(models.Spot.all().order('-created')).fetch(20)
+    spots = []
+    # TODO(Kumar) introduce paging?
+    for spot in AutoRetry(models.Spot.all().order('-created')).fetch(200):
+        if spot.active is False:
+            continue
+        spots.append(spot)
     return render_to_response('traffic_log/spot_list.html', 
         {'spots':spots}, 
         context_instance=RequestContext(request))

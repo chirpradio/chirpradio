@@ -1,25 +1,36 @@
+
+/* YUI CSS RESET via Yahoo! */
+
+body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,form,fieldset,input,textarea,p,blockquote,th,td { margin: 0; padding: 0; } 
+table { border-collapse: collapse; border-spacing: 0; } 
+fieldset,img { border: 0; }
+address,caption,cite,code,dfn,em,th,var { font-style: normal; font-weight: normal; } 
+ol,ul { list-style: none; } 
+caption,th { text-align: left; } 
+h1,h2,h3,h4,h5,h6 { font-size: 100%; font-weight: normal; } 
+q:before,q:after { content: ''; } 
+abbr,acronym { border: 0; } 
+
 /* GLOBAL STYLES */
 
-body { font-size: 62.5%; background: #fff url(background-tile.png) center top repeat-y; color: #4a4a4a; } /* Reset 1em to 10px */
-fieldset { padding: 0; border: none; }
-input, textarea { margin: 0; }
+body { font-size: 62.5%; font-family: Helvetica, Arial, sans-serif; background: #fff url(background-tile.png) center top repeat-y; color: #4a4a4a; } /* Reset 1em to 10px */
 
 /* BUILDING BLOCKS */
 
-#playlist { width: 800px; margin: 0 auto; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
-#form-column { float: left; width: 334px; margin-top: 20px; }
+#playlist { width: 800px; margin: 0 auto; }
+#form-column { float: left; width: 334px; }
 #playlist-column { float: right; width: 450px; }
 .song-info { border-bottom: 1px solid #aaa; padding: 20px 10px 16px; width: 430px; }
 .new { background-color: #ffffd0; }
 
 /* HEADLINES AND TEXT */
 
-#content h1 { width: 800px; margin: 0 auto; }
-h2 { margin: 20px 0 0; padding-bottom: 10px; color: #ec0035; font-size: 1.2em; font-weight: bold; text-transform: uppercase; border-bottom: 3px double #aaa; }
+h1 { width: 301px; height: 48px; text-indent: -9999px; background: transparent url(header.png) left top no-repeat; margin: 20px 0; }
+h2 { margin-top: 20px; padding-bottom: 10px; color: #ec0035; font-size: 1.2em; font-weight: bold; text-transform: uppercase; border-bottom: 3px double #aaa; }
 .song-info p { font-size: 1.8em; line-height: 22px; margin-bottom: 5px; color: #aaa; }
 p.time { font-weight: bold; font-size: 1.4em; line-height: 1em; color: #ec0035; }
 p.notes { color: #777; font-size: 1.4em; line-height: 1.1em; }
-p.break { padding: 1px 10px 2px; margin-top: 0px; font-weight: bold; color: #fff; background: #aaa; text-transform: uppercase; }
+p.break { padding: 1px 10px 2px; font-weight: bold; color: #fff; background: #aaa; text-transform: uppercase; }
 .song-info span { color: #2a2a2a; }
 span.artist { font-weight: bold; }
 p.links { border-top: 1px solid #aaa; margin-top: 1px; padding-top: 10px; font-size: 1.2em; text-align: right; }
@@ -74,4 +85,9 @@ input.ac_loading {
     padding: 3px; 
     background: #ffffc8;
     border: 1px solid #5ed4f3;
+}
+
+/* CHIRP */
+#auth {
+    border-bottom: 1px solid #000;
 }

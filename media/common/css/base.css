@@ -17,3 +17,7 @@ The file's original header was:
 /* Import patch for IE 6 Windows */
 /*\*/ @import "patch-iewin.css"; /**/
 
+/* CHIRP specific */
+#container {
+    background: #fff;
+}
