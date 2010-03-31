@@ -2,10 +2,7 @@
 {% load traffic_log_extras %}
 
 {% block extrahead_for_page %}
-<link rel="stylesheet" type="text/css" href="/media/common/js/jquery-facebox/facebox.css" media="screen" />
-<script type="text/javascript" src="/media/common/js/jquery-facebox/facebox.js"></script>
-<link rel="stylesheet" type="text/css" href="/media/traffic_log/css/trafficlog.css" media="screen" />
-<script type="text/javascript" src="/media/traffic_log/js/trafficlog.js"></script>
+<script type="text/javascript" src="/media/common/js/jqModal/jqModal.js"></script>
 {% endblock %}
 
 {% block title %}
@@ -43,4 +40,10 @@ Traffic Log Spots
 {% endfor %}
     
 {% endfor %}
+</table>
+
+{% block modal %}
+<div id="modal-container"></div>
+{% endblock %}
+
 {% endblock %}
