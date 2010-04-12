@@ -58,6 +58,10 @@ class SpotConstraint(db.Model):
                 # there was a bug where deleted spots had lingering constraints.
                 # See http://code.google.com/p/chirpradio/issues/detail?id=103
                 continue
+            copy, is_logged = spot.get_spot_copy(self.dow, self.hour, self.slot)
+            if copy is None:
+                # probably a spot with expired copy (or copy not yet created)
+                continue
             yield spot
     
     def iter_spots_at_constraint(self):
@@ -119,9 +123,33 @@ class Spot(db.Model):
     def add_spot_copy(self, spot_copy):
         self.random_spot_copies.append(spot_copy.key())
         AutoRetry(self).save()
+    
+    def _expunge_expired_spot_copies(self, random_spot_copies):
+        """Check to see if any of the cached spot copies have expired.
+        
+        if so, expunge them and save the spot with a new list.
+        """
+        one_expired = False
+        q = SpotCopy.all().filter("spot =", self)
+        q = q.filter("__key__ in", random_spot_copies)
+        
+        expired_spot_copy_keys = []
+        for copy in q:
+            if copy.expire_on and copy.expire_on <= datetime.datetime.now():
+                expired_spot_copy_keys.append(copy.key())
+        
+        for expired_key in expired_spot_copy_keys:
+            for k in random_spot_copies:
+                one_expired = True
+                if str(k) == str(expired_key):
+                    random_spot_copies.remove(k)
+        if one_expired:
+            # only save if we have to since expunging will be rare
+            self.random_spot_copies = random_spot_copies
+            AutoRetry(self).save()
 
     def shuffle_spot_copies(self, prev_spot_copy=None):
-        # Shuffle list of spot copy keys associated with this spot.
+        """Shuffle list of spot copy keys associated with this spot."""
         spot_copies = [spot_copy.key() for spot_copy in self.all_spot_copy()]
         random.shuffle(spot_copies)
 
@@ -137,7 +165,7 @@ class Spot(db.Model):
         for i in range(len(spot_copies)):
             if spot_copies[0] in recent_spot_copies:
                 spot_copies.append(spot_copies.pop(0))
-		
+        
         # If all spot copies were read in the last period, the first item in the new shuffled list
         # may by chance be the last one read. If so, move to the end.
         if prev_spot_copy and spot_copies[0] == prev_spot_copy:
@@ -148,34 +176,38 @@ class Spot(db.Model):
     def get_spot_copy(self, dow, hour, slot):
         spot_copy = None
         is_logged = False
-
+        
         # If random spot copy list for this spot is empty, fill and shuffle.
         if len(self.random_spot_copies) == 0:
             self.shuffle_spot_copies()
             AutoRetry(self).save()
         
-        # Return the spot copy that a DJ just read (even though the 
-        # finish link will be disabled)
-        # or return the next random one for reading
+        self._expunge_expired_spot_copies(self.random_spot_copies)
+        
+        # if spot copies exist and none have expired...
+        if len(self.random_spot_copies) > 0:
+            # Return the spot copy that a DJ just read (even though the 
+            # finish link will be disabled)
+            # or return the next random one for reading
 
-        today = time_util.chicago_now().date()
-        q = (TrafficLogEntry.all()
-                .filter("log_date =", today)
-                .filter("spot =", self)
-                .filter("dow =", dow)
-                .filter("hour =", hour)
-                .filter("slot =", slot))
+            today = time_util.chicago_now().date()
+            q = (TrafficLogEntry.all()
+                    .filter("log_date =", today)
+                    .filter("spot =", self)
+                    .filter("dow =", dow)
+                    .filter("hour =", hour)
+                    .filter("slot =", slot))
                 
-        # Spot copy exists for dow, hour, and slot. Return it.
-        if AutoRetry(q).count(1):
-            existing_logged_spot = AutoRetry(q).fetch(1)[0]
-            spot_copy = existing_logged_spot.spot_copy
-            is_logged = True
+            # Spot copy exists for dow, hour, and slot. Return it.
+            if AutoRetry(q).count(1):
+                existing_logged_spot = AutoRetry(q).fetch(1)[0]
+                spot_copy = existing_logged_spot.spot_copy
+                is_logged = True
             
-        # Return next random spot copy.
-        else:
-            spot_copy = AutoRetry(db).get(self.random_spot_copies[0])
-                
+            # Return next random spot copy.
+            else:
+                spot_copy = AutoRetry(db).get(self.random_spot_copies[0])
+        
         return spot_copy, is_logged
 
     def finish_spot_copy(self):
