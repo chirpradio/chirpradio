@@ -154,25 +154,26 @@ class Spot(db.Model):
             self.shuffle_spot_copies()
             AutoRetry(self).save()
         
-        # Return previous spot copy, or next random one.
-        if len(self.random_spot_copies) > 0:
-            today = time_util.chicago_now().date()
-            q = (TrafficLogEntry.all()
-                    .filter("log_date =", today)
-                    .filter("spot =", self)
-                    .filter("dow =", dow)
-                    .filter("hour =", hour)
-                    .filter("slot =", slot))
-                    
-            # Spot copy exists for dow, hour, and slot. Return it.
-            if AutoRetry(q).count(1):
-                existing_logged_spot = AutoRetry(q).fetch(1)[0]
-                spot_copy = existing_logged_spot.spot_copy
-                is_logged = True
+        # Return the spot copy that a DJ just read (even though the finish link will be disabled)
+        # or return the next random one for reading
+
+        today = time_util.chicago_now().date()
+        q = (TrafficLogEntry.all()
+                .filter("log_date =", today)
+                .filter("spot =", self)
+                .filter("dow =", dow)
+                .filter("hour =", hour)
+                .filter("slot =", slot))
                 
-            # Return next random spot copy.
-            else:
-                spot_copy = AutoRetry(db).get(self.random_spot_copies[0])
+        # Spot copy exists for dow, hour, and slot. Return it.
+        if AutoRetry(q).count(1):
+            existing_logged_spot = AutoRetry(q).fetch(1)[0]
+            spot_copy = existing_logged_spot.spot_copy
+            is_logged = True
+            
+        # Return next random spot copy.
+        else:
+            spot_copy = AutoRetry(db).get(self.random_spot_copies[0])
                 
         return spot_copy, is_logged
 
