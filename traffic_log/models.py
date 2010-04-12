@@ -154,7 +154,8 @@ class Spot(db.Model):
             self.shuffle_spot_copies()
             AutoRetry(self).save()
         
-        # Return the spot copy that a DJ just read (even though the finish link will be disabled)
+        # Return the spot copy that a DJ just read (even though the 
+        # finish link will be disabled)
         # or return the next random one for reading
 
         today = time_util.chicago_now().date()
