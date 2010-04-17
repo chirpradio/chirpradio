@@ -193,7 +193,8 @@ class Album(db.Model):
     An album consists of a series of numbered tracks.
 
     Attributes:
-      category: The category of the album. May be core, local_current, local_classic, heavy, light.
+      category: The category of the album. May be core, local_current,
+        local_classic, heavy, light.
       title: The name of the album.  This is used in TALB tags.
       disc_number: If specified, this album is one part of a multi-disc
         set.

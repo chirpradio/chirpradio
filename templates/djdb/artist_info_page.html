@@ -35,6 +35,7 @@ It is still very primitive.
 <h3>Albums by {{ artist.pretty_name }}</h3>
 
 {% if user.is_music_director %}
+<form method="post" name="djdbForm" action="update">
 <p>
 Select: <a id="checkbox_all" href="">All</a>,
         <a id="checkbox_none" href="">None</a>,
@@ -43,17 +44,16 @@ Select: <a id="checkbox_all" href="">All</a>,
     {% if not forloop.first %}, {% endif %}
         <a id="checkbox_{{ category }}" href="">{{ category|replace:"/_/ "|capfirst }}</a>
   {% endfor %}<br/>
-Mark selected as: <a id="mark_nocat" href="">No category</a>,
+Mark selected as: <a id="mark_nocat" href="update">No category</a>,
   {% for category in categories %}
     {% if not forloop.first %}, {% endif %}
-                  <a id="mark_{{ category }}" href="">{{ category|replace:"/_/ "|capfirst }}</a>
+                  <a id="mark_{{ category }}" href="update">{{ category|replace:"/_/ "|capfirst }}</a>
   {% endfor %}
 </p>
 
-<form method="post" name="djdbForm" action="/djdb/album/change_categories">
+<input type="hidden" name="mark_as"/>
 <input type="hidden" name="response_page" value="artist"/>
 <input type="hidden" name="artist_name" value="{{ artist.name }}"/>
-<input type="submit" value="Update Categories"/>
 {% endif %}
 <table>
 {% for album in artist.sorted_albums %}
@@ -65,12 +65,11 @@ Mark selected as: <a id="mark_nocat" href="">No category</a>,
     </td>
     <td>
       <input type="hidden" name="album_key_{{ forloop.counter }}" value="{{ album.key }}"/>
-      <select name="category_{{ forloop.counter }}">
-        <option value="none" {% ifequal album.category "none" %}selected="selected"{% endifequal %}>None</option>
-    {% for category in categories %}
-        <option value="{{ category }}" {% ifequal album.category category %}selected="selected"{% endifequal %}>{{ category|replace:"/_/ "|capfirst }}</option>
-    {% endfor %}
-      </select>
+    {% ifequal album.category None %}
+      No category
+    {% else %}
+      {{ album.category|replace:"/_/ "|capfirst }}
+    {% endifequal %}
     </td>
   {% endif %}
     <td><a href="{{ album.url }}">{{ album.title }}</a></td>
@@ -93,7 +92,6 @@ Mark selected as: <a id="mark_nocat" href="">No category</a>,
 {% endfor %}
 </table>
 {% if user.is_music_director %}
-<input type="submit" value="Update Categories"/>
 </form>
 {% endif %}
 

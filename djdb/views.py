@@ -103,14 +103,17 @@ def album_search_for_autocomplete(request):
     return response
 
 @require_role(roles.MUSIC_DIRECTOR)
-def album_change_categories(request) :
+def update_albums(request) :
+    mark_as = request.POST.get('mark_as')
     for name in request.POST.keys() :
         if re.match('checkbox_', name) :
             type, num = name.split('_')
-            category = request.POST.get('category_%s' % num)
             album_key = request.POST.get('album_key_%s' % num)
             album = AutoRetry(Album).get(album_key)
-            album.category = category
+            if mark_as == 'none':
+                album.category = None
+            else:
+                album.category = mark_as
             AutoRetry(album).save()
 
     if request.POST.get('response_page') == 'artist' :
@@ -118,7 +121,28 @@ def album_change_categories(request) :
     else :
         return landing_page(request)
 
-def album_update_tracks(request, album_id_str):
+@require_role(roles.MUSIC_DIRECTOR)
+def update_albums2(request, artist_id_str):
+    artist = models.Artist.fetch_by_name(artist_id_str)
+    if artist is None:
+        return http.HttpResponse(status=404)
+    mark_as = request.POST.get('mark_as')
+    for name in request.POST.keys():
+        if re.match('checkbox_', name):
+            type, num = name.split('_')
+            album = artist.sorted_albums[int(num) - 1]
+            if mark_as == 'none':
+                album.category = None
+            else:
+                album.category = mark_as
+            AutoRetry(album).save()
+            
+    if request.POST.get('response_page') == 'artist':
+        return artist_info_page(request, request.POST.get('artist_name'))
+    else:
+        return landing_page(request)
+
+def update_tracks(request, album_id_str):
     album = _get_album_or_404(album_id_str)
     mark_as = request.POST.get('mark_as')
     for name in request.POST.keys() :

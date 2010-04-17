@@ -32,14 +32,23 @@ urlpatterns = patterns(
     # Landing page
     (r'^/?$', 'djdb.views.landing_page'),
 
+    # Update albums from landing page
+    (r'^update$', 'djdb.views.update_albums'),
+    
     # Artist information page
     (r'artist/(.*)/info', 'djdb.views.artist_info_page'),
+
+    # Update albums.
+    (r'artist/.*/update', 'djdb.views.update_albums'),
 
     # Artist search for jquery.autocomplete
     (r'artist/search\.txt', 'djdb.views.artist_search_for_autocomplete'),
     
     # Album information page
     (r'album/(.*)/info', 'djdb.views.album_info_page'),
+
+    # Update tracks.
+    (r'album/(.*)/update', 'djdb.views.update_tracks'),
 
     # Album reviews.
     (r'album/(.*)/new_review', 'djdb.views.album_new_review'),
@@ -51,12 +60,6 @@ urlpatterns = patterns(
     
     # Album search for jquery.autocomplete
     (r'album/search\.txt', 'djdb.views.album_search_for_autocomplete'),
-
-    # Change album categories.
-    (r'album/change_categories', 'djdb.views.album_change_categories'),
-    
-    # Update tracks.
-    (r'album/(.*)/update_tracks', 'djdb.views.album_update_tracks'),
     
     # Album category page.
     (r'category/(.*)', 'djdb.views.category_page'),
