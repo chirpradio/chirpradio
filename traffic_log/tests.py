@@ -62,6 +62,11 @@ class TestTrafficLogViews(DjangoTestCase):
         constraint_keys = views.saveConstraint(dict(hourbucket="0,24", dow_list=range(1,8), slot=0))
         views.connectConstraintsAndSpot(constraint_keys, spot_key)
         
+        spot_copy = models.SpotCopy(body='body',
+                                    spot=spot,
+                                    author=user)
+        spot_copy.put()
+        
         resp = self.client.get(reverse('traffic_log.index'))
         context = resp.context[0]
         spot_map = {}
@@ -135,12 +140,61 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spots = [c.title for c in context['spots']]
         self.assertEqual(spots, ['Legal ID'])
     
+    def test_spot_copy_expires_when_randomly_shuffled(self):
+        # make a regular spot:
+        resp = self.client.post(reverse('traffic_log.createSpot'), {
+            'title': 'Legal ID',
+            'type': 'Station ID',
+            'hourbucket': '0,24',
+            'dow_list': [str(d) for d in range(1,8)],
+            'slot': '0'
+        })
+        self.assertNoFormErrors(resp)
+        spot = models.Spot.all().filter("title =", "Legal ID").fetch(1)[0]
+        
+        resp = self.client.post(reverse('traffic_log.createSpotCopy'), {
+            'spot_key': spot.key(),
+            'body': 'You are listening to chirprario.odg',
+            'underwriter': 'pretend this is an underwriter',
+            # null expiration date for now:
+            'expire_on': ''
+        })
+        self.assertNoFormErrors(resp)
+        
+        # spot shows up in DJ view:
+        resp = self.client.get(reverse('traffic_log.index'))
+        context = resp.context[0]
+        slotted_spots = [c for c in context['slotted_spots']]
+        spots = [s.title for s in slotted_spots[0].iter_spots()]
+        self.assertEqual(spots[0], spot.title)
+        
+        # make the copy expire:
+        spot_copy = spot.all_spot_copy()[0]
+        spot_copy.expire_on = datetime.datetime.now()
+        spot_copy.save()
+        
+        # it should be hidden now:
+        resp = self.client.get(reverse('traffic_log.index'))
+        context = resp.context[0]
+        spots = []
+        for slotted_spot in context['slotted_spots']:
+            spots.append([s.title for s in slotted_spot.iter_spots()])
+            
+        self.assertEqual(spots, [[], [], [], []])
+    
     def test_delete_spot(self):
         spot = models.Spot(
                         title='Legal ID',
                         type='Station ID')
         spot.put()
         self.assertEqual(spot.active, True)
+        
+        author = User(email='test')
+        author.put()
+        spot_copy = models.SpotCopy(body='body',
+                                    spot=spot,
+                                    author=author)
+        spot_copy.put()
         
         # assign it to every day of the week at the top of the hour:
         constraint_keys = views.saveConstraint(dict(hourbucket="0,24", dow_list=range(1,8), slot=0))
