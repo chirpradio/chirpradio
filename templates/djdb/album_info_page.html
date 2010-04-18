@@ -87,7 +87,7 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
 
 <h3>Reviews</h3>
 {% if album.reviews %}
-<a href="new_review">Write another review</a> of this album.
+<a href="/djdb/album/{{ album.album_id }}/new_review">Write another review</a> of this album.
   {% for doc in album.reviews %}
 <p>
 <blockquote>
@@ -95,19 +95,19 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
 </blockquote>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author }} on {{ doc.timestamp_display|date:"F j, Y P" }}</small>
   {% ifequal user.key doc.author.key %}
-[ <a href="edit_review/{{ doc.key }}">Edit</a> ]
+[ <a href="/djdb/album/{{ album.album_id }}/edit_review/{{ doc.key }}">Edit</a> ]
   {% endifequal %}
 </p>
   {% endfor %}
 {% else %}
 No reviews yet!  You could be the first to
-<a href="new_review">write a review</a> of this album.
+<a href="/djdb/album/{{ album.album_id }}/new_review">write a review</a> of this album.
 {% endif %}
 
 {% if album.reviews %}
 <h3>Comments</h3>
   {% if album.comments %}
-<a href="new_comment">Write another comment</a> about this album.
+<a href="/djdb/album/{{ album.album_id }}/new_comment">Write another comment</a> about this album.
     {% for doc in album.comments %}
 <p>
 <blockquote>
@@ -115,13 +115,13 @@ No reviews yet!  You could be the first to
 </blockquote>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author }} on {{ doc.timestamp_display|date:"F j, Y P" }}</small>
     {% ifequal user.key doc.author.key %}
-[ <a href="edit_comment/{{ doc.key }}">Edit</a> ]
+[ <a href="/djdb/album/{{ album.album_id }}/edit_comment/{{ doc.key }}">Edit</a> ]
     {% endifequal %}
 </p>
     {% endfor %}
   {% else %}
 No comments yet!  You could be the first to
-<a href="new_comment">write a comment</a> about this album.
+<a href="/djdb/album/{{ album.album_id }}/new_comment">write a comment</a> about this album.
   {% endif %}
 {% endif %}
 
