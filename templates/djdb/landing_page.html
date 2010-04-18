@@ -92,7 +92,7 @@ matching album{{ query_results.Album|pluralize }}</i>
 
   {% if query_results.Album %}
     {% if user.is_music_director %}
-<form method="post" name="djdbForm" action="update">
+<form method="post" name="djdbForm" action="/djdb/update_albums">
 <p/>
 Select: <a id="checkbox_all" href="">All</a>,
         <a id="checkbox_none" href="">None</a>,
@@ -101,10 +101,10 @@ Select: <a id="checkbox_all" href="">All</a>,
         {% if not forloop.first %}, {% endif %}
         <a id="checkbox_{{ category }}" href="">{{ category|replace:"/_/ "|capfirst }}</a>
       {% endfor %}<br/>
-Mark selected as: <a id="mark_nocat" href="update">No category</a>,
+Mark selected as: <a id="mark_nocat" href="/djdb/update_albums">No category</a>,
       {% for category in categories %}
         {% if not forloop.first %}, {% endif %}
-                  <a id="mark_{{ category }}" href="update">{{ category|replace:"/_/ "|capfirst }}</a>
+                  <a id="mark_{{ category }}" href="/djdb/update_albums">{{ category|replace:"/_/ "|capfirst }}</a>
       {% endfor %}
 <p/>
     {% endif %}

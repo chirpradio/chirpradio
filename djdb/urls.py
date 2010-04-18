@@ -31,14 +31,12 @@ urlpatterns = patterns(
     '',
     # Landing page
     (r'^/?$', 'djdb.views.landing_page'),
-
-    # Update albums from landing page
-    (r'^update$', 'djdb.views.update_albums'),
     
     # Artist information page
     (r'artist/(.*)/info', 'djdb.views.artist_info_page'),
 
-    # Update albums.
+    # Update albums (from landing page or artist info page)
+    (r'^update_albums$', 'djdb.views.update_albums'),
     (r'artist/.*/update', 'djdb.views.update_albums'),
 
     # Artist search for jquery.autocomplete

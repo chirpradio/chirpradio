@@ -313,29 +313,27 @@ class  AlbumCategoryViewsTestCase(DjangoTestCase):
         self.artist.delete()
         self.user.delete()
         
-    def test_change_categories_forbidden(self):
+    def test_update_albums_forbidden(self):
         albums = self.artist.sorted_albums
         vars = {'checkbox_1': 'on',
                 'checkbox_3': 'on',
-                'category_1': models.ALBUM_CATEGORIES[1],
-                'category_3': models.ALBUM_CATEGORIES[1],
                 'album_key_1': albums[0].key(),
-                'album_key_3': albums[2].key()}
-        response = self.client.post('/djdb/album/change_categories', vars)
+                'album_key_3': albums[2].key(),
+                'mark_as': models.ALBUM_CATEGORIES[1]}
+        response = self.client.post('/djdb/update_albums', vars)
         self.assertEqual(response.status_code, 403)
         
-    def test_change_categories(self):
+    def test_update_albums(self):
         self.user.roles.append(roles.MUSIC_DIRECTOR)
         self.user.save()
         
         albums = self.artist.sorted_albums
         vars = {'checkbox_1': 'on',
                 'checkbox_3': 'on',
-                'category_1': models.ALBUM_CATEGORIES[1],
-                'category_3': models.ALBUM_CATEGORIES[1],
                 'album_key_1': albums[0].key(),
-                'album_key_3': albums[2].key()}
-        response = self.client.post('/djdb/album/change_categories', vars)
+                'album_key_3': albums[2].key(),
+                'mark_as': models.ALBUM_CATEGORIES[1]}
+        response = self.client.post('/djdb/update_albums', vars)
         self.assertEqual(response.status_code, 200)
         
         albums = self.artist.sorted_albums
