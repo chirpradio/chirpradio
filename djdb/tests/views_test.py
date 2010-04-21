@@ -169,6 +169,12 @@ class ReviewViewsTestCase(DjangoTestCase):
         # Get user.
         self.user = models.User.all().filter('email =', 'test@test.com')[0]
         
+        # Create a review user.
+        self.review_user = models.User(email='test_user@test.com',
+                                       first_name='Test',
+                                       last_name='User')
+        self.review_user.put()
+        
         # Create an artist.
         self.artist = models.Artist(name='Artist')
         self.artist.put()
@@ -193,6 +199,7 @@ class ReviewViewsTestCase(DjangoTestCase):
         self.assertEqual(response.status_code, 200)
         
         # Test post - save review.
+        # Test non-music director.
         vars = {'save': 'Save',
                 'text': 'Album review.'}
         response = self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
@@ -200,6 +207,44 @@ class ReviewViewsTestCase(DjangoTestCase):
         
         album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
         self.assertEqual(album.reviews[0].text, 'Album review.')
+        self.assertEqual(album.reviews[0].author.key(), self.user.key())
+
+        # Test non-music director trying to set user field.
+        vars = {'save': 'Save',
+                'text': 'Album review.',
+                'user': 'Test User',
+                'user_key': self.review_user.key()}
+        response = self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 302)
+        
+        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
+        self.assertEqual(album.reviews[-1].text, 'Album review.')
+        self.assertEqual(album.reviews[-1].author.key(), self.user.key())
+
+        # Test music director, no user field.
+        self.user.roles.append(roles.MUSIC_DIRECTOR)
+        self.user.save()
+
+        vars = {'save': 'Save',
+                'text': 'Album review.'}
+        response = self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 302)
+        
+        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
+        self.assertEqual(album.reviews[-1].text, 'Album review.')
+        self.assertEqual(album.reviews[-1].author.key(), self.user.key())
+
+        # Test music director setting user field.
+        vars = {'save': 'Save',
+                'text': 'Album review.',
+                'user': 'Test User',
+                'user_key': self.review_user.key()}
+        response = self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 302)
+        
+        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
+        self.assertEqual(album.reviews[-1].text, 'Album review.')
+        self.assertEqual(album.reviews[-1].author.key(), self.review_user.key())
 
     def test_edit_review(self):
         # Post a new review.
@@ -221,7 +266,42 @@ class ReviewViewsTestCase(DjangoTestCase):
         self.assertEqual(response.status_code, 302)
         album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
         self.assertEqual(album.reviews[0].text, 'Edited album review.')
+        self.assertEqual(album.reviews[0].author.key(), self.user.key())
 
+        # Test non-music director trying to change user.
+        vars = {'save': 'Save',
+                'text': 'Edited album review.',
+                'user': 'Test User',
+                'user_key': self.review_user.key()}
+        response = self.client.post('/djdb/album/%d/edit_review/%s' % (self.album.album_id, doc_key), vars)
+        self.assertEqual(response.status_code, 302)
+        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
+        self.assertEqual(album.reviews[0].text, 'Edited album review.')
+        self.assertEqual(album.reviews[0].author.key(), self.user.key())
+
+        # Test music director not changing user.
+        self.user.roles.append(roles.MUSIC_DIRECTOR)
+        self.user.save()
+
+        vars = {'save': 'Save',
+                'text': 'Edited album review.'}
+        response = self.client.post('/djdb/album/%d/edit_review/%s' % (self.album.album_id, doc_key), vars)
+        self.assertEqual(response.status_code, 302)
+        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
+        self.assertEqual(album.reviews[0].text, 'Edited album review.')
+        self.assertEqual(album.reviews[0].author.key(), self.user.key())
+
+        # Test music director changing user.
+        vars = {'save': 'Save',
+                'text': 'Edited album review.',
+                'user': 'Test User',
+                'user_key': self.review_user.key()}
+        response = self.client.post('/djdb/album/%d/edit_review/%s' % (self.album.album_id, doc_key), vars)
+        self.assertEqual(response.status_code, 302)
+        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
+        self.assertEqual(album.reviews[0].text, 'Edited album review.')
+        self.assertEqual(album.reviews[0].author.key(), self.review_user.key())
+        
 class CommentViewsTestCase(DjangoTestCase):
     def setUp(self):
         # Log in.

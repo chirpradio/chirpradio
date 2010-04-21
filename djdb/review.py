@@ -39,6 +39,10 @@ class Form(forms.Form):
     text = forms.CharField(required=True, widget=forms.Textarea,
                            min_length=10, max_length=20000)
 
+    def __init__(self, user, *args, **kwargs):
+        super(Form, self).__init__(*args, **kwargs)
+        if user.is_music_director:
+            self.fields['user'] = forms.CharField(required=False, label='Author')
 
 def fetch_recent(max_num_returned=10):
     """Returns the most recent reviews, in reverse chronological order."""

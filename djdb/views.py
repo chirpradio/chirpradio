@@ -228,17 +228,29 @@ def album_new_review(request, album_id_str):
     ctx_vars = { "title": u"New Review", "album": album }
     form = None
     if request.method == "GET":
-        form = review.Form()
+        form = review.Form(request.user)
     else:
-        form = review.Form(request.POST)
+        form = review.Form(request.user, request.POST)
         if form.is_valid():
             if "preview" in request.POST:
                 ctx_vars["valid_html_tags"] = (
                     sanitize_html.valid_tags_description())
                 ctx_vars["preview"] = sanitize_html.sanitize_html(
                     form.cleaned_data["text"])
+                if request.user.is_music_director and request.POST.get('user'):
+                    try:
+                        author = AutoRetry(db).get(request.POST.get('user_key'))
+                    except:
+                        ctx_vars["error"] = "Invalid user. Make sure you select a user from the drop-down box."
+                        ctx_vars["preview"] = None
+                    else:
+                        ctx_vars["author"] = author
             elif "save" in request.POST:
-                doc = review.new(album, request.user)
+                if request.user.is_music_director and request.POST.get('user_key'):
+                    author = AutoRetry(db).get(request.POST.get('user_key'))
+                    doc = review.new(album, author)
+                else:
+                    doc = review.new(album, request.user)
                 doc.unsafe_text = form.cleaned_data["text"]
                 # Increment the number of reviews.
                 album.num_reviews += 1
@@ -258,20 +270,37 @@ def album_edit_review(request, album_id_str, review_key):
     template = loader.get_template("djdb/album_edit_review.html")
     ctx_vars = { "title": u"Edit Review",
                  "album": album,
-                 "review": doc }
+                 "review": doc,
+                 "author": doc.author}
 
     form = None
     if request.method == "GET":
-        form = review.Form({'text': doc.text})
+        attrs = {'text': doc.text}
+        if request.user.is_music_director:
+            attrs['user'] = doc.author
+        form = review.Form(request.user, attrs)
     else:
-        form = review.Form(request.POST)
+        form = review.Form(request.user, request.POST)
         if form.is_valid():
             if "preview" in request.POST:
                 ctx_vars["valid_html_tags"] = (
                     sanitize_html.valid_tags_description())
                 ctx_vars["preview"] = sanitize_html.sanitize_html(
                     form.cleaned_data["text"])
+                if request.user.is_music_director and request.POST.get('user'):
+                    try:
+                        author = AutoRetry(db).get(request.POST.get('user_key'))
+                    except:
+                        ctx_vars["error"] = "Invalid user. Make sure you select a user from the drop-down box."
+                        ctx_vars["preview"] = None
+                    else:
+                        ctx_vars["author"] = author
             elif "save" in request.POST:
+                if request.user.is_music_director and request.POST.get('user_key'):
+                    author = AutoRetry(db).get(request.POST.get('user_key'))
+                    doc.author = author
+                else:
+                    doc.author = request.user
                 doc.unsafe_text = form.cleaned_data["text"]
                 AutoRetry(doc).save()
                 # Redirect back to the album info page.

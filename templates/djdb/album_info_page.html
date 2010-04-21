@@ -1,5 +1,6 @@
 {% extends "common/internal_page.html" %}
 
+{% load common_extras %}
 {% load djdb_extras %}
 
 {% block breadcrumbs %}
@@ -31,6 +32,33 @@ It is still very primitive.
 <p>
 <a href="/djdb/crate">Go to your crate.</a>
 </p>
+
+{% if album.category %}
+<h3>Category: {{ album.category|replace:"/_/ "|capfirst }}</h3>
+{% endif %}
+
+<h3>Reviews</h3>
+{% if album.reviews %}
+<a href="/djdb/album/{{ album.album_id }}/new_review">Write another review</a> of this album.
+  {% for doc in album.reviews %}
+<p>
+<blockquote>
+{{ doc.text|safe }}
+</blockquote>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author }} on {{ doc.timestamp_display|date:"F j, Y P" }}</small>
+  {% ifequal user.key doc.author.key %}
+[ <a href="/djdb/album/{{ album.album_id }}/edit_review/{{ doc.key }}">Edit</a> ]
+  {% else %}
+    {% if user.is_music_director %}
+[ <a href="/djdb/album/{{ album.album_id }}/edit_review/{{ doc.key }}">Edit</a> ]
+    {% endif %}    
+  {% endifequal %}
+</p>
+  {% endfor %}
+{% else %}
+No reviews yet!  You could be the first to
+<a href="/djdb/album/{{ album.album_id }}/new_review">write a review</a> of this album.
+{% endif %}
 
 {% if album.current_tags %}
 <h3>Album Tags</h3>
@@ -84,25 +112,6 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
 {% endfor %}
 </table>
 </form>
-
-<h3>Reviews</h3>
-{% if album.reviews %}
-<a href="/djdb/album/{{ album.album_id }}/new_review">Write another review</a> of this album.
-  {% for doc in album.reviews %}
-<p>
-<blockquote>
-{{ doc.text|safe }}
-</blockquote>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author }} on {{ doc.timestamp_display|date:"F j, Y P" }}</small>
-  {% ifequal user.key doc.author.key %}
-[ <a href="/djdb/album/{{ album.album_id }}/edit_review/{{ doc.key }}">Edit</a> ]
-  {% endifequal %}
-</p>
-  {% endfor %}
-{% else %}
-No reviews yet!  You could be the first to
-<a href="/djdb/album/{{ album.album_id }}/new_review">write a review</a> of this album.
-{% endif %}
 
 {% if album.reviews %}
 <h3>Comments</h3>
