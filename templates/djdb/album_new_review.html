@@ -70,7 +70,7 @@ The allowed HTML tags are: {{ valid_html_tags }}
   {{ form.as_table }}
 <!-- Should be in review.Form, but doesn't seem to work... -->
 {% if user.is_music_director %}
-  <input id="id_user_key" type="hidden" name="user_key" value="{{ user.key }}"/>
+  <input id="id_author_key" type="hidden" name="author_key" value="{{ author.key }}"/>
 {% endif %}
 </table>
 <input type="submit" name="preview" value="Preview">

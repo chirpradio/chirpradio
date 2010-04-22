@@ -73,6 +73,16 @@ Mark selected as: <a id="mark_nocat" href="update">No category</a>,
     </td>
   {% endif %}
     <td><a href="{{ album.url }}">{{ album.title }}</a></td>
+  <td>
+  {% ifnotequal album.label None %}
+  {{ album.label }}
+  {% endifnotequal %}
+  </td>
+  <td>
+  {% ifnotequal album.year None %}
+  {{ album.year }}
+  {% endifnotequal %}
+  </td>
     <td>
       {{ album.num_tracks }} track{{ album.num_tracks|pluralize }}
     </td>

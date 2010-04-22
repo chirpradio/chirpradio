@@ -42,7 +42,7 @@ class Form(forms.Form):
     def __init__(self, user, *args, **kwargs):
         super(Form, self).__init__(*args, **kwargs)
         if user.is_music_director:
-            self.fields['user'] = forms.CharField(required=False, label='Author')
+            self.fields['author'] = forms.CharField(required=False)
 
 def fetch_recent(max_num_returned=10):
     """Returns the most recent reviews, in reverse chronological order."""

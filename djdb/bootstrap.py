@@ -33,6 +33,17 @@ _ARTIST_NAMES = (
     u"Kinks, The",
 )
 
+_LABELS = (
+    u"Sub Pop",
+    u"Warp",
+    u"Merge",
+    u"Touch & Go",
+    u"Asthmatic Kitty",
+    u"Matador"
+)
+
+_YEARS = [1900 + random.randint(50, 110) for n in range(10)]
+
 _WORDS = (
     "alpha", "beta", "gamma", "delta", "epsilon", "sigma", "theta",
     "dog", "cat", "monkey", "elephant", "bear", "hedgehog", "sloth",
@@ -40,11 +51,9 @@ _WORDS = (
     "bowie", "fall", "kinks",
     )
 
-
 def random_phrase():
     return u" ".join(
         random.sample(_WORDS, random.randint(2, 5)))
-
 
 def bootstrap(request):
     """Inject test library data into the datastore."""
@@ -68,6 +77,8 @@ def bootstrap(request):
                 counter += 1
                 alb = models.Album(
                     title=random_phrase(),
+                    label=_LABELS[random.randint(0, len(_LABELS) - 1)],
+                    year=_YEARS[random.randint(0, len(_YEARS) - 1)],
                     disc_number=disc_num,
                     album_id=counter,
                     import_timestamp=datetime.datetime.now(),

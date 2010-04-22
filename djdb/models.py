@@ -196,6 +196,8 @@ class Album(db.Model):
       category: The category of the album. May be core, local_current,
         local_classic, heavy, light.
       title: The name of the album.  This is used in TALB tags.
+      label: The label of the album.
+      year: The year of the album.
       disc_number: If specified, this album is one part of a multi-disc
         set.
       album_id: A unique integer identifier that is assigned to the
@@ -216,6 +218,10 @@ class Album(db.Model):
     
     title = db.StringProperty(required=True)
 
+    label = db.StringProperty(required=False)
+    
+    year = db.IntegerProperty(required=False)
+    
     disc_number = db.IntegerProperty(required=False)
 
     album_id = db.IntegerProperty(required=True)

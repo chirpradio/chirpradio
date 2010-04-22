@@ -133,8 +133,18 @@ Mark selected as: <a id="mark_nocat" href="/djdb/update_albums">No category</a>,
       <td><a href="{{ album.artist_url}}">{{ album.artist_name }}</a></td>
       <td><a href="{{ album.url }}">{{ album.title }}</a></td>
       <td>
+      {% ifnotequal album.label None %}
+      {{ album.label }}
+      {% endifnotequal %}
+      </td>
+      <td>
+      {% ifnotequal album.year None %}
+      {{ album.year }}
+      {% endifnotequal %}
+      </td>
+      <td>
       {% if album.num_reviews %}
-{{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
+      {{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
       {% endif %}
       </td>
       <td>

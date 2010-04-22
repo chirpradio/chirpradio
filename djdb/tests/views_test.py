@@ -160,6 +160,50 @@ class AutocompleteViewsTestCase(DjangoTestCase):
         response = self.client.get("/djdb/track/search.txt", {'q':'eno'})
         self.assertEqual(response.content, "")
 
+class UpdateAlbumViewsTestCase(DjangoTestCase):
+    def setUp(self):
+        # Log in.
+        self.client = Client()
+        self.client.login(email='test@test.com', roles=[roles.DJ])
+        
+        # Get user.
+        self.user = models.User.all().filter('email =', 'test@test.com')[0]
+    
+        # Create an artist.
+        self.artist = models.Artist(name='Artist')
+        self.artist.put()
+        
+        # Create an album.
+        self.album = models.Album(title='Album',
+                                  label='Label',
+                                  year=2010,
+                                  album_id=1,
+                                  import_timestamp=datetime.datetime.now(),
+                                  album_artist=self.artist,
+                                  num_tracks=1)
+        self.album.put()
+
+    def test_update_album(self):
+        vars = {'label': 'New Label',
+                'year': 2009,
+                'update': 'Update'}
+        response = self.client.post('/djdb/album/%d/info' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 200)
+        album = db.get(self.album.key())
+        self.assertEqual(self.album.label, 'Label')
+        self.assertEqual(self.album.year, 2010)
+
+        self.user.roles.append(roles.MUSIC_DIRECTOR)
+        self.user.save()
+        vars = {'label': 'New Label',
+                'year': 2009,
+                'update': 'Update'}
+        response = self.client.post('/djdb/album/%d/info' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 200)
+        album = db.get(self.album.key())
+        self.assertEqual(album.label, 'New Label')
+        self.assertEqual(album.year, 2009)
+
 class ReviewViewsTestCase(DjangoTestCase):
     def setUp(self):
         # Log in.
@@ -212,8 +256,8 @@ class ReviewViewsTestCase(DjangoTestCase):
         # Test non-music director trying to set user field.
         vars = {'save': 'Save',
                 'text': 'Album review.',
-                'user': 'Test User',
-                'user_key': self.review_user.key()}
+                'author': 'Test User',
+                'author_key': self.review_user.key()}
         response = self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
         self.assertEqual(response.status_code, 302)
         
@@ -237,8 +281,8 @@ class ReviewViewsTestCase(DjangoTestCase):
         # Test music director setting user field.
         vars = {'save': 'Save',
                 'text': 'Album review.',
-                'user': 'Test User',
-                'user_key': self.review_user.key()}
+                'author': 'Test User',
+                'author_key': self.review_user.key()}
         response = self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
         self.assertEqual(response.status_code, 302)
         
@@ -271,8 +315,8 @@ class ReviewViewsTestCase(DjangoTestCase):
         # Test non-music director trying to change user.
         vars = {'save': 'Save',
                 'text': 'Edited album review.',
-                'user': 'Test User',
-                'user_key': self.review_user.key()}
+                'author': 'Test User',
+                'author_key': self.review_user.key()}
         response = self.client.post('/djdb/album/%d/edit_review/%s' % (self.album.album_id, doc_key), vars)
         self.assertEqual(response.status_code, 302)
         album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
@@ -294,8 +338,8 @@ class ReviewViewsTestCase(DjangoTestCase):
         # Test music director changing user.
         vars = {'save': 'Save',
                 'text': 'Edited album review.',
-                'user': 'Test User',
-                'user_key': self.review_user.key()}
+                'author': 'Test User',
+                'author_key': self.review_user.key()}
         response = self.client.post('/djdb/album/%d/edit_review/%s' % (self.album.album_id, doc_key), vars)
         self.assertEqual(response.status_code, 302)
         album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]

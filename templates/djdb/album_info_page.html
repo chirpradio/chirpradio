@@ -37,6 +37,17 @@ It is still very primitive.
 <h3>Category: {{ album.category|replace:"/_/ "|capfirst }}</h3>
 {% endif %}
 
+{% if user.is_music_director %}
+<h3>Edit Album</h3>
+
+<form action="" method="post">
+  <table>
+{{ album_form.as_table }}
+  </table>
+  <input type="submit" name="update" value="Update">
+</form>
+{% endif %}
+
 <h3>Reviews</h3>
 {% if album.reviews %}
 <a href="/djdb/album/{{ album.album_id }}/new_review">Write another review</a> of this album.
