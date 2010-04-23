@@ -96,6 +96,9 @@ def reviews_page(request, ctx_vars=None):
                     if rev.subject.category == category:
                         revs.append(rev)
                 reviews = revs
+                ctx_vars["num_reviews"] = len(reviews)
+            else:
+                ctx_vars["num_reviews"] = reviews.count()
     ctx_vars["form"] = form
 
     ctx_vars["reviews"] = reviews
