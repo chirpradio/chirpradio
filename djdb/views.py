@@ -82,6 +82,7 @@ def reviews_page(request, ctx_vars=None):
 
     if request.method == "GET":
         form = forms.ListReviewsForm()
+        ctx_vars["num_reviews"] = reviews.count()
     else:
         form = forms.ListReviewsForm(request.POST)
         if form.is_valid() and "search" in request.POST:
