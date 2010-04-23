@@ -32,7 +32,7 @@ from djdb import models
 from djdb import search
 from djdb import review
 from djdb import comment
-from djdb.forms import PartialAlbumForm
+from djdb import forms
 from djdb.models import Album
 import re
 import tag_util
@@ -69,6 +69,36 @@ def landing_page(request, ctx_vars=None):
     # Add categories.
     ctx_vars["categories"] = models.ALBUM_CATEGORIES
     
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+def reviews_page(request, ctx_vars=None):
+    template = loader.get_template('djdb/reviews.html')
+    if ctx_vars is None : ctx_vars = {}
+    ctx_vars['title'] = 'DJ Database Reviews'
+
+    # Grab reviews.
+    reviews = review.fetch_all()
+
+    if request.method == "GET":
+        form = forms.ListReviewsForm()
+    else:
+        form = forms.ListReviewsForm(request.POST)
+        if form.is_valid() and "search" in request.POST:
+            author_key = request.POST.get('author_key')
+            if author_key:
+                author = db.get(author_key)
+                reviews.filter("author =", author)
+            category = request.POST.get('category')
+            if category:
+                revs = []
+                for rev in reviews:
+                    if rev.subject.category == category:
+                        revs.append(rev)
+                reviews = revs
+    ctx_vars["form"] = form
+
+    ctx_vars["reviews"] = reviews
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
@@ -223,10 +253,10 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     if request.user.is_music_director:
         album_form = None
         if request.method == "GET":
-            album_form = PartialAlbumForm({'label': album.label,
+            album_form = forms.PartialAlbumForm({'label': album.label,
                                            'year': album.year})
         else:
-            album_form = PartialAlbumForm(request.POST)
+            album_form = forms.PartialAlbumForm(request.POST)
             if album_form.is_valid() and "update" in request.POST:
                 album.label = album_form.cleaned_data["label"]
                 album.year = album_form.cleaned_data["year"]

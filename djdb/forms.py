@@ -21,8 +21,17 @@ from django import forms
 from djdb import models
 from common.autoretry import AutoRetry
 
+ALBUM_CATEGORY_CHOICES = [["", ""]]
+ALBUM_CATEGORY_CHOICES += zip(models.ALBUM_CATEGORIES,
+                              [category.replace('_', ' ').capitalize() for category in models.ALBUM_CATEGORIES])
+
 class PartialAlbumForm(forms.Form):
     label = forms.CharField(required=False,
                             widget=forms.TextInput(attrs={'size': 40}))
     year = forms.IntegerField(required=False,
                               widget=forms.TextInput(attrs={'size': 4, 'maxlength': 4}))
+
+class ListReviewsForm(forms.Form):
+    author = forms.CharField(required=False)
+    author_key = forms.CharField(required=False, widget=forms.HiddenInput)
+    category = forms.ChoiceField(required=False, choices=ALBUM_CATEGORY_CHOICES)

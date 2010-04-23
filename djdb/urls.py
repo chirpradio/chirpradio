@@ -32,6 +32,9 @@ urlpatterns = patterns(
     # Landing page
     (r'^/?$', 'djdb.views.landing_page'),
     
+    # Reviews page
+    (r'reviews', 'djdb.views.reviews_page'),
+    
     # Artist information page
     (r'artist/(.*)/info', 'djdb.views.artist_info_page'),
 
