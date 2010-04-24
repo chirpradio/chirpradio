@@ -206,12 +206,20 @@ def createEditSpotCopy(request, spot_copy_key=None, spot_key=None):
                             }, instance=spot_copy)
         if spot_copy_form.is_valid():
             spot_copy = spot_copy_form.save()
+            old_spot = spot_copy.spot
             spot_copy.author = user
             spot_copy.spot = AutoRetry(models.Spot).get(spot_copy_form['spot_key'].data)
             
             # Add spot copy to spot's list of shuffled spot copies.
             spot_copy.spot.add_spot_copy(spot_copy)
             AutoRetry(spot_copy).put()
+            
+            if old_spot:
+                # just in case this copy was moved from one spot 
+                # to another, bust the old cache of spot copies
+                # See Issue 124
+                old_spot.shuffle_spot_copies()
+                AutoRetry(old_spot).save()
             
             return HttpResponseRedirect(reverse('traffic_log.listSpots'))
     else:

@@ -322,8 +322,9 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         
         self.assertEqual(spot.get_spot_copy(dow, hour, slot), (None, False))
     
-    def test_move_spot_copy_from_spot_to_other(self):
+    def test_move_spot_copy_to_another_spot(self):
         
+        # See http://code.google.com/p/chirpradio/issues/detail?id=124
         dow=1 
         hour=0
         slot=0
@@ -332,6 +333,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
                         title='First Spot',
                         type='Station ID')
         spot1.put()
+        spot1_key = spot1.key()
         constraint = models.SpotConstraint(dow=dow, hour=hour, slot=slot, spots=[spot1.key()])
         constraint.put()
         
@@ -363,6 +365,8 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         self.assertNoFormErrors(resp)
         
         self.assertEqual(spot2.get_spot_copy(dow, hour, slot)[0].body, "Second")
+        
+        spot1 = models.Spot.get(spot1_key)
         self.assertEqual(spot1.get_spot_copy(dow, hour, slot)[0], None)
     
     def test_random_spot_copy_during_creation_and_after_finishing(self):
