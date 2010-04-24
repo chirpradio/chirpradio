@@ -62,7 +62,7 @@ def add_hour(base_hour, dow):
 @require_role(DJ)
 def index(request):
     now = time_util.chicago_now()
-    # now = now.replace(hour=23)
+    now = now.replace(hour=23)
     today = now.date()
     
     hours_by_day = defaultdict(lambda: [])
@@ -74,10 +74,10 @@ def index(request):
     hour_plus1, dow_for_hour = add_hour(current_hour, current_dow)
     hours_by_day[dow_for_hour].append(hour_plus1)
     
-    hour_plus2, dow_for_hour = add_hour(hour_plus1, current_dow)
+    hour_plus2, dow_for_hour = add_hour(hour_plus1, dow_for_hour)
     hours_by_day[dow_for_hour].append(hour_plus2)
     
-    hour_plus3, dow_for_hour = add_hour(hour_plus2, current_dow)
+    hour_plus3, dow_for_hour = add_hour(hour_plus2, dow_for_hour)
     hours_by_day[dow_for_hour].append(hour_plus3)
     
     hours_to_show = [current_hour, hour_plus1, hour_plus2, hour_plus3]
