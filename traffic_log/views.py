@@ -20,6 +20,7 @@ import random
 import datetime
 import calendar
 import logging
+from collections import defaultdict
 
 from google.appengine.ext import db
 
@@ -43,37 +44,56 @@ from traffic_log import models, forms, constants
 
 log = logging.getLogger()
 
-def add_hour(base_hour):
+def add_hour(base_hour, dow):
     """Adds an hour to base_hour and ensures it's in range.
+    Sets the day ahead if necessary.
     
     Operates on 24 hour clock hours.
     """
+    next_dow = dow
     next_hour = base_hour + 1
-    if next_hour == 25:
+    if next_hour > 24:
         next_hour = 0
-    return next_hour
+        next_dow = dow + 1
+        if next_dow > 7:
+            next_dow = 1
+    return next_hour, next_dow
 
 @require_role(DJ)
 def index(request):
-#    db.delete(models.TrafficLogEntry.all())
     now = time_util.chicago_now()
+    # now = now.replace(hour=23)
     today = now.date()
+    
+    hours_by_day = defaultdict(lambda: [])
+    
     current_hour = now.hour
-    hour_plus1 = add_hour(current_hour)
-    hour_plus2 = add_hour(hour_plus1)
-    hour_plus3 = add_hour(hour_plus2)
+    current_dow = today.isoweekday()
+    hours_by_day[current_dow].append(current_hour)
+    
+    hour_plus1, dow_for_hour = add_hour(current_hour, current_dow)
+    hours_by_day[dow_for_hour].append(hour_plus1)
+    
+    hour_plus2, dow_for_hour = add_hour(hour_plus1, current_dow)
+    hours_by_day[dow_for_hour].append(hour_plus2)
+    
+    hour_plus3, dow_for_hour = add_hour(hour_plus2, current_dow)
+    hours_by_day[dow_for_hour].append(hour_plus3)
+    
     hours_to_show = [current_hour, hour_plus1, hour_plus2, hour_plus3]
     
-    current_spots = (models.SpotConstraint.all()
-                        .filter("dow =", today.isoweekday())
-                        .filter("hour IN", hours_to_show)
-                        .order("hour")
-                        .order("slot"))
+    slotted_spots = []
+    for dow in hours_by_day:
+        q = (models.SpotConstraint.all()
+                        .filter("dow =", dow)
+                        .filter("hour IN", hours_by_day[dow]))
+        for s in AutoRetry(q).fetch(10):
+            slotted_spots.append(s)
     
     def hour_position(s):
         return hours_to_show.index(s.hour)
         
-    slotted_spots = sorted([s for s in AutoRetry(current_spots).fetch(10)], key=hour_position) 
+    slotted_spots.sort(key=hour_position)
     
     return render_to_response('traffic_log/index.html', dict(
             date=today,
