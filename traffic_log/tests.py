@@ -294,6 +294,81 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         self.assertEqual([c.underwriter for c in spot_copy], [None, 'another underwriter'])
         self.assertEqual([c.author.email for c in spot_copy], ['test', 'test@test.com'])
     
+    def test_delete_spot_copy(self):
+        spot = models.Spot(
+                        title='Legal ID',
+                        type='Station ID')
+        spot.put()
+        dow=1 
+        hour=0
+        slot=0
+        constraint = models.SpotConstraint(dow=dow, hour=hour, slot=slot, spots=[spot.key()])
+        constraint.put()
+        
+        author = User(email='test')
+        author.put()
+        spot_copy = models.SpotCopy(
+                        body='First',
+                        spot=spot,
+                        author=author)
+        spot_copy.put()
+        
+        self.assertEqual(spot.get_spot_copy(dow, hour, slot)[0].body, "First")
+        
+        # now edit the second one:
+        resp = self.client.get(reverse('traffic_log.deleteSpotCopy', args=(spot_copy.key(),)))
+        
+        self.assertEqual([c for c in spot.all_spot_copy()], [])
+        
+        self.assertEqual(spot.get_spot_copy(dow, hour, slot), (None, False))
+    
+    def test_move_spot_copy_to_another_spot(self):
+        
+        # See http://code.google.com/p/chirpradio/issues/detail?id=124
+        dow=1 
+        hour=0
+        slot=0
+        
+        spot1 = models.Spot(
+                        title='First Spot',
+                        type='Station ID')
+        spot1.put()
+        spot1_key = spot1.key()
+        constraint = models.SpotConstraint(dow=dow, hour=hour, slot=slot, spots=[spot1.key()])
+        constraint.put()
+        
+        spot2 = models.Spot(
+                        title='Second Spot',
+                        type='Station ID')
+        spot2.put()
+        constraint = models.SpotConstraint(dow=dow, hour=hour, slot=slot, spots=[spot2.key()])
+        constraint.put()
+        
+        # assign it to the first one:
+        author = User(email='test')
+        author.put()
+        spot_copy = models.SpotCopy(
+                        body='First',
+                        spot=spot1,
+                        author=author)
+        spot_copy.put()
+        
+        self.assertEqual(spot1.get_spot_copy(dow, hour, slot)[0].body, "First")
+        
+        # now move it to the second spot:
+        resp = self.client.post(reverse('traffic_log.editSpotCopy', args=(spot_copy.key(),)), {
+            'spot_key': spot2.key(),
+            'body': 'Second',
+            'underwriter': '',
+            'expire_on': ''
+        })
+        self.assertNoFormErrors(resp)
+        
+        self.assertEqual(spot2.get_spot_copy(dow, hour, slot)[0].body, "Second")
+        
+        spot1 = models.Spot.get(spot1_key)
+        self.assertEqual(spot1.get_spot_copy(dow, hour, slot)[0], None)
+    
     def test_random_spot_copy_during_creation_and_after_finishing(self):
         author = User(email='test')
         author.save()
@@ -411,27 +486,6 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot_copy, is_logged = spot.get_spot_copy(dow, hour, slot)
         converted_expire_on = time_util.convert_utc_to_chicago(spot_copy.expire_on)
         self.assertEqual(converted_expire_on.timetuple(), now.timetuple())
-    
-    def test_delete_spot_copy(self):
-        spot = models.Spot(
-                        title='Legal ID',
-                        type='Station ID')
-        spot.put()
-        constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
-        constraint.put()
-        
-        author = User(email='test')
-        author.put()
-        spot_copy = models.SpotCopy(
-                        body='First',
-                        spot=spot,
-                        author=author)
-        spot_copy.put()
-        
-        # now edit the second one:
-        resp = self.client.get(reverse('traffic_log.deleteSpotCopy', args=(spot_copy.key(),)))
-        
-        self.assertEqual([c for c in spot.all_spot_copy()], [])
 
 class TestObjects(DjangoTestCase):
     
