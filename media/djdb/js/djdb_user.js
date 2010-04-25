@@ -9,8 +9,7 @@ $(document).ready(function() {
                 $("#id_user_key").attr("value", entity_key);
                 $("#id_user").focus();
             }
-        }, default_opt)
-    );
+        }, default_opt));
     
     // be sure that freeform entry always clears out any 
     // previously auto-completed keys :
@@ -25,8 +24,7 @@ $(document).ready(function() {
                 $("#id_author_key").attr("value", entity_key);
                 $("#id_author").focus();
             }
-        }, default_opt)
-    );
+        }, default_opt));
     
     // be sure that freeform entry always clears out any 
     // previously auto-completed keys :

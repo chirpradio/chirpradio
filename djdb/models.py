@@ -35,7 +35,7 @@ EXPLICIT_TAG = "explicit"
 RECOMMENDED_TAG = "recommended"
 
 # List of album categories.
-ALBUM_CATEGORIES = ['core', 'local_current', 'local_classic', 'heavy', 'light']
+ALBUM_CATEGORIES = ['core', 'local_current', 'local_classic', 'heavy_rotation', 'light_rotation']
 
 class DjDbImage(db.Model):
     """An image (usually a JPEG or PNG) associated with an artist or album.
@@ -507,8 +507,18 @@ class Document(db.Model):
     subject = db.ReferenceProperty(required=True)
 
     # The user who wrote the text.
-    author = db.ReferenceProperty(User, required=True)
-
+    author = db.ReferenceProperty(User, required=False)
+    
+    # If the author is not a user, then use this field.
+    author_name = db.StringProperty(required=False)
+    
+    @property
+    def author_display(self):
+        if self.author:
+            return self.author
+        else:
+            return self.author_name
+            
     # When this document was created.
     timestamp = db.DateTimeProperty(required=True, auto_now=True)
 
