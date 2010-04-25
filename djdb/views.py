@@ -295,19 +295,26 @@ def album_new_review(request, album_id_str):
                 ctx_vars["preview"] = sanitize_html.sanitize_html(
                     form.cleaned_data["text"])
                 if request.user.is_music_director and request.POST.get('author'):
-                    try:
-                        author = AutoRetry(db).get(request.POST.get('author_key'))
-                    except:
-                        ctx_vars["error"] = "Invalid user. Make sure you select a user from the drop-down box."
-                        ctx_vars["preview"] = None
-                    else:
-                        ctx_vars["author"] = author
-            elif "save" in request.POST:
-                if request.user.is_music_director and request.POST.get('author_key'):
-                    author = AutoRetry(db).get(request.POST.get('author_key'))
-                    doc = review.new(album, author)
+                    ctx_vars["author_key"] = request.POST.get("author_key")
+                    ctx_vars["author_name"] = request.POST.get("author")
                 else:
-                    doc = review.new(album, request.user)
+                    ctx_vars["author_key"] = request.user.key()
+                    ctx_vars["author_name"] = request.user
+            elif "save" in request.POST:
+                if request.POST.get('author_key'):
+                    author = AutoRetry(db).get(request.POST.get('author_key'))
+                else:
+                    author_name = request.POST.get('author')
+                    first_name, sep, last_name = author_name.partition(' ')
+                    query = models.User.all()
+                    query.filter("first_name =", first_name)
+                    query.filter("last_name =", last_name)
+                    author = AutoRetry(query).fetch(1)
+                    if author: author = author[0]
+                if author:
+                    doc = review.new(album, user=author)
+                else:
+                    doc = review.new(album, user_name=author_name)
                 doc.unsafe_text = form.cleaned_data["text"]
                 # Increment the number of reviews.
                 album.num_reviews += 1
@@ -327,14 +334,15 @@ def album_edit_review(request, album_id_str, review_key):
     template = loader.get_template("djdb/album_edit_review.html")
     ctx_vars = { "title": u"Edit Review",
                  "album": album,
-                 "review": doc,
-                 "author": doc.author}
+                 "review": doc }
+    if doc.author:
+        ctx_vars['author_key'] = doc.author.key()
 
     form = None
     if request.method == "GET":
         attrs = {'text': doc.text}
         if request.user.is_music_director:
-            attrs['author'] = doc.author
+            attrs['author'] = doc.author_display
         form = review.Form(request.user, attrs)
     else:
         form = review.Form(request.user, request.POST)
@@ -345,19 +353,28 @@ def album_edit_review(request, album_id_str, review_key):
                 ctx_vars["preview"] = sanitize_html.sanitize_html(
                     form.cleaned_data["text"])
                 if request.user.is_music_director and request.POST.get('author'):
-                    try:
-                        author = AutoRetry(db).get(request.POST.get('author_key'))
-                    except:
-                        ctx_vars["error"] = "Invalid user. Make sure you select a user from the drop-down box."
-                        ctx_vars["preview"] = None
-                    else:
-                        ctx_vars["author"] = author
-            elif "save" in request.POST:
-                if request.user.is_music_director and request.POST.get('author_key'):
-                    author = AutoRetry(db).get(request.POST.get('author_key'))
-                    doc.author = author
+                    ctx_vars["author_key"] = request.POST.get("author_key")
+                    ctx_vars["author_name"] = request.POST.get("author")
                 else:
-                    doc.author = request.user
+                    ctx_vars["author_key"] = request.user.key()
+                    ctx_vars["author_name"] = request.user
+            elif "save" in request.POST:
+                if request.POST.get('author_key'):
+                    author = AutoRetry(db).get(request.POST.get('author_key'))
+                else:
+                    author_name = request.POST.get('author')
+                    first_name, sep, last_name = author_name.partition(' ')
+                    query = models.User.all()
+                    query.filter("first_name =", first_name)
+                    query.filter("last_name =", last_name)
+                    author = AutoRetry(query).fetch(1)
+                    if author: author = author[0]
+                if author:
+                    doc.author = author
+                    doc.author_name = None
+                else:
+                    doc.author = None
+                    doc.author_name = author_name
                 doc.unsafe_text = form.cleaned_data["text"]
                 AutoRetry(doc).save()
                 # Redirect back to the album info page.

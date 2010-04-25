@@ -16,8 +16,7 @@
 ###
 
 import datetime
-import unittest
-from django.test import TestCase as DjangoTestCase
+from django.test import TestCase
 from django import http
 from django.test.client import Client
 from google.appengine.ext import db
@@ -25,10 +24,9 @@ from djdb import models
 from djdb import search
 from auth import roles
 
-class ViewsTestCase(unittest.TestCase):
+class ViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
-        self.client = Client()
         self.client.login(email="test@test.com")
 
         # Create an image entry.
@@ -54,7 +52,7 @@ class ViewsTestCase(unittest.TestCase):
         response = self.client.get(self.img.url + 'trailing garbage')
         self.assertEqual(404, response.status_code)
 
-class AutocompleteViewsTestCase(DjangoTestCase):
+class AutocompleteViewsTestCase(TestCase):
     def setUp(self):
         self.client.login(email="test@test.com", roles=[roles.DJ])
         
@@ -160,7 +158,7 @@ class AutocompleteViewsTestCase(DjangoTestCase):
         response = self.client.get("/djdb/track/search.txt", {'q':'eno'})
         self.assertEqual(response.content, "")
 
-class UpdateAlbumViewsTestCase(DjangoTestCase):
+class UpdateAlbumViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
         self.client = Client()
@@ -204,7 +202,7 @@ class UpdateAlbumViewsTestCase(DjangoTestCase):
         self.assertEqual(album.label, 'New Label')
         self.assertEqual(album.year, 2009)
 
-class ReviewViewsTestCase(DjangoTestCase):
+class ReviewViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
         self.client = Client()
@@ -231,122 +229,97 @@ class ReviewViewsTestCase(DjangoTestCase):
                                   num_tracks=1)
         self.album.put()
 
-#    def tearDown(self):
-        # Delete test data.
-#        self.album.delete()
-#        self.artist.delete()
-#        self.user.delete()
-
     def test_new_review(self):
         # Test get - emty form.
         response = self.client.get('/djdb/album/%d/new_review' % self.album.album_id)
         self.assertEqual(response.status_code, 200)
         
-        # Test post - save review.
-        # Test non-music director.
-        vars = {'save': 'Save',
-                'text': 'Album review.'}
-        response = self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
-        self.assertEqual(response.status_code, 302)
-        
-        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
-        self.assertEqual(album.reviews[0].text, 'Album review.')
-        self.assertEqual(album.reviews[0].author.key(), self.user.key())
-
-        # Test non-music director trying to set user field.
+        # Test save review with no user field.
         vars = {'save': 'Save',
                 'text': 'Album review.',
-                'author': 'Test User',
-                'author_key': self.review_user.key()}
+                'author_key': self.user.key()}
         response = self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
         self.assertEqual(response.status_code, 302)
-        
         album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
         self.assertEqual(album.reviews[-1].text, 'Album review.')
         self.assertEqual(album.reviews[-1].author.key(), self.user.key())
 
-        # Test music director, no user field.
-        self.user.roles.append(roles.MUSIC_DIRECTOR)
-        self.user.save()
-
-        vars = {'save': 'Save',
-                'text': 'Album review.'}
-        response = self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
-        self.assertEqual(response.status_code, 302)
-        
-        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
-        self.assertEqual(album.reviews[-1].text, 'Album review.')
-        self.assertEqual(album.reviews[-1].author.key(), self.user.key())
-
-        # Test music director setting user field.
+        # Test save review with user field of existing user.
         vars = {'save': 'Save',
                 'text': 'Album review.',
-                'author': 'Test User',
-                'author_key': self.review_user.key()}
+                'author': 'Test User'}
         response = self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
         self.assertEqual(response.status_code, 302)
-        
         album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
         self.assertEqual(album.reviews[-1].text, 'Album review.')
         self.assertEqual(album.reviews[-1].author.key(), self.review_user.key())
 
+        # Test save review with user field of non-existing user.
+        vars = {'save': 'Save',
+                'text': 'Album review.',
+                'author': 'Nonexisting User'}
+        response = self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 302)
+        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
+        self.assertEqual(album.reviews[-1].text, 'Album review.')
+        self.assertEqual(album.reviews[-1].author_name, "Nonexisting User")
+
     def test_edit_review(self):
         # Post a new review.
         vars = {'save': 'Save',
-                'text': 'Album review.'}
+                'text': 'Album review.',
+                'author_key': self.user.key()}
         self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
         album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
         doc_key = album.reviews[0].key()
 
-        # Test get - edit.
+        # Test get page.
         response = self.client.post('/djdb/album/%d/edit_review/%s' % (self.album.album_id, doc_key))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['review'].text, 'Album review.')
         
-        # Test post - save review.
+        # Test edit review with no user.
         vars = {'save': 'Save',
-                'text': 'Edited album review.'}
+                'text': 'Edited album review 1.',
+                'author_key': self.user.key()}
         response = self.client.post('/djdb/album/%d/edit_review/%s' % (self.album.album_id, doc_key), vars)
         self.assertEqual(response.status_code, 302)
         album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
-        self.assertEqual(album.reviews[0].text, 'Edited album review.')
+        self.assertEqual(album.reviews[0].text, 'Edited album review 1.')
         self.assertEqual(album.reviews[0].author.key(), self.user.key())
 
-        # Test non-music director trying to change user.
+        # Test edit review with different user and key.
         vars = {'save': 'Save',
-                'text': 'Edited album review.',
+                'text': 'Edited album review 2.',
                 'author': 'Test User',
                 'author_key': self.review_user.key()}
         response = self.client.post('/djdb/album/%d/edit_review/%s' % (self.album.album_id, doc_key), vars)
         self.assertEqual(response.status_code, 302)
         album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
-        self.assertEqual(album.reviews[0].text, 'Edited album review.')
-        self.assertEqual(album.reviews[0].author.key(), self.user.key())
-
-        # Test music director not changing user.
-        self.user.roles.append(roles.MUSIC_DIRECTOR)
-        self.user.save()
-
-        vars = {'save': 'Save',
-                'text': 'Edited album review.'}
-        response = self.client.post('/djdb/album/%d/edit_review/%s' % (self.album.album_id, doc_key), vars)
-        self.assertEqual(response.status_code, 302)
-        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
-        self.assertEqual(album.reviews[0].text, 'Edited album review.')
-        self.assertEqual(album.reviews[0].author.key(), self.user.key())
-
-        # Test music director changing user.
-        vars = {'save': 'Save',
-                'text': 'Edited album review.',
-                'author': 'Test User',
-                'author_key': self.review_user.key()}
-        response = self.client.post('/djdb/album/%d/edit_review/%s' % (self.album.album_id, doc_key), vars)
-        self.assertEqual(response.status_code, 302)
-        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
-        self.assertEqual(album.reviews[0].text, 'Edited album review.')
+        self.assertEqual(album.reviews[0].text, 'Edited album review 2.')
         self.assertEqual(album.reviews[0].author.key(), self.review_user.key())
+
+        # Test edit review with different existing user but no key.
+        vars = {'save': 'Save',
+                'text': 'Edited album review 3.',
+                'author': 'Test User'}
+        response = self.client.post('/djdb/album/%d/edit_review/%s' % (self.album.album_id, doc_key), vars)
+        self.assertEqual(response.status_code, 302)
+        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
+        self.assertEqual(album.reviews[0].text, 'Edited album review 3.')
+        self.assertEqual(album.reviews[0].author.key(), self.review_user.key())
+
+        # Test edit review with non-existing user.
+        vars = {'save': 'Save',
+                'text': 'Edited album review 4.',
+                'author': 'Nonexisting User'}
+        response = self.client.post('/djdb/album/%d/edit_review/%s' % (self.album.album_id, doc_key), vars)
+        self.assertEqual(response.status_code, 302)
+        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
+        self.assertEqual(album.reviews[0].text, 'Edited album review 4.')
+        self.assertEqual(album.reviews[0].author_name, 'Nonexisting User')
         
-class CommentViewsTestCase(DjangoTestCase):
+class CommentViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
         self.client = Client()
@@ -408,7 +381,7 @@ class CommentViewsTestCase(DjangoTestCase):
         album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
         self.assertEqual(album.comments[0].text, 'Edited album comment.')
 
-class  AlbumCategoryViewsTestCase(DjangoTestCase):
+class  AlbumCategoryViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
         self.client = Client()
@@ -465,7 +438,7 @@ class  AlbumCategoryViewsTestCase(DjangoTestCase):
         self.assertEqual(albums[1].category, None)
         self.assertEqual(albums[2].category, models.ALBUM_CATEGORIES[1])
 
-class TrackViewsTestCase(DjangoTestCase):
+class TrackViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
         self.client = Client()
@@ -545,7 +518,7 @@ class TrackViewsTestCase(DjangoTestCase):
         self.assertEqual(tracks[2].current_tags, [])
         self.assertEqual(tracks[3].current_tags, [])
 
-class CrateViewsTestCase(DjangoTestCase):
+class CrateViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
         self.client = Client()

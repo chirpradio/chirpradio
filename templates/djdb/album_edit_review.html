@@ -19,10 +19,6 @@
 <script type="text/javascript" src="/media/djdb/js/djdb_user.js"></script>
 {% endblock %}
 
-{% if error %}
-<ul class="errorlist"><li>{{ error }}</li></ul>
-{% endif %}
-
 You are editing your review of
 <a href="{{ album.url }}"><b>{{ album.title }}</b></a>
 by
@@ -43,11 +39,7 @@ Your text of your review will look like this when it is displayed:
 {{ preview|safe }}
 </blockquote>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by
-{% if author %}
-{{ author }}
-{% else %}
-{{ user }}
-{% endif %}
+{{ author_name }}
 on {% now "F j, Y P" %} {{ doc.timestamp_display|date:"F j, Y P" }}</small>
 </p>
 </div>
@@ -62,13 +54,13 @@ continue to edit the post in the form below.
 You can use basic HTML markup in the body of your review; unsupported
 HTML will be stripped out automatically.
 </p>
+<p>
+The allowed HTML tags are: {{ valid_html_tags }}
+</p>
 <table>
   {{ form.as_table }}
-<!-- Should be in review.Form, but doesn't seem to work... -->
-{% if user.is_music_director %}
-  <input id="id_author_key" type="hidden" name="author_key" value="{{ author.key }}"/>
-{% endif %}
 </table>
+<input id="id_author_key" type="hidden" name="author_key" value="{{ author_key }}"/>
 <input type="submit" name="preview" value="Preview">
 
 {% endblock %}

@@ -20,7 +20,7 @@ from djdb import models
 from common.autoretry import AutoRetry
 
 
-def new(album, user):
+def new(album, user=None, user_name=None):
     """Returns a new partially-initialized Document object for a review.
 
     The new Document is in the same entity group as the album being
@@ -32,6 +32,7 @@ def new(album, user):
     """
     return models.Document(parent=album,
                            subject=album, author=user,
+                           author_name=user_name,
                            doctype=models.DOCTYPE_REVIEW)
 
 
