@@ -319,6 +319,60 @@ class ReviewViewsTestCase(TestCase):
         self.assertEqual(album.reviews[0].text, 'Edited album review 4.')
         self.assertEqual(album.reviews[0].author_name, 'Nonexisting User')
         
+    def test_hide_unhide_review(self):
+        # Post a new review.
+        vars = {'save': 'Save',
+                'text': 'Album review.',
+                'author_key': self.user.key()}
+        self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
+        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
+        doc_key = album.reviews[0].key()
+
+        # Test permissions.
+        response = self.client.post('/djdb/album/%d/hide_review/%s' % (self.album.album_id, doc_key))
+        self.assertEqual(response.status_code, 403)
+
+        self.user.roles.append(roles.MUSIC_DIRECTOR)
+        self.user.save()
+
+        # Test hide review.
+        response = self.client.post('/djdb/album/%d/hide_review/%s' % (self.album.album_id, doc_key))
+        self.assertEqual(response.status_code, 200)
+        doc = db.get(doc_key)
+        self.assertEqual(doc.is_hidden, True)
+        
+        # Test unhide review.
+        response = self.client.post('/djdb/album/%d/unhide_review/%s' % (self.album.album_id, doc_key))
+        self.assertEqual(response.status_code, 200)
+        doc = db.get(doc_key)
+        self.assertEqual(doc.is_hidden, False)
+
+    def test_delete_review(self):
+        # Post a new review.
+        vars = {'save': 'Save',
+                'text': 'Album review.',
+                'author_key': self.user.key()}
+        self.client.post('/djdb/album/%d/new_review' % self.album.album_id, vars)
+        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
+        doc_key = album.reviews[0].key()
+
+        # Test permissions.
+        vars = {'doc_key': doc_key,
+                'confirm': 'Confirm'}
+        response = self.client.post('/djdb/album/%d/delete_review' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 403)
+
+        self.user.roles.append(roles.MUSIC_DIRECTOR)
+        self.user.save()
+
+        # Test delete review.
+        vars = {'review_key': doc_key,
+                'confirm': 'Confirm'}
+        response = self.client.post('/djdb/album/%d/delete_review' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 200)
+        doc = db.get(doc_key)
+        self.assertEqual(doc, None)
+    
 class CommentViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
@@ -380,6 +434,58 @@ class CommentViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
         self.assertEqual(album.comments[0].text, 'Edited album comment.')
+
+    def test_hide_unhide_comment(self):
+        # Post a new comment.
+        vars = {'save': 'Save',
+                'text': 'Album comment.'}
+        self.client.post('/djdb/album/%d/new_comment' % self.album.album_id, vars)
+        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
+        doc_key = album.comments[0].key()
+
+        # Test permissions.
+        response = self.client.post('/djdb/album/%d/hide_comment/%s' % (self.album.album_id, doc_key))
+        self.assertEqual(response.status_code, 403)
+
+        self.user.roles.append(roles.MUSIC_DIRECTOR)
+        self.user.save()
+
+        # Test hide comment.
+        response = self.client.post('/djdb/album/%d/hide_comment/%s' % (self.album.album_id, doc_key))
+        self.assertEqual(response.status_code, 200)
+        doc = db.get(doc_key)
+        self.assertEqual(doc.is_hidden, True)
+        
+        # Test unhide comment.
+        response = self.client.post('/djdb/album/%d/unhide_comment/%s' % (self.album.album_id, doc_key))
+        self.assertEqual(response.status_code, 200)
+        doc = db.get(doc_key)
+        self.assertEqual(doc.is_hidden, False)
+
+    def test_delete_comment(self):
+        # Post a new comment.
+        vars = {'save': 'Save',
+                'text': 'Album comment.'}
+        self.client.post('/djdb/album/%d/new_comment' % self.album.album_id, vars)
+        album = models.Album.all().filter('album_id =', self.album.album_id).fetch(1)[0]
+        doc_key = album.comments[0].key()
+
+        # Test permissions.
+        vars = {'doc_key': doc_key,
+                'confirm': 'Confirm'}
+        response = self.client.post('/djdb/album/%d/delete_comment' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 403)
+
+        self.user.roles.append(roles.MUSIC_DIRECTOR)
+        self.user.save()
+
+        # Test delete comment.
+        vars = {'comment_key': doc_key,
+                'confirm': 'Confirm'}
+        response = self.client.post('/djdb/album/%d/delete_comment' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 200)
+        doc = db.get(doc_key)
+        self.assertEqual(doc, None)
 
 class  AlbumCategoryViewsTestCase(TestCase):
     def setUp(self):

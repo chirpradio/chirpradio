@@ -279,77 +279,33 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
-def album_new_review(request, album_id_str):
+def album_edit_review(request, album_id_str, review_key=None):
     album = _get_album_or_404(album_id_str)
-    template = loader.get_template("djdb/album_new_review.html")
-    ctx_vars = { "title": u"New Review", "album": album }
-    form = None
-    if request.method == "GET":
-        form = review.Form(request.user)
-    else:
-        form = review.Form(request.user, request.POST)
-        if form.is_valid():
-            if "preview" in request.POST:
-                ctx_vars["valid_html_tags"] = (
-                    sanitize_html.valid_tags_description())
-                ctx_vars["preview"] = sanitize_html.sanitize_html(
-                    form.cleaned_data["text"])
-                if request.user.is_music_director and request.POST.get('author'):
-                    ctx_vars["author_key"] = request.POST.get("author_key")
-                    ctx_vars["author_name"] = request.POST.get("author")
-                else:
-                    ctx_vars["author_key"] = request.user.key()
-                    ctx_vars["author_name"] = request.user
-            elif "save" in request.POST:
-                if request.POST.get('author_key'):
-                    author = AutoRetry(db).get(request.POST.get('author_key'))
-                else:
-                    author_name = request.POST.get('author')
-                    first_name, sep, last_name = author_name.partition(' ')
-                    query = models.User.all()
-                    query.filter("first_name =", first_name)
-                    query.filter("last_name =", last_name)
-                    author = AutoRetry(query).fetch(1)
-                    if author: author = author[0]
-                if author:
-                    doc = review.new(album, user=author)
-                else:
-                    doc = review.new(album, user_name=author_name)
-                doc.unsafe_text = form.cleaned_data["text"]
-                # Increment the number of reviews.
-                album.num_reviews += 1
-                # Now save both the modified album and the document.
-                # They are both in the same entity group, so this write
-                # is atomic.
-                AutoRetry(db).put([album, doc])
-                # Redirect back to the album info page.
-                return http.HttpResponseRedirect("info")
-    ctx_vars["form"] = form
-    ctx = RequestContext(request, ctx_vars)
-    return http.HttpResponse(template.render(ctx))
-
-def album_edit_review(request, album_id_str, review_key):
-    album = _get_album_or_404(album_id_str)
-    doc = review.get_or_404(review_key)
     template = loader.get_template("djdb/album_edit_review.html")
-    ctx_vars = { "title": u"Edit Review",
-                 "album": album,
-                 "review": doc }
-    if doc.author:
-        ctx_vars['author_key'] = doc.author.key()
+    ctx_vars = { "album": album,
+                 "valid_html_tags": sanitize_html.valid_tags_description() }
+    if review_key:
+        doc = review.get_or_404(review_key)
+        ctx_vars["review"] = doc
+        if doc.author:
+            ctx_vars['author_key'] = doc.author.key()
+        ctx_vars["title"] = "Edit Review"
+        ctx_vars["edit"] = True
+    else:
+        ctx_vars["title"] = "New Review"
 
     form = None
     if request.method == "GET":
-        attrs = {'text': doc.text}
-        if request.user.is_music_director:
-            attrs['author'] = doc.author_display
+        attrs = None
+        if review_key:
+            attrs = {'text': doc.text}
+            if request.user.is_music_director:
+                attrs['author'] = doc.author_display
         form = review.Form(request.user, attrs)
     else:
         form = review.Form(request.user, request.POST)
         if form.is_valid():
             if "preview" in request.POST:
-                ctx_vars["valid_html_tags"] = (
-                    sanitize_html.valid_tags_description())
                 ctx_vars["preview"] = sanitize_html.sanitize_html(
                     form.cleaned_data["text"])
                 if request.user.is_music_director and request.POST.get('author'):
@@ -369,77 +325,129 @@ def album_edit_review(request, album_id_str, review_key):
                     query.filter("last_name =", last_name)
                     author = AutoRetry(query).fetch(1)
                     if author: author = author[0]
+
+                # Save author or author name.
                 if author:
-                    doc.author = author
-                    doc.author_name = None
+                    if review_key:
+                        doc.author = author
+                        doc.author_name = None
+                    else:
+                        doc = review.new(album, user=author)
                 else:
-                    doc.author = None
-                    doc.author_name = author_name
+                    if review_key:
+                        doc.author = None
+                        doc.author_name = author_name
+                    else:
+                        doc = review.new(album, user_name=author_name)
+                
                 doc.unsafe_text = form.cleaned_data["text"]
-                AutoRetry(doc).save()
+                
+                if review_key:
+                    AutoRetry(doc).save()
+                else:
+                    # Increment the number of reviews.
+                    album.num_reviews += 1
+                    # Now save both the modified album and the document.
+                    # They are both in the same entity group, so this write
+                    # is atomic.
+                    AutoRetry(db).put([album, doc])
+                
                 # Redirect back to the album info page.
                 return http.HttpResponseRedirect(album.url)
     ctx_vars["form"] = form
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
-def album_new_comment(request, album_id_str):
+@require_role(roles.MUSIC_DIRECTOR)
+def album_hide_unhide_review(request, album_id_str, review_key):
     album = _get_album_or_404(album_id_str)
-    template = loader.get_template("djdb/album_new_comment.html")
-    ctx_vars = { "title": u"New Comment", "album": album }
+    doc = review.get_or_404(review_key)
+    if doc.is_hidden:
+        doc.is_hidden = False
+    else:
+        doc.is_hidden = True
+    AutoRetry(doc).save()
+    return album_info_page(request, album_id_str)
+
+@require_role(roles.MUSIC_DIRECTOR)
+def album_delete_review(request, album_id_str, review_key=None):
+    album = _get_album_or_404(album_id_str)
+    if review_key is None:
+        review_key = request.POST.get('review_key')
+    doc = review.get_or_404(review_key)
+    if request.POST.get('confirm'):
+        AutoRetry(doc).delete()
+        album.num_reviews -= 1
+        AutoRetry(album).save()
+    return album_info_page(request, album_id_str)
+    
+def album_edit_comment(request, album_id_str, comment_key=None):
+    album = _get_album_or_404(album_id_str)
+    template = loader.get_template("djdb/album_edit_comment.html")
+    ctx_vars = { "album": album,
+                 "valid_html_tags": sanitize_html.valid_tags_description() }
+    if comment_key:
+        doc = comment.get_or_404(comment_key)
+        ctx_vars["comment"] = doc
+        ctx_vars["title"] = "Edit Comment"
+        ctx_vars["edit"] = True
+    else:
+        ctx_vars["title"] = "New Comment"
+
     form = None
     if request.method == "GET":
-        form = comment.Form()
+        attrs = None
+        if comment_key:
+            attrs = {'text': doc.text}
+        form = comment.Form(attrs)
     else:
         form = comment.Form(request.POST)
         if form.is_valid():
             if "preview" in request.POST:
-                ctx_vars["valid_html_tags"] = (
-                    sanitize_html.valid_tags_description())
                 ctx_vars["preview"] = sanitize_html.sanitize_html(
                     form.cleaned_data["text"])
             elif "save" in request.POST:
-                doc = comment.new(album, request.user)
+                if comment_key is None:
+                    doc = comment.new(album, request.user)
                 doc.unsafe_text = form.cleaned_data["text"]
-                # Increment the number of commentss.
-                album.num_comments += 1
-                # Now save both the modified album and the document.
-                # They are both in the same entity group, so this write
-                # is atomic.
-                AutoRetry(db).put([album, doc])
+                if comment_key:
+                    AutoRetry(doc).save()
+                else:
+                    doc.unsafe_text = form.cleaned_data["text"]
+                    # Increment the number of commentss.
+                    album.num_comments += 1
+                    # Now save both the modified album and the document.
+                    # They are both in the same entity group, so this write
+                    # is atomic.
+                    AutoRetry(db).put([album, doc])
                 # Redirect back to the album info page.
-                return http.HttpResponseRedirect("info")
+                return http.HttpResponseRedirect(album.url)
     ctx_vars["form"] = form
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
-def album_edit_comment(request, album_id_str, comment_key):
+@require_role(roles.MUSIC_DIRECTOR)
+def album_hide_unhide_comment(request, album_id_str, comment_key):
     album = _get_album_or_404(album_id_str)
     doc = comment.get_or_404(comment_key)
-    template = loader.get_template("djdb/album_edit_comment.html")
-    ctx_vars = { "title": u"Edit Comment",
-                 "album": album,
-                 "comment": doc }
-
-    form = None
-    if request.method == "GET":
-        form = comment.Form({'text': doc.text})
+    if doc.is_hidden:
+        doc.is_hidden = False
     else:
-        form = comment.Form(request.POST)
-        if form.is_valid():
-            if "preview" in request.POST:
-                ctx_vars["valid_html_tags"] = (
-                    sanitize_html.valid_tags_description())
-                ctx_vars["preview"] = sanitize_html.sanitize_html(
-                    form.cleaned_data["text"])
-            elif "save" in request.POST:
-                doc.unsafe_text = form.cleaned_data["text"]
-                AutoRetry(doc).save()
-                # Redirect back to the album info page.
-                return http.HttpResponseRedirect(album.url)
-    ctx_vars["form"] = form
-    ctx = RequestContext(request, ctx_vars)
-    return http.HttpResponse(template.render(ctx))
+        doc.is_hidden = True
+    AutoRetry(doc).save()
+    return album_info_page(request, album_id_str)
+
+@require_role(roles.MUSIC_DIRECTOR)
+def album_delete_comment(request, album_id_str, comment_key=None):
+    album = _get_album_or_404(album_id_str)
+    if comment_key is None:
+        comment_key = request.POST.get('comment_key')
+    doc = comment.get_or_404(comment_key)
+    if request.POST.get('confirm'):
+        AutoRetry(doc).delete()
+        album.num_comments -= 1
+        AutoRetry(album).save()
+    return album_info_page(request, album_id_str)
 
 def image(request):
     img = models.DjDbImage.get_by_url(request.path)
