@@ -87,7 +87,7 @@ def index(request):
         q = (models.SpotConstraint.all()
                         .filter("dow =", dow)
                         .filter("hour IN", hours_by_day[dow]))
-        for s in AutoRetry(q).fetch(10):
+        for s in AutoRetry(q):
             slotted_spots.append(s)
     
     def hour_position(s):
