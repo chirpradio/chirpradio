@@ -7,7 +7,13 @@
 
 {% block content %}
 
-You are editing your comment of
+You are
+{% if edit %}
+editing your comment
+{% else %}
+writing a new comment
+{% endif %}
+for
 <a href="{{ album.url }}"><b>{{ album.title }}</b></a>
 by
 <a href="{{ album.artist_url }}">{{ album.artist_name }}</a>.
@@ -21,10 +27,14 @@ Please proofread your comment carefully before you submit it.
 <p>
 Your text of your comment will look like this when it is displayed:
 </p>
-<div style="BACKGROUND-COLOR: #f0f0f0; PADDING: 10px; BORDER: black 10px solid">
-
+<div style="BACKGROUND-COLOR: #f0f0f0; PADDING: 10px; BORDER: black 3px solid">
 <p>
+<blockquote>
 {{ preview|safe }}
+</blockquote>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by
+{{ user }}
+on {% now "F j, Y P" %}</small>
 </p>
 </div>
 
@@ -39,6 +49,9 @@ continue to edit the post in the form below.
 <p>
 You can use basic HTML markup in the body of your comment; unsupported
 HTML will be stripped out automatically.
+</p>
+<p>
+The allowed HTML tags are: {{ valid_html_tags }}
 </p>
 <table>
   {{ form.as_table }}

@@ -52,12 +52,20 @@ urlpatterns = patterns(
     (r'album/(.*)/update', 'djdb.views.update_tracks'),
 
     # Album reviews.
-    (r'album/(.*)/new_review', 'djdb.views.album_new_review'),
+    (r'album/(.*)/new_review', 'djdb.views.album_edit_review'),
     (r'album/(.*)/edit_review/(.*)', 'djdb.views.album_edit_review'),
+    (r'album/(.*)/hide_review/(.*)', 'djdb.views.album_hide_unhide_review'),
+    (r'album/(.*)/unhide_review/(.*)', 'djdb.views.album_hide_unhide_review'),
+    (r'album/(.*)/delete_review/(.*)', 'djdb.views.album_delete_review'),
+    (r'album/(.*)/delete_review', 'djdb.views.album_delete_review'),
     
     # Album comments.
-    (r'album/(.*)/new_comment', 'djdb.views.album_new_comment'),
+    (r'album/(.*)/new_comment', 'djdb.views.album_edit_comment'),
     (r'album/(.*)/edit_comment/(.*)', 'djdb.views.album_edit_comment'),
+    (r'album/(.*)/hide_comment/(.*)', 'djdb.views.album_hide_unhide_comment'),
+    (r'album/(.*)/unhide_comment/(.*)', 'djdb.views.album_hide_unhide_comment'),
+    (r'album/(.*)/delete_comment/(.*)', 'djdb.views.album_delete_comment'),
+    (r'album/(.*)/delete_comment', 'djdb.views.album_delete_comment'),
     
     # Album search for jquery.autocomplete
     (r'album/search\.txt', 'djdb.views.album_search_for_autocomplete'),

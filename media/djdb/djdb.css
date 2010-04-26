@@ -1,3 +1,11 @@
+blockquote {
+    font-size: 12px;
+    color: #000;
+    margin-left: 2px;
+    padding-left: 10px;
+    border-left: 5px solid #ddd;
+}
+
 .ac_results {
 	padding: 0px;
 	border: 1px solid WindowFrame;
