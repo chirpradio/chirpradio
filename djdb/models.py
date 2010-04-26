@@ -520,12 +520,15 @@ class Document(db.Model):
             return self.author_name
             
     # When this document was created.
-    timestamp = db.DateTimeProperty(required=True, auto_now=True)
+    created = db.DateTimeProperty(required=True, auto_now_add=True)
+
+    # When this document was last modified.
+    modified = db.DateTimeProperty(required=True, auto_now=True)
 
     @property
-    def timestamp_display(self):
+    def created_display(self):
         """This is the time to show to users."""
-        return time_util.convert_utc_to_chicago(self.timestamp)
+        return time_util.convert_utc_to_chicago(self.created)
 
     # What type of document this is.
     # Example: "review" for an Album review.
@@ -550,7 +553,7 @@ class Document(db.Model):
     @property
     def sort_key(self):
         # We want to sort documents in reverse chronological order.
-        return tuple(-x for x in self.timestamp.utctimetuple())
+        return tuple(-x for x in self.created.utctimetuple())
 
 
 ############################################################################

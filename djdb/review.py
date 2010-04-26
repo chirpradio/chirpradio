@@ -49,14 +49,14 @@ def fetch_recent(max_num_returned=10):
     """Returns the most recent reviews, in reverse chronological order."""
     rev_query = models.Document.all()
     rev_query.filter("doctype =", models.DOCTYPE_REVIEW)
-    rev_query.order("-timestamp")
+    rev_query.order("-created")
     return AutoRetry(rev_query).fetch(max_num_returned)
 
 def fetch_all():
     """Returns all reviews in reverse chronological order."""
     rev_query = models.Document.all()
     rev_query.filter("doctype =", models.DOCTYPE_REVIEW)
-    rev_query.order("-timestamp")
+    rev_query.order("-created")
     return rev_query
     
 def get_or_404(doc_key):

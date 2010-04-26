@@ -67,7 +67,7 @@ It is still very primitive.
 <blockquote>
 {{ doc.text|safe }}
 </blockquote>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author_display }} on {{ doc.timestamp_display|date:"F j, Y P" }}</small>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author_display }} on {{ doc.created_display|date:"F j, Y P" }}</small>
       {% ifequal user.key doc.author.key %}
 [ <a href="/djdb/album/{{ album.album_id }}/edit_review/{{ doc.key }}">Edit</a>
       {% else %}
@@ -173,7 +173,7 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
 <blockquote>
 {{ doc.text|safe }}
 </blockquote>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author }} on {{ doc.timestamp_display|date:"F j, Y P" }}</small>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author }} on {{ doc.created_display|date:"F j, Y P" }}</small>
         {% ifequal user.key doc.author.key %}
 [ <a href="/djdb/album/{{ album.album_id }}/edit_comment/{{ doc.key }}">Edit</a>
         {% else %}
