@@ -13,7 +13,7 @@ indexes:
 - kind: Document
   properties:
   - name: doctype
-  - name: timestamp
+  - name: created
     direction: desc
 
 - kind: SearchMatches
@@ -55,6 +55,12 @@ indexes:
 - kind: Document
   properties:
   - name: author
+  - name: doctype
+  - name: timestamp
+    direction: desc
+
+- kind: Document
+  properties:
   - name: doctype
   - name: timestamp
     direction: desc

@@ -613,3 +613,18 @@ def artists_bulk_add(request):
     ctx_vars[mode] = True
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(tmpl.render(ctx))
+
+def _copy_created(request):
+    """
+    Update documents - copy document timestamp field to created and modified
+    field.
+    """
+    for doc in models.Document.all():
+        try:
+            doc.created = doc.timestamp
+            doc.modified = doc.timestamp
+        except:
+            ""
+        else:
+            AutoRetry(doc).save()
+    return landing_page(request)
