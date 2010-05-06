@@ -82,7 +82,8 @@ def reviews_page(request, ctx_vars=None):
     reviews = None
     if request.method == "GET":
         form = forms.ListReviewsForm()
-        reviews = review.fetch_recent(default_page_size + 1)
+        page_size = default_page_size
+        reviews = review.fetch_recent(page_size + 1)
     else:
         page_size = int(request.POST.get('page_size', default_page_size))
         form = forms.ListReviewsForm(request.POST)
