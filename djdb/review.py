@@ -57,7 +57,11 @@ def fetch_recent(max_num_returned=10, author_key=None, bookmark=None):
         author = db.get(author_key)
         rev_query.filter('author =', author)
     if bookmark:
-        date = datetime.datetime.strptime(bookmark, "%Y-%m-%d %H:%M:%S.%f")
+        # %f only in Python 2.6
+        #date = datetime.datetime.strptime(bookmark, "%Y-%m-%d %H:%M:%S.%f")
+        parts = bookmark.split('.')
+        date = datetime.datetime.strptime(parts[0], "%Y-%m-%d %H:%M:%S")
+        date = date.replace(microsecond=int(parts[1]))
         rev_query.filter('created <=', date)
     return AutoRetry(rev_query).fetch(max_num_returned)
 
