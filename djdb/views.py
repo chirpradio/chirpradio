@@ -72,7 +72,9 @@ def landing_page(request, ctx_vars=None):
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
-def reviews_page(request, ctx_vars=None):    
+def reviews_page(request, ctx_vars=None): 
+    default_page_size = 10
+    
     template = loader.get_template('djdb/reviews.html')
     if ctx_vars is None : ctx_vars = {}
     ctx_vars['title'] = 'DJ Database Reviews'
@@ -80,9 +82,9 @@ def reviews_page(request, ctx_vars=None):
     reviews = None
     if request.method == "GET":
         form = forms.ListReviewsForm()
-        reviews = review.fetch_recent(page_size + 1)
+        reviews = review.fetch_recent(default_page_size + 1)
     else:
-        page_size = int(request.POST.get('page_size', 10))
+        page_size = int(request.POST.get('page_size', default_page_size))
         form = forms.ListReviewsForm(request.POST)
         if form.is_valid():
             author_key = request.POST.get('author_key')
