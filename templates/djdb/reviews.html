@@ -35,9 +35,12 @@
 <hr/>
 <br/>
 
-<p>
-{{ num_reviews }} Reviews
-</p>
+<form action="/djdb/reviews" name="paging" method="post">
+  <input type="submit" name="next" onclick="document.paging.bookmark.value='{{ next }}'" value="Next Page"/>
+  <input type="hidden" id="bookmark" name="bookmark" value=""/>
+  <input type="hidden" name="author_key" value="{{ author_key }}"/>
+  <input type="hidden" name="page_size" value="{{ page_size }}"/>
+</form>
 
 <ul>
 {% for rev in reviews %}

@@ -56,6 +56,13 @@ indexes:
   properties:
   - name: author
   - name: doctype
+  - name: created
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: author
+  - name: doctype
   - name: timestamp
     direction: desc
 

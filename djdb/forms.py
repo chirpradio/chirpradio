@@ -34,4 +34,6 @@ class PartialAlbumForm(forms.Form):
 class ListReviewsForm(forms.Form):
     author = forms.CharField(required=False)
     author_key = forms.CharField(required=False, widget=forms.HiddenInput)
-    category = forms.ChoiceField(required=False, choices=ALBUM_CATEGORY_CHOICES)
+#    category = forms.ChoiceField(required=False, choices=ALBUM_CATEGORY_CHOICES)
+    page_size = forms.ChoiceField(required=False, choices=[[10, 10], [50, 50], [100, 100]])
+    

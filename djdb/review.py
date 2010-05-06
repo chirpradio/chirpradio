@@ -15,6 +15,9 @@
 ### limitations under the License.
 ###
 
+import datetime
+
+from google.appengine.ext import db
 from django import forms
 from djdb import models
 from common.autoretry import AutoRetry
@@ -45,11 +48,17 @@ class Form(forms.Form):
         if user.is_music_director:
             self.fields['author'] = forms.CharField(required=False)
 
-def fetch_recent(max_num_returned=10):
+def fetch_recent(max_num_returned=10, author_key=None, bookmark=None):
     """Returns the most recent reviews, in reverse chronological order."""
     rev_query = models.Document.all()
     rev_query.filter("doctype =", models.DOCTYPE_REVIEW)
     rev_query.order("-created")
+    if author_key:
+        author = db.get(author_key)
+        rev_query.filter('author =', author)
+    if bookmark:
+        date = datetime.datetime.strptime(bookmark, "%Y-%m-%d %H:%M:%S.%f")
+        rev_query.filter('created <=', date)
     return AutoRetry(rev_query).fetch(max_num_returned)
 
 def fetch_all():

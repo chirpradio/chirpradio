@@ -72,37 +72,42 @@ def landing_page(request, ctx_vars=None):
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
-def reviews_page(request, ctx_vars=None):
+def reviews_page(request, ctx_vars=None):    
     template = loader.get_template('djdb/reviews.html')
     if ctx_vars is None : ctx_vars = {}
     ctx_vars['title'] = 'DJ Database Reviews'
 
-    # Grab reviews.
-    reviews = review.fetch_all()
-
+    reviews = None
     if request.method == "GET":
         form = forms.ListReviewsForm()
-        ctx_vars["num_reviews"] = reviews.count()
+        reviews = review.fetch_recent(page_size + 1)
     else:
+        page_size = int(request.POST.get('page_size', 10))
         form = forms.ListReviewsForm(request.POST)
-        if form.is_valid() and "search" in request.POST:
+        if form.is_valid():
             author_key = request.POST.get('author_key')
-            if author_key:
-                author = db.get(author_key)
-                reviews.filter("author =", author)
-            category = request.POST.get('category')
-            if category:
-                revs = []
-                for rev in reviews:
-                    if rev.subject.category == category:
-                        revs.append(rev)
-                reviews = revs
-                ctx_vars["num_reviews"] = len(reviews)
-            else:
-                ctx_vars["num_reviews"] = reviews.count()
+            ctx_vars['author_key'] = author_key
+            bookmark = request.POST.get('bookmark')
+            reviews = review.fetch_recent(page_size + 1, author_key, bookmark)
+            
+            # category = request.POST.get('category')
+            # if category:
+                # revs = []
+                # for rev in reviews:
+                    # if rev.subject.category == category:
+                        # revs.append(rev)
+                # reviews = revs
+                # ctx_vars["num_reviews"] = len(reviews)
+            # else:
+                # ctx_vars["num_reviews"] = reviews.count()
+    if len(reviews) == page_size + 1:
+        ctx_vars['next'] = reviews[-1].created
+        ctx_vars['reviews'] = reviews[:page_size]
+    else:
+        ctx_vars['reviews'] = reviews
+    
     ctx_vars["form"] = form
-
-    ctx_vars["reviews"] = reviews
+    ctx_vars['page_size'] = page_size
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
