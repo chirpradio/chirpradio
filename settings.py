@@ -15,8 +15,9 @@
 # Django settings for chirpradio project.
 
 import os
+from common import in_dev
 
-DEBUG = True
+DEBUG = in_dev()
 TEMPLATE_DEBUG = DEBUG
 
 ROOT_PATH = os.path.dirname(__file__)
