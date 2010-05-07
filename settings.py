@@ -18,6 +18,7 @@ import os
 from common import in_dev
 
 DEBUG = in_dev()
+# DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ROOT_PATH = os.path.dirname(__file__)
@@ -64,10 +65,19 @@ TEMPLATE_LOADERS = (
     'django.template.loaders.app_directories.load_template_source',
 )
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE_CLASSES = [
     'django.middleware.common.CommonMiddleware',
     'auth.middleware.AuthenticationMiddleware',
-)
+]
+
+if not DEBUG:
+    # when in production, install this error handler
+    # (otherwise, let the debug middleware handle the request)
+    MIDDLEWARE_CLASSES.append(
+        # from:
+        # http://github.com/wtanaka/google-app-engine-django-errors
+        'errors.middleware.GoogleAppEngineErrorMiddleware'
+    )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     'common.context_processors.base',
@@ -89,5 +99,6 @@ INSTALLED_APPS = (
      'landing_page',
      'playlists',
      'volunteers',
-     'traffic_log'
+     'traffic_log',
+     'errors'
 )
