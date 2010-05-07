@@ -26,7 +26,6 @@ indexes:
   - name: subject
   - name: timestamp
 
-
 ### Playlists ###
 
 - kind: PlaylistEvent
@@ -51,13 +50,6 @@ indexes:
 # manually, move them above the marker line.  The index.yaml file is
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
-
-- kind: Document
-  properties:
-  - name: author
-  - name: doctype
-  - name: created
-    direction: desc
 
 - kind: Document
   properties:
