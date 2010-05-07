@@ -33,3 +33,8 @@ def four_oh_four(request):
     return http.HttpResponse("No such page: " + request.path,
                              mimetype="text/plain",
                              status=404)
+
+def error_on_purpose(request):
+    raise RuntimeError(
+            "When the moon shines on the 5th house on the 7th hour, "
+            "your shoe laces will unravel.")

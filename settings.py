@@ -24,7 +24,8 @@ ROOT_PATH = os.path.dirname(__file__)
 ROOT_ABSPATH = os.path.abspath(ROOT_PATH)
 
 ADMINS = (
-    # ('Your Name', 'your_email@domain.com'),
+    # fixme: make this a CHIRP distribution list maybe?
+    ('Kumar McMillan', 'kumar.mcmillan@gmail.com'),
 )
 
 MANAGERS = ADMINS

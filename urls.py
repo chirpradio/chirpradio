@@ -51,6 +51,9 @@ urlpatterns = patterns(
     
     # Common.
     ('^common/', include('common.urls')),
+    
+    # Forced error
+    (r'^error-on-purpose/?', 'landing_page.views.error_on_purpose'),
 
     # A catch-all rule to generate a 404.
     (r'', 'landing_page.views.four_oh_four'),
