@@ -15,8 +15,24 @@
 ### limitations under the License.
 ###
 
+from errors.middleware import CATCHABLE
+
 def _test_errorhandler(request):
-    """URL for forcing an error during manual and automated testing."""
-    raise RuntimeError(
+    """URL for forcing an error during manual and automated testing.
+    
+    You can simulate the exception contained in the catchable tuple by 
+    specifying their index on the query string.  For example:
+    
+    http://127.0.0.1:8000/errors/_test_errorhandler?type=0
+    http://127.0.0.1:8000/errors/_test_errorhandler?type=1
+    ...
+    
+    """
+    if 'type' in request.GET:
+        SimulatedException = CATCHABLE[int(request.GET['type'])][0]
+    else:
+        SimulatedException = lambda: RuntimeError(
             "When the moon shines on the 5th house on the 7th hour, "
             "your shoe laces will unravel.")
+        
+    raise SimulatedException()

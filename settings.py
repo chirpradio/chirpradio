@@ -17,8 +17,8 @@
 import os
 from common import in_dev
 
-DEBUG = in_dev()
-# DEBUG = False
+# DEBUG = in_dev()
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ROOT_PATH = os.path.dirname(__file__)
@@ -88,7 +88,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
-    os.path.join(ROOT_PATH, 'templates')
+    os.path.join(ROOT_PATH, 'templates'),
 )
 
 INSTALLED_APPS = (

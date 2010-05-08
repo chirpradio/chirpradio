@@ -23,9 +23,10 @@ from unittest import TestCase
 from django.utils import simplejson
 from django.test import TestCase as DjangoTestCase
 import django.test.client
+from django.core.urlresolvers import reverse
+from django.conf import settings
 import fudge
 from fudge.inspector import arg
-from django.core.urlresolvers import reverse
 
 from auth import roles
 import errors.middleware
@@ -35,29 +36,28 @@ class ClientHandlerWithErroHandler(django.test.client.ClientHandler):
     def load_middleware(self):
         from django.conf import settings
         
-        m = [n for n in settings.MIDDLEWARE_CLASSES]
-        if 'errors.middleware.GoogleAppEngineErrorMiddleware' not in m:
-            # e.g. in case this middleware was excluded while in debug mode
-            m.append('errors.middleware.GoogleAppEngineErrorMiddleware')
-        settings.MIDDLEWARE_CLASSES = m
+        middleware = [n for n in settings.MIDDLEWARE_CLASSES]
+        if 'errors.middleware.GoogleAppEngineErrorMiddleware' not in middleware:
+            # e.g. in case this middleware was excluded during debug mode
+            middleware.append('errors.middleware.GoogleAppEngineErrorMiddleware')
+        settings.MIDDLEWARE_CLASSES = middleware
         
         super(ClientHandlerWithErroHandler, self).load_middleware()
 
 class TestErrorHandler(DjangoTestCase):
     
     def setUp(self):
+        self.orig_middleware = [m for m in settings.MIDDLEWARE_CLASSES]
         self.client.handler = ClientHandlerWithErroHandler() # custom handler with middleware applied
         self.client.login(email="test@test.com", roles=[roles.DJ])
         
     def tearDown(self):
+        settings.MIDDLEWARE_CLASSES = self.orig_middleware
         fudge.clear_expectations()
     
     @fudge.with_fakes
     def test_unexpected_error_is_logged(self):
         fake_logging = fudge.Fake('logging').expects('exception')
         with fudge.patched_context(errors.middleware, "logging", fake_logging):   
-            try:
-                self.client.get(reverse('errors._test_errorhandler'))
-            except RuntimeError:
-                pass
+            self.client.get(reverse('errors._test_errorhandler'))
 
