@@ -59,5 +59,17 @@ class TestErrorHandler(DjangoTestCase):
     def test_unexpected_error_is_logged(self):
         fake_logging = fudge.Fake('logging').expects('exception')
         with fudge.patched_context(errors.middleware, "logging", fake_logging):   
-            self.client.get(reverse('errors._test_errorhandler'))
+            response = self.client.get(reverse('errors._test_errorhandler'))
+        
+        self.assertEqual(response.context['readable_exception'], 'RuntimeError')
+    
+    @fudge.with_fakes
+    def test_expected_error_is_logged(self):
+        fake_logging = fudge.Fake('logging').expects('exception')
+        with fudge.patched_context(errors.middleware, "logging", fake_logging):   
+            response = self.client.get(reverse('errors._test_errorhandler'), {
+                'type': '0' # first catchable exception
+            })
+            
+        self.assertEqual(response.context['readable_exception'], 'datastore_errors.Timeout')
 
