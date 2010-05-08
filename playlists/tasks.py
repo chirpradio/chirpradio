@@ -330,6 +330,11 @@ def send_track_to_live365(request):
     Album title
     """
     track = AutoRetry(PlaylistEvent).get(request.POST['id'])
+    if not track:
+        log.warning("Requested to create a non-existant track of ID %r" % request.POST['id'])
+        # this is not an error (malicious POST, etc), so make sure the task succeeds:
+        return task_response({'success':True})
+        
     log.info("Live365 create track %s" % track.key())
     
     qs = {

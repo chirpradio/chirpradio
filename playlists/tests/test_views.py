@@ -881,5 +881,13 @@ class TestLive365PlaylistTasks(TaskTest, TestCase):
             })
         
         fudge.verify()
+    
+    def test_create_non_existant_track(self):
+        key = self.track.key()
+        self.track.delete() # make it non-existant
+        resp = self.client.post(reverse('playlists.send_track_to_live365'), {
+            'id': key
+        })
+        self.assertEqual(resp.status_code, 200)
 
 
