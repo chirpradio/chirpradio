@@ -711,6 +711,14 @@ class TestLiveSitePlaylistTasks(TaskTest, TestCase):
         
         fudge.verify()
     
+    def test_create_non_existant_track(self):
+        key = self.track.key()
+        self.track.delete() # make it non-existant
+        resp = self.client.post(reverse('playlists.send_track_to_live_site'), {
+            'id': key
+        })
+        self.assertEqual(resp.status_code, 200)
+    
     def test_create_failure(self):
         
         fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
