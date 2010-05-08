@@ -58,5 +58,11 @@ class TestAsEncodedString(TestCase):
     
     def test_passthru_encoded_str(self):
         self.assertEqual(utilities.as_encoded_str('Ivan Krsti\xc4\x87'), 'Ivan Krsti\xc4\x87')
-        
+    
+    def test_encode_unicode_with_error_mode(self):
+        self.assertEqual(utilities.as_encoded_str(u'Ivan Krsti\u0107', 
+                                                        encoding='ascii', 
+                                                        errors='replace'), 
+                                                    'Ivan Krsti?')
+
 
