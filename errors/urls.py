@@ -1,5 +1,5 @@
 ###
-### Copyright 2009 The Chicago Independent Radio Project
+### Copyright 2010 The Chicago Independent Radio Project
 ### All Rights Reserved.
 ###
 ### Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,21 +15,10 @@
 ### limitations under the License.
 ###
 
-"""Views for the site landing page."""
+from django.conf import settings
+from django.conf.urls.defaults import patterns, url
 
-from django import http
-from django.template import RequestContext, loader
-
-
-def landing_page(request):
-    template = loader.get_template('landing_page/landing_page.html')
-    ctx = RequestContext(request, {
-            'title': 'Welcome to chirpradio',
-            })
-    return http.HttpResponse(template.render(ctx))
-
-
-def four_oh_four(request):
-    return http.HttpResponse("No such page: " + request.path,
-                             mimetype="text/plain",
-                             status=404)
+urlpatterns = patterns('errors.views',
+    # Forced an error for manual and automated testing
+    url(r'^_test_errorhandler$', '_test_errorhandler', name='errors._test_errorhandler'),
+)

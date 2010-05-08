@@ -4,6 +4,8 @@
 # Google App Engine Internal Error Middleware
 # Copyright (C) 2009 Wesley Tanaka <http://wtanaka.com>
 #
+# Portions of this code Copyright 2010 The Chicago Independent Radio Project
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
