@@ -21,4 +21,5 @@ from django.conf.urls.defaults import patterns, url
 
 urlpatterns = patterns('common.views',
     url(r'^_init_config$', '_init_config'),
+    url(r'^_make_json_error$', '_make_json_error'),
 )
