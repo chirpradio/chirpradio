@@ -21,8 +21,8 @@
 import logging
 
 import django.http
-import django.template.loader
-import django.template
+from django.shortcuts import render_to_response
+from django.template import RequestContext
 
 from google.appengine.api.datastore_errors import InternalError
 from google.appengine.api.datastore_errors import Timeout
@@ -56,17 +56,18 @@ def expand_exception(exception):
     
     return exception.__class__, exception.__class__.__name__, 500
 
-class GoogleAppEngineErrorMiddleware:
+class GoogleAppEngineErrorMiddleware(object):
     """Display a default template on internal google app engine errors"""
+    
     def process_exception(self, request, exception):
         logging.exception("Exception in request:")
         e_type, readable_exception, status_code = expand_exception(exception)
         
-        t = django.template.loader.get_template('errors/exception-handler.html')
-        html = t.render(django.template.Context({
+        html = render_to_response('errors/exception-handler.html', {
                         'exception': exception, 
                         'readable_exception': readable_exception
-                    }))
+                    },
+                    context_instance=RequestContext(request))
         
         response = django.http.HttpResponseServerError(html)
         response.status_code = status_code

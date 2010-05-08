@@ -62,6 +62,9 @@ class TestErrorHandler(DjangoTestCase):
             response = self.client.get(reverse('errors._test_errorhandler'))
         
         self.assertEqual(response.context['readable_exception'], 'RuntimeError')
+        # this ensures the CHIRP context processor is loaded but 
+        # the real test is to ensure that RequestContext(request) is used
+        self.assertEqual(response.context['MEDIA_URL'], settings.MEDIA_URL)
     
     @fudge.with_fakes
     def test_expected_error_is_logged(self):

@@ -17,8 +17,8 @@
 import os
 from common import in_dev
 
-# DEBUG = in_dev()
-DEBUG = False
+DEBUG = in_dev()
+# DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ROOT_PATH = os.path.dirname(__file__)
@@ -58,6 +58,9 @@ USE_I18N = False
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
 MEDIA_ROOT =  os.path.join(ROOT_ABSPATH, 'media')
+
+# URL to access the media directory:
+MEDIA_URL = '/media/'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
