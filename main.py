@@ -25,8 +25,11 @@ import os
 import sys
 import logging
 
+import appengine_django
 from appengine_django import InstallAppengineHelperForDjango
-InstallAppengineHelperForDjango()
+if not hasattr(appengine_django, '_installed'):
+  InstallAppengineHelperForDjango()
+  appengine_django._installed = True
 
 from appengine_django import have_django_zip
 from appengine_django import django_zip_path
