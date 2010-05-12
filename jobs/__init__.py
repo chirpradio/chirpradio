@@ -1,7 +1,7 @@
 
 """Execute long running jobs incrementally in multiple requests. 
 
-App Engine has pretty strict time limits which means it's really hard to do things like build reports that need to query data over a period of a month or so when the data set is large.  This provides a framework for running these kinds of jobs.
+App Engine has very strict execution time limits so it's really hard to do things like build reports that need to query data over a period of a month or so when the data set is large.  This provides a framework for running these kinds of jobs.
 
 First you need webpage that can interact with the job server.  In jQuery it looks something like this::
     
@@ -9,11 +9,11 @@ First you need webpage that can interact with the job server.  In jQuery it look
     $.post({
         url: '/jobs/start',
         data: {
-            'job_key': 'build-playlist-report'
+            'job_name': 'build-playlist-report'
         },
         dataType: 'json',
-        success: function(data, textStatus) {
-            job_id = data.job_id;
+        success: function(result, textStatus) {
+            job_id = result.job_id;
             work(job_id);
         }
     });
@@ -25,8 +25,8 @@ First you need webpage that can interact with the job server.  In jQuery it look
                 'job_id': job_id
             },
             dataType: 'json',
-            success: function(data, textStatus) {
-                if (data.done) {
+            success: function(job_result, textStatus) {
+                if (job_result.done) {
                     show_product(job_id)
                 } else {
                     work(job_id);
@@ -56,16 +56,16 @@ On the server, all you have to do is implement a worker method::
         last_offset = offset+10
         results['last_offset'] = last_offset
         
-        got_rows = False
+        got_results = False
         for employee in Employee.all()[ offset: last_offset ]:
-            got_rows = True
+            got_results = True
             results['file_lines'].append(",".join([
                     str(datetime.datetime.now()),
                     employee.name,
                     employee.hair_color
                 ]))
         
-        if not got_rows:
+        if not got_results:
             finished = True
         else:
             finished = False
