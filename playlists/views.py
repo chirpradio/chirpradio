@@ -24,6 +24,7 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 
+from google.appengine.api import datastore_errors
 from google.appengine.api.datastore_errors import BadKeyError
 
 from auth.decorators import require_role
@@ -35,6 +36,7 @@ from playlists.tasks import playlist_event_listeners
 from common.utilities import as_encoded_str, http_send_csv_file
 from common.autoretry import AutoRetry
 
+log = logging.getLogger()
 
 common_context = {
     'title': 'CHIRPradio.org DJ Playlist Tracker'
@@ -211,6 +213,26 @@ def filter_tracks_by_date_range(from_date, to_date):
     pl = pl.order('-established')
     return pl
 
+def _get_entity_attr(entity, attr, *getattr_args):
+    """gets the value of an attribute on an entity.
+    
+    if the value is an orphaned reference then return 
+    the string __bad_reference__ instead
+    """
+    try:
+        if len(getattr_args):
+            return getattr(entity, attr, *getattr_args)
+        else:
+            return getattr(entity, attr)
+    except datastore_errors.Error, exc:
+        if str(exc) == 'ReferenceProperty failed to be resolved':
+            log.warning("Could not resolve reference property %r on %r at %s" % (
+                                                            attr, entity, entity.key()))
+            return '__bad_reference__'
+        else:
+            # something else happened
+            raise
+
 def query_group_by_track_key(from_date, to_date):
     ''' app engine Query and GqlQuery do not support SQL group by
     manually count each record and group them by some unique key
@@ -227,7 +249,16 @@ def query_group_by_track_key(from_date, to_date):
     def item_key(item):
         key_parts = []
         for key in fields:
-            stub = as_encoded_str(getattr(item, key, ''))
+            try:
+                stub = as_encoded_str(_get_entity_attr(item, key, ''))
+            except datastore_errors.Error, exc:
+                if str(exc) == 'ReferenceProperty failed to be resolved':
+                    log.warning("Could not resolve reference property %r on %r at %r" % (
+                                                                    key, item, item.key()))
+                    stub = '__bad_reference__'
+                else:
+                    raise
+                    
             if stub is None:
                 # for existing None-type attributes
                 stub = ''
@@ -239,7 +270,7 @@ def query_group_by_track_key(from_date, to_date):
     def item2hash(item):
         d = {}
         for key in fields:
-            d[key] = getattr(item, key, None)
+            d[key] = _get_entity_attr(item, key, None)
 
         # init additional props
         d[key_counter] = 0
@@ -254,7 +285,6 @@ def query_group_by_track_key(from_date, to_date):
     # hash of seen keys
     seen = {}
 
-    #
     for item in AutoRetry(query):
         key = item_key(item)
 

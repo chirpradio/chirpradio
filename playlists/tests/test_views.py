@@ -181,6 +181,44 @@ class TestPlaylistReport(PlaylistViewsTest):
             [str(from_date), str(to_date), 
             'Talking Book', 'Stevie Wonder', 'Motown', '1'],
             report.next())
+    
+    def test_report_ignores_reference_errors(self):
+        selector = self.get_selector()
+        playlist = ChirpBroadcast()
+        stevie, talking_book, tracks = create_stevie_wonder_album_data()
+        track = PlaylistTrack(
+                    playlist=playlist, 
+                    selector=selector,
+                    artist=stevie,
+                    album=talking_book,
+                    track=tracks['You Are The Sunshine Of My Life'],
+                    freeform_label='Motown')
+        track.put()
+        
+        # simulate an integrity error.
+        # it is unlikely but happened to us after a bad data import.
+        stevie.delete()
+        talking_book.delete()
+        
+        from_date = datetime.date.today() - timedelta(days=1)
+        to_date = datetime.date.today() + timedelta(days=1)
+        
+        response = self.client.post(reverse('playlists_report'), {
+            'from_date': from_date,
+            'to_date': to_date,
+            'download': 'Download'
+        })
+        
+        self.assertEquals(response['Content-Type'], 'text/csv; charset=utf-8')
+        
+        report = csv.reader(StringIO(response.content))
+        self.assertEquals(
+            ['from_date', 'to_date', 'album_title', 'artist_name', 'label', 'play_count'],
+            report.next())
+        self.assertEquals(
+            [str(from_date), str(to_date), 
+            '__bad_reference__', '__bad_reference__', 'Motown', '1'],
+            report.next())
 
 class TestPlaylistViews(PlaylistViewsTest):
     
