@@ -103,5 +103,6 @@ INSTALLED_APPS = (
      'playlists',
      'volunteers',
      'traffic_log',
-     'errors'
+     'errors',
+     'jobs'
 )

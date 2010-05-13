@@ -51,6 +51,8 @@ urlpatterns = patterns(
     
     ('^common/', include('common.urls')),
     
+    ('^jobs/', include('jobs.urls')),
+    
     ('^errors/', include('errors.urls')),
 
     # A catch-all rule to generate a 404.
