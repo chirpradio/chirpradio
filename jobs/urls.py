@@ -24,4 +24,5 @@ from django.conf.urls.defaults import patterns, url
 urlpatterns = patterns('jobs.views',
     url(r'^start$', 'start_job', name="jobs.start"),
     url(r'^work$', 'do_job_work', name="jobs.work"),
+    url(r'^product/(.*)$', 'get_job_product', name="jobs.product"),
 )

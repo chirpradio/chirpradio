@@ -104,6 +104,12 @@ def _reset_registry():
 
 _reset_registry()
 
+def job_product(job_name):
+    def fn_decorator(fn):
+        worker_registry['producers'][job_name] = fn
+        return fn
+    return fn_decorator
+
 def job_worker(job_name):
     def fn_decorator(fn):
         worker_registry['workers'][job_name] = fn
@@ -112,8 +118,10 @@ def job_worker(job_name):
 
 def get_worker(job_name):
     if job_name not in worker_registry['workers']:
-        raise LookupError("Cannot start job %r because no worker has been registered" % job_name)
+        raise LookupError("No worker has been registered for job %r" % job_name)
     return worker_registry['workers'][job_name]
 
 def get_producer(job_name):
-    raise NotImplementedError
+    if job_name not in worker_registry['producers']:
+        raise LookupError("No producer has been registered for job %r" % job_name)
+    return worker_registry['producers'][job_name]

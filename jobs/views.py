@@ -50,3 +50,10 @@ def do_job_work(request):
         'finished': finished,
         'success': True
     }
+
+def get_job_product(request, job_key):
+    job = Job.get(job_key)
+    # TODO(kumar) make sure job is finished
+    producer = get_producer(job.job_name)
+    result = simplejson.loads(job.result)
+    return producer(result)

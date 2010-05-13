@@ -22,11 +22,12 @@ import datetime
 from django.test import TestCase as DjangoTestCase
 from django.core.urlresolvers import reverse
 from django.utils import simplejson
+from django import http
 
 from auth import roles
 import jobs
 from jobs.models import Job
-from jobs import worker_registry, job_worker
+from jobs import worker_registry, job_worker, job_product
 
 def teardown_data():
     for ob in Job.all():
@@ -46,7 +47,7 @@ class TestJobModel(TestCase):
     def tearDown(self):
         teardown_data()
     
-class TestJobWorker(DjangoTestCase):
+class TestJobs(DjangoTestCase):
     
     def setUp(self):
         self.client.login(email="test@test.com", roles=[roles.DJ])
@@ -117,4 +118,41 @@ class TestJobWorker(DjangoTestCase):
         job = Job.all().filter('job_name =', 'counter')[0]
         self.assertEqual(simplejson.loads(job.result), {'count':3})
         self.assertEqual(json_response['finished'], True)
+    
+    def test_producer(self):
+        
+        @job_product('counter')
+        def counter_product(data):
+            content = "Count is: %s" % data['count']
+            return http.HttpResponse(content=content, status=200)
+            
+        response = self.client.post(reverse('jobs.start'), {
+            'job_name': 'counter'
+        })
+        json_response = simplejson.loads(response.content)
+        self.assert_json_success(json_response)
+        job_key = json_response['job_key']
+        
+        # count three times until finished:
+        response = self.client.post(reverse('jobs.work'), {
+            'job_key': job_key
+        })
+        json_response = simplejson.loads(response.content)
+        self.assert_json_success(json_response)
+        
+        response = self.client.post(reverse('jobs.work'), {
+            'job_key': job_key
+        })
+        json_response = simplejson.loads(response.content)
+        self.assert_json_success(json_response)
+        
+        response = self.client.post(reverse('jobs.work'), {
+            'job_key': job_key
+        })
+        json_response = simplejson.loads(response.content)
+        self.assert_json_success(json_response)
+        
+        # get the product:
+        response = self.client.get(reverse('jobs.product', args=(job_key,)))
+        self.assertEqual(response.content, "Count is: 3")
     
