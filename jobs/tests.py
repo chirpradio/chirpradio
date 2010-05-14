@@ -120,7 +120,7 @@ class TestJobs(DjangoTestCase):
         self.assertEqual(simplejson.loads(job.result), {'count':3})
         self.assertEqual(json_response['finished'], True)
     
-    def test_producer(self):
+    def test_get_job_product(self):
         
         @job_product('counter')
         def counter_product(data):
@@ -156,6 +156,16 @@ class TestJobs(DjangoTestCase):
         # get the product:
         response = self.client.get(reverse('jobs.product', args=(job_key,)))
         self.assertEqual(response.content, "Count is: 3")
+    
+    def test_get_nonexistant_job_product(self):
+        # make a deleted job:
+        job = Job(job_name="counter")
+        job.save()
+        job_key = job.key()
+        job.delete()
+        
+        response = self.client.get(reverse('jobs.product', args=(job_key,)))
+        self.assertEqual(response.status_code, 404)
     
     def test_job_reaper_kills_old_jobs(self):
         # make an old job:

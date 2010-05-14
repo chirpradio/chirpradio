@@ -21,6 +21,7 @@ import datetime
 from datetime import timedelta
 
 from django.utils import simplejson
+from django.http import Http404
 
 from common.utilities import as_json
 from jobs.models import Job
@@ -60,6 +61,10 @@ def do_job_work(request):
 
 def get_job_product(request, job_key):
     job = Job.get(job_key)
+    if job is None:
+        raise Http404(
+            "The requested job product does not exist.  It may have expired, in which "
+            "case you will have to run the job again.")
     # TODO(kumar) make sure job is finished
     producer = get_producer(job.job_name)
     result = simplejson.loads(job.result)
