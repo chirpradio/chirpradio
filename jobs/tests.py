@@ -18,6 +18,7 @@
 
 from unittest import TestCase
 import datetime
+from datetime import timedelta
 
 from django.test import TestCase as DjangoTestCase
 from django.core.urlresolvers import reverse
@@ -156,3 +157,17 @@ class TestJobs(DjangoTestCase):
         response = self.client.get(reverse('jobs.product', args=(job_key,)))
         self.assertEqual(response.content, "Count is: 3")
     
+    def test_job_reaper_kills_old_jobs(self):
+        # make an old job:
+        job = Job(job_name='counter')
+        job.started = datetime.datetime.now() - timedelta(days=3)
+        job.save()
+        old_job_key = job.key()
+        
+        response = self.client.post(reverse('jobs.start'), {
+            'job_name': 'counter'
+        })
+        json_response = simplejson.loads(response.content)
+        self.assert_json_success(json_response)
+        
+        self.assertEqual(Job.get(old_job_key), None)

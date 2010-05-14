@@ -17,6 +17,8 @@
 ###
 
 import logging
+import datetime
+from datetime import timedelta
 
 from django.utils import simplejson
 
@@ -26,10 +28,15 @@ from jobs import get_worker, get_producer
 
 log = logging.getLogger()
 
+def reap_dead_jobs():
+    q = Job.all().filter("started <", datetime.datetime.now() - timedelta(days=2))
+    for job in q:
+        job.delete()
+
 @as_json
 def start_job(request):
     # TODO(kumar) check for already running jobs
-    # TODO(kumar) run the job reaper
+    reap_dead_jobs()
     job_name = request.POST['job_name']
     job = Job(job_name=job_name)
     job.put()
