@@ -22,6 +22,9 @@ There isn't much here yet.  Things you can do:
 {% if user.is_volunteer_coordinator %}
 <li> <a href="/auth/">User Management</a>
 {% endif %}
+{% if user.is_music_director %}
+<li> <a href="/playlists/report">Playlist Tracker Report</a>
+{% endif %}
 <li> <a href="/auth/change_password">Change Your Password</a>
 </ul>
 </p>
