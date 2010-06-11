@@ -94,6 +94,7 @@ class DjDbImage(db.Model):
         key_name = cls.get_key_name(sha1)
         return AutoRetry(cls).get_by_key_name(key_name)
 
+
 class Artist(db.Model):
     """An individual musician, or a band.
 
@@ -104,10 +105,15 @@ class Artist(db.Model):
       name: The canonical name used to describe this artist in TPE1 tags.
         This name should follow the music committee's naming style guide.
       image: An image associated with this artist.
+      revoked: If true, this object has been revoked.  Revoked items should
+        not be returned in search results, and should be otherwise hidden
+        from users when possible.
     """
     name = db.StringProperty(required=True)
 
     image = db.ReferenceProperty(DjDbImage)
+
+    revoked = db.BooleanProperty(required=False, default=False)
 
     # TODO(trow): Add a list of references to related artists?
 
@@ -213,6 +219,9 @@ class Album(db.Model):
         when it was imported into the library.
       image: An image associated with this album.  This is typically
         used for the album's cover art.
+      revoked: If true, this object has been revoked.  Revoked items should
+        not be returned in search results, and should be otherwise hidden
+        from users when possible.
     """
     category = db.StringProperty(required=False)
     
@@ -253,6 +262,8 @@ class Album(db.Model):
     num_comments = db.IntegerProperty(default=0)
     
     image = db.ReferenceProperty(DjDbImage)
+
+    revoked = db.BooleanProperty(required=False, default=False)
 
     # Keys are automatically assigned. 
     _KEY_FORMAT = u"djdb/a:%x"
@@ -364,6 +375,9 @@ class Track(db.Model):
       channels: The number and type of channels in the MP3 file.
       duration_ms: The duration of the track, measured in milliseconds.
         (Remember that 1 second = 1000 milliseconds!)
+      revoked: If true, this object has been revoked.  Revoked items should
+        not be returned in search results, and should be otherwise hidden
+        from users when possible.
     """
     album = db.ReferenceProperty(Album, required=True)
 
@@ -392,6 +406,8 @@ class Track(db.Model):
 
     # TODO(trow): Validate that this is > 0.
     duration_ms = db.IntegerProperty(required=True)
+
+    revoked = db.BooleanProperty(required=False, default=False)
 
     @property
     def duration(self):
@@ -602,6 +618,7 @@ class TagEdit(db.Model):
         obj.save()
         return current_tags
 
+
 class Crate(db.Model):
     """Mode for a crate, which contains artists, albums, or tracks.
     """
@@ -611,17 +628,20 @@ class Crate(db.Model):
     # List of keys to items.
     items = db.ListProperty(db.Key)
     
-    # List of positions for ordering.
-    # When the crate page is shown and reorders take place, you can't reorder the list directly each
-    # time since the original positions are referenced in the list item id's, which do not change.
-    # So you have to keep track of the order separately. When the crate page is reloaded, then the
-    # actual item list should be reordered.
-    # I suppose some javascript could be added to update the list item id's when reordering
-    # takes place...
+    # List of positions for ordering.  When the crate page is shown
+    # and reorders take place, you can't reorder the list directly
+    # each time since the original positions are referenced in the
+    # list item id's, which do not change.  So you have to keep track
+    # of the order separately. When the crate page is reloaded, then
+    # the actual item list should be reordered.  I suppose some
+    # javascript could be added to update the list item id's when
+    # reordering takes place...
     order = db.ListProperty(int)
+
     
 class CrateItem(db.Model):
-    """Model for crate items that represent artists/albums/tracks entered by hand.
+    """Model for crate items that represent artists/albums/tracks entered
+    by hand.
     """
     artist = db.StringProperty()
     album = db.StringProperty()

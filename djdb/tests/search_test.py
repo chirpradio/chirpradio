@@ -25,6 +25,51 @@ from djdb import models
 from djdb import search
 
 
+class SearchHelpersTestCase(unittest.TestCase):
+
+    def test_discard_items(self):
+        items = range(10)
+        # Check the common case.
+        self.assertEqual(search._discard_items(items, 3), 3)
+        self.assertEqual(len(items), 7)
+        # Check discarding 0 items.
+        self.assertEqual(search._discard_items(items, 0), 0)
+        self.assertEqual(len(items), 7)
+        # Check discarding a negative number of items.
+        self.assertEqual(search._discard_items(items, -17), 0)
+        self.assertEqual(len(items), 7)
+        # Check discarding more items than actually exist.
+        self.assertEqual(search._discard_items(items, 100), 7)
+        self.assertEqual(len(items), 0)
+        # Check discarding from None.
+        self.assertEqual(search._discard_items(None, 17), 0)
+
+    def test_enforce_results_limit_on_matches(self):
+        matches = {"Artist": range(10), "Album": range(10), "Track": range(10)}
+        # If the max_num_results is larger than the total number of matches,
+        # do nothing.
+        search._enforce_results_limit_on_matches(matches, 100)
+        self.assertEqual(30, sum(len(x) for x in matches.values()))
+        # If the max_num_results is None, do nothing.
+        search._enforce_results_limit_on_matches(matches, None)
+        self.assertEqual(30, sum(len(x) for x in matches.values()))
+        # Track objects are the first to go.
+        search._enforce_results_limit_on_matches(matches, 25)
+        self.assertEqual(25, sum(len(x) for x in matches.values()))
+        self.assertEqual(5, len(matches["Track"]))
+        # Next we start dropping Album objects.
+        search._enforce_results_limit_on_matches(matches, 12)
+        self.assertEqual(12, sum(len(x) for x in matches.values()))
+        self.assertEqual(2, len(matches["Album"]))
+        # Empty lists are dropped entirely.
+        self.assertTrue("Track" not in matches)
+        # Artists are the last to go.
+        search._enforce_results_limit_on_matches(matches, 5)
+        self.assertEqual(5, sum(len(x) for x in matches.values()))
+        self.assertEqual(5, len(matches["Artist"]))
+        self.assertEqual(1, len(matches))
+
+
 class SearchTestCase(unittest.TestCase):
 
     def tearDown(self):
@@ -421,18 +466,51 @@ class SearchTestCaseWithData(SearchTestCase):
     def setUp(self):
         idx = search.Indexer()
         # Create some test artists.
-        art = models.Artist(name=u"beatles", parent=idx.transaction, key_name="ss-art1")
+        art = models.Artist(name=u"beatles", parent=idx.transaction,
+                            key_name="ss-art1")
         idx.add_artist(art)
-        art = models.Artist(name=u"beatnicks", parent=idx.transaction, key_name="ss-art2")
+        art = models.Artist(name=u"beatnicks", parent=idx.transaction,
+                            key_name="ss-art2")
         idx.add_artist(art)
-        art = models.Artist(name=u"beatnuts", parent=idx.transaction, key_name="ss-art3")
+        art = models.Artist(name=u"beatnuts", parent=idx.transaction,
+                            key_name="ss-art3")
         idx.add_artist(art)
         idx.save()
     
     def test_search_results_are_truncated(self):
-        # this is a regression for a bug
+        # Make sure that the max_num_results works properly.
         matches = search.simple_music_search(u"beat*", max_num_results=2,
-                                                entity_kind='Artist')
-        # print matches
+                                             entity_kind='Artist')
         self.assertEquals(len(matches['Artist']), 2)
+
+        # Now revoke one of the two matches
+        revoked_art = matches['Artist'].pop()
+        revoked_art.revoked = True
+        revoked_art.save()
+
+        # Now perform the same query again: we should get two results,
+        # specifically the two items we didn't revoke.
+        new_matches = search.simple_music_search(u"beat*", max_num_results=2,
+                                                 entity_kind='Artist')
+        self.assertEquals(len(new_matches['Artist']), 2)
+        self.assertTrue(new_matches['Artist'][0].key() != revoked_art.key())
+        self.assertTrue(new_matches['Artist'][1].key() != revoked_art.key())
+
+        # Now revoke one more item and repeat the query.  The lone
+        # unrevoked item should be the only result.
+        new_matches["Artist"][0].revoked = True
+        new_matches["Artist"][0].save()
+        unrevoked_art = new_matches["Artist"][1]
+        newer_matches = search.simple_music_search(u"beat*", max_num_results=2,
+                                                   entity_kind='Artist')
+        self.assertEquals(len(newer_matches['Artist']), 1)
+        self.assertEquals(newer_matches['Artist'][0].key(),
+                          unrevoked_art.key())
+
+
+        
+
+
+
+        
         

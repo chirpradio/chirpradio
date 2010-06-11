@@ -490,7 +490,7 @@ def load_and_segment_keys(fetched_keys):
     """
     segmented = {}
     for entity in AutoRetry(db).get(fetched_keys):
-        if entity:
+        if entity and not getattr(entity, "revoked", False):
             by_kind = segmented.get(entity.kind())
             if by_kind is None:
                 by_kind = segmented[entity.kind()] = []
@@ -520,6 +520,70 @@ def _album_is_reviewed(album, user_key):
             return True
     return False
 
+
+def _artist_has_reviewed_album(artist, user_key):
+    """Check if an artist has an album that has been reviewed.
+
+    Args:
+      artist: An Artist entity.
+      user_key: A stringified user key, or None.
+
+    Returns:
+      True if _album_is_reviewed(album, user_key) is True for any
+      album by that artist, False otherwise.
+    """
+    artist_album_query = models.Album.all().filter(
+        "album_artist =", artist)
+    for album in album_artist_query:
+        if _album_is_reviewed(album, user_key):
+            return True
+    return False
+
+
+def _discard_items(target_list, num_to_discard):
+    """Discards items from a list at random.
+
+    Args:
+      target_list: The list to discard items from a list.  The list is
+        modified in-place.
+      num_to_discard: The number of items to attempt to discard.
+
+    Returns:
+      Returns the number of items that were actually discarded.
+      This number will be equal to len(target_list) if that value is
+      less than num_to_discard.
+    """
+    if num_to_discard <= 0 or target_list is None:
+        return 0
+    num_to_discard = min(len(target_list), num_to_discard)
+    for _ in xrange(num_to_discard):
+        discarded = target_list.pop()
+    return num_to_discard
+        
+
+def _enforce_results_limit_on_matches(segmented_matches, max_num_results):
+    """If necessary, throw away results to avoid returning too many items.
+
+    Args:
+      segmented_matches: A dictionary mapping entity type strings to
+        lists of matching entities.  This dict is modified in-place.
+      max_num_results: The maximum number of items that may be returned.
+        This function does nothing is max_num_results is None.
+    
+    If the dict contains too many items, they are thrown away
+    semi-randomly: Track objects are discarded first, then Albums,
+    and finally Artists.
+    """
+    if max_num_results is None:
+        return
+    num_results = sum([len(x) for x in segmented_matches.itervalues()])
+    num_to_discard = num_results - max_num_results
+    for kind in ("Track", "Album", "Artist"):
+        these_matches = segmented_matches.get(kind)
+        num_to_discard -= _discard_items(these_matches, num_to_discard)
+        if these_matches is not None and len(these_matches) == 0:
+            del segmented_matches[kind]
+    
 
 def simple_music_search(query_str, max_num_results=None, entity_kind=None,
                         reviewed=False, user_key=None):
@@ -552,40 +616,33 @@ def simple_music_search(query_str, max_num_results=None, entity_kind=None,
     if user_key is not None:
         reviewed = True
 
-    # Next, filter out all tracks that do not have a title match.
-    # Also filter reviewed albums.
-    filtered = []
-    recordcount = 0
+    # Next, filter out the keys for tracks that do not have a title match.
+    keys_to_fetch = []
     for key, fields in all_matches.iteritems():
-        include_item = True
-        if key.kind() == "Track":
-            if reviewed:
-                album = AutoRetry(db).get(key).album
-                include_item = _album_is_reviewed(album, user_key)
-                        
-        elif key.kind() == "Album":
-            if reviewed:
-                album = AutoRetry(db).get(key)
-                include_item = _album_is_reviewed(album, user_key)
-            
-        elif key.kind() == "Artist" :
-            if reviewed:
-                artist = AutoRetry(db).get(key)
-                artist_album_query = models.Album.all().filter(
-                    "album_artist =", artist)
-                include_item = False
-                for album in album_artist_query:
-                    include_item = _album_is_reviewed(album, user_key)
-                    if include_item:
-                        break
-                
-        if include_item and (key.kind() != "Track" or "title" in fields):
-            recordcount += 1
-            # If we got too many matches, throw some away.
-            if max_num_results and recordcount > max_num_results:
-                break
-            filtered.append(key)
+        if key.kind() != "Track" or "title" in fields:
+            keys_to_fetch.append(key)
 
-    # Finally, return a segmented dict of matches.
-    return load_and_segment_keys(filtered)
+    # Fetch all of the specified keys from the datastore and construct a
+    # segmented dict of matches.
+    segmented_matches = load_and_segment_keys(keys_to_fetch)
+
+    # If necessary, filter out unreviewed matches.
+    if reviewed:
+        if "Track" in segmented_matches:
+            segmented_matches["Track"] = [
+                trk for trk in segmented_matches["Track"]
+                if _album_is_reviewed(trk.album, user_key)]
+        if "Album" in segmented_matches:
+            segmented_matches["Album"] = [
+                alb for alb in segmented_matches["Album"]
+                if _album_is_reviewed(alb, user_key)]
+        if "Artist" in segmented_matches:
+            segmented_matches["Artist"] = [
+                art for art in segmented_matches["Artist"]
+                if _artist_has_reviewed_album(art, user_key)]
+
+    # Now enforce any limit on the number of results.
+    _enforce_results_limit_on_matches(segmented_matches, max_num_results)
+                
+    return segmented_matches
         
