@@ -1,10 +1,7 @@
-{% extends "common/internal_page.html" %}
+{% extends "djdb/internal_page.html" %}
+
 {% load common_extras %}
 {% load djdb_extras %}
-
-{% block extrastyle %}
-<link rel="stylesheet" href="/media/djdb/djdb.css" />
-{% endblock %}
 
 {% block breadcrumbs %}
 <a href="/">chipradio home</a>
@@ -21,33 +18,33 @@
 <script type="text/javascript" src="/media/djdb/js/djdb_user.js"></script>
 {% endblock %}
 
-<p>
-Landing page for DJDB app
-</p>
+{% if msg %}
+<div class="success">
+{{ msg }}
+</div>
+{% endif %}
 
 <p>
-<a href="/djdb/crate">Go to your crate.</a>
-</p>
-
-<p/><p>
+{% if not query_str %}
 <h2>Categories: [
-{% for category in categories %}
-  {% if not forloop.first %} | {% endif %}
+  {% for category in categories %}
+    {% if not forloop.first %} | {% endif %}
 <a href="category/{{ category }}">{{ category|replace:"/_/ "|capfirst }}</a>
-{% endfor %}
+  {% endfor %}
 ]</h2>
-</o>
+</p>
 
 <h2>Recent Reviews</h2>
 <ul>
-{% for rev in recent_reviews %}
+  {% for rev in recent_reviews %}
   <li> <a href="{{ rev.subject.url }}">{{ rev.subject.album_artist.name }} / {{ rev.subject.title }},</a>
 reviewed by {{ rev.author }}
 &nbsp;&nbsp;
   <small>Posted {{ rev.created_display|date:"F j, Y P" }}</small> </li>
-{% endfor %}
+  {% endfor %}
 </ul>
 <a href="/djdb/reviews">Read more reviews...</a>
+{% endif %}
 
 <h2>Search the Database</h2>
 <form action="" method="post">
@@ -61,9 +58,9 @@ reviewed by {{ rev.author }}
 <p/>
 
 {% if query_str %}
-<p>Query was "{{ query_str }}".
+<h2>Query: "{{ query_str }}"
   {% if invalid_query %}<br/><b>Invalid Query!</b>{% endif %}
-</p>
+</h2>
 
 <h3>Artists</h3>
 <i>{{ query_results.Artist|length }}

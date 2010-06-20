@@ -1,4 +1,4 @@
-{% extends "common/internal_page.html" %}
+{% extends "djdb/internal_page.html" %}
 
 {% load djdb_extras %}
 
@@ -9,10 +9,6 @@
 
 {% block content %}
 
-{% block extrastyle %}
-<link rel="stylesheet" href="/media/djdb/djdb.css"/>
-{% endblock %}
-
 {% block extrahead %}
 <script type="text/javascript" src="/media/common/js/jquery-ui/jquery-1.3.2.min.js"></script>
 <script type="text/javascript" src="/media/common/js/jquery-ui/jquery-ui-1.7.2.custom.min.js"></script>
@@ -20,10 +16,7 @@
 <script type="text/javascript" src="/media/djdb/js/djdb_crate.js"></script>
 {% endblock %}
 
-<p>
-This is the crate page for <b>{{ user }}</b>.
-</p>
-
+<p/>
 <div id="reorder"></div>
 
 <div id="crate">
@@ -49,12 +42,21 @@ This is the crate page for <b>{{ user }}</b>.
       <textarea id="id_song_notes" rows="10" cols="40" name="song_notes"></textarea>
 
       <p/>
-      <input type="submit" class="button" name="save" value="Save To Crate" />
+      <input type="submit" class="button" name="save" value="Save To Crate"/>
     </form>
   </div>
   
   <div id="crate-items-column">
 {% if crate_items %}
+    <form method="post" action="/djdb/crate/remove_all_crate_items">
+      <input type="submit" class="remove_all_crate_items" name="remove_all_crate_items" value="Remove All Items"/>
+      <div class="warning remove_all_crate_items" style="display: none">
+        Are you sure:
+        <input type="submit" name="confirm" value="Confirm"/>
+        <input type="submit" class="cancel" name="cancel" value="Cancel"/>
+      </div>
+    </form>
+    <i>Drag and drop items to change order.</i>
     <ul id="sortable">
   {% for item in crate_items %}
       <li id="item_{{ forloop.counter }}" class="ui-state-default">

@@ -24,6 +24,11 @@ from common.autoretry import AutoRetry
 ALBUM_CATEGORY_CHOICES = [["", ""]]
 ALBUM_CATEGORY_CHOICES += zip(models.ALBUM_CATEGORIES,
                               [category.replace('_', ' ').capitalize() for category in models.ALBUM_CATEGORIES])
+PAGE_SIZE_CHOICES = [[10, 10],
+                     [50, 50],
+                     [100, 100]]
+ORDER_CHOICES = [['created', 'created'],
+                 ['author', 'author']]
 
 class PartialAlbumForm(forms.Form):
     label = forms.CharField(required=False,
@@ -35,5 +40,5 @@ class ListReviewsForm(forms.Form):
     author = forms.CharField(required=False)
     author_key = forms.CharField(required=False, widget=forms.HiddenInput)
 #    category = forms.ChoiceField(required=False, choices=ALBUM_CATEGORY_CHOICES)
-    page_size = forms.ChoiceField(required=False, choices=[[10, 10], [50, 50], [100, 100]])
-    
+    page_size = forms.ChoiceField(required=False, choices=PAGE_SIZE_CHOICES)
+    order = forms.ChoiceField(required=False, choices=ORDER_CHOICES)

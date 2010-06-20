@@ -6,6 +6,18 @@ blockquote {
     border-left: 5px solid #ddd;
 }
 
+#djdb_header {
+  padding: 3px 8px 3px 8px;
+  font-size: 11px;
+  overflow: hidden;
+}
+#djdb_links {
+    float: left;
+}
+#djdb_search {
+    float: right;
+}
+
 .ac_results {
 	padding: 0px;
 	border: 1px solid WindowFrame;
@@ -53,7 +65,7 @@ blockquote {
 	color: HighlightText;
 }
 
-#sortable { list-style-type: none; margin: 0; padding: 0; width: 90%; }
+#sortable { list-style-type: none; margin: 0; padding: 0; width: 100%; }
 #sortable li { list-style-type:none; margin: 0 0 -1px 0; padding: 0.2em; font-size: 1.3em; border: solid 1px}
 #sortable li span { position: relative; float: right; }
 input.text { margin-bottom:12px; width:95%; padding: .4em; }
