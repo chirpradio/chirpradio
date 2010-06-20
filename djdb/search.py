@@ -513,7 +513,7 @@ def _album_is_reviewed(album, user_key):
       If user_key is not None, returns True if and only if the album
         has been reviewed by the specified user.
     """
-    if user_key is None:
+    if user_key is None or user_key == "":
         return len(album.reviews) > 0
     for review in album.reviews:
         if str(review.author.key()) == user_key:
@@ -534,7 +534,7 @@ def _artist_has_reviewed_album(artist, user_key):
     """
     artist_album_query = models.Album.all().filter(
         "album_artist =", artist)
-    for album in album_artist_query:
+    for album in artist_album_query:
         if _album_is_reviewed(album, user_key):
             return True
     return False
@@ -613,7 +613,7 @@ def simple_music_search(query_str, max_num_results=None, entity_kind=None,
 
     # If a user key is set, we are only interested in items that have
     # been reviewed.
-    if user_key is not None:
+    if user_key:
         reviewed = True
 
     # Next, filter out the keys for tracks that do not have a title match.
