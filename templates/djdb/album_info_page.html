@@ -1,11 +1,7 @@
-{% extends "common/internal_page.html" %}
+{% extends "djdb/internal_page.html" %}
 
 {% load common_extras %}
 {% load djdb_extras %}
-
-{% block extrastyle %}
-<link rel="stylesheet" href="/media/djdb/djdb.css" />
-{% endblock %}
 
 {% block breadcrumbs %}
 <a href="/">chipradio home</a> /
@@ -13,6 +9,12 @@
 {% endblock %}
 
 {% block content %}
+
+{% if album.category %}
+<p>
+  <h3>Category: {{ album.category|replace:"/_/ "|capfirst }}</h3>
+</p>
+{% endif %}
 
 {% block extrahead %}
 <script type="text/javascript" 
@@ -23,24 +25,10 @@
     src="/media/djdb/js/djdb_delete_review.js"></script>
 {% endblock %}
 
-<p>
-This is the album information page for <b>{{ album.title }}</b> by
-<a href="{{ album.artist_url }}">{{ album.artist_name }}</a>.
-It is still very primitive.
-</p>
-
-<p>
 {% if msg %}
+<div class="success">
 {{ msg }}
-{% endif %}
-</p>
-
-<p>
-<a href="/djdb/crate">Go to your crate.</a>
-</p>
-
-{% if album.category %}
-<h3>Category: {{ album.category|replace:"/_/ "|capfirst }}</h3>
+</div>
 {% endif %}
 
 {% if user.is_music_director %}
@@ -85,8 +73,7 @@ It is still very primitive.
       {% endif %}
 ]
       {% if user.is_music_director %}
-  <div class="delete_review_{{ forloop.counter }}" style="display: none">
-    <br/>
+  <div class="warning delete_review_{{ forloop.counter }}" style="display: none">
     <form action="/djdb/album/{{ album.album_id }}/delete_review" method="post">
       <input type="hidden" name="review_key" value="{{ doc.key }}"/>
       Are you sure:

@@ -1,4 +1,4 @@
-{% extends "common/internal_page.html" %}
+{% extends "djdb/internal_page.html" %}
 
 {% load common_extras %}
 {% load djdb_extras %}
@@ -17,22 +17,13 @@
     src="/media/djdb/js/djdb.js"></script>
 {% endblock %}
 
-<p>
-This is the artist information page for <b>{{ artist.pretty_name }}</b>.
-It is still very primitive.
-</p>
-
-<p>
 {% if msg %}
+<div class="success">
 {{ msg }}
+</div>
 {% endif %}
-</p>
 
-<p>
-<a href="/djdb/crate">Go to your crate.</a>
-</p>
-
-<h3>Albums by {{ artist.pretty_name }}</h3>
+<h3>Albums</h3>
 
 {% if user.is_music_director %}
 <form method="post" name="djdbForm" action="update">

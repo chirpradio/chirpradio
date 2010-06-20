@@ -26,7 +26,7 @@ from django.template import loader, Context, RequestContext
 
 from auth.decorators import require_role
 from auth import roles
-from common import sanitize_html
+from common import sanitize_html, pager
 from common.autoretry import AutoRetry
 from djdb import models
 from djdb import search
@@ -68,49 +68,45 @@ def landing_page(request, ctx_vars=None):
 
     # Add categories.
     ctx_vars["categories"] = models.ALBUM_CATEGORIES
-    
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
 def reviews_page(request, ctx_vars=None): 
     default_page_size = 10
+    default_order = 'created'
     
     template = loader.get_template('djdb/reviews.html')
     if ctx_vars is None : ctx_vars = {}
     ctx_vars['title'] = 'DJ Database Reviews'
 
-    reviews = None
     if request.method == "GET":
         form = forms.ListReviewsForm()
+        author_key = ""
         page_size = default_page_size
-        reviews = review.fetch_recent(page_size + 1)
+        order = default_order
+        bookmark = None
     else:
         page_size = int(request.POST.get('page_size', default_page_size))
         form = forms.ListReviewsForm(request.POST)
         if form.is_valid():
             author_key = request.POST.get('author_key')
-            ctx_vars['author_key'] = author_key
+            order = request.POST.get('order')
             bookmark = request.POST.get('bookmark')
-            reviews = review.fetch_recent(page_size + 1, author_key, bookmark)
-            
-            # category = request.POST.get('category')
-            # if category:
-                # revs = []
-                # for rev in reviews:
-                    # if rev.subject.category == category:
-                        # revs.append(rev)
-                # reviews = revs
-                # ctx_vars["num_reviews"] = len(reviews)
-            # else:
-                # ctx_vars["num_reviews"] = reviews.count()
-    if len(reviews) == page_size + 1:
-        ctx_vars['next'] = reviews[-1].created
-        ctx_vars['reviews'] = reviews[:page_size]
-    else:
-        ctx_vars['reviews'] = reviews
-    
+    if order not in ['created', 'author']:
+        return http.HttpResponse(status=404)
+    query = pager.PagerQuery(models.Document).filter("doctype =", models.DOCTYPE_REVIEW)
+    if author_key:
+        author = db.get(author_key)
+        query.filter('author =', author)
+    query.order("-%s" % order)
+    prev, reviews, next = query.fetch(page_size, bookmark)
+    ctx_vars["reviews"] = reviews
+    ctx_vars["prev"] = prev
+    ctx_vars["next"] = next
     ctx_vars["form"] = form
-    ctx_vars['page_size'] = page_size
+    ctx_vars["author_key"] = author_key
+    ctx_vars["page_size"] = page_size
+    ctx_vars["order"] = order
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
@@ -281,8 +277,8 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     year = album.year
     if year is None:
         year = ''
-    ctx_vars["title"] = u"%s / %s / %s / %s" % (album.artist_name, album.title,
-                                                label, str(year))
+    ctx_vars["title"] = u'<a href="%s">%s</a> / %s / %s / %s' \
+      % (album.artist_url, album.artist_name, album.title, label, str(year))
 
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
@@ -488,6 +484,7 @@ def crate_page(request, ctx_vars=None):
     crate.save()
     
     if ctx_vars is None : ctx_vars = {}
+    ctx_vars["title"] = "Your Crate"
     ctx_vars["crate_items"] = crate_items
     ctx_vars["user"] = request.user
     ctx = RequestContext(request, ctx_vars)
@@ -534,7 +531,7 @@ def add_crate_item(request):
     response_page = request.GET.get('response_page')
     ctx_vars = { 'msg': msg }
     if response_page == 'landing':
-        ctx_vars = { 'query': request.GET.get('query') }
+        ctx_vars['query'] = request.GET.get('query')
         return landing_page(request, ctx_vars)
     elif response_page == 'artist':
         return artist_info_page(request, item.album_artist.name, ctx_vars)
@@ -592,6 +589,16 @@ def reorder(request):
     AutoRetry(crate).save()
     return http.HttpResponse(mimetype="text/plain")
 
+def remove_all_crate_items(request):
+    crate = _get_crate(request.user)
+    for key in crate.items:
+        crate.items.remove(key)
+    crate.order = []
+    AutoRetry(crate).save()
+
+    ctx_vars = {}
+    return crate_page(request, ctx_vars)
+    
 # Only the music director has the power to add new artists.
 @require_role(roles.MUSIC_DIRECTOR)
 def artists_bulk_add(request):
