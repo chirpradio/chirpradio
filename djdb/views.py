@@ -19,6 +19,7 @@
 
 import logging
 
+from google.appengine.api import datastore_errors
 from google.appengine.ext import db
 from django import forms
 from django import http
@@ -643,3 +644,40 @@ def _copy_created(request):
         else:
             AutoRetry(doc).save()
     return landing_page(request)
+
+@require_role(roles.MUSIC_DIRECTOR)
+def check_datastore(request):
+    ctx_vars = {}
+
+    if request.method == "GET":
+        query = models.Document.all().filter("doctype =", models.DOCTYPE_REVIEW)
+        num_reviews = 0
+        num_bad_subject_refs = 0
+        num_bad_author_refs = 0
+        for review in query:            
+            try:
+                subject = review.subject
+            except datastore_errors.Error, e:
+                if e.args[0] == "ReferenceProperty failed to be resolved":
+                    num_bad_subject_refs += 1
+                else:
+                    raise
+            try:
+                author = review.author
+            except datastore_errors.Error, e:
+                if e.args[0] == "ReferenceProperty failed to be resolved":
+                    num_bad_author_refs += 1
+                else:
+                    raise
+
+            num_reviews += 1
+        ctx_vars['num_reviews'] = num_reviews
+        ctx_vars['num_bad_subject_refs'] = num_bad_subject_refs
+        ctx_vars['num_bad_author_refs'] = num_bad_author_refs
+    else:
+        ""
+    template = loader.get_template('djdb/check_datastore.html')
+    ctx_vars['title'] = 'DJ Database Reviews'
+
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))

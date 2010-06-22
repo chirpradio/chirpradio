@@ -85,6 +85,9 @@ urlpatterns = patterns(
     
     (r'update/artists/bulk_add', 'djdb.views.artists_bulk_add'),
     
+    # Check the djdb for duplicates and bad references.
+    (r'check_datastore', 'djdb.views.check_datastore'),
+    
     # Images
     (IMAGE_URL_PATTERN, 'djdb.views.image'),
 
