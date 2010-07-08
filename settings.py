@@ -19,7 +19,6 @@ from common import in_dev
 
 DEBUG = in_dev()
 # DEBUG = False
-DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ROOT_PATH = os.path.dirname(__file__)
