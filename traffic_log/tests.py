@@ -77,11 +77,14 @@ class TestTrafficLogViews(DjangoTestCase):
         
         now = time_util.chicago_now()
         
+        # first hour:
         self.assertEqual(spot_map[now.hour].title, 'Legal ID')
+        # second hour:
         self.assertEqual(spot_map[(now + datetime.timedelta(hours=1)).hour].title, 
                 'Legal ID')
-        self.assertEqual(spot_map[(now + datetime.timedelta(hours=2)).hour].title, 
-                'Legal ID')
+        # thir hour (not shown anymore):
+        # self.assertEqual(spot_map[(now + datetime.timedelta(hours=2)).hour].title, 
+        #         'Legal ID')
 
 class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
     
@@ -180,7 +183,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         for slotted_spot in context['slotted_spots']:
             spots.append([s.title for s in slotted_spot.iter_spots()])
             
-        self.assertEqual(spots, [[], [], [], []])
+        self.assertEqual(spots, [[], []]) # ensure 2 hours of spots have expired
     
     def test_delete_spot(self):
         spot = models.Spot(
