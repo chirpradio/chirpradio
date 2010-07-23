@@ -48,7 +48,7 @@
 <ul>
 {% for rev in reviews %}
   <li> <a href="{{ rev.subject.url }}">{{ rev.subject.album_artist.name }} / {{ rev.subject.title }},</a>
-reviewed by {{ rev.author }}
+reviewed by {{ rev.author_display }}
 &nbsp;&nbsp;
   <small>Posted {{ rev.created_display|date:"F j, Y P" }}</small> </li>
 {% endfor %}

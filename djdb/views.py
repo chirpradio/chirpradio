@@ -649,12 +649,14 @@ def _copy_created(request):
 def check_datastore(request):
     ctx_vars = {}
 
-    if request.method == "GET":
-        query = models.Document.all().filter("doctype =", models.DOCTYPE_REVIEW)
+    bookmark = request.POST.get('bookmark')
+    if 1:
+        query = pager.PagerQuery(models.Document).filter("doctype =", models.DOCTYPE_REVIEW)
+        prev, reviews, next = query.fetch(50, bookmark)
         num_reviews = 0
         num_bad_subject_refs = 0
         num_bad_author_refs = 0
-        for review in query:            
+        for review in reviews:            
             try:
                 subject = review.subject
             except datastore_errors.Error, e:
@@ -671,6 +673,8 @@ def check_datastore(request):
                     raise
 
             num_reviews += 1
+        ctx_vars['prev'] = prev
+        ctx_vars['next'] = next
         ctx_vars['num_reviews'] = num_reviews
         ctx_vars['num_bad_subject_refs'] = num_bad_subject_refs
         ctx_vars['num_bad_author_refs'] = num_bad_author_refs
