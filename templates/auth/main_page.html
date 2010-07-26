@@ -38,6 +38,7 @@ Select: <a id="checkbox_all" href="">All</a>,
 	<tr>
 		<th/>
 		<th>name</th>
+        <th>dj name</th>
 		<th>email</th>
 		<th>roles</th>
 		<th>last login</th>
@@ -53,6 +54,7 @@ Select: <a id="checkbox_all" href="">All</a>,
                    name="checkbox_{{ forloop.counter }}"/></td>
 		<td><a href="/auth/edit_user?email={{ u.email }}">
 {{ u.last_name }}, {{ u.first_name }}</a></td>
+        <td>{{ u.dj_name }}</td>
 		<td>{{ u.email }}</td>
 		<td>
 			<small>
