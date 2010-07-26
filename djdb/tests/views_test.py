@@ -272,8 +272,8 @@ class ReviewViewsTestCase(TestCase):
         album = models.Album.all().filter(
             'album_id =', self.album.album_id).fetch(1)[0]
         self.assertEqual(album.reviews[-1].text, 'Album review.')
-        self.assertEqual(album.reviews[-1].author.key(),
-                         self.review_user.key())
+        self.assertEqual(str(album.reviews[-1].author.key()),
+                         str(self.review_user.key()))
 
         # Test save review with user field of non-existing user.
         vars = {'save': 'Save',
