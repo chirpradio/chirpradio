@@ -30,8 +30,8 @@ ul#nav { padding: 0; }
 ul#nav li { float: left; display: inline; }
 ul#nav li a { display: block; background: #9a9a9a; padding: 5px 10px; margin-right: 1px; font-weight: bold; color: #fff; }
 ul#nav li a:hover { color: #ff0; background: #4a4a4a; }
-ul#nav li.log a { -webkit-border-top-left-radius:3px; -webkit-border-bottom-left-radius:3px; -moz-border-radius-topleft:3px; -moz-border-radius-bottomleft:3px; border-bottom-left-radius:3px; }
-ul#nav li.new a { -webkit-border-top-right-radius:3px; -webkit-border-bottom-right-radius:3px; -moz-border-radius-topright:3px; -moz-border-radius-bottomright:3px; border-bottom-right-radius:3px; }
+ul#nav li.first a { -webkit-border-top-left-radius:3px; -webkit-border-bottom-left-radius:3px; -moz-border-radius-topleft:3px; -moz-border-radius-bottomleft:3px; border-bottom-left-radius:3px; }
+ul#nav li.last a { -webkit-border-top-right-radius:3px; -webkit-border-bottom-right-radius:3px; -moz-border-radius-topright:3px; -moz-border-radius-bottomright:3px; border-bottom-right-radius:3px; }
 
 input#refresh-button { background: #009438 url(../../common/img/gradient-white-small.png) left top repeat-x; padding: 3px; color: #fff; border: 1px solid #009438; -webkit-border-radius:3px; -moz-border-radius:3px; border-radius:3px; font-weight: bold; font-size: 1.2em; position: absolute; top: 24px; right: 0; }
 input#refresh-button:hover { cursor: pointer; background-color: #2a2a2a; border-color: #2a2a2a; color: #ff0; }
@@ -40,7 +40,13 @@ table { width: 800px; }
 tr.new { background: #fff; }
 th, td { border-bottom: none; padding: 8px 10px; }
 th, tr.new td { font-size: 1.1em; padding: 12px 10px 11px; }
-th { background-color: #6a6a6a; color: #ff0; }
+th { 
+    background-color: #6a6a6a; 
+    color: #ff0; 
+}
+th label {
+    color: #ff0; 
+}
 td { border-top: 1px solid #6a6a6a; }
 
 span.to-do { font-weight: bold; color: #ec0035; background-color: #fff; border: 1px solid #ec0035; font-size: .8em; padding: 0 2px; -webkit-border-radius:2px; -moz-border-radius:2px; border-radius:2px; display: none; }
