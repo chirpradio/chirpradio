@@ -40,7 +40,7 @@ os.environ['SERVER_PORT'] = '1234'
 os.environ['USER_EMAIL'] = 'test@test.com'
 
 
-class AuthTestCase(unittest.TestCase):
+class AuthTestCase(DjangoTestCase):
 
     def setUp(self):
         # Remember the original versions of these functions.
@@ -206,6 +206,20 @@ class AuthTestCase(unittest.TestCase):
         client.logout()
         response = client.get('/')
         self.assertEqual(302, response.status_code)
+    
+    def test_logout_redirect(self):
+        client = Client()
+        # Log in as a test user.
+        client.login(email='test@test.com')
+        # Logged in, active users should be able to reach '/'.
+        response = client.get('/')
+        self.assertEqual(200, response.status_code)
+        
+        response = client.get('/auth/goodbye')
+        self.assertRedirects(response, 'http://testserver/auth/hello/')
+        
+        response = client.get('/auth/goodbye', {'redirect': '/somewhere/else'})
+        self.assertRedirects(response, 'http://testserver/auth/hello/?redirect=/somewhere/else')
 
     def test_client_login_supports_roles(self):
         client = Client()

@@ -21,9 +21,12 @@ import auth
 from django.conf import settings
 
 def base(request):
+    # logout should always redirect to the current page to 
+    # make it easier to switch users (like on the playlist tracker)
+    logout_url = "%s?redirect=%s" % (auth.LOGOUT_URL, request.path)
     return {
         'user': request.user,
         'login_url': auth.create_login_url('/'),
-        'logout_url': auth.LOGOUT_URL,
+        'logout_url': logout_url,
         'MEDIA_URL': settings.MEDIA_URL
         }
