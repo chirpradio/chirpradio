@@ -15,13 +15,15 @@
 ### limitations under the License.
 ###
 
-from django import forms
+import datetime
 
+from google.appengine.ext import db
+from django import forms
 from djdb import models
 from common.autoretry import AutoRetry
 
 
-def new(album, user):
+def new(album, user=None, user_name=None):
     """Returns a new partially-initialized Document object for a review.
 
     The new Document is in the same entity group as the album being
@@ -33,18 +35,45 @@ def new(album, user):
     """
     return models.Document(parent=album,
                            subject=album, author=user,
+                           author_name=user_name,
                            doctype=models.DOCTYPE_REVIEW)
 
 
 class Form(forms.Form):
-    title = forms.CharField(required=True, min_length=2, max_length=250)
     text = forms.CharField(required=True, widget=forms.Textarea,
                            min_length=10, max_length=20000)
 
+    def __init__(self, user, *args, **kwargs):
+        super(Form, self).__init__(*args, **kwargs)
+        if user.is_music_director:
+            self.fields['author'] = forms.CharField(required=False)
 
-def fetch_recent(max_num_returned=10):
+def fetch_recent(max_num_returned=10, author_key=None, bookmark=None, order="created"):
     """Returns the most recent reviews, in reverse chronological order."""
     rev_query = models.Document.all()
     rev_query.filter("doctype =", models.DOCTYPE_REVIEW)
-    rev_query.order("-timestamp")
+    rev_query.order("-%s" % order)
+    if author_key:
+        author = db.get(author_key)
+        rev_query.filter('author =', author)
+    if bookmark:
+        # %f only in Python 2.6
+        #date = datetime.datetime.strptime(bookmark, "%Y-%m-%d %H:%M:%S.%f")
+        parts = bookmark.split('.')
+        date = datetime.datetime.strptime(parts[0], "%Y-%m-%d %H:%M:%S")
+        date = date.replace(microsecond=int(parts[1]))
+        rev_query.filter('%s <=' % order, date)
     return AutoRetry(rev_query).fetch(max_num_returned)
+
+def fetch_all():
+    """Returns all reviews in reverse chronological order."""
+    rev_query = models.Document.all()
+    rev_query.filter("doctype =", models.DOCTYPE_REVIEW)
+    rev_query.order("-created")
+    return rev_query
+    
+def get_or_404(doc_key):
+    doc = models.Document.get(doc_key)
+    if doc is None :
+        return http.HttpResponse(status=404)
+    return doc

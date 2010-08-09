@@ -164,10 +164,8 @@ def url_track_delete(key):
 
 """ bluk of the remoting code
 """
-def _url_track_create(track=None):
+def _url_track_create(track):
     log.info("chirpradio.org create track %s" % track.key())
-    if track is None:
-        return
     
     qs = {
         'track_name': as_encoded_str(track.track_title),
@@ -276,8 +274,14 @@ def task_response(result):
         return HttpResponse("OK")
 
 def send_track_to_live_site(request):
-    result = _url_track_create(AutoRetry(PlaylistEvent).get(request.POST['id']))
-    return task_response(result)
+    track = AutoRetry(PlaylistEvent).get(request.POST['id'])
+    if not track:
+        log.warning("Requested to create a non-existant track of ID %r" % request.POST['id'])
+        # this is not an error (malicious POST, etc), so make sure the task succeeds:
+        return  task_response({'success':True})
+    else:
+        result = _url_track_create(track)
+        return task_response(result)
 
 def delete_track_from_live_site(request):
     result = _url_track_delete(request.POST['id'])
@@ -326,6 +330,11 @@ def send_track_to_live365(request):
     Album title
     """
     track = AutoRetry(PlaylistEvent).get(request.POST['id'])
+    if not track:
+        log.warning("Requested to create a non-existant track of ID %r" % request.POST['id'])
+        # this is not an error (malicious POST, etc), so make sure the task succeeds:
+        return task_response({'success':True})
+        
     log.info("Live365 create track %s" % track.key())
     
     qs = {

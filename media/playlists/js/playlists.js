@@ -13,6 +13,16 @@ $(document).ready(function() {
                             // result is "Eno, Brian")
     };
     
+    $("#id_artist").keydown(function() {
+        $(this).addClass('freeform');
+    });
+    $("#id_album").keydown(function() {
+       $(this).addClass('freeform');
+    });
+    $("#id_song").keydown(function() {
+        $(this).addClass('freeform');
+    });
+
     $("#id_artist").autocomplete("/djdb/artist/search.txt", 
         $.extend({
             onItemSelect: function(li) {
@@ -22,6 +32,7 @@ $(document).ready(function() {
                 song.autocompleter.flushCache();
                 $("#id_artist_key").attr("value", entity_key);
                 $("#id_artist").focus();
+                $("#id_artist").removeClass('freeform');
             }
         }, default_opt));
     
@@ -31,6 +42,7 @@ $(document).ready(function() {
                 var entity_key = li.extra[0];
                 $("#id_album_key").attr("value", entity_key);
                 $("#id_album").focus();
+                $("#id_album").removeClass('freeform');
             }
         }, default_opt));
     
@@ -40,6 +52,7 @@ $(document).ready(function() {
                 var entity_key = li.extra[0];
                 $("#id_song_key").attr("value", entity_key);
                 $("#id_song").focus();
+                $("#id_song").removeClass('freeform');
             }
         }, default_opt));
     

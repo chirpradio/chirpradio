@@ -19,6 +19,7 @@
 
 import logging
 
+from google.appengine.api import datastore_errors
 from google.appengine.ext import db
 from django import forms
 from django import http
@@ -26,43 +27,99 @@ from django.template import loader, Context, RequestContext
 
 from auth.decorators import require_role
 from auth import roles
-from common import sanitize_html
+from common import sanitize_html, pager
 from common.autoretry import AutoRetry
 from djdb import models
 from djdb import search
 from djdb import review
+from djdb import comment
+from djdb import forms
+from djdb.models import Album
+import re
+import tag_util
 
 log = logging.getLogger(__name__)
 
-
-def landing_page(request):
+def landing_page(request, ctx_vars=None):
     template = loader.get_template('djdb/landing_page.html')
-    ctx_vars = { 'title': 'DJ Database' }
+    if ctx_vars is None : ctx_vars = {}
+    ctx_vars['title'] = 'DJ Database'
 
     # Grab recent reviews.
     ctx_vars["recent_reviews"] = review.fetch_recent()
 
     if request.method == "POST":
         query_str = request.POST.get("query")
-        if query_str:
-            ctx_vars["query_str"] = query_str
-            matches = search.simple_music_search(query_str)
-            if matches is None:
-                ctx_vars["invalid_query"] = True
-            else:
-                ctx_vars["query_results"] = matches
+        reviewed = request.POST.get("reviewed")
+        user_key = request.POST.get("user_key")
+    else:
+        query_str = request.GET.get("query")
+        reviewed = request.GET.get("reviewed")
+        user_key = request.GET.get("user_key")
+
+    if query_str:
+        ctx_vars["query_str"] = query_str
+        if reviewed is None: reviewed = False
+        else: reviewed = True
+        matches = search.simple_music_search(query_str, reviewed=reviewed, user_key=user_key)
+        if matches is None:
+            ctx_vars["invalid_query"] = True
+        else:
+            ctx_vars["query_results"] = matches
+
+    # Add categories.
+    ctx_vars["categories"] = models.ALBUM_CATEGORIES
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
+def reviews_page(request, ctx_vars=None): 
+    default_page_size = 10
+    default_order = 'created'
+    
+    template = loader.get_template('djdb/reviews.html')
+    if ctx_vars is None : ctx_vars = {}
+    ctx_vars['title'] = 'DJ Database Reviews'
 
-def artist_info_page(request, artist_name):
+    if request.method == "GET":
+        form = forms.ListReviewsForm()
+        author_key = ""
+        page_size = default_page_size
+        order = default_order
+        bookmark = None
+    else:
+        page_size = int(request.POST.get('page_size', default_page_size))
+        form = forms.ListReviewsForm(request.POST)
+        if form.is_valid():
+            author_key = request.POST.get('author_key')
+            order = request.POST.get('order')
+            bookmark = request.POST.get('bookmark')
+    if order not in ['created', 'author']:
+        return http.HttpResponse(status=404)
+    query = pager.PagerQuery(models.Document).filter("doctype =", models.DOCTYPE_REVIEW)
+    if author_key:
+        author = db.get(author_key)
+        query.filter('author =', author)
+    query.order("-%s" % order)
+    prev, reviews, next = query.fetch(page_size, bookmark)
+    ctx_vars["reviews"] = reviews
+    ctx_vars["prev"] = prev
+    ctx_vars["next"] = next
+    ctx_vars["form"] = form
+    ctx_vars["author_key"] = author_key
+    ctx_vars["page_size"] = page_size
+    ctx_vars["order"] = order
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+def artist_info_page(request, artist_name, ctx_vars=None):
     artist = models.Artist.fetch_by_name(artist_name)
     if artist is None:
         return http.HttpResponse(status=404)
     template = loader.get_template("djdb/artist_info_page.html")
-    ctx_vars = { "title": artist.pretty_name,
-                 "artist": artist,
-                 }
+    if ctx_vars is None : ctx_vars = {}
+    ctx_vars["title"] = artist.pretty_name
+    ctx_vars["artist"] = artist
+    ctx_vars["categories"] = models.ALBUM_CATEGORIES
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
@@ -83,6 +140,60 @@ def album_search_for_autocomplete(request):
     for ent in matching_entities:
         response.write("%s|%s\n" % (ent.title, ent.key()))
     return response
+
+@require_role(roles.MUSIC_DIRECTOR)
+def update_albums(request) :
+    mark_as = request.POST.get('mark_as')
+    for name in request.POST.keys() :
+        if re.match('checkbox_', name) :
+            type, num = name.split('_')
+            album_key = request.POST.get('album_key_%s' % num)
+            album = AutoRetry(Album).get(album_key)
+            if mark_as == 'none':
+                album.category = None
+            else:
+                album.category = mark_as
+            AutoRetry(album).save()
+
+    if request.POST.get('response_page') == 'artist' :
+        return artist_info_page(request, request.POST.get('artist_name'))
+    else :
+        return landing_page(request)
+
+def update_tracks(request, album_id_str):
+    album = _get_album_or_404(album_id_str)
+    mark_as = request.POST.get('mark_as')
+    for name in request.POST.keys() :
+        if re.match('checkbox_', name) :
+            type, num = name.split('_')
+            track = album.sorted_tracks[int(num) - 1]
+            if mark_as == 'explicit' :
+                if models.EXPLICIT_TAG in models.TagEdit.fetch_and_merge(track) :
+                    tag_util.remove_tag_and_save(request.user, track, models.EXPLICIT_TAG)
+                else :
+                    tag_util.add_tag_and_save(request.user, track, models.EXPLICIT_TAG)
+            elif mark_as == 'recommended' :
+                if models.RECOMMENDED_TAG in models.TagEdit.fetch_and_merge(track) :
+                    tag_util.remove_tag_and_save(request.user, track, models.RECOMMENDED_TAG)
+                else :
+                    tag_util.add_tag_and_save(request.user, track, models.RECOMMENDED_TAG)
+            
+    template = loader.get_template("djdb/album_info_page.html")
+    ctx_vars = { "title": u"%s / %s" % (album.title, album.artist_name),
+                 "album": album,
+                 "user": request.user }
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+def category_page(request, category):
+    query = models.Album.all().filter("category =", category)
+    albums = AutoRetry(query).fetch(AutoRetry(query).count())
+    template = loader.get_template("djdb/category_page.html")
+    ctx_vars = { "category": category,
+                 "user": request.user,
+                 "albums": albums }
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
 
 def track_search_for_autocomplete(request):
     matching_entities = _get_matches_for_partial_entity_search(
@@ -140,46 +251,208 @@ def _get_album_or_404(album_id_str):
         return http.HttpResponse(status=404)
     return album
 
-def album_info_page(request, album_id_str):
+def album_info_page(request, album_id_str, ctx_vars=None):
     album = _get_album_or_404(album_id_str)
     template = loader.get_template("djdb/album_info_page.html")
-    ctx_vars = { "title": u"%s / %s" % (album.title, album.artist_name),
-                 "album": album }
+
+    if ctx_vars is None : ctx_vars = {}
+    ctx_vars["album"] = album
+    ctx_vars["user"] = request.user
+            
+    if request.user.is_music_director:
+        album_form = None
+        if request.method == "GET":
+            album_form = forms.PartialAlbumForm({'label': album.label,
+                                           'year': album.year})
+        else:
+            album_form = forms.PartialAlbumForm(request.POST)
+            if album_form.is_valid() and "update" in request.POST:
+                album.label = album_form.cleaned_data["label"]
+                album.year = album_form.cleaned_data["year"]
+                AutoRetry(album).save()
+        ctx_vars["album_form"] = album_form
+    
+    label = album.label
+    if label is None:
+        label = ''
+    year = album.year
+    if year is None:
+        year = ''
+    ctx_vars["title"] = u'<a href="%s">%s</a> / %s / %s / %s' \
+      % (album.artist_url, album.artist_name, album.title, label, str(year))
+
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
-
-def album_new_review(request, album_id_str):
+def album_edit_review(request, album_id_str, review_key=None):
     album = _get_album_or_404(album_id_str)
-    template = loader.get_template("djdb/album_new_review.html")
-    ctx_vars = { "title": u"New Review", "album": album }
+    template = loader.get_template("djdb/album_edit_review.html")
+    ctx_vars = { "album": album,
+                 "valid_html_tags": sanitize_html.valid_tags_description() }
+    if review_key:
+        doc = review.get_or_404(review_key)
+        ctx_vars["review"] = doc
+        if doc.author:
+            ctx_vars['author_key'] = doc.author.key()
+        ctx_vars["title"] = "Edit Review"
+        ctx_vars["edit"] = True
+    else:
+        ctx_vars["title"] = "New Review"
+
     form = None
     if request.method == "GET":
-        form = review.Form()
+        attrs = None
+        if review_key:
+            attrs = {'text': doc.text}
+            if request.user.is_music_director:
+                attrs['author'] = doc.author_display
+        form = review.Form(request.user, attrs)
     else:
-        form = review.Form(request.POST)
+        form = review.Form(request.user, request.POST)
         if form.is_valid():
             if "preview" in request.POST:
-                ctx_vars["valid_html_tags"] = (
-                    sanitize_html.valid_tags_description())
                 ctx_vars["preview"] = sanitize_html.sanitize_html(
                     form.cleaned_data["text"])
+                if request.user.is_music_director and request.POST.get('author'):
+                    ctx_vars["author_key"] = request.POST.get("author_key")
+                    ctx_vars["author_name"] = request.POST.get("author")
+                else:
+                    ctx_vars["author_key"] = request.user.key()
+                    ctx_vars["author_name"] = request.user
             elif "save" in request.POST:
-                doc = review.new(album, request.user)
-                doc.title = form.cleaned_data["title"]
+                if request.POST.get('author_key'):
+                    author = AutoRetry(db).get(request.POST.get('author_key'))
+                else:
+                    author_name = request.POST.get('author')
+                    first_name, sep, last_name = author_name.partition(' ')
+                    query = models.User.all()
+                    query.filter("first_name =", first_name)
+                    query.filter("last_name =", last_name)
+                    author = AutoRetry(query).fetch(1)
+                    if author: author = author[0]
+
+                # Save author or author name.
+                if author:
+                    if review_key:
+                        doc.author = author
+                        doc.author_name = None
+                    else:
+                        doc = review.new(album, user=author)
+                else:
+                    if review_key:
+                        doc.author = None
+                        doc.author_name = author_name
+                    else:
+                        doc = review.new(album, user_name=author_name)
+                
                 doc.unsafe_text = form.cleaned_data["text"]
-                # Increment the number of reviews.
-                album.num_reviews += 1
-                # Now save both the modified album and the document.
-                # They are both in the same entity group, so this write
-                # is atomic.
-                AutoRetry(db).put([album, doc])
+                
+                if review_key:
+                    AutoRetry(doc).save()
+                else:
+                    # Increment the number of reviews.
+                    album.num_reviews += 1
+                    # Now save both the modified album and the document.
+                    # They are both in the same entity group, so this write
+                    # is atomic.
+                    AutoRetry(db).put([album, doc])
+                
                 # Redirect back to the album info page.
-                return http.HttpResponseRedirect("info")
+                return http.HttpResponseRedirect(album.url)
     ctx_vars["form"] = form
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
+@require_role(roles.MUSIC_DIRECTOR)
+def album_hide_unhide_review(request, album_id_str, review_key):
+    album = _get_album_or_404(album_id_str)
+    doc = review.get_or_404(review_key)
+    if doc.is_hidden:
+        doc.is_hidden = False
+    else:
+        doc.is_hidden = True
+    AutoRetry(doc).save()
+    return album_info_page(request, album_id_str)
+
+@require_role(roles.MUSIC_DIRECTOR)
+def album_delete_review(request, album_id_str, review_key=None):
+    album = _get_album_or_404(album_id_str)
+    if review_key is None:
+        review_key = request.POST.get('review_key')
+    doc = review.get_or_404(review_key)
+    if request.POST.get('confirm'):
+        AutoRetry(doc).delete()
+        album.num_reviews -= 1
+        AutoRetry(album).save()
+    return album_info_page(request, album_id_str)
+    
+def album_edit_comment(request, album_id_str, comment_key=None):
+    album = _get_album_or_404(album_id_str)
+    template = loader.get_template("djdb/album_edit_comment.html")
+    ctx_vars = { "album": album,
+                 "valid_html_tags": sanitize_html.valid_tags_description() }
+    if comment_key:
+        doc = comment.get_or_404(comment_key)
+        ctx_vars["comment"] = doc
+        ctx_vars["title"] = "Edit Comment"
+        ctx_vars["edit"] = True
+    else:
+        ctx_vars["title"] = "New Comment"
+
+    form = None
+    if request.method == "GET":
+        attrs = None
+        if comment_key:
+            attrs = {'text': doc.text}
+        form = comment.Form(attrs)
+    else:
+        form = comment.Form(request.POST)
+        if form.is_valid():
+            if "preview" in request.POST:
+                ctx_vars["preview"] = sanitize_html.sanitize_html(
+                    form.cleaned_data["text"])
+            elif "save" in request.POST:
+                if comment_key is None:
+                    doc = comment.new(album, request.user)
+                doc.unsafe_text = form.cleaned_data["text"]
+                if comment_key:
+                    AutoRetry(doc).save()
+                else:
+                    doc.unsafe_text = form.cleaned_data["text"]
+                    # Increment the number of commentss.
+                    album.num_comments += 1
+                    # Now save both the modified album and the document.
+                    # They are both in the same entity group, so this write
+                    # is atomic.
+                    AutoRetry(db).put([album, doc])
+                # Redirect back to the album info page.
+                return http.HttpResponseRedirect(album.url)
+    ctx_vars["form"] = form
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+@require_role(roles.MUSIC_DIRECTOR)
+def album_hide_unhide_comment(request, album_id_str, comment_key):
+    album = _get_album_or_404(album_id_str)
+    doc = comment.get_or_404(comment_key)
+    if doc.is_hidden:
+        doc.is_hidden = False
+    else:
+        doc.is_hidden = True
+    AutoRetry(doc).save()
+    return album_info_page(request, album_id_str)
+
+@require_role(roles.MUSIC_DIRECTOR)
+def album_delete_comment(request, album_id_str, comment_key=None):
+    album = _get_album_or_404(album_id_str)
+    if comment_key is None:
+        comment_key = request.POST.get('comment_key')
+    doc = comment.get_or_404(comment_key)
+    if request.POST.get('confirm'):
+        AutoRetry(doc).delete()
+        album.num_comments -= 1
+        AutoRetry(album).save()
+    return album_info_page(request, album_id_str)
 
 def image(request):
     img = models.DjDbImage.get_by_url(request.path)
@@ -188,7 +461,145 @@ def image(request):
     return http.HttpResponse(content=img.image_data,
                              mimetype=img.image_mimetype)
 
+def _get_crate(user):
+    crate = AutoRetry(models.Crate.all().filter("user =", user)).fetch(1)
+    if len(crate) == 0:
+        crate = models.Crate(user=user)
+        AutoRetry(db).put(crate)
+    else:
+        crate = crate[0]
+    return crate
 
+def crate_page(request, ctx_vars=None):
+    crate_items = AutoRetry(models.CrateItem.all().filter("user =", request.user)).fetch(999)
+    template = loader.get_template("djdb/crate_page.html")
+    crate = _get_crate(request.user)
+    new_crate_items = []
+    crate_items = []
+    if crate.items :
+        for pos in crate.order:
+            new_crate_items.append(crate.items[pos-1])
+            crate_items.append(AutoRetry(db).get(crate.items[pos-1]))
+    crate.items = new_crate_items
+    crate.order = range(1, len(crate.items)+1)
+    crate.save()
+    
+    if ctx_vars is None : ctx_vars = {}
+    ctx_vars["title"] = "Your Crate"
+    ctx_vars["crate_items"] = crate_items
+    ctx_vars["user"] = request.user
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+def add_crate_item(request):
+    if request.method == 'POST':
+        artist = request.POST.get('artist')
+        album = request.POST.get('album')
+        track = request.POST.get('track')
+        label = request.POST.get('label')
+        notes = request.POST.get('notes')
+        item = models.CrateItem(artist=artist,
+                                album=album,
+                                track=track,
+                                label=label,
+                                notes=notes)
+        AutoRetry(db).put(item)
+    else:
+        item_key = request.GET.get('item_key')
+        if not item_key:
+            return http.HttpResponse(status=404)
+        item = AutoRetry(db).get(item_key)
+        if not item:
+            return http.HttpResponse(status=404)
+
+    msg = ''
+    crate = _get_crate(request.user)
+    if item.key() not in crate.items:
+        crate.items.append(item.key())
+        if crate.order:
+            crate.order.append(max(crate.order) + 1)
+        else:
+            crate.order = [1]
+        AutoRetry(crate).save()
+
+        if item.kind() == 'Artist':
+            msg = 'Artist added to crate,'
+        elif item.kind() == 'Album':
+            msg = 'Album added to crate.'
+        elif item.kind() == 'Track':
+            msg = 'Track added to crate.'
+
+    response_page = request.GET.get('response_page')
+    ctx_vars = { 'msg': msg }
+    if response_page == 'landing':
+        ctx_vars['query'] = request.GET.get('query')
+        return landing_page(request, ctx_vars)
+    elif response_page == 'artist':
+        return artist_info_page(request, item.album_artist.name, ctx_vars)
+    elif response_page == 'album':
+        return album_info_page(request, str(item.album.album_id), ctx_vars)
+    else:
+        return crate_page(request, ctx_vars)
+
+def remove_crate_item(request):
+    item_key = request.GET.get('item_key')
+    if not item_key:
+        return http.HttpResponse(status=404)
+    item = AutoRetry(db).get(item_key)
+    if not item:
+        return http.HttpResponse(status=404)
+
+    msg = ''
+    crate = _get_crate(request.user)
+    if item.key() in crate.items:
+        remove_pos = crate.items.index(item.key())
+        crate.items.remove(item.key())
+        new_order = []
+        for pos in crate.order:
+            if pos-1 != remove_pos:
+                if pos-1 > remove_pos:
+                    new_order.append(pos-1)
+                else:
+                    new_order.append(pos)
+        crate.order = new_order
+        AutoRetry(crate).save()
+
+        if item.kind() == 'Artist':
+            msg = 'Artist removed from crate,'
+        elif item.kind() == 'Album':
+            msg = 'Album removed from crate.'
+        elif item.kind() == 'Track':
+            msg = 'Track removed from crate.'
+
+    response_page = request.GET.get('response_page')
+    ctx_vars = { 'msg': msg }
+    if response_page == 'landing':
+        ctx_vars['query'] = request.GET.get('query')
+        return landing_page(request, ctx_vars)
+    elif response_page == 'artist':
+        return artist_info_page(request, item.album_artist.name, ctx_vars)
+    elif response_page == 'album':
+        return album_info_page(request, str(item.album.album_id), ctx_vars)
+    else:
+        return crate_page(request, ctx_vars)
+
+def reorder(request):
+    item = request.GET.getlist('item[]')
+    crate = _get_crate(request.user)
+    crate.order = [int(u) for u in item]
+    AutoRetry(crate).save()
+    return http.HttpResponse(mimetype="text/plain")
+
+def remove_all_crate_items(request):
+    crate = _get_crate(request.user)
+    for key in crate.items:
+        crate.items.remove(key)
+    crate.order = []
+    AutoRetry(crate).save()
+
+    ctx_vars = {}
+    return crate_page(request, ctx_vars)
+    
 # Only the music director has the power to add new artists.
 @require_role(roles.MUSIC_DIRECTOR)
 def artists_bulk_add(request):
@@ -218,3 +629,59 @@ def artists_bulk_add(request):
     ctx_vars[mode] = True
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(tmpl.render(ctx))
+
+def _copy_created(request):
+    """
+    Update documents - copy document timestamp field to created and modified
+    field.
+    """
+    for doc in models.Document.all():
+        try:
+            doc.created = doc.timestamp
+            doc.modified = doc.timestamp
+        except:
+            ""
+        else:
+            AutoRetry(doc).save()
+    return landing_page(request)
+
+@require_role(roles.MUSIC_DIRECTOR)
+def check_datastore(request):
+    ctx_vars = {}
+
+    bookmark = request.POST.get('bookmark')
+    if 1:
+        query = pager.PagerQuery(models.Document).filter("doctype =", models.DOCTYPE_REVIEW)
+        prev, reviews, next = query.fetch(50, bookmark)
+        num_reviews = 0
+        num_bad_subject_refs = 0
+        num_bad_author_refs = 0
+        for review in reviews:            
+            try:
+                subject = review.subject
+            except datastore_errors.Error, e:
+                if e.args[0] == "ReferenceProperty failed to be resolved":
+                    num_bad_subject_refs += 1
+                else:
+                    raise
+            try:
+                author = review.author
+            except datastore_errors.Error, e:
+                if e.args[0] == "ReferenceProperty failed to be resolved":
+                    num_bad_author_refs += 1
+                else:
+                    raise
+
+            num_reviews += 1
+        ctx_vars['prev'] = prev
+        ctx_vars['next'] = next
+        ctx_vars['num_reviews'] = num_reviews
+        ctx_vars['num_bad_subject_refs'] = num_bad_subject_refs
+        ctx_vars['num_bad_author_refs'] = num_bad_author_refs
+    else:
+        ""
+    template = loader.get_template('djdb/check_datastore.html')
+    ctx_vars['title'] = 'DJ Database Reviews'
+
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))

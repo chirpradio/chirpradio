@@ -1,0 +1,68 @@
+{% extends "djdb/internal_page.html" %}
+
+{% block breadcrumbs %}
+<a href="/">chipradio home</a> /
+<a href="/djdb/">DJ Database home</a>
+{% endblock %}
+
+{% block content %}
+
+{% block extrahead %}
+<script type="text/javascript" 
+    src="/media/common/js/jquery/jquery-1.3.1.js"></script>
+<script type="text/javascript" 
+    src="/media/common/js/jquery-autocomplete/jquery.autocomplete.js"></script>
+<script type="text/javascript" src="/media/djdb/js/djdb_user.js"></script>
+{% endblock %}
+
+You are
+{% if edit %}
+editing the
+{% else %}
+writing a new
+{% endif %}
+review of
+<a href="{{ album.url }}"><b>{{ album.title }}</b></a>
+by
+<a href="{{ album.artist_url }}">{{ album.artist_name }}</a>.
+
+<p>
+Please proofread your review carefully before you submit it.
+</p>
+
+<form action="{{ review.key }}" method="post">
+{% if preview %}
+<p>
+The text of your review will look like this when it is displayed:
+</p>
+<div style="BACKGROUND-COLOR: #f0f0f0; PADDING: 10px; BORDER: black 3px solid">
+<p>
+<blockquote>
+{{ preview|safe }}
+</blockquote>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by
+{{ author_name }}
+on {% now "F j, Y P" %}</small>
+</p>
+</div>
+<p>
+If this looks good to you, click on "Save".  Otherwise you can
+continue to edit the post in the form below.
+</p>
+<input type="submit" name="save" value="Save">
+<hr><br><br>
+{% endif %}
+<p>
+You can use basic HTML markup in the body of your review; unsupported
+HTML will be stripped out automatically.
+</p>
+<p>
+The allowed HTML tags are: {{ valid_html_tags }}
+</p>
+<table>
+  {{ form.as_table }}
+</table>
+<input id="id_author_key" type="hidden" name="author_key" value="{{ author_key }}"/>
+<input type="submit" name="preview" value="Preview">
+
+{% endblock %}

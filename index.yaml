@@ -13,7 +13,7 @@ indexes:
 - kind: Document
   properties:
   - name: doctype
-  - name: timestamp
+  - name: created
     direction: desc
 
 - kind: SearchMatches
@@ -25,7 +25,6 @@ indexes:
   properties:
   - name: subject
   - name: timestamp
-
 
 ### Playlists ###
 
@@ -51,6 +50,76 @@ indexes:
 # manually, move them above the marker line.  The index.yaml file is
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
+
+- kind: Document
+  properties:
+  - name: author
+  - name: created
+  - name: doctype
+  - name: __key__
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: author
+  - name: doctype
+  - name: __key__
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: author
+  - name: doctype
+  - name: created
+  - name: __key__
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: author
+  - name: doctype
+  - name: created
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: author
+  - name: doctype
+  - name: timestamp
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: created
+  - name: doctype
+  - name: __key__
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: doctype
+  - name: author
+  - name: __key__
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: doctype
+  - name: author
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: doctype
+  - name: created
+  - name: __key__
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: doctype
+  - name: timestamp
+    direction: desc
 
 - kind: PlaylistEvent
   properties:
@@ -83,3 +152,13 @@ indexes:
   properties:
   - name: spot
   - name: expire_on
+
+- kind: TrafficLogEntry
+  properties:
+  - name: spot.type
+  - name: log_date
+
+- kind: TrafficLogEntry
+  properties:
+  - name: type
+  - name: log_date

@@ -25,8 +25,15 @@ import os
 import sys
 import logging
 
+import appengine_django
 from appengine_django import InstallAppengineHelperForDjango
-InstallAppengineHelperForDjango()
+if not hasattr(appengine_django, '_installed'):
+  # this ensures that the setup code only gets called once.
+  # i.e. if there is an exception in main.py then it will be reloaded 
+  # even though other parts of the app are still in memory.
+  # if this runs twice then mutiple instances of django might get loaded.
+  InstallAppengineHelperForDjango()
+  appengine_django._installed = True
 
 from appengine_django import have_django_zip
 from appengine_django import django_zip_path
@@ -34,21 +41,13 @@ from appengine_django import django_zip_path
 # Google App Engine imports.
 from google.appengine.ext.webapp import util
 
-# Import the part of Django that we use here.
-import django.core.handlers.wsgi
-
-path_backup = sys.path[:]
-
 def main():
-  # Kumar: workaround Django (or...?) catching exceptions 
-  # which results in partially loaded modules.
-  # See: http://code.google.com/p/chirpradio/issues/detail?id=89&q=resolver404
-  # Note: this code is based off of similar code from app-engine-patch
-  sys.path = path_backup[:]
-
   # Ensure the Django zipfile is in the path if required.
   if have_django_zip and django_zip_path not in sys.path:
     sys.path.insert(1, django_zip_path)
+
+  # Import the part of Django that we use here.
+  import django.core.handlers.wsgi
 
   # Map the contents of the django-extras tree into the django
   # module's namespace.

@@ -49,8 +49,11 @@ urlpatterns = patterns(
 
     (r'^traffic_log/', include('traffic_log.urls')),   
     
-    # Common.
     ('^common/', include('common.urls')),
+    
+    ('^jobs/', include('jobs.urls')),
+    
+    ('^errors/', include('errors.urls')),
 
     # A catch-all rule to generate a 404.
     (r'', 'landing_page.views.four_oh_four'),

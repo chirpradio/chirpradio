@@ -34,8 +34,9 @@ p.links a:hover { color: #fff; background: #ec3005; }
 #playlist-form { width: 334px; }
 #playlist-form label { display: block; width: 291px; font-size: 1.6em; font-weight: bold; padding: 5px 5px 3px; color: #fff; background: #5ed4f3; text-transform: uppercase; }
 #playlist-form input.text, #playlist-form textarea { margin-bottom: 15px; border: 1px solid #5ed4f3; width: 293px; font-size: 1.2em; line-height: 1.5em; color: #4a4a4a; padding: 3px; }
-#playlist-form input:focus.text, #playlist-form textarea:focus { background: #ddf8ff; }
+#playlist-form input:focus.text, #playlist-form textarea:focus { background-color: #ddf8ff; }
 #playlist-form input.button { width: 200px; display: block; margin-bottom: 15px; }
+#playlist-form input.freeform, #playlist-form input.freeform:focus { border-color: #ff0000; background-color: #f08080; }
 
 /* ERRORS */
 
@@ -59,8 +60,8 @@ p.playlist-event-management {
 }
 
 /* AUTOCOMPLETE */
-input.ac_loading {
-    
+.ac_loading {
+	background: Window url('/media/common/img/playlist-loader.gif') right center no-repeat;
 }
 .ac_over {
     font-weight: bold;

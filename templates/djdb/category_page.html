@@ -1,0 +1,42 @@
+{% extends "djdb/internal_page.html" %}
+
+{% load common_extras %}
+
+{% block breadcrumbs %}
+<a href="/">chipradio home</a> /
+<a href="/djdb/">DJ Database home</a>
+{% endblock %}
+
+{% block content %}
+
+{% block extrahead %}
+<script type="text/javascript" 
+    src="/media/common/js/jquery/jquery-1.3.1.js"></script>
+<script type="text/javascript" 
+    src="/media/djdb/js/djdb.js"></script>
+{% endblock %}
+
+<h2>Category: {{ category|replace:"/_/ "|capfirst }}</h2>
+
+{% if albums %}
+<h3>Albums</h3>
+<i>{{ albums|length }} album{{ albums|pluralize }}</i>
+
+<table>
+  {% for album in albums %}
+  <tr>
+    <td><a href="{{ album.artist_url}}">{{ album.artist_name }}</a></td>
+    <td><a href="{{ album.url }}">{{ album.title }}</a></td>
+    <td>
+    {% if album.num_reviews %}
+{{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
+    {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+No albums have been assigned to {{ category|replace:"/_/ "|capfirst }}.
+{% endif %}
+
+{% endblock %}

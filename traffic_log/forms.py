@@ -86,3 +86,11 @@ class SpotConstraintForm(djangoforms.ModelForm):
 class TrafficLogForm(djangoforms.ModelForm):
     class Meta:
         model = models.TrafficLogEntry
+
+class ReportForm(djangoforms.ModelForm):
+    start_date = djangoforms.forms.DateField(label="Start Date", required=True)
+    end_date = djangoforms.forms.DateField(label="End Date", required=True)
+    type = djangoforms.forms.ChoiceField(label="Spot Type", required=False,
+                                         choices=zip(   constants.SPOT_TYPE_CHOICES, 
+                                                        ['[all]'] + constants.SPOT_TYPE_CHOICES[1:]))
+    underwriter = djangoforms.forms.CharField(label="Underwriter", required=False)

@@ -5,7 +5,7 @@
 <link rel="stylesheet" type="text/css" href="/media/common/css/forms.css">
 {% block extrastyle %}{% endblock %}
 {% block extrahead %}{% endblock %}
-<title>CHIRP{% if title %}: {% endif %}{{ title }}</title>
+<title>CHIRP{% if title %}: {% endif %}{{ title|removetags:"a" }}</title>
 
 {# Block all robots by default #}
 <meta name="robots" content="NONE,NOARCHIVE" />

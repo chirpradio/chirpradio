@@ -15,15 +15,18 @@
 # Django settings for chirpradio project.
 
 import os
+from common import in_dev
 
-DEBUG = True
+DEBUG = in_dev()
+# DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ROOT_PATH = os.path.dirname(__file__)
 ROOT_ABSPATH = os.path.abspath(ROOT_PATH)
 
 ADMINS = (
-    # ('Your Name', 'your_email@domain.com'),
+    # fixme: make this a CHIRP distribution list maybe?
+    ('Kumar McMillan', 'kumar.mcmillan@gmail.com'),
 )
 
 MANAGERS = ADMINS
@@ -56,16 +59,28 @@ USE_I18N = False
 # Example: "/home/media/media.lawrence.com/"
 MEDIA_ROOT =  os.path.join(ROOT_ABSPATH, 'media')
 
+# URL to access the media directory:
+MEDIA_URL = '/media/'
+
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.load_template_source',
     'django.template.loaders.app_directories.load_template_source',
 )
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE_CLASSES = [
     'django.middleware.common.CommonMiddleware',
     'auth.middleware.AuthenticationMiddleware',
-)
+]
+
+if not DEBUG:
+    # when in production, install this error handler
+    # (otherwise, let the debug middleware handle the request)
+    MIDDLEWARE_CLASSES.append(
+        # from:
+        # http://github.com/wtanaka/google-app-engine-django-errors
+        'errors.middleware.GoogleAppEngineErrorMiddleware'
+    )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     'common.context_processors.base',
@@ -76,7 +91,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
-    os.path.join(ROOT_PATH, 'templates')
+    os.path.join(ROOT_PATH, 'templates'),
 )
 
 INSTALLED_APPS = (
@@ -87,5 +102,7 @@ INSTALLED_APPS = (
      'landing_page',
      'playlists',
      'volunteers',
-     'traffic_log'
+     'traffic_log',
+     'errors',
+     'jobs'
 )

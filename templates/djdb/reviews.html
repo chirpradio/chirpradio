@@ -1,0 +1,57 @@
+{% extends "djdb/internal_page.html" %}
+
+{% load common_extras %}
+{% load djdb_extras %}
+
+{% block breadcrumbs %}
+<a href="/">chipradio home</a> /
+<a href="/djdb/">DJ Database home</a>
+{% endblock %}
+
+{% block content %}
+
+{% block extrahead %}
+<script type="text/javascript" 
+    src="/media/common/js/jquery/jquery-1.3.1.js"></script>
+<script type="text/javascript" 
+    src="/media/common/js/jquery-autocomplete/jquery.autocomplete.js"></script>
+<script type="text/javascript" src="/media/djdb/js/djdb.js"></script>
+<script type="text/javascript" src="/media/djdb/js/djdb_user.js"></script>
+{% endblock %}
+
+<form action="" method="post">
+{{ form.as_table }}
+  <input type="submit" name="search" value="Search"/>
+</form>
+
+<br/>
+<hr/>
+<br/>
+
+<form action="/djdb/reviews" name="paging" method="post">
+{% ifequal prev None %}
+  <input disabled="disabled" type="submit" name="prev" onclick="document.paging.bookmark.value='{{ prev }}'" value="Previous Page"/>
+{% else %}
+  <input type="submit" name="prev" onclick="document.paging.bookmark.value='{{ prev }}'" value="Previous Page"/>
+{% endifequal %}
+{% ifequal next None %}
+  <input disabled="disabled" type="submit" name="next" onclick="document.paging.bookmark.value='{{ next }}'" value="Next Page"/>
+{% else %}
+  <input type="submit" name="next" onclick="document.paging.bookmark.value='{{ next }}'" value="Next Page"/>
+{% endifequal %}
+  <input type="hidden" id="bookmark" name="bookmark" value=""/>
+  <input type="hidden" name="author_key" value="{{ author_key }}"/>
+  <input type="hidden" name="page_size" value="{{ page_size }}"/>
+  <input type="hidden" name="order" value="{{ order }}"/>
+</form>
+
+<ul>
+{% for rev in reviews %}
+  <li> <a href="{{ rev.subject.url }}">{{ rev.subject.album_artist.name }} / {{ rev.subject.title }},</a>
+reviewed by {{ rev.author_display }}
+&nbsp;&nbsp;
+  <small>Posted {{ rev.created_display|date:"F j, Y P" }}</small> </li>
+{% endfor %}
+</ul>
+
+{% endblock %}

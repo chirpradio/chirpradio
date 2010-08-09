@@ -1,82 +1,186 @@
-{% extends "common/internal_page.html" %}
+{% extends "djdb/internal_page.html" %}
+
+{% load common_extras %}
+{% load djdb_extras %}
 
 {% block breadcrumbs %}
 <a href="/">chipradio home</a>
 {% endblock %}
 
 {% block content %}
-Landing page for DJDB app
+
+{% block extrahead %}
+<script type="text/javascript" 
+    src="/media/common/js/jquery/jquery-1.3.1.js"></script>
+<script type="text/javascript" 
+    src="/media/common/js/jquery-autocomplete/jquery.autocomplete.js"></script>
+<script type="text/javascript" src="/media/djdb/js/djdb.js"></script>
+<script type="text/javascript" src="/media/djdb/js/djdb_user.js"></script>
+{% endblock %}
+
+{% if msg %}
+<div class="success">
+{{ msg }}
+</div>
+{% endif %}
+
+<p>
+{% if not query_str %}
+<h2>Categories: [
+  {% for category in categories %}
+    {% if not forloop.first %} | {% endif %}
+<a href="category/{{ category }}">{{ category|replace:"/_/ "|capfirst }}</a>
+  {% endfor %}
+]</h2>
+</p>
 
 <h2>Recent Reviews</h2>
 <ul>
-{% for rev in recent_reviews %}
-<li> <a href="{{ rev.subject.url }}">{{ rev.subject.title }},</a>
-reviewed by {{ rev.author }}:  <i>{{ rev.title }}</i>
+  {% for rev in recent_reviews %}
+  <li> <a href="{{ rev.subject.url }}">{{ rev.subject.album_artist.name }} / {{ rev.subject.title }},</a>
+reviewed by {{ rev.author }}
 &nbsp;&nbsp;
-<small>Posted {{ rev.timestamp_display|date:"F j, Y P" }}</small>
-{% endfor %}
+  <small>Posted {{ rev.created_display|date:"F j, Y P" }}</small> </li>
+  {% endfor %}
 </ul>
+<a href="/djdb/reviews">Read more reviews...</a>
+{% endif %}
 
 <h2>Search the Database</h2>
 <form action="" method="post">
-<input type="text" name="query">
-<input type="submit" value="Search">
+  <input type="text" name="query"/>
+  <input type="submit" value="Search"/>
+  <input type="checkbox" name="reviewed"/>&nbsp;Reviewed
+  By
+  <input id="id_user" name="user"/>
+  <input id="id_user_key" type="hidden" name="user_key"/>
 </form>
-</p>
+<p/>
 
 {% if query_str %}
-<p>Query was "{{ query_str }}".
-{% if invalid_query %}<br><b>Invalid Query!</b>{% endif %}
-</p>
+<h2>Query: "{{ query_str }}"
+  {% if invalid_query %}<br/><b>Invalid Query!</b>{% endif %}
+</h2>
 
 <h3>Artists</h3>
 <i>{{ query_results.Artist|length }}
-matching artist{{ query_results.Artist|pluralize }}</i><br>
-{% if query_results.Artist %}
+matching artist{{ query_results.Artist|pluralize }}</i><br/>
+
+  {% if query_results.Artist %}
 <table>
-{% for artist in query_results.Artist %}
-<tr>
-<td><a href="{{ artist.url}}">{{ artist.pretty_name }}</a></td>
-<td>{{ artist.num_albums }} album{{ artist.num_albums|pluralize }}</td>
-</tr>
-{% endfor %}
+    {% for artist in query_results.Artist %}
+  <tr>
+    <td><a href="{{ artist.url}}">{{ artist.pretty_name }}</a></td>
+    <td>{{ artist.num_albums }} album{{ artist.num_albums|pluralize }}</td>
+    <td>
+      {% ifincrate user artist %}
+      <a href="/djdb/crate/remove_item?response_page=landing&item_key={{ artist.key }}&query={{ query_str }}"><img src="/media/common/img/remove.png" alt="Remove Artist from Crate" title="Remove Artist from Crate"/></a>
+      {% else %}
+      <a href="/djdb/crate/add_item?response_page=landing&item_key={{ artist.key }}&query={{ query_str }}"><img src="/media/common/img/add.png" alt="Add Artist to Crate" title="Add Artist to Crate"/></a>
+      {% endifincrate %}
+    </td>
+  </tr>
+    {% endfor %}
 </table>
-{% endif %}
+  {% endif %}
 
 <h3>Albums</h3>
 <i>{{ query_results.Album|length }}
-matching album{{ query_results.Album|pluralize }}</i><br>
-{% if query_results.Album %}
-<table>
-{% for album in query_results.Album %}
-<tr>
-<td><a href="{{ album.artist_url}}">{{ album.artist_name }}</a></td>
-<td><a href="{{ album.url }}">{{ album.title }}</a></td>
-<td>
-{% if album.num_reviews %}
-{{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
-{% endif %}
-</td>
-</tr>
-{% endfor %}
-</table>
-{% endif %}
+matching album{{ query_results.Album|pluralize }}</i>
+
+  {% if query_results.Album %}
+    {% if user.is_music_director %}
+<form method="post" name="djdbForm" action="/djdb/update_albums">
+<p/>
+Select: <a id="checkbox_all" href="">All</a>,
+        <a id="checkbox_none" href="">None</a>,
+        <a id="checkbox_nocat" href="">No category</a>,
+      {% for category in categories %}
+        {% if not forloop.first %}, {% endif %}
+        <a id="checkbox_{{ category }}" href="">{{ category|replace:"/_/ "|capfirst }}</a>
+      {% endfor %}<br/>
+Mark selected as: <a id="mark_nocat" href="/djdb/update_albums">No category</a>,
+      {% for category in categories %}
+        {% if not forloop.first %}, {% endif %}
+                  <a id="mark_{{ category }}" href="/djdb/update_albums">{{ category|replace:"/_/ "|capfirst }}</a>
+      {% endfor %}
+<p/>
+    {% endif %}
+
+    {% if user.is_music_director %}
+  <input type="hidden" name="mark_as"/>
+  <input type="hidden" name="query" value="{{ query_str }}"/>
+    {% endif %}
+  <table>
+    {% for album in query_results.Album %}
+    <tr>
+      {% if user.is_music_director %}
+      <td>
+        <input type="checkbox" class="checkbox {{ album.category|lower}}"
+               name="checkbox_{{ forloop.counter }}"/>
+      </td>
+      <td>
+        <input type="hidden" name="album_key_{{ forloop.counter }}" value="{{ album.key }}"/>
+        {% ifequal album.category None %}
+        No category
+        {% else %}
+        {{ album.category|replace:"/_/ "|capfirst }}
+        {% endifequal %}
+      </td>
+      {% endif %}
+      <td><a href="{{ album.artist_url}}">{{ album.artist_name }}</a></td>
+      <td><a href="{{ album.url }}">{{ album.title }}</a></td>
+      <td>
+      {% ifnotequal album.label None %}
+      {{ album.label }}
+      {% endifnotequal %}
+      </td>
+      <td>
+      {% ifnotequal album.year None %}
+      {{ album.year }}
+      {% endifnotequal %}
+      </td>
+      <td>
+      {% if album.num_reviews %}
+      {{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
+      {% endif %}
+      </td>
+      <td>
+      {% ifincrate user album %}
+        <a href="/djdb/crate/remove_item?response_page=landing&item_key={{ album.key }}&query={{ query_str }}"><img src="/media/common/img/remove.png" alt="Remove Album from Crate" title="Remove Album from Crate"/></a>
+      {% else %}
+        <a href="/djdb/crate/add_item?response_page=landing&item_key={{ album.key }}&query={{ query_str }}"><img src="/media/common/img/add.png" alt="Add Album to Crate" title="Add Album to Crate"/></a>
+      {% endifincrate %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+    {% if user.is_music_director %}
+</form>
+    {% endif %}
+  {% endif %}
 
 <h3>Tracks</h3>
 <i>{{ query_results.Track|length }}
 matching track{{ query_results.Track|pluralize }}</i>
-{% if query_results.Track %}
+  {% if query_results.Track %}
 <table>
-{% for track in query_results.Track %}
-<tr>
-<td>{{ track.title }}</td>
-<td><a href="{{ track.artist_url }}">{{ track.artist_name }}</a></td>
-<td><a href="{{ track.album.url }}">{{ track.album.title }}</a></td>
-{% endfor %}
+    {% for track in query_results.Track %}
+  <tr>
+    <td>{{ track.title }}</td>
+    <td><a href="{{ track.artist_url }}">{{ track.artist_name }}</a></td>
+    <td><a href="{{ track.album.url }}">{{ track.album.title }}</a></td>
+    <td>
+      {% ifincrate user track %}
+      <a href="/djdb/crate/remove_item?response_page=landing&item_key={{ track.key }}&query={{ query_str }}"><img src="/media/common/img/remove.png" alt="Remove Track from Crate" title="Remove Track from Crate"/></a>
+      {% else %}
+      <a href="/djdb/crate/add_item?response_page=landing&item_key={{ track.key }}&query={{ query_str }}"><img src="/media/common/img/add.png" alt="Add Track to Crate" title="Add Track to Crate"/></a>
+      {% endifincrate %}
+    </td>
+    {% endfor %}
+  </tr>
 </table>
+  {% endif %}
 {% endif %}
-
-{% endif %}
-
 
 {% endblock %}

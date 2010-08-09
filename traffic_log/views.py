@@ -18,7 +18,11 @@
 import sys
 import random
 import datetime
+import calendar
 import logging
+from collections import defaultdict
+
+from google.appengine.ext import db
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
@@ -27,7 +31,9 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils import simplejson
 
-from common.utilities import as_json
+import django.forms
+
+from common.utilities import as_json, http_send_csv_file
 from common import time_util
 from common.autoretry import AutoRetry
 import auth
@@ -38,36 +44,62 @@ from traffic_log import models, forms, constants
 
 log = logging.getLogger()
 
-def add_hour(base_hour):
+def add_hour(base_hour, dow):
     """Adds an hour to base_hour and ensures it's in range.
+    Sets the day ahead if necessary.
     
     Operates on 24 hour clock hours.
     """
+    next_dow = dow
     next_hour = base_hour + 1
-    if next_hour == 25:
+    if next_hour > 24:
         next_hour = 0
-    return next_hour
+        next_dow = dow + 1
+        if next_dow > 7:
+            next_dow = 1
+    return next_hour, next_dow
 
 @require_role(DJ)
 def index(request):
     now = time_util.chicago_now()
+    # now = now.replace(hour=23)
     today = now.date()
-    current_hour = now.hour
-    hour_plus1 = add_hour(current_hour)
-    hour_plus2 = add_hour(hour_plus1)
-    hour_plus3 = add_hour(hour_plus2)
-    hours_to_show = [current_hour, hour_plus1, hour_plus2, hour_plus3]
     
-    current_spots = (models.SpotConstraint.all()
-                        .filter("dow =", today.isoweekday())
-                        .filter("hour IN", hours_to_show)
-                        .order("hour")
-                        .order("slot"))
+    hours_by_day = defaultdict(lambda: [])
+    
+    current_hour = now.hour
+    current_dow = today.isoweekday()
+    hours_by_day[current_dow].append(current_hour)
+    
+    hour_plus1, dow_for_hour = add_hour(current_hour, current_dow)
+    hours_by_day[dow_for_hour].append(hour_plus1)
+    
+    ## it seems that showing more than 2 hours was 
+    ## consistently causing datastore timeouts during a 
+    ## period when datastore status was reported as normal
+    
+    # hour_plus2, dow_for_hour = add_hour(hour_plus1, dow_for_hour)
+    # hours_by_day[dow_for_hour].append(hour_plus2)
+    # 
+    # hour_plus3, dow_for_hour = add_hour(hour_plus2, dow_for_hour)
+    # hours_by_day[dow_for_hour].append(hour_plus3)
+    # 
+    # hours_to_show = [current_hour, hour_plus1, hour_plus2, hour_plus3]
+    
+    hours_to_show = [current_hour, hour_plus1]
+    
+    slotted_spots = []
+    for dow in hours_by_day:
+        q = (models.SpotConstraint.all()
+                        .filter("dow =", dow)
+                        .filter("hour IN", hours_by_day[dow]))
+        for s in AutoRetry(q):
+            slotted_spots.append(s)
     
     def hour_position(s):
         return hours_to_show.index(s.hour)
         
-    slotted_spots = sorted([s for s in AutoRetry(current_spots).fetch(10)], key=hour_position) 
+    slotted_spots.sort(key=hour_position)
     
     return render_to_response('traffic_log/index.html', dict(
             date=today,
@@ -77,11 +109,17 @@ def index(request):
 @require_role(DJ)
 def spotTextForReading(request, spot_key=None):
     spot = AutoRetry(models.Spot).get(spot_key)
+
+    # Get random spot copy.
     dow, hour, slot = _get_slot_from_request(request)
-    spot_copy = spot.copy_at_random
-    
-    url = reverse('traffic_log.finishReadingSpotCopy', args=(spot_copy.key(),))
-    url = "%s?hour=%d&dow=%d&slot=%d" % (url, hour, dow, slot)
+    spot_copy, is_logged = spot.get_spot_copy(dow, hour, slot)
+
+    # If spot copy has not already been read, construct url to finish.
+    url = None
+    if spot_copy and not is_logged:
+        url = reverse('traffic_log.finishReadingSpotCopy', args=(spot_copy.key(),))
+        url = "%s?hour=%d&dow=%d&slot=%d" % (url, hour, dow, slot)
+
     return render_to_response('traffic_log/spot_detail_for_reading.html', dict(
             spot_copy=spot_copy,
             url_to_finish_spot=url
@@ -91,7 +129,8 @@ def spotTextForReading(request, spot_key=None):
 @as_json
 def finishReadingSpotCopy(request, spot_copy_key=None):
     dow, hour, slot = _get_slot_from_request(request)
-        
+    
+    # Check if a single spot constraint exists for the dow, hour, slot.
     q = (models.SpotConstraint.all()
                     .filter("dow =", dow)
                     .filter("hour =", hour)
@@ -106,8 +145,10 @@ def finishReadingSpotCopy(request, spot_copy_key=None):
                                                                     dow, hour, slot))
     
     constraint = AutoRetry(q).fetch(1)[0]
+
     spot_copy = AutoRetry(models.SpotCopy).get(spot_copy_key)
-    
+
+    # Check if spot has already been read (i.e., logged).
     today = time_util.chicago_now().date()
     q = (models.TrafficLogEntry.all()
                     .filter("log_date =", today)
@@ -119,7 +160,11 @@ def finishReadingSpotCopy(request, spot_copy_key=None):
         existing_logged_spot = AutoRetry(q).fetch(1)[0]
         raise RuntimeError("This spot %r at %r has already been read %s" % (
                     spot_copy.spot, constraint, existing_logged_spot.reader))
-    
+
+    # Remove spot copy from the spot's list.
+    spot_copy.spot.finish_spot_copy()
+	
+    # Log spot read.
     logged_spot = models.TrafficLogEntry(
         log_date = today,
         spot = spot_copy.spot,
@@ -131,7 +176,7 @@ def finishReadingSpotCopy(request, spot_copy_key=None):
         readtime = time_util.chicago_now(), 
         reader = auth.get_current_user(request)
     )
-    logged_spot.put()
+    AutoRetry(logged_spot).put()
     
     return {
         'spot_copy_key': str(spot_copy.key()), 
@@ -187,9 +232,20 @@ def createEditSpotCopy(request, spot_copy_key=None, spot_key=None):
                             }, instance=spot_copy)
         if spot_copy_form.is_valid():
             spot_copy = spot_copy_form.save()
+            old_spot = spot_copy.spot
             spot_copy.author = user
             spot_copy.spot = AutoRetry(models.Spot).get(spot_copy_form['spot_key'].data)
+            
+            # Add spot copy to spot's list of shuffled spot copies.
+            spot_copy.spot.add_spot_copy(spot_copy)
             AutoRetry(spot_copy).put()
+            
+            if old_spot:
+                # just in case this copy was moved from one spot 
+                # to another, bust the old cache of spot copies
+                # See Issue 124
+                old_spot.shuffle_spot_copies()
+                AutoRetry(old_spot).save()
             
             return HttpResponseRedirect(reverse('traffic_log.listSpots'))
     else:
@@ -405,6 +461,49 @@ def traffic_log(request, date):
         dict(spots=spots_for_date), 
         context_instance=RequestContext(request))
 
+@require_role(TRAFFIC_LOG_ADMIN)
+def report(request):
+    entries = []
+    if request.method == 'POST':
+        report_form = forms.ReportForm(request.POST)
+        if report_form.is_valid():
+            query = (models.TrafficLogEntry.all()
+                        .filter('log_date >= ', report_form.cleaned_data['start_date'])
+                        .filter('log_date <= ', report_form.cleaned_data['end_date']))            
+            filter_type = report_form.cleaned_data['type'] != "Spot Type"
+            filter_underwriter = report_form.cleaned_data['underwriter'] != ""
+            if filter_type or filter_underwriter:
+                for entry in AutoRetry(query):
+                    if (not filter_type or entry.spot.type == report_form.cleaned_data['type']) \
+                       and (not filter_underwriter or entry.spot_copy.underwriter == report_form.cleaned_data['underwriter']):
+                       entries.append(report_entry_to_csv_dict(entry))
+            else:
+                for entry in AutoRetry(query):
+                    entries.append(report_entry_to_csv_dict(entry))
+            if request.POST.get('download'):
+                fields = ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'excerpt']
+                fname = "chirp-traffic_log_%s_%s" % (report_form.cleaned_data['start_date'],
+                                                     report_form.cleaned_data['end_date'])
+                return http_send_csv_file(fname, fields, entries)
+    else :
+        end_date = datetime.datetime.now().date()
+        start_date = end_date - datetime.timedelta(days=30)
+        report_form = forms.ReportForm({'start_date': start_date, 'end_date': end_date})
+    return render_to_response('traffic_log/report.html', 
+                              {'form': report_form},
+                              context_instance=RequestContext(request))
+
+def report_entry_to_csv_dict(entry):
+    return {    
+        'readtime': time_util.convert_utc_to_chicago(entry.readtime),
+        'dow': constants.DOW_DICT[entry.dow],                                       
+        'underwriter': entry.spot_copy.underwriter,
+        'slot_time': entry.scheduled.readable_slot_time,
+        'title': entry.spot.title,
+        'type': entry.spot.type,
+        'excerpt': entry.spot_copy.body[:140]
+    }
+
 def box(thing):
     if isinstance(thing,list):
         return thing
@@ -422,4 +521,3 @@ def _get_slot_from_request(request):
     if slot not in constants.SLOT:
         raise ValueError("dow value %r is out of range" % slot)
     return dow, hour, slot
-

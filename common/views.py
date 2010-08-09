@@ -17,6 +17,7 @@
 
 from django.http import HttpResponse, HttpResponseRedirect
 from common.models import Config
+from common.utilities import as_json
 
 def _init_config(request):
     q = Config.all()
@@ -28,3 +29,12 @@ def _init_config(request):
         return HttpResponse("Config initialized. You can now add new values in the Datastore admin.")
     else:
         return HttpResponse("Config does not need initialization")
+
+@as_json
+def _make_json_error(request):
+    """view for the tests that purposefully raises an exception while decorated as a JSON handler.
+    """    
+    # TODO(kumar) set this up programmatically in the tests instead?
+    raise RuntimeError(
+            "When the moon shines on the 5th house on the 7th hour, "
+            "your shoe laces will unravel.")
