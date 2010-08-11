@@ -17,13 +17,17 @@
 
 """Custom context processor for CHIRP request templates."""
 
-import auth
 from django.conf import settings
+
+import auth
+
+from common import time_util
 
 def base(request):
     return {
         'user': request.user,
         'login_url': auth.create_login_url('/'),
         'logout_url': auth.LOGOUT_URL,
-        'MEDIA_URL': settings.MEDIA_URL
+        'MEDIA_URL': settings.MEDIA_URL,
+        'chicago_now': time_util.chicago_now()
         }

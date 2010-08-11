@@ -15,7 +15,7 @@
 {% block content %}
 <nobr>
 {% block topbar %}
-<h2>Traffic Log - {% now "F j, Y" %}</h2>
+<h2>Traffic Log - {{ chicago_now|date:"F j, Y" }}</h2>
 {% endblock %}
 </nobr>
 
