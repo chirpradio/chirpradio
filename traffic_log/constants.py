@@ -1,7 +1,7 @@
 
-HOUR = range(24)
+HOUR = range(24) # 0->23
 
-DOW = range(1,8)
+DOW = range(1,8) # 1-6
 
 SLOT = (0,12,13,24,25,30,36,37,48,49)
 

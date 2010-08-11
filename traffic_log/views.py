@@ -48,11 +48,13 @@ def add_hour(base_hour, dow):
     """Adds an hour to base_hour and ensures it's in range.
     Sets the day ahead if necessary.
     
-    Operates on 24 hour clock hours.
+    Operates on zero-based 24 hour clock hours.
+    i.e. the 24th hour (midnight) is zero.
     """
     next_dow = dow
     next_hour = base_hour + 1
-    if next_hour > 24:
+    
+    if next_hour > 23:
         next_hour = 0
         next_dow = dow + 1
         if next_dow > 7:

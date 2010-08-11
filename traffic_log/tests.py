@@ -722,3 +722,16 @@ class TestTrafficLogReport(FormTestCaseHelper, DjangoTestCase):
         self.assertEquals(row[5], self.spot.type)
         self.assertEquals(row[6], self.spot_copy.body)
 
+class TestAddHour(unittest.TestCase):
+    
+    def test_12am_on_sunday_becomes_1am(self):
+        self.assertEqual(views.add_hour(0, 0), (1, 0))
+        
+    def test_1am_on_sunday_becomes_2am(self):
+        self.assertEqual(views.add_hour(1, 0), (2, 0))
+        
+    def test_11pm_on_monday_becomes_12am_tuesday(self):
+        self.assertEqual(views.add_hour(23, 1), (0, 2))
+        
+    def test_11pm_on_sunday_becomes_12am_monday(self):
+        self.assertEqual(views.add_hour(23, 7), (0, 1))
