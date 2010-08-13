@@ -1,9 +1,3 @@
-{% comment %}
-The base site template for CHIRP's web apps.
-
-TODO(trow): My HTML skills are extremely rudimentary.  Someone who understands
-CSS, etc. should fix this.
-{% endcomment %}
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-us" xml:lang="en-us">
 <head>
@@ -21,22 +15,18 @@ CSS, etc. should fix this.
 
 <div id="container">
 
-  <div id="danger">
-    This system is under active development.  It might not work properly in
+  <div id="headband">
+    
+    <p id="warning">This system is under active development.  It might not work properly in
     all browsers.  We apologize in advance
     for any problems you might have.  If you find a bug, please
-  <a href="http://code.google.com/p/chirpradio/issues/entry">file a bug report
-    </a> and let us know.
+    <a href="http://code.google.com/p/chirpradio/issues/entry">file a bug report</a>
+    and let us know.</p>
+
   </div>
 
-  <div id="auth">
-    {% if user %}
-    {{ user }} <a href="{{ logout_url }}">Sign Out</a>
-    {% else %}
-    <a href="{{ login_url }}">Sign In</a>
-    {% endif %}
-  </div> {# end of auth #}
   {% block page_content %}{% endblock %}
+
 </div> {# end of container #}
 
 </body>

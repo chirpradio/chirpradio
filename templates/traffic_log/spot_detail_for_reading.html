@@ -1,15 +1,17 @@
 {# this is rendered in a popover window via Ajax #}
+<div class="spot-reading-buttons">        
+    {% if url_to_finish_spot %}
+        <a class="finish-spot-after-reading"
+            href="{{ url_to_finish_spot }}">Finish</a>
+    {% else %}
+        (already finished)
+    {% endif %}
+    <a class="jqmClose"
+        href="#"><strong>&times;</strong> Close Script</a>
+</div>
 <div class="spot_detail_for_reading">
 {% if spot_copy %}
 {{ spot_copy.body }}
-  <div id="spot-reading-buttons">
-    {% if url_to_finish_spot %}
-    <a class="finish-spot-after-reading"
-        href="{{ url_to_finish_spot }}">Finish</a>
-    {% else %}
-    (already finished)
-    {% endif %}
-  </div>
 {% else %}
 This spot does not yet have text to read or maybe its text has expired.
 {% endif %}

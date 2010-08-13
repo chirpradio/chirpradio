@@ -29,30 +29,25 @@ $(document).ready(function() {
     //     $('#facebox table').width(700);
     // });
     
-    $(".show-text-for-reading").click(function(e) {
-        e.preventDefault();
-        var url = $(this).attr("href");
-        var tr = $(this).parent().parent(); // a->td->tr
-        $.facebox(function() {
-            $.ajax({
-                url: url,
-                success: function(data, textStatus) {
-                    $.facebox(data);
-                    var onclick = function(e) {
-                        e.preventDefault();
-                        var anchor = this;
-                        ns.handle_finish_spot(anchor, tr);
-                        $(document).trigger('close.facebox');
-                        $(this).unbind("click", onclick);
-                    };
-                    $('.finish-spot-after-reading').click(onclick);
-                },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    alert("Whoops, there was an error on the server. An email has been sent to the admins so sit tight or try again.");
-                    $(document).trigger('close.facebox');
-                }
-            });
-        });
+    $('#modal-container').jqm({
+        ajax: '@href',
+        overlay: 75,
+        modal: true,
+        trigger: '.show-text-for-reading',
+        onLoad: function(hash) {
+            var tr = $(hash.t).parent().parent(); // a->td->tr
+            // temporarily bind this function to the 
+            // anchor in the popover window. then unbind it 
+            // after it fires.
+            var onclick = function(e) {
+                e.preventDefault();
+                var anchor = this;
+                ns.handle_finish_spot(anchor, tr);
+                hash.w.jqmHide();
+                $(this).unbind("click", onclick);
+            };
+            $(".finish-spot-after-reading").click(onclick);
+        }
     });
     
     $(".finish-spot").click(function(e) {
@@ -61,41 +56,6 @@ $(document).ready(function() {
         var tr = $(anchor).parent().parent(); // a->td->tr
         ns.handle_finish_spot(anchor, tr);
     });
-    
-    // sigh. this is all necessary to override the image paths:
-    $.extend($.facebox.settings, {
-        loadingImage : '/media/common/js/jquery-facebox/loading.gif',
-        closeImage   : '/media/common/js/jquery-facebox/closelabel.gif',
-        faceboxHtml  : '\
-    <div id="facebox" style="display:none;"> \
-      <div class="popup"> \
-        <table> \
-          <tbody> \
-            <tr> \
-              <td class="tl"/><td class="b tb"/><td class="tr"/> \
-            </tr> \
-            <tr> \
-              <td class="b"/> \
-              <td class="body"> \
-                <div class="content"> \
-                </div> \
-                <div class="footer"> \
-                  <a href="#" class="close"> \
-                    <img src="/media/common/js/jquery-facebox/closelabel.gif" title="close" class="close_image" /> \
-                  </a> \
-                </div> \
-              </td> \
-              <td class="b"/> \
-            </tr> \
-            <tr> \
-              <td class="bl"/><td class="b"/><td class="br"/> \
-            </tr> \
-          </tbody> \
-        </table> \
-      </div> \
-    </div>'
-        }
-    );
 });
 
 

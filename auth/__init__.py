@@ -206,14 +206,22 @@ def create_login_url(path):
     return "/auth/hello?redirect=%s" % path
 
 
-def logout():
+def logout(redirect=None):
     """Create an HTTP response that will log a user out.
-
+    
+    The redirect param can be a relative URL in which case 
+    the user will go back to the same page when logging in.
+    This is useful for switching users like on the playlist 
+    tracker page.
+    
     Returns:
       An HttpResponse object that will log the user out.
     """
     # If the user was signed in and has a cookie, clear it.
-    response = http.HttpResponseRedirect(_FINAL_LOGOUT_URL)
+    logout_url = _FINAL_LOGOUT_URL
+    if redirect:
+        logout_url = '%s?redirect=%s' % (logout_url, redirect)
+    response = http.HttpResponseRedirect(logout_url)
     response.set_cookie(_CHIRP_SECURITY_TOKEN_COOKIE, '')
     return response
 

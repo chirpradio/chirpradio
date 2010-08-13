@@ -47,7 +47,7 @@ class AuthenticationMiddleware(object):
         # If the "_logout" flag is set on the response, generate a response
         # that will log the user out.
         if getattr(response, '_logout', False):
-            return auth.logout()
+            return auth.logout(redirect=request.GET.get('redirect', None))
         # If our security token is old, issue a new one.
         if hasattr(request, 'user'):
             cred = getattr(request.user, '_credentials', None)
