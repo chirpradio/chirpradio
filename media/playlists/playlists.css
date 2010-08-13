@@ -66,6 +66,10 @@ p.playlist-event-management {
 .ac_over {
     font-weight: bold;
 }
+.ac_results ul {
+    padding: 0;
+    margin: 0;
+}
 .ac_results li {
     cursor: pointer;
     list-style: none;
