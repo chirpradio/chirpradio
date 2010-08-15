@@ -26,7 +26,6 @@ from google.appengine.ext import db
 from auth import roles
 from common.autoretry import AutoRetry
 
-
 class User(db.Model):
     """CHIRP radio's canonical user class.
 
@@ -40,6 +39,8 @@ class User(db.Model):
     first_name = db.StringProperty()
     last_name = db.StringProperty()
 
+    dj_name = db.StringProperty()
+    
     # This is an index of searchable terms for the user. Used by autocomplete.
     index = db.StringListProperty()
     
@@ -106,7 +107,6 @@ class User(db.Model):
             return AutoRetry(query).get()
         else:
             raise LookupError('User email collision for %s' % email)
-
 
 # Patch the User class to provide properties for checking roles.
 # These are useful in templates.

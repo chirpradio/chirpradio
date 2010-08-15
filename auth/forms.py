@@ -95,6 +95,7 @@ class UserForm(forms.Form):
     email = forms.EmailField()
     first_name = forms.CharField()
     last_name = forms.CharField()
+    dj_name = forms.CharField()
     password = forms.CharField(required=False)
     is_active = forms.BooleanField(initial=True, required=False)
     # We also plug in synthetic fields for all of our various roles.
@@ -111,9 +112,13 @@ class UserForm(forms.Form):
         return self.cleaned_data['first_name'].strip()
 
     def clean_last_name(self):
-        # Remove leading and trailing whitespace.p
+        # Remove leading and trailing whitespace.
         return self.cleaned_data['last_name'].strip()
 
+    def clean_dj_name(self):
+        # Remove leading and trailing whitespace.
+        return self.cleaned_data['dj_name'].strip()
+        
     @classmethod
     def from_user(cls, user):
         initial = {
@@ -121,6 +126,7 @@ class UserForm(forms.Form):
             'email': user.email,
             'first_name': user.first_name,
             'last_name': user.last_name,
+            'dj_name': user.dj_name,
             'is_active': user.is_active,
             }
         for r in user.roles:

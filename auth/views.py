@@ -249,6 +249,16 @@ def main_page(request):
             })
     return http.HttpResponse(tmpl.render(ctx))
 
+def _reindex(user):
+    index = []
+    for term in search.scrub(unicode(user)).split():
+        for i in range(len(term) + 1) :
+            index.append(term[0:i])
+    if user.dj_name is not None:
+        for term in search.scrub(user.dj_name).split():
+            for i in range(len(term) + 1):
+                index.append(term[0:i])
+    user.index = index
 
 @require_role(USER_MANAGEMENT_ROLE)
 def edit_user(request):
@@ -261,6 +271,7 @@ def edit_user(request):
         user_form = auth_forms.UserForm(request.POST)
         if user_form.is_valid():
             user_to_edit = user_form.to_user()
+            _reindex(user_to_edit)
             AutoRetry(user_to_edit).save()
             # When finished, redirect user back to the user list.
             return http.HttpResponseRedirect('/auth/')
@@ -270,7 +281,6 @@ def edit_user(request):
             'form': user_form,
             })
     return http.HttpResponse(tmpl.render(ctx))
-
 
 @require_role(USER_MANAGEMENT_ROLE)
 def add_user(request):
@@ -288,11 +298,7 @@ def add_user(request):
             user = form.to_user()
             
             # Set name index for autocomplete searching.
-            index = []
-            for term in search.scrub(unicode(user)).split():
-                for i in range(len(term) + 1) :
-                    index.append(term[0:i])
-            user.index = index
+            _reindex(user)
             
             user.save()
             
@@ -312,11 +318,7 @@ def add_user(request):
 
 def index_users(request):
     for user in User.all() :
-        index = []
-        for term in search.scrub(unicode(user)).split():
-            for i in range(len(term) + 1) :
-                index.append(term[0:i])
-        user.index = index
+        _reindex(user)
         user.save()
 
     tmpl = loader.get_template('auth/main_page.html')
@@ -346,6 +348,8 @@ def user_search_for_autocomplete(request):
             break
     for user in match_users :
         response.write("%s|%s\n" % (user, user.key()))
+        if user.dj_name is not None:
+            response.write("%s|%s\n" % (user.dj_name, user.key()))
     return response
 
 def token(request):
