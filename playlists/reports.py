@@ -15,10 +15,10 @@
 ### limitations under the License.
 ###
 
-import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.template import loader, RequestContext
+from django.shortcuts import render_to_response, get_object_or_404
 
 from auth.decorators import require_role
 import auth

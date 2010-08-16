@@ -38,6 +38,9 @@ class TestPlaylistReport(PlaylistViewsTest):
         super(TestPlaylistReport, self).setUp()
         self.client.login(email="test@test.com", roles=[roles.DJ, roles.MUSIC_DIRECTOR])
 
+    def test_report_landing_page(self):
+        # sanity check:
+        response = self.client.get(reverse('playlists_report'))
 
     def test_report_dates(self):
         selector = self.get_selector()
