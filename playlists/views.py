@@ -30,7 +30,7 @@ from google.appengine.api.datastore_errors import BadKeyError
 from auth.decorators import require_role
 import auth
 from auth import roles
-from playlists.forms import PlaylistTrackForm, PlaylistReportForm
+from playlists.forms import PlaylistTrackForm
 from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast
 from playlists.tasks import playlist_event_listeners
 from common.utilities import as_encoded_str, http_send_csv_file
@@ -155,54 +155,6 @@ def delete_event(request, event_key):
             playlist_event_listeners.delete(event_key)
 
     return HttpResponseRedirect(reverse('playlists_landing_page'))
-
-
-
-@require_role(roles.MUSIC_DIRECTOR)
-def report_playlist(request):
-    vars = {}
-
-    # report vars
-    items = None
-    fields = ['from_date', 'to_date', 'album_title', 'artist_name', 'label', 'play_count']
-
-    # default report
-    if request.method == 'GET':
-        to_date = datetime.now().date()
-        from_date = to_date - timedelta(days=1)
-        items = query_group_by_track_key(from_date, to_date)
-
-        # default form
-        form = PlaylistReportForm({'from_date':from_date, 'to_date':to_date})
-
-    # check form data post
-    elif request.method == 'POST':
-
-        # generic search form
-        form = PlaylistReportForm(data=request.POST)
-        if form.is_valid():
-            from_date = form.cleaned_data['from_date']
-            to_date = form.cleaned_data['to_date']
-
-
-            # special case to download report
-            if request.POST.get('download') == 'Download':
-                fname = "chirp-play-count_%s_%s" % (from_date, to_date)
-                return http_send_csv_file(fname, fields, query_group_by_track_key(from_date, to_date))
-
-            # generate report from date range
-            if request.POST.get('search') == 'Search':
-                items = query_group_by_track_key(from_date, to_date)
-
-    # template vars
-    vars['form'] = form
-
-    if items:
-        vars['fields'] = fields
-        vars['tracks'] = query_group_by_track_key(from_date, to_date)
-
-    return render_to_response('playlists/reports.html', vars,
-            context_instance=RequestContext(request))
 
 # TODO: move following funcs to models
 def filter_tracks_by_date_range(from_date, to_date):
