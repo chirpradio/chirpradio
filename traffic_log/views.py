@@ -467,7 +467,7 @@ def traffic_log(request, date):
         context_instance=RequestContext(request))
 
 @job_worker('build-trafficlog-report')
-def trafficlog_report_worker(results):
+def trafficlog_report_worker(results, request_params):
     fields = ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'excerpt']
     if results is None:
         # when starting the job, init file lines with the header row...
@@ -479,10 +479,19 @@ def trafficlog_report_worker(results):
         }
     
     offset = results['last_offset']
-    last_offset = offset+10
+    last_offset = offset+50
     results['last_offset'] = last_offset
+    
+    def mkdt(dt_string):
+        parts = [int(p) for p in dt_string.split("-")]
+        return datetime.datetime(*parts)
         
-    all_entries = models.TrafficLogEntry.all()[ offset: last_offset ]
+    query = (models.TrafficLogEntry.all()
+                .filter('log_date >= ', mkdt(request_params['start_date']))
+                .filter('log_date <= ', mkdt(request_params['end_date']))
+    )
+                        
+    all_entries = query[ offset: last_offset ]
     if len(all_entries) == 0:
         finished = True
     else:
