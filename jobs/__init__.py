@@ -23,7 +23,8 @@ App Engine has very strict execution time limits so it's really hard to do thing
 First you need webpage that can interact with the job server.  In jQuery it looks something like this::
     
     
-    $.post({
+    $.ajax({
+        type: 'POST',
         url: '/jobs/start',
         data: {
             'job_name': 'build-playlist-report'
@@ -36,14 +37,15 @@ First you need webpage that can interact with the job server.  In jQuery it look
     });
     
     var work = function(job_key) {
-        $.post({
+        $.ajax({
+            type: 'POST',
             url: '/jobs/work',
             data: {
                 'job_key': job_key
             },
             dataType: 'json',
             success: function(job_result, textStatus) {
-                if (job_result.done) {
+                if (job_result.finished) {
                     show_product(job_key)
                 } else {
                     work(job_key);
