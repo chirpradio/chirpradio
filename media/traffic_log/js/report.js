@@ -39,7 +39,7 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(job_result, textStatus) {
                 if (job_result.finished) {
-                    show_product(job_key)
+                    show_product(job_key);
                 } else {
                     work(job_key, form_values);
                 }
