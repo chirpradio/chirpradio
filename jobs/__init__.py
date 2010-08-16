@@ -63,7 +63,7 @@ On the server, all you have to do is implement a worker method::
     from jobs import job_worker, job_product
     
     @job_worker('build-playlist-report')
-    def playlist_report_worker(results):
+    def playlist_report_worker(results, request_params):
         if results is None:
             # build report headers:
             results = {
