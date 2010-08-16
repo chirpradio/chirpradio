@@ -32,10 +32,9 @@ from django.conf import settings
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils import simplejson
-
 import django.forms
 
-from common.utilities import as_json, http_send_csv_file
+from common.utilities import as_json, http_send_csv_file, as_encoded_str
 from common import time_util
 from common.autoretry import AutoRetry
 import auth
@@ -501,6 +500,8 @@ def trafficlog_report_worker(results, request_params):
         buf = StringIO()
         writer = csv.DictWriter(buf, fields)
         row = report_entry_to_csv_dict(entry)
+        for k, v in row.items():
+            row[k] = as_encoded_str(v, encoding='utf8')
         writer.writerow(row)
         results['file_lines'].append(buf.getvalue())
     
