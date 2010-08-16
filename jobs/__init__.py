@@ -69,7 +69,7 @@ On the server, all you have to do is implement a worker method::
                 'last_offset': 0
             }
         
-        offset = results['last_offset]
+        offset = results['last_offset']
         last_offset = offset+10
         results['last_offset'] = last_offset
         
