@@ -21,6 +21,8 @@ import datetime
 import calendar
 import logging
 from collections import defaultdict
+from StringIO import StringIO
+import csv
 
 from google.appengine.ext import db
 
@@ -41,6 +43,7 @@ from auth.models import User
 from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
 from auth.decorators import require_role
 from traffic_log import models, forms, constants
+from jobs import job_worker, job_product
 
 log = logging.getLogger()
 
@@ -462,6 +465,46 @@ def traffic_log(request, date):
     return render_to_response('traffic_log/spot_list.html', 
         dict(spots=spots_for_date), 
         context_instance=RequestContext(request))
+
+@job_worker('build-trafficlog-report')
+def trafficlog_report_worker(results):
+    fields = ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'excerpt']
+    if results is None:
+        # when starting the job, init file lines with the header row...
+        results = {
+            "file_lines": [ 
+                ",".join(fields) + "\n" 
+            ],
+            'last_offset': 0
+        }
+    
+    offset = results['last_offset']
+    last_offset = offset+10
+    results['last_offset'] = last_offset
+        
+    all_entries = models.TrafficLogEntry.all()[ offset: last_offset ]
+    if len(all_entries) == 0:
+        finished = True
+    else:
+        finished = False
+    
+    for entry in all_entries:
+        buf = StringIO()
+        writer = csv.DictWriter(buf, fields)
+        row = report_entry_to_csv_dict(entry)
+        writer.writerow(row)
+        results['file_lines'].append(buf.getvalue())
+    
+    return finished, results
+
+@job_product('build-trafficlog-report')
+def playlist_report_product(results):
+    fname = "chirp-traffic_log"
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = "attachment; filename=%s.csv" % (fname)
+    for line in results['file_lines']:
+        response.write(line)
+    return response
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def report(request):
