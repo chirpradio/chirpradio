@@ -50,10 +50,17 @@ def start_job(request):
 @as_json
 def do_job_work(request):
     job = Job.get(request.POST['job_key'])
+    params = request.POST.get('params', '{}')
+    
     worker = get_worker(job.job_name)
-    finished, result = worker(job.result and simplejson.loads(job.result))
+    if job.result:
+        result_for_worker = simplejson.loads(job.result)
+    else:
+        result_for_worker = None
+    finished, result = worker(result_for_worker, simplejson.loads(params))
     job.result = simplejson.dumps(result)
     job.save()
+    
     return {
         'finished': finished,
         'success': True

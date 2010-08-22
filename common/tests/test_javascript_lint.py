@@ -18,7 +18,14 @@ class TestJavascriptLint(unittest.TestCase):
         media = os.path.join(root, 'media')
         assert os.path.exists(media), "Possible miscalculation of root: %s" % root
         
+        exceptions = [
+            # jsl trips over this...
+            '%s/common/js/json2.js' % media
+        ]
+        
         for filename in glob.glob("%s/*/js/*.js" % media):
+            if filename in exceptions:
+                continue
             # in macports:
             # sudo port install javascript-lint
             prog = 'jsl'

@@ -21,6 +21,8 @@ import datetime
 import calendar
 import logging
 from collections import defaultdict
+from StringIO import StringIO
+import csv
 
 from google.appengine.ext import db
 
@@ -30,10 +32,9 @@ from django.conf import settings
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils import simplejson
-
 import django.forms
 
-from common.utilities import as_json, http_send_csv_file
+from common.utilities import as_json, http_send_csv_file, as_encoded_str
 from common import time_util
 from common.autoretry import AutoRetry
 import auth
@@ -41,6 +42,7 @@ from auth.models import User
 from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
 from auth.decorators import require_role
 from traffic_log import models, forms, constants
+from jobs import job_worker, job_product
 
 log = logging.getLogger()
 
@@ -462,6 +464,57 @@ def traffic_log(request, date):
     return render_to_response('traffic_log/spot_list.html', 
         dict(spots=spots_for_date), 
         context_instance=RequestContext(request))
+
+@job_worker('build-trafficlog-report')
+def trafficlog_report_worker(results, request_params):
+    fields = ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'excerpt']
+    if results is None:
+        # when starting the job, init file lines with the header row...
+        results = {
+            "file_lines": [ 
+                ",".join(fields) + "\n" 
+            ],
+            'last_offset': 0
+        }
+    
+    offset = results['last_offset']
+    last_offset = offset+50
+    results['last_offset'] = last_offset
+    
+    def mkdt(dt_string):
+        parts = [int(p) for p in dt_string.split("-")]
+        return datetime.datetime(*parts)
+        
+    query = (models.TrafficLogEntry.all()
+                .filter('log_date >= ', mkdt(request_params['start_date']))
+                .filter('log_date <= ', mkdt(request_params['end_date']))
+    )
+                        
+    all_entries = query[ offset: last_offset ]
+    if len(all_entries) == 0:
+        finished = True
+    else:
+        finished = False
+    
+    for entry in all_entries:
+        buf = StringIO()
+        writer = csv.DictWriter(buf, fields)
+        row = report_entry_to_csv_dict(entry)
+        for k, v in row.items():
+            row[k] = as_encoded_str(v, encoding='utf8')
+        writer.writerow(row)
+        results['file_lines'].append(buf.getvalue())
+    
+    return finished, results
+
+@job_product('build-trafficlog-report')
+def playlist_report_product(results):
+    fname = "chirp-traffic_log"
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = "attachment; filename=%s.csv" % (fname)
+    for line in results['file_lines']:
+        response.write(line)
+    return response
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def report(request):

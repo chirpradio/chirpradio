@@ -47,14 +47,23 @@ class TestJobModel(TestCase):
     
     def tearDown(self):
         teardown_data()
+
+class JobsTestCase(DjangoTestCase):
     
-class TestJobs(DjangoTestCase):
+    def tearDown(self):
+        teardown_data()
+    
+    def assert_json_success(self, json_response):
+        self.assertEqual(json_response['success'], True,
+                    "Unsuccessful response, error=%r" % json_response.get('error'))
+    
+class TestJobs(JobsTestCase):
     
     def setUp(self):
         self.client.login(email="test@test.com", roles=[roles.DJ])
         
         @job_worker('counter')
-        def counter(data):
+        def counter(data, request_params):
             if data is None:
                 data = {'count':0}
             data['count'] += 1
@@ -65,13 +74,6 @@ class TestJobs(DjangoTestCase):
                 finished = False
                 
             return finished, data
-    
-    def tearDown(self):
-        teardown_data()
-    
-    def assert_json_success(self, json_response):
-        self.assertEqual(json_response['success'], True,
-                    "Unsuccessful response, error=%r" % json_response.get('error'))
     
     def test_start(self):
         response = self.client.post(reverse('jobs.start'), {
@@ -181,3 +183,57 @@ class TestJobs(DjangoTestCase):
         self.assert_json_success(json_response)
         
         self.assertEqual(Job.get(old_job_key), None)
+
+    
+class TestJobsWithParams(JobsTestCase):
+    
+    def setUp(self):
+        self.client.login(email="test@test.com", roles=[roles.DJ])
+        
+        @job_worker('report')
+        def report_worker(data, request_params):
+            if data is None:
+                data = {
+                    'file_lines': []
+                }
+            
+            data['file_lines'].append(
+                "Results from %s to %s" % (
+                    request_params['start_date'],
+                    request_params['end_date']
+                )
+            )
+            
+            finished = True
+            return finished, data
+        
+        @job_product('report')
+        def report_product(data):
+            content = "".join(data['file_lines'])
+            return http.HttpResponse(content=content, status=200)
+    
+    def test_run_job_with_params(self):
+        
+        # start the job
+        response = self.client.post(reverse('jobs.start'), {
+            'job_name': 'report'
+        })
+        json_response = simplejson.loads(response.content)
+        self.assert_json_success(json_response)
+        job_key = json_response['job_key']
+        
+        # run the job...
+        response = self.client.post(reverse('jobs.work'), {
+            'job_key': job_key,
+            'params': simplejson.dumps({
+                'start_date': '2010-08-01',
+                'end_date': '2010-08-31'
+            })
+        })
+        json_response = simplejson.loads(response.content)
+        self.assert_json_success(json_response)
+        
+        # get the product:
+        response = self.client.get(reverse('jobs.product', args=(job_key,)))
+        self.assertEqual(response.content, "Results from 2010-08-01 to 2010-08-31")
+
