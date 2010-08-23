@@ -652,7 +652,8 @@ def check_datastore(request):
     bookmark = request.POST.get('bookmark')
     if 1:
         query = pager.PagerQuery(models.Document).filter("doctype =", models.DOCTYPE_REVIEW)
-        prev, reviews, next = query.fetch(50, bookmark)
+        query.order("-author")
+        prev, reviews, next = query.fetch(100, bookmark)
         num_reviews = 0
         num_bad_subject_refs = 0
         num_bad_author_refs = 0

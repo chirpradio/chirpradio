@@ -169,7 +169,13 @@ class Artist(db.Model):
     @property
     def sorted_albums(self):
         """Sorted list of albums by this artist."""
-        return sorted(self.album_set, key=lambda x: x.sort_key)
+        albums = []
+        entities = sorted(self.album_set, key=lambda x: x.sort_key)
+        for entity in entities:
+            if not getattr(entity, "revoked", False):
+                albums.append(entity)
+
+        return albums
 
     @property
     def sorted_tracks(self):
@@ -178,8 +184,14 @@ class Artist(db.Model):
         These are tracks that appear on compilations.  It does not
         include tracks on albums that are specifically by this artist.
         """
-        return sorted(self.track_set, key=lambda x: x.sort_key)
+        tracks = []
+        entities = sorted(self.track_set, key=lambda x: x.sort_key)
+        for entity in entities:
+            if not getattr(entity, "revoked", False):
+                tracks.append(entity)
 
+        return tracks
+        
     @property
     def url(self):
         """URL for artist information page."""
@@ -322,7 +334,13 @@ class Album(db.Model):
     @property
     def sorted_tracks(self):
         """Returns Album tracks sorted by track number."""
-        return sorted(self.track_set, key=lambda x: x.sort_key)
+        tracks = []
+        entities = sorted(self.track_set, key=lambda x: x.sort_key)
+        for entity in entities:
+            if not getattr(entity, "revoked", False):
+                tracks.append(entity)
+
+        return tracks
 
     @property
     def reviews(self):
