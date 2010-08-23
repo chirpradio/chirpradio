@@ -436,7 +436,22 @@ class UserViewsTestCase(FormTestCaseHelper, DjangoTestCase):
         self.assertEqual(u.email, 'fancypants@glitterclub.com')
         self.assertEqual(u.dj_name, 'DJ Steve')
         self.assertEqual(u.roles, ['dj'])
-        self.assertEqual(u.password, '') # password prompt was emailed to user
+        self.assertEqual(u.password, None) # password prompt was emailed to user
+
+    def test_create_user_with_initial_password(self):
+        resp = self.client.post('/auth/add_user/', {
+            'email': 'bob@bob.com',
+            'first_name': 'Bob',
+            'last_name': 'Jones',
+            'dj_name': 'Dr. Jones',
+            'password': "my-initial-password",
+            'is_dj': 'checked'
+        })
+        self.assertNoFormErrors(resp)
+        
+        user = User.all().filter('email =', 'bob@bob.com').fetch(1)[0]
+        # password was set:
+        self.assertEqual(user.check_password('my-initial-password'), True)
         
     def test_user_edit_form(self):
         steve = User(

@@ -159,8 +159,17 @@ class UserForm(forms.Form):
                     setattr(user, key, val)
             user.save()
         else:
+            # creating new user...
             del data['original_email']
+            initial_password = None
+            if data['password']:
+                # this is uncommon
+                initial_password = data['password']
+            del data['password']
             user = User(**data)
+            if initial_password:
+                user.set_password(initial_password)
+                user.save()
         return user
 
 
