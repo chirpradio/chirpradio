@@ -146,12 +146,18 @@ class UserForm(forms.Form):
         data['roles'] = user_roles
             
         if data['original_email']:
+            # update the user (edit form)...
             user = User.get_by_email(data['original_email'])
             for key, val in data.items():
+                # update all attributes with form values except our 
+                # placeholder field, original_email; also handle password as a special case
                 if key == 'password':
-                    user.set_password(val)
+                    if val:
+                        # only change the password if it was filled in on the edit form:
+                        user.set_password(val)
                 elif key != 'original_email':
                     setattr(user, key, val)
+            user.save()
         else:
             del data['original_email']
             user = User(**data)

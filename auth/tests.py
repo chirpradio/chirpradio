@@ -427,13 +427,15 @@ class UserViewsTestCase(FormTestCaseHelper, DjangoTestCase):
             'email': 'FancyPants@glitterCLUB.com',
             'first_name': 'Steve',
             'last_name': 'Dolfin',
-            'dj_name': 'DJ Steve'
+            'dj_name': 'DJ Steve',
+            'is_dj': 'checked'
         })
         self.assertNoFormErrors(resp)
         
         u = User.all().filter('last_name =', 'Dolfin').fetch(1)[0]
         self.assertEqual(u.email, 'fancypants@glitterclub.com')
         self.assertEqual(u.dj_name, 'DJ Steve')
+        self.assertEqual(u.roles, ['dj'])
         self.assertEqual(u.password, '') # password prompt was emailed to user
         
     def test_user_edit_form(self):
@@ -442,20 +444,57 @@ class UserViewsTestCase(FormTestCaseHelper, DjangoTestCase):
             first_name='Steve',
             last_name='Dolfin',
             dj_name='DJ Steve',
+            roles=['dj'],
+            is_active=True,
             password='123456' # pretend this is encrypted
         )
         steve.save()
         
         resp = self.client.post('/auth/edit_user/', {
-            'email': 'steve@dolfin.com', # this is the key
+            'original_email': 'steve@dolfin.com', # this is the key
+            'email': 'steve@dolfin.com',
             'first_name': 'Steven',
             'last_name': 'Dolfin III',
-            'dj_name': 'Steve Holt!'
+            'dj_name': 'Steve Holt!',
+            'is_active': 'checked',
+            # change roles:
+            'is_volunteer_coordinator': 'checked'
         })
         self.assertNoFormErrors(resp)
         
-        u = User.all().filter('email =', 'steve@dolfin.com').fetch(1)[0]
-        self.assertEqual(u.first_name, 'Steven')
-        self.assertEqual(u.last_name, 'Dolfin')
-        self.assertEqual(u.dj_name, 'Steve Holt!')
-        self.assertEqual(u.password, '123456')
+        user = User.all().filter('email =', 'steve@dolfin.com').fetch(1)[0]
+        self.assertEqual(user.first_name, 'Steven')
+        self.assertEqual(user.last_name, 'Dolfin III')
+        self.assertEqual(user.dj_name, 'Steve Holt!')
+        self.assertEqual(user.roles, ['volunteer_coordinator'])
+        self.assertEqual(user.password, '123456') # should be untouched
+        
+    def test_user_edit_form_change_password(self):
+        steve = User(
+            email='steve@dolfin.com',
+            first_name='Steve',
+            last_name='Dolfin',
+            dj_name='DJ Steve',
+            roles=['dj'],
+            is_active=True,
+            password='123456'
+        )
+        steve.save()
+        
+        resp = self.client.post('/auth/edit_user/', {
+            'original_email': 'steve@dolfin.com', # this is the key
+            'email': 'steve@dolfin.com',
+            'first_name': 'Steve',
+            'last_name': 'Dolfin',
+            'dj_name': 'DJ Seteve',
+            'is_active': 'checked',
+            'is_dj': 'checked',
+            # new password
+            'password': '1234567'
+        })
+        self.assertNoFormErrors(resp)
+
+        user = User.all().filter('email =', 'steve@dolfin.com').fetch(1)[0]
+        # password was changed:
+        self.assertEqual(user.check_password('1234567'), True)
+        
