@@ -418,7 +418,7 @@ class FormsTestCase(unittest.TestCase):
 class UserViewsTestCase(FormTestCaseHelper, DjangoTestCase):
     
     def setUp(self):
-        for u in User.all().fetch(1000):
+        for u in User.all():
             u.delete()
         self.client.login(email="test@test.com", roles=[roles.VOLUNTEER_COORDINATOR])
 
@@ -426,12 +426,15 @@ class UserViewsTestCase(FormTestCaseHelper, DjangoTestCase):
         resp = self.client.post('/auth/add_user/', {
             'email': 'FancyPants@glitterCLUB.com',
             'first_name': 'Steve',
-            'last_name': 'Dolfin'
+            'last_name': 'Dolfin',
+            'dj_name': 'DJ Steve'
         })
         self.assertNoFormErrors(resp)
         
         u = User.all().filter('last_name =', 'Dolfin').fetch(1)[0]
         self.assertEqual(u.email, 'fancypants@glitterclub.com')
+        self.assertEqual(u.dj_name, 'DJ Steve')
+        self.assertEqual(u.password, '') # password prompt was emailed to user
         
     def test_user_edit_form(self):
         # TODO: Add some tests here!
