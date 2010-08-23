@@ -268,6 +268,8 @@ def edit_user(request):
         user_to_edit = User.get_by_email(email)
         user_form = auth_forms.UserForm.from_user(user_to_edit)
     elif request.method == 'POST':
+        email = request.POST.get('email')
+        user_to_edit = User.get_by_email(email)
         user_form = auth_forms.UserForm(request.POST)
         if user_form.is_valid():
             user_to_edit = user_form.to_user()

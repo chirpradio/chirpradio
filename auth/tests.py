@@ -437,5 +437,25 @@ class UserViewsTestCase(FormTestCaseHelper, DjangoTestCase):
         self.assertEqual(u.password, '') # password prompt was emailed to user
         
     def test_user_edit_form(self):
-        # TODO: Add some tests here!
-        pass
+        steve = User(
+            email='steve@dolfin.com',
+            first_name='Steve',
+            last_name='Dolfin',
+            dj_name='DJ Steve',
+            password='123456' # pretend this is encrypted
+        )
+        steve.save()
+        
+        resp = self.client.post('/auth/edit_user/', {
+            'email': 'steve@dolfin.com', # this is the key
+            'first_name': 'Steven',
+            'last_name': 'Dolfin III',
+            'dj_name': 'Steve Holt!'
+        })
+        self.assertNoFormErrors(resp)
+        
+        u = User.all().filter('email =', 'steve@dolfin.com').fetch(1)[0]
+        self.assertEqual(u.first_name, 'Steven')
+        self.assertEqual(u.last_name, 'Dolfin')
+        self.assertEqual(u.dj_name, 'Steve Holt!')
+        self.assertEqual(u.password, '123456')
