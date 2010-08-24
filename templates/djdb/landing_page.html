@@ -24,16 +24,7 @@
 </div>
 {% endif %}
 
-<p>
 {% if not query_str %}
-<h2>Categories: [
-  {% for category in categories %}
-    {% if not forloop.first %} | {% endif %}
-<a href="category/{{ category }}">{{ category|replace:"/_/ "|capfirst }}</a>
-  {% endfor %}
-]</h2>
-</p>
-
 <h2>Recent Reviews</h2>
 <ul>
   {% for rev in recent_reviews %}
@@ -181,6 +172,36 @@ matching track{{ query_results.Track|pluralize }}</i>
   </tr>
 </table>
   {% endif %}
+{% endif %}
+
+{% if not query_str %}
+<h2>Browse the Database</h2>
+
+<h3>
+By: [
+<a href="/djdb/browse/artist/all">Artist</a> |
+<a href="/djdb/browse/album/all">Album</a> |
+<a href="/djdb/browse/track/all">Track</a>
+]
+<br/>
+
+Category: [
+  {% for category in categories %}
+    {% if not forloop.first %} | {% endif %}
+<a href="/djdb/browse/album/all?category={{ category }}">{{ category|replace:"/_/ "|capfirst }}</a>
+  {% endfor %}
+]
+<br/>
+
+Starts with: [
+<a href="/djdb/browse/artist/all">All</a> |
+<a href="/djdb/browse/artist/0">0-9</a> |
+  {% for letter in 'ABCDEFGHIJKLMNOPQRSTUV' %}
+<a href="/djdb/browse/artist/{{ letter }}">{{ letter }}</a> |
+  {% endfor %}
+<a href="/djdb/browse/artist/other">Other</a>
+]
+</h3>
 {% endif %}
 
 {% endblock %}

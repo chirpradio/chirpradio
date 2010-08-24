@@ -54,4 +54,21 @@ reviewed by {{ rev.author_display }}
 {% endfor %}
 </ul>
 
+<form action="/djdb/reviews" name="paging2" method="post">
+{% ifequal prev None %}
+  <input disabled="disabled" type="submit" name="prev" onclick="document.paging2.bookmark.value='{{ prev }}'" value="Previous Page"/>
+{% else %}
+  <input type="submit" name="prev" onclick="document.paging2.bookmark.value='{{ prev }}'" value="Previous Page"/>
+{% endifequal %}
+{% ifequal next None %}
+  <input disabled="disabled" type="submit" name="next" onclick="document.paging2.bookmark.value='{{ next }}'" value="Next Page"/>
+{% else %}
+  <input type="submit" name="next" onclick="document.paging2.bookmark.value='{{ next }}'" value="Next Page"/>
+{% endifequal %}
+  <input type="hidden" id="bookmark" name="bookmark" value=""/>
+  <input type="hidden" name="author_key" value="{{ author_key }}"/>
+  <input type="hidden" name="page_size" value="{{ page_size }}"/>
+  <input type="hidden" name="order" value="{{ order }}"/>
+</form>
+
 {% endblock %}

@@ -56,10 +56,62 @@ indexes:
   - name: album_artist
   - name: revoked
 
+- kind: Album
+  properties:
+  - name: category
+  - name: title
+
+- kind: Album
+  properties:
+  - name: category
+  - name: title
+  - name: __key__
+    direction: desc
+
+- kind: Album
+  properties:
+  - name: category
+  - name: title
+    direction: desc
+  - name: __key__
+    direction: desc
+
+- kind: Album
+  properties:
+  - name: title
+  - name: __key__
+    direction: desc
+
+- kind: Album
+  properties:
+  - name: title
+    direction: desc
+  - name: __key__
+    direction: desc
+
+- kind: Artist
+  properties:
+  - name: doctype
+  - name: name
+    direction: desc
+
+- kind: Artist
+  properties:
+  - name: name
+  - name: __key__
+    direction: desc
+
 - kind: Artist
   properties:
   - name: name
   - name: revoked
+
+- kind: Artist
+  properties:
+  - name: name
+    direction: desc
+  - name: __key__
+    direction: desc
 
 - kind: Document
   properties:

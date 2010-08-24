@@ -66,6 +66,8 @@ def landing_page(request, ctx_vars=None):
             ctx_vars["invalid_query"] = True
         else:
             ctx_vars["query_results"] = matches
+    elif reviewed and user_key:
+        return http.HttpResponseRedirect("/djdb/reviews?author_key=%s" % user_key)
 
     # Add categories.
     ctx_vars["categories"] = models.ALBUM_CATEGORIES
@@ -185,6 +187,72 @@ def update_tracks(request, album_id_str):
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
+def browse_page(request, entity_kind, start_char, ctx_vars=None):
+    allowed = map(chr, range(65, 91))
+    allowed.extend(['all', '0', 'other'])
+    if start_char not in allowed:
+        return http.HttpResponse(status=404)
+
+    default_page_size = 25
+    
+    template = loader.get_template('djdb/browse_page.html')
+    if ctx_vars is None : ctx_vars = {}
+    ctx_vars["title"] = 'Browse DJ Database'
+    ctx_vars["entity_kind"] = entity_kind
+    ctx_vars["start_char"] = start_char
+    ctx_vars["categories"] = models.ALBUM_CATEGORIES
+
+    if request.method == "GET":
+        form = forms.ListReviewsForm()
+        page_size = int(request.GET.get('page_size', default_page_size))
+        bookmark = None
+        category = request.GET.get('category')
+    else:
+        page_size = int(request.POST.get('page_size', default_page_size))
+        bookmark = request.POST.get('bookmark')
+        category = request.POST.get('category')
+    
+    if category is not None and category not in models.ALBUM_CATEGORIES:
+        return http.HttpResponse(status=404)
+        
+    if entity_kind == 'artist':
+        model = models.Artist
+        field = "name"
+    elif entity_kind == 'album':
+        model = models.Album
+        field = "title"
+    elif entity_kind == 'track':
+        model = models.Track
+        field = "title"
+    else:
+        return http.HttpResponse(status=404)
+
+    query = pager.PagerQuery(model)
+    if start_char == '0':
+        query.filter("%s >=" % field, "0")
+        query.filter("%s <" % field, u"9" + u"\uffff")
+    elif start_char == 'other':
+        query.filter("%s >=" % field, u"\u0021")
+        query.filter("%s <" % field, u"\u0030")
+    elif start_char != 'all':
+        query.filter("%s >=" % field, start_char)
+        query.filter("%s <" % field, start_char + u"\uffff")
+    if category:
+        query.filter("category =", category)
+    query.order(field)
+    prev, items, next = query.fetch(page_size, bookmark)
+    
+    ctx_vars["bookmark"] = bookmark
+    ctx_vars["items"] = items
+    ctx_vars["prev"] = prev
+    ctx_vars["next"] = next
+    ctx_vars["page_size"] = page_size
+    ctx_vars["page_sizes"] = [25, 50, 100]
+    ctx_vars["category"] = category
+
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+    
 def category_page(request, category):
     query = models.Album.all().filter("category =", category)
     albums = AutoRetry(query).fetch(AutoRetry(query).count())

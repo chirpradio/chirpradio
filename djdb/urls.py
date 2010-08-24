@@ -70,6 +70,9 @@ urlpatterns = patterns(
     # Album search for jquery.autocomplete
     (r'album/search\.txt', 'djdb.views.album_search_for_autocomplete'),
     
+    # Browse the database.
+    (r'browse/(.+)/(.+)', 'djdb.views.browse_page'),
+    
     # Album category page.
     (r'category/(.*)', 'djdb.views.category_page'),
     
