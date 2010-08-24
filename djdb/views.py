@@ -237,8 +237,9 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
     elif start_char != 'all':
         query.filter("%s >=" % field, start_char)
         query.filter("%s <" % field, start_char + u"\uffff")
-    if category:
+    if category is not None:
         query.filter("category =", category)
+    query.filter("revoked =", False)
     query.order(field)
     prev, items, next = query.fetch(page_size, bookmark)
     

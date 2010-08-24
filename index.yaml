@@ -59,6 +59,12 @@ indexes:
 - kind: Album
   properties:
   - name: category
+  - name: revoked
+  - name: title
+
+- kind: Album
+  properties:
+  - name: category
   - name: title
 
 - kind: Album
@@ -75,6 +81,11 @@ indexes:
     direction: desc
   - name: __key__
     direction: desc
+
+- kind: Album
+  properties:
+  - name: revoked
+  - name: title
 
 - kind: Album
   properties:
@@ -112,6 +123,11 @@ indexes:
     direction: desc
   - name: __key__
     direction: desc
+
+- kind: Artist
+  properties:
+  - name: revoked
+  - name: name
 
 - kind: Document
   properties:
