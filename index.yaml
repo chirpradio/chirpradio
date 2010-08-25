@@ -94,6 +94,21 @@ indexes:
 
 - kind: Album
   properties:
+  - name: revoked
+  - name: title
+  - name: __key__
+    direction: desc
+
+- kind: Album
+  properties:
+  - name: revoked
+  - name: title
+    direction: desc
+  - name: __key__
+    direction: desc
+
+- kind: Album
+  properties:
   - name: title
   - name: __key__
     direction: desc
@@ -125,6 +140,13 @@ indexes:
 - kind: Artist
   properties:
   - name: name
+  - name: revoked
+  - name: __key__
+    direction: desc
+
+- kind: Artist
+  properties:
+  - name: name
     direction: desc
   - name: __key__
     direction: desc
@@ -133,6 +155,14 @@ indexes:
   properties:
   - name: revoked
   - name: name
+
+- kind: Artist
+  properties:
+  - name: revoked
+  - name: name
+    direction: desc
+  - name: __key__
+    direction: desc
 
 - kind: Document
   properties:
@@ -240,6 +270,21 @@ indexes:
   properties:
   - name: revoked
   - name: title
+
+- kind: Track
+  properties:
+  - name: revoked
+  - name: title
+  - name: __key__
+    direction: desc
+
+- kind: Track
+  properties:
+  - name: revoked
+  - name: title
+    direction: desc
+  - name: __key__
+    direction: desc
 
 - kind: TrafficLogEntry
   properties:
