@@ -113,7 +113,7 @@ Other
     <option value="{{ num }}">{{ num }}</option>
     {% endifequal %}
   {% endfor %}
-  </select></td></tr>
+  </select>
   <input type="submit" name="update" value="Update"/>
   {% ifnotequal bookmark None %}
   <input type="hidden" id="bookmark" name="bookmark" value="{{ bookmark }}"/>
@@ -153,6 +153,11 @@ Other
     {% ifequal entity_kind "album" %}
     <td>[{{ item.category|replace:"/_/ "|capfirst }}]</td>
     <td><a href="{{ item.url }}">{{ item.title }}</a> / <a href="{{ item.album_artist.url }}">{{ item.album_artist }}</a></td>
+    <td>
+    {% if item.num_reviews %}
+      {{ item.num_reviews }} review{{ item.num_reviews|pluralize }}
+    {% endif %}
+    </td>
     {% endifequal %}
     {% ifequal entity_kind "track" %}
     <td>{{ item.title }} / <a href="{{ item.album.url }}">{{ item.album.title }}</a> / <a href="{{ item.album.album_artist.url }}">{{ item.album.album_artist }}</a></td>

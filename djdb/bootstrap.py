@@ -45,10 +45,10 @@ _LABELS = (
 _YEARS = [1900 + random.randint(50, 110) for n in range(10)]
 
 _WORDS = (
-    "alpha", "beta", "gamma", "delta", "epsilon", "sigma", "theta",
-    "dog", "cat", "monkey", "elephant", "bear", "hedgehog", "sloth",
-    "orange", "yellow", "blue", "red", "black", "green", "pink", "purple",
-    "bowie", "fall", "kinks",
+    "Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Sigma", "Theta",
+    "Dog", "Cat", "Monkey", "Elephant", "Bear", "Hedgehog", "Sloth",
+    "Orange", "Yellow", "Blue", "Red", "Black", "Green", "Pink", "Purple",
+    "Bowie", "Fall", "Kinks",
     )
 
 def random_phrase():

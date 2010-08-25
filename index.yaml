@@ -84,6 +84,11 @@ indexes:
 
 - kind: Album
   properties:
+  - name: num_reviews
+  - name: title
+
+- kind: Album
+  properties:
   - name: revoked
   - name: title
 
@@ -230,6 +235,11 @@ indexes:
   properties:
   - name: spot
   - name: expire_on
+
+- kind: Track
+  properties:
+  - name: revoked
+  - name: title
 
 - kind: TrafficLogEntry
   properties:
