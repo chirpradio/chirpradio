@@ -193,7 +193,7 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
     if start_char not in allowed:
         return http.HttpResponse(status=404)
 
-    default_page_size = 5
+    default_page_size = 25
     
     template = loader.get_template('djdb/browse_page.html')
     if ctx_vars is None : ctx_vars = {}
