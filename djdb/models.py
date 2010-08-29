@@ -546,6 +546,8 @@ class Document(db.Model):
     # If the author is not a user, then use this field.
     author_name = db.StringProperty(required=False)
     
+    revoked = db.BooleanProperty(required=False, default=False)
+
     @property
     def author_display(self):
         if self.author:

@@ -97,7 +97,7 @@ def reviews_page(request, ctx_vars=None):
             bookmark = request.POST.get('bookmark')
     if order not in ['created', 'author']:
         return http.HttpResponse(status=404)
-    query = pager.PagerQuery(models.Document).filter("doctype =", models.DOCTYPE_REVIEW)
+    query = pager.PagerQuery(models.Document).filter("doctype =", models.DOCTYPE_REVIEW).filter("revoked =", False)
     if author_key:
         author = db.get(author_key)
         query.filter('author =', author)

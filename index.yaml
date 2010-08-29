@@ -231,6 +231,13 @@ indexes:
 - kind: Document
   properties:
   - name: doctype
+  - name: revoked
+  - name: author
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: doctype
   - name: timestamp
     direction: desc
 
