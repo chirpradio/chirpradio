@@ -63,7 +63,7 @@ Mark selected as: <a id="mark_nocat" href="update">No category</a>,
     {% endifequal %}
     </td>
   {% endif %}
-    <td><a href="{{ album.url }}">{{ album.title }}</a></td>
+    <td><a href="{{ album.url }}">{{ album }}</a></td>
   <td>
   {% ifnotequal album.label None %}
   {{ album.label }}

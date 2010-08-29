@@ -296,7 +296,13 @@ class Album(db.Model):
         db.Model.__init__(self, *args, **kwargs)
 
     def __unicode__(self):
-        return self.title
+        title = self.title
+        for tag in self.import_tags:
+            m = re.match("Disc (\d+)", tag)
+            if m:
+                title += " %d" % m.group(0)
+            
+        return title
 
     @property
     def url(self):

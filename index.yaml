@@ -175,6 +175,15 @@ indexes:
 - kind: Document
   properties:
   - name: author
+  - name: created
+  - name: doctype
+  - name: revoked
+  - name: __key__
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: author
   - name: doctype
   - name: __key__
     direction: desc
@@ -191,6 +200,31 @@ indexes:
   properties:
   - name: author
   - name: doctype
+  - name: created
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: author
+  - name: doctype
+  - name: revoked
+  - name: __key__
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: author
+  - name: doctype
+  - name: revoked
+  - name: created
+  - name: __key__
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: author
+  - name: doctype
+  - name: revoked
   - name: created
     direction: desc
 
@@ -205,6 +239,14 @@ indexes:
   properties:
   - name: created
   - name: doctype
+  - name: __key__
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: created
+  - name: doctype
+  - name: revoked
   - name: __key__
     direction: desc
 
@@ -233,6 +275,41 @@ indexes:
   - name: doctype
   - name: revoked
   - name: author
+
+- kind: Document
+  properties:
+  - name: doctype
+  - name: revoked
+  - name: author
+  - name: __key__
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: doctype
+  - name: revoked
+  - name: author
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: doctype
+  - name: revoked
+  - name: created
+
+- kind: Document
+  properties:
+  - name: doctype
+  - name: revoked
+  - name: created
+  - name: __key__
+    direction: desc
+
+- kind: Document
+  properties:
+  - name: doctype
+  - name: revoked
+  - name: created
     direction: desc
 
 - kind: Document
