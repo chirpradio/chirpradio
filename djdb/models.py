@@ -298,9 +298,9 @@ class Album(db.Model):
     def __unicode__(self):
         title = self.title
         for tag in self.import_tags:
-            m = re.match("Disc (\d+)", tag)
-            if m:
-                title += " %d" % m.group(0)
+            if re.match("Disc", tag):
+                title += " [%s]" % tag
+                break
             
         return title
 
