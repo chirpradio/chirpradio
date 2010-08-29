@@ -120,7 +120,7 @@ Mark selected as: <a id="mark_nocat" href="/djdb/update_albums">No category</a>,
       </td>
       {% endif %}
       <td><a href="{{ album.artist_url}}">{{ album.artist_name }}</a></td>
-      <td><a href="{{ album.url }}">{{ album.title }}</a></td>
+      <td><a href="{{ album.url }}">{{ album }}</a></td>
       <td>
       {% ifnotequal album.label None %}
       {{ album.label }}
@@ -160,7 +160,7 @@ matching track{{ query_results.Track|pluralize }}</i>
   <tr>
     <td>{{ track.title }}</td>
     <td><a href="{{ track.artist_url }}">{{ track.artist_name }}</a></td>
-    <td><a href="{{ track.album.url }}">{{ track.album.title }}</a></td>
+    <td><a href="{{ track.album.url }}">{{ track.album }}</a></td>
     <td>
       {% ifincrate user track %}
       <a href="/djdb/crate/remove_item?response_page=landing&item_key={{ track.key }}&query={{ query_str }}"><img src="/media/common/img/remove.png" alt="Remove Track from Crate" title="Remove Track from Crate"/></a>

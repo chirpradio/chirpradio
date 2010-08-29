@@ -25,7 +25,7 @@ from auth.models import User
 from common import sanitize_html
 from common import time_util
 from common.autoretry import AutoRetry
-
+import re
 
 # A list of standard doctypes.
 DOCTYPE_REVIEW = "review"  # A review, subject must be an Album object.

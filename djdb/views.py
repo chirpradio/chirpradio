@@ -348,7 +348,7 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     if year is None:
         year = ''
     ctx_vars["title"] = u'<a href="%s">%s</a> / %s / %s / %s' \
-      % (album.artist_url, album.artist_name, album.title, label, str(year))
+      % (album.artist_url, album.artist_name, album, label, str(year))
 
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
