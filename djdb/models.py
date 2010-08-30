@@ -297,10 +297,11 @@ class Album(db.Model):
 
     def __unicode__(self):
         title = self.title
-        for tag in self.import_tags:
+        for tag in sorted(self.import_tags):
             if re.match("Disc", tag):
                 title += " [%s]" % tag
-                break
+            elif tag == "EP":
+                title += " [EP]"
             
         return title
 
