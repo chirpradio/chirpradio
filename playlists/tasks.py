@@ -167,16 +167,16 @@ def url_track_delete(key):
 def _url_track_create(track):
     log.info("chirpradio.org create track %s" % track.key())
     
-#    if track.selector.dj_name is None:
-#        dj_name = as_encoded_str("%s %s" % (track.selector.first_name, track.selector.last_name))
-#    else:
-#        dj_name = as_encoded_str(track.selector.dj_name)
+    if track.selector.dj_name is None:
+        dj_name = as_encoded_str("%s %s" % (track.selector.first_name, track.selector.last_name))
+    else:
+        dj_name = as_encoded_str(track.selector.dj_name)
     
     qs = {
         'track_name': as_encoded_str(track.track_title),
         'track_artist': as_encoded_str(track.artist_name),
-#        'dj_name': dj_name,
-        'dj_name': as_encoded_str("%s %s" % (track.selector.first_name, track.selector.last_name)),
+        'dj_name': dj_name,
+#        'dj_name': as_encoded_str("%s %s" % (track.selector.first_name, track.selector.last_name)),
         'time_played': track.modified.strftime("%Y-%m-%d %H:%M:%S"),
         'track_id': str(track.key()),
     }
