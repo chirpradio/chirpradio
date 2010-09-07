@@ -16,6 +16,7 @@
     src="/media/common/js/jquery-autocomplete/jquery.autocomplete.js"></script>
 <script type="text/javascript" src="/media/djdb/js/djdb.js"></script>
 <script type="text/javascript" src="/media/djdb/js/djdb_user.js"></script>
+<script type="text/javascript" src="/media/djdb/js/djdb_search_help.js"></script>
 {% endblock %}
 
 {% if msg %}
@@ -46,6 +47,36 @@ reviewed by {{ rev.author }}
   <input id="id_user" name="user"/>
   <input id="id_user_key" type="hidden" name="user_key"/>
 </form>
+<a class="open_search_help" href="">Help with searching...</a>
+<div class="search_help" style="display: none">
+<p>
+[ <a class="close_search_help" href="">Close</a> ]
+</p>
+
+<p>
+<u><b>Search Help</b></u>
+</p>
+
+<p>
+Our query language is very simple. Here are some illustrative examples:
+</p>
+
+<p>
+<ol>
+  <li>"foo bar" means "find all entities whose text contains both the terms "foo" and "bar".</li><br/>
+  
+<li>"-foo" means "exclude all entities whose text contains the term "foo".</li><br/>
+  <li>"foo*" means "find all entities whose text contains a term starting with the prefix "foo".</li><br/>
+  <li>"label:blah" means "find all entities whose given field (e.g., label) contains the term "blah".</li><br/>
+  <li>"label:blah*" means "find all entities whose given field (e.g., label) conains a term starting with the prefix "blah".</li><br/>
+  <li>"year:1970-1979" means "find all entities whose given field (e.g., year) falls within the range "1970" to "1979".</li>
+</ol>
+</p>
+
+<p>
+[ <a class="close_search_help" href="">Close</a> ]
+</p>
+</div>
 <p/>
 
 {% if query_str %}

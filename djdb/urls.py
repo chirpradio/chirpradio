@@ -87,10 +87,7 @@ urlpatterns = patterns(
     (r'crate/remove_all_crate_items', 'djdb.views.remove_all_crate_items'),
     
     (r'update/artists/bulk_add', 'djdb.views.artists_bulk_add'),
-    
-    # Check the djdb for duplicates and bad references.
-    (r'check_datastore', 'djdb.views.check_datastore'),
-    
+        
     # Images
     (IMAGE_URL_PATTERN, 'djdb.views.image'),
 

@@ -325,6 +325,11 @@ indexes:
   - name: established
     direction: desc
 
+- kind: SearchMatches
+  properties:
+  - name: field
+  - name: term
+
 - kind: SpotConstraint
   properties:
   - name: dow

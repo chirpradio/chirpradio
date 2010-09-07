@@ -67,6 +67,10 @@ def _scrub_char(c):
     elif c == "'":
         # Filter out apostrophes, so "foo's" will become "foos".
         return ""
+    elif c in ':-':
+        # Keep colons, since they are used for searching on properties(fields).
+        # Keep dashes, since they are used for searching in a range.
+        return c
     else:
         # Other types of characters are replaced by whitespace.
         return " "
@@ -172,6 +176,8 @@ class Indexer(object):
         assert album.parent_key() == self.transaction
         self.add_key(album.key(), "title", strip_tags(album.title))
         self.add_key(album.key(), "artist", album.artist_name)
+        self.add_key(album.key(), "label", album.label)
+        self.add_key(album.key(), "year", unicode(album.year))
         self._txn_objects_to_save.append(album)
 
     def add_track(self, track):
@@ -290,6 +296,7 @@ IS_FORBIDDEN = "1:is_forbidden"
 
 IS_TERM = "0:is_term"
 IS_PREFIX = "1:is_prefix"
+IS_RANGE = "2:is_range"
 
 def _parse_query_string(query_str):
     """Convert a query string into a sequence of annotated terms.
@@ -301,6 +308,12 @@ def _parse_query_string(query_str):
           the term "foo".
       (3) "foo*" means "find all entities whose text contains a term starting
           with the prefix "foo".
+      (4) "label:blah" means "find all entities whose given field (e.g., label)
+          contains the given term.
+      (5) "label:blah*" means "find all entities whose given field (e.g., label)
+          starts with the prefix "blah".
+      (6) "year:1970-1979" means "find all entities whose given field (e.g., year)
+          falls within the range "1970" to "1979".
 
     We automatically filter out query terms that are stop words, as
     well as prefix-query terms that are also the prefix of a stop
@@ -315,6 +328,7 @@ def _parse_query_string(query_str):
       If logic == IS_FORBIDDEN, text must not match the rule to be returned.
       If flavor == IS_TERM, arg is a term string.  
       If flavor == IS_PREFIX, arg is a term prefix string.
+      If flavor == IS_RANGE, arg is a range of values.
     """
     query_str_parts = query_str.split()
     query = []
@@ -331,15 +345,29 @@ def _parse_query_string(query_str):
         for i, subp in enumerate(subparts):
             flavor = IS_TERM
             logic = IS_REQUIRED
+            field = None
+            end = None
             if i == 0 and not is_required:
                 logic = IS_FORBIDDEN
+            # Check if searching on a property (field).
+            field_subp = subp.split(':')
+            if len(field_subp) == 2:
+                field = field_subp[0]
+                subp = field_subp[1]
             if i == len(subparts)-1 and is_prefix:
                 # We need to filter out any prefix which might match a
                 # stop word.  Otherwise a prefix search like "mott
                 # th*" would fail to match "Mott the Hoople".
                 if _is_stop_word_prefix(subp):
                     continue
-                flavor = IS_PREFIX
+                flavor = IS_PREFIX                
+            # Check if range and get start and end values.
+            start_end = subp.split('-')
+            if len(start_end) == 2:
+                subp = start_end[0]
+                end = start_end[1]
+                if _is_stop_word(end):
+                    continue                
             # Skip stop words when building a query 
             # because no stop words exist in the index.
             if _is_stop_word(subp):
@@ -347,8 +375,10 @@ def _parse_query_string(query_str):
             # Skip parts where the search term or prefix is empty.
             if not subp:
                 continue
-            query.append((logic, flavor, subp))
+            query.append((logic, flavor, subp, field, end))
 
+    for q in query:
+        print q
     return query
 
 
@@ -370,7 +400,7 @@ def _fetch_all(query):
     return all_matches
 
 
-def fetch_keys_for_one_term(term, entity_kind=None, field=None):
+def fetch_keys_for_one_term(term, entity_kind=None, field=None, end=None):
     """Find entity keys matching a single search term.
 
     Args:
@@ -379,6 +409,8 @@ def fetch_keys_for_one_term(term, entity_kind=None, field=None):
         restricted to entities of that kind.
       field: An optional string.  If given, the returned keys are restricted
         to matches for that particular field.
+      end: An optional string. If given, the returned keys are restricted to
+        matched within a range from term to end.
 
     Returns:
       A set of (db.Key, matching field) pairs.
@@ -388,7 +420,11 @@ def fetch_keys_for_one_term(term, entity_kind=None, field=None):
         query.filter("entity_kind =", entity_kind)
     if field:
         query.filter("field =", field)
-    query.filter("term =", term)
+    if end:
+        query.filter("term >=", term)
+        query.filter("term <", end + u"\uffff")
+    else:
+        query.filter("term =", term)
     return _fetch_all(query)
 
 
@@ -434,13 +470,13 @@ def fetch_keys_for_query_string(query_str, entity_kind=None):
     is_first = True
     # We sort the parsed query so that all of the terms with
     # logic=IS_REQUIRED will be processed first.
-    for logic, flavor, arg in sorted(parsed):
+    for logic, flavor, arg, field, end in sorted(parsed):
         # Find all of the matches related to this component of the
         # query.
         if flavor == IS_TERM:
-            these_matches = fetch_keys_for_one_term(arg, entity_kind)
+            these_matches = fetch_keys_for_one_term(arg, entity_kind, field, end)
         elif flavor == IS_PREFIX:
-            these_matches = fetch_keys_for_one_prefix(arg, entity_kind)
+            these_matches = fetch_keys_for_one_prefix(arg, entity_kind, field)
         else:
             # This should never happen.
             logging.error("Query produced unexpected results: %s", query_str)
