@@ -49,7 +49,7 @@ class TestErrorHandler(DjangoTestCase):
     def setUp(self):
         self.orig_middleware = [m for m in settings.MIDDLEWARE_CLASSES]
         self.client.handler = ClientHandlerWithErroHandler() # custom handler with middleware applied
-        self.client.login(email="test@test.com", roles=[roles.DJ])
+        assert self.client.login(email="test@test.com", roles=[roles.DJ])
         
     def tearDown(self):
         settings.MIDDLEWARE_CLASSES = self.orig_middleware

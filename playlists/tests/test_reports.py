@@ -36,7 +36,7 @@ class TestPlaylistReport(PlaylistViewsTest):
 
     def setUp(self):
         super(TestPlaylistReport, self).setUp()
-        self.client.login(email="test@test.com", roles=[roles.DJ, roles.MUSIC_DIRECTOR])
+        assert self.client.login(email="test@test.com", roles=[roles.DJ, roles.MUSIC_DIRECTOR])
 
     def test_report_landing_page(self):
         # sanity check:

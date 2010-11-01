@@ -29,7 +29,7 @@ from common import utilities
 class TestJSONHandler(DjangoTestCase):
     
     def setUp(self):
-        self.client.login(email="test@test.com", roles=[roles.DJ])
+        assert self.client.login(email="test@test.com", roles=[roles.DJ])
     
     def test_json_error(self):
         response = self.client.get('/common/_make_json_error')

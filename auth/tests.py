@@ -187,7 +187,7 @@ class AuthTestCase(DjangoTestCase):
         response = client.get('/auth/hello')
         self.assertEqual(200, response.status_code)
         # Log in as a test user.
-        client.login(email='test@test.com')
+        assert client.login(email='test@test.com')
         # Logged in, active users should be able to reach '/'.
         response = client.get('/')
         self.assertEqual(200, response.status_code)
@@ -420,7 +420,7 @@ class UserViewsTestCase(FormTestCaseHelper, DjangoTestCase):
     def setUp(self):
         for u in User.all():
             u.delete()
-        self.client.login(email="test@test.com", roles=[roles.VOLUNTEER_COORDINATOR])
+        assert self.client.login(email="test@test.com", roles=[roles.VOLUNTEER_COORDINATOR])
 
     def test_email_is_case_insensitive_on_creation(self):
         resp = self.client.post('/auth/add_user/', {

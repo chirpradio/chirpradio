@@ -96,7 +96,7 @@ def create_stevie_wonder_album_data():
 class PlaylistViewsTest(FormTestCaseHelper, TestCase):
 
     def setUp(self):
-        self.client.login(email="test@test.com", roles=[roles.DJ])
+        assert self.client.login(email="test@test.com", roles=[roles.DJ])
         setup_dbconfig()
 
     def tearDown(self):

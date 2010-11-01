@@ -29,7 +29,7 @@ class ViewsTestCase(TestCase):
 
     def setUp(self):
         # Log in.
-        self.client.login(email="test@test.com")
+        assert self.client.login(email="test@test.com")
 
         # Create an image entry.
         self.img = models.DjDbImage(image_data="test data",
@@ -58,7 +58,7 @@ class ViewsTestCase(TestCase):
 class AutocompleteViewsTestCase(TestCase):
 
     def setUp(self):
-        self.client.login(email="test@test.com", roles=[roles.DJ])
+        assert self.client.login(email="test@test.com", roles=[roles.DJ])
         
         idx = search.Indexer()
         
@@ -174,7 +174,7 @@ class UpdateAlbumViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
         self.client = Client()
-        self.client.login(email='test@test.com', roles=[roles.DJ])
+        assert self.client.login(email='test@test.com', roles=[roles.DJ])
         
         # Get user.
         self.user = models.User.all().filter('email =', 'test@test.com')[0]
@@ -221,7 +221,7 @@ class ReviewViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
         self.client = Client()
-        self.client.login(email='test@test.com', roles=[roles.DJ])
+        assert self.client.login(email='test@test.com', roles=[roles.DJ])
         
         # Get user.
         self.user = models.User.all().filter('email =', 'test@test.com')[0]
@@ -425,7 +425,7 @@ class CommentViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
         self.client = Client()
-        self.client.login(email='test@test.com', roles=[roles.DJ])
+        assert self.client.login(email='test@test.com', roles=[roles.DJ])
         
         # Get user.
         self.user = models.User.all().filter('email =', 'test@test.com')[0]
@@ -560,7 +560,7 @@ class  AlbumCategoryViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
         self.client = Client()
-        self.client.login(email='test@test.com', roles=[roles.DJ])
+        assert self.client.login(email='test@test.com', roles=[roles.DJ])
 
         # Get user.
         self.user = models.User.all().filter('email =', 'test@test.com')[0]
@@ -619,7 +619,7 @@ class TrackViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
         self.client = Client()
-        self.client.login(email='test@test.com', roles=[roles.DJ])
+        assert self.client.login(email='test@test.com', roles=[roles.DJ])
 
         # Get user.
         self.user = models.User.all().filter('email =', 'test@test.com')[0]
@@ -706,7 +706,7 @@ class CrateViewsTestCase(TestCase):
     def setUp(self):
         # Log in.
         self.client = Client()
-        self.client.login(email='test@test.com', roles=[roles.DJ])
+        assert self.client.login(email='test@test.com', roles=[roles.DJ])
 
         # Get user.
         self.user = models.User.all().filter('email =', 'test@test.com')[0]

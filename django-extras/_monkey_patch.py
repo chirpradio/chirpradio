@@ -46,6 +46,8 @@ def chirp_Client_login(self, **credentials):
     if user:
         token = auth._create_security_token(user)
     self.cookies[auth._CHIRP_SECURITY_TOKEN_COOKIE] = token
+    if token:
+        return True
 
 
 def chirp_Client_logout(self):

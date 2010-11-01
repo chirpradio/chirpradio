@@ -60,7 +60,7 @@ class JobsTestCase(DjangoTestCase):
 class TestJobs(JobsTestCase):
     
     def setUp(self):
-        self.client.login(email="test@test.com", roles=[roles.DJ])
+        assert self.client.login(email="test@test.com", roles=[roles.DJ])
         
         @job_worker('counter')
         def counter(data, request_params):
@@ -188,7 +188,7 @@ class TestJobs(JobsTestCase):
 class TestJobsWithParams(JobsTestCase):
     
     def setUp(self):
-        self.client.login(email="test@test.com", roles=[roles.DJ])
+        assert self.client.login(email="test@test.com", roles=[roles.DJ])
         
         @job_worker('report')
         def report_worker(data, request_params):

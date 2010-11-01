@@ -46,7 +46,7 @@ def clear_data():
 class TestTrafficLogViews(DjangoTestCase):
     
     def setUp(self):
-        self.client.login(email="test@test.com", roles=[roles.DJ])
+        assert self.client.login(email="test@test.com", roles=[roles.DJ])
     
     def tearDown(self):
         clear_data()
@@ -89,7 +89,7 @@ class TestTrafficLogViews(DjangoTestCase):
 class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
     
     def setUp(self):
-        self.client.login(email="test@test.com", roles=[roles.TRAFFIC_LOG_ADMIN, roles.DJ])
+        assert self.client.login(email="test@test.com", roles=[roles.TRAFFIC_LOG_ADMIN, roles.DJ])
     
     def tearDown(self):
         clear_data()
@@ -522,7 +522,7 @@ class TestObjects(DjangoTestCase):
 class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
     
     def setUp(self):
-        self.client.login(email="dj-test@test.com", roles=[roles.DJ])
+        assert self.client.login(email="dj-test@test.com", roles=[roles.DJ])
     
     def tearDown(self):
         clear_data()
@@ -649,7 +649,7 @@ class TrafficLogTestCase(unittest.TestCase):
 class TestTrafficLogReport(FormTestCaseHelper, DjangoTestCase):
     
     def setUp(self):
-        self.client.login(email="test@test.com", roles=[roles.TRAFFIC_LOG_ADMIN])
+        assert self.client.login(email="test@test.com", roles=[roles.TRAFFIC_LOG_ADMIN])
         
         author = User(email='test')
         author.save()
