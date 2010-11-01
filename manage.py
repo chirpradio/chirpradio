@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.5
 # Copyright 2008 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,7 +35,7 @@ except ImportError:
 
 
 if __name__ == "__main__":
-    
+
     # chirp: hack to enable testlib.
     # TODO(kumar) switch to Nose for testing and make this a Nose plugin
     import sys
@@ -49,5 +49,5 @@ if __name__ == "__main__":
             mod = os.path.splitext(os.path.basename(path))[0]
             # e.g. /path/to/fudge-0.9.4.zip/fudge-0.9.4
             sys.path.append(os.path.join(path, mod))
-    
+
     execute_manager(settings)
