@@ -27,13 +27,7 @@ import logging
 
 import appengine_django
 from appengine_django import InstallAppengineHelperForDjango
-if not hasattr(appengine_django, '_installed'):
-  # this ensures that the setup code only gets called once.
-  # i.e. if there is an exception in main.py then it will be reloaded 
-  # even though other parts of the app are still in memory.
-  # if this runs twice then mutiple instances of django might get loaded.
-  InstallAppengineHelperForDjango()
-  appengine_django._installed = True
+InstallAppengineHelperForDjango()
 
 from appengine_django import have_django_zip
 from appengine_django import django_zip_path
