@@ -90,7 +90,11 @@ def _create_security_token(user):
     else:
         key_storage = KeyStorage.get()
         body = AES.new(key_storage.aes_key, AES.MODE_CBC).encrypt(plaintext)
-        sig = HMAC.HMAC(key=key_storage.hmac_key, msg=body).hexdigest()
+        hmac_key = key_storage.hmac_key
+        if type(hmac_key) == unicode:
+            # Crypto requires byte strings
+            hmac_key = hmac_key.encode('utf8')
+        sig = HMAC.HMAC(key=hmac_key, msg=body).hexdigest()
     return '%s:%s' % (sig, body)
 
 def _parse_security_token(token):
@@ -111,7 +115,11 @@ def _parse_security_token(token):
         plaintext = body
     else:
         key_storage = KeyStorage.get()
-        computed_sig = HMAC.HMAC(key=key_storage.hmac_key,
+        hmac_key = key_storage.hmac_key
+        if type(hmac_key) == unicode:
+            # Crypto requires byte strings
+            hmac_key = hmac_key.encode('utf8')
+        computed_sig = HMAC.HMAC(key=hmac_key,
                                  msg=body).hexdigest()
         if sig != computed_sig:
             logging.warn('Malformed token: invalid signature')
