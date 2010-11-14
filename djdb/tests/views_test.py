@@ -73,12 +73,14 @@ class AutocompleteViewsTestCase(TestCase):
         # Create some test albums.
         alb1 = models.Album(title=u"This Nation's Saving Grace",
                             album_id=12345,
+                            label=u"Some Label",
                             import_timestamp=datetime.datetime.now(),
                             album_artist=art1,
                             num_tracks=123,
                             parent=idx.transaction)
         alb2 = models.Album(title=u"Another Green World",
                             album_id=67890,
+                            label=u"Some Label",
                             import_timestamp=datetime.datetime.now(),
                             album_artist=art2,
                             num_tracks=456,

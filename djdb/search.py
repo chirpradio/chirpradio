@@ -320,15 +320,18 @@ def _parse_query_string(query_str):
     word.
 
     Returns:
-      A sequence of 3-tuples of rules, of the form
-        (logic, flavor, arg)
-      all of which are strings.
+      A sequence of tuples of rules, of the form
+        (logic, flavor, arg, field, end)
+      all of which are strings except for field and end.
 
       If logic == IS_REQUIRED, text must match the rule to be returned.
       If logic == IS_FORBIDDEN, text must not match the rule to be returned.
       If flavor == IS_TERM, arg is a term string.  
       If flavor == IS_PREFIX, arg is a term prefix string.
       If flavor == IS_RANGE, arg is a range of values.
+      
+      field (can be None) is the name of a field to search on.
+      end (can be None) is the last term in a series of terms
     """
     query_str_parts = query_str.split()
     query = []
@@ -377,8 +380,6 @@ def _parse_query_string(query_str):
                 continue
             query.append((logic, flavor, subp, field, end))
 
-    for q in query:
-        print q
     return query
 
 
