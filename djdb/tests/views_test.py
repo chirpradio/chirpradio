@@ -246,6 +246,12 @@ class ReviewViewsTestCase(TestCase):
                                   num_tracks=1)
         self.album.put()
 
+    def tearDown(self):
+        for o in models.Document.all():
+            o.delete()
+        for o in models.Album.all():
+            o.delete()
+
     def test_new_review(self):
         # Test get - emty form.
         response = self.client.get(
@@ -264,6 +270,7 @@ class ReviewViewsTestCase(TestCase):
         self.assertEqual(album.reviews[-1].text, 'Album review.')
         self.assertEqual(album.reviews[-1].author.key(), self.user.key())
 
+    def test_new_review_with_user(self):
         # Test save review with user field of existing user.
         vars = {'save': 'Save',
                 'text': 'Album review.',
@@ -277,6 +284,7 @@ class ReviewViewsTestCase(TestCase):
         self.assertEqual(str(album.reviews[-1].author.key()),
                          str(self.review_user.key()))
 
+    def test_new_review_no_user(self):
         # Test save review with user field of non-existing user.
         vars = {'save': 'Save',
                 'text': 'Album review.',
