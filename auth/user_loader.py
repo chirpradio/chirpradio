@@ -1,10 +1,9 @@
 
 """Bulk upload users from CSV file.
 
-To bulk upload users, you first need to run "adhoc\export_users.py <sqllite3-database>". Make sure
-the GAE directory is in your path. Then from <app-directory> do::
+To bulk upload users, you first need to run "./adhoc/export_users.py <sqllite3-database>". Then from <app-directory> do::
 
-    python2.5 ./appcfg.py upload_data --config_file auth/user_loader.py --filename=adhoc\users.csv --kind=User --url=http://localhost:8000/remote_api <app-directory>
+    python2.5 ./appcfg.py upload_data --config_file auth/user_loader.py --filename=./users.csv --kind=User --url http://localhost:8000/remote_api <app-directory>
 
 NOTE: the appcfg.py to use is the one in the project directory, not your 
 global one.
