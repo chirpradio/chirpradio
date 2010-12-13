@@ -336,9 +336,11 @@ def album_info_page(request, album_id_str, ctx_vars=None):
         else:
             album_form = forms.PartialAlbumForm(request.POST)
             if album_form.is_valid() and "update" in request.POST:
-                album.label = album_form.cleaned_data["label"]
-                album.year = album_form.cleaned_data["year"]
-                AutoRetry(album).save()
+                # Update album and search index.
+                idx = search.Indexer(album.parent_key())
+                idx.update_album(album, {"label" : album_form.cleaned_data["label"],
+                                         "year" : album_form.cleaned_data["year"]})
+                idx.save()
         ctx_vars["album_form"] = album_form
     
     label = album.label

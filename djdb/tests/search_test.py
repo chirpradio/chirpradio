@@ -309,6 +309,7 @@ class SearchTestCase(unittest.TestCase):
                              key_name="art2")
         # Create some test single-artist albums.
         alb1 = models.Album(title=u"This Nation's Saving Grace",
+                            year=1985,
                             album_id=12345,
                             label=u"Some Label",
                             import_timestamp=datetime.datetime.now(),

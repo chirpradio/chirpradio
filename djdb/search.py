@@ -111,16 +111,19 @@ def strip_tags(text):
 class Indexer(object):
     """Builds a searchable index of text associated with datastore entities."""
 
-    def __init__(self):
+    def __init__(self, transaction=None):
         # A cache of our pending, to-be-written SearchMatches objects.
         self._matches = {}
         # Additional objects to save at the same time as the
         # SearchMatches.
         self._txn_objects_to_save = []
-        # We use the current time in microseconds as the transaction ID.
-        timestamp = int(1000000*time.time())
-        self._transaction = db.Key.from_path("IndexerTransaction",
-                                             timestamp)
+        if transaction:
+            self._transaction = transaction
+        else:
+            # We use the current time in microseconds as the transaction ID.
+            timestamp = int(1000000*time.time())
+            self._transaction = db.Key.from_path("IndexerTransaction",
+                                                 timestamp)
 
     @property
     def transaction(self):
@@ -132,19 +135,27 @@ class Indexer(object):
         """
         return self._transaction
 
-    def _get_matches(self, entity_kind, field, term):
+    def _get_matches(self, entity_kind, field, term, key=None):
         """Returns a cached SearchMatches object for a given kind and term."""
-        key = (entity_kind, field, term)
-        sm = self._matches.get(key)
+        _key = (entity_kind, field, term)
+        sm = self._matches.get(_key)
         if sm is None:
-            sm = models.SearchMatches(generation=_GENERATION,
-                                      entity_kind=entity_kind,
-                                      field=field,
-                                      term=term,
-                                      parent=self.transaction)
-            self._matches[key] = sm
+            if key:
+                q = models.SearchMatches.all()
+                q.filter("entity_kind =", entity_kind)
+                q.filter("field =", field)
+                q.filter("term =", term)
+                q.filter("matches =", key)
+                sm = q.fetch(1)[0]
+            else:
+                sm = models.SearchMatches(generation=_GENERATION,
+                                          entity_kind=entity_kind,
+                                          field=field,
+                                          term=term,
+                                          parent=self.transaction)
+            self._matches[_key] = sm
         return sm
-
+        
     def add_key(self, key, field, text):
         """Prepare to index content associated with a datastore key.
 
@@ -176,10 +187,12 @@ class Indexer(object):
         assert album.parent_key() == self.transaction
         self.add_key(album.key(), "title", strip_tags(album.title))
         self.add_key(album.key(), "artist", album.artist_name)
-        self.add_key(album.key(), "label", album.label)
-        self.add_key(album.key(), "year", unicode(album.year))
+        if album.label is not None:
+            self.add_key(album.key(), "label", album.label)
+        if album.year is not None:
+            self.add_key(album.key(), "year", unicode(album.year))
         self._txn_objects_to_save.append(album)
-
+            
     def add_track(self, track):
         """Prepare to index metdata associated with a Track instance.
 
@@ -191,6 +204,39 @@ class Indexer(object):
         self.add_key(track.key(), "album", strip_tags(track.album.title))
         self.add_key(track.key(), "artist", track.artist_name)
         self._txn_objects_to_save.append(track)
+
+    def update_key(self, key, field, old_text, text):
+        """Update index content associated with a datastore key.
+        
+        Args:
+          key: A db.Key instance.
+          field: A field identifier string.
+          old_text: A unicode string, the old text, to be updated with text.
+          text: A unicode string, the content to be indexed.
+        """
+        # Remove old terms.
+        for term in set(explode(old_text)):
+            sm = self._get_matches(key.kind(), field, term, key)
+            sm.matches.remove(key)
+            
+        # Add new terms.
+        self.add_key(key, field, text)
+
+    def update_album(self, album, fields):
+        """Update index metadata associated with an Album instance.
+        
+        Args:
+          album: An Album instance.
+          fields: A dictionary of field/property names to update and new values.
+          
+        album must have the indexer's transaction as its parent key.
+        album is saved when the indexer's save() method is called.
+        """
+        assert album.parent_key() == self.transaction
+        for field, value in fields.iteritems():
+            self.update_key(album.key(), field, unicode(getattr(album, field)), unicode(value))
+            setattr(album, field, value)
+        self._txn_objects_to_save.append(album)
 
     def save(self):
         """Write all pending index data into the Datastore."""

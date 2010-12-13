@@ -180,20 +180,29 @@ class UpdateAlbumViewsTestCase(TestCase):
         
         # Get user.
         self.user = models.User.all().filter('email =', 'test@test.com')[0]
-    
+
+        # Create an search indexer.
+        idx = search.Indexer()
+
         # Create an artist.
-        self.artist = models.Artist(name='Artist')
+        self.artist = models.Artist(name=u'Artist',
+                                    parent=idx.transaction)
         self.artist.put()
+        idx.add_artist(self.artist)
         
         # Create an album.
-        self.album = models.Album(title='Album',
-                                  label='Label',
+        self.album = models.Album(title=u'Album',
+                                  label=u'Label',
                                   year=2010,
                                   album_id=1,
                                   import_timestamp=datetime.datetime.now(),
                                   album_artist=self.artist,
-                                  num_tracks=1)
+                                  num_tracks=1,
+                                  parent=idx.transaction)
         self.album.put()
+        idx.add_album(self.album)
+
+        idx.save()
 
     def test_update_album(self):
         vars = {'label': 'New Label',
