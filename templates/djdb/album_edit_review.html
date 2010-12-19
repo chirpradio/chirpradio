@@ -32,37 +32,38 @@ Please proofread your review carefully before you submit it.
 
 <form action="{{ review.key }}" method="post">
 {% if preview %}
-<p>
+    <p>
 The text of your review will look like this when it is displayed:
-</p>
-<div style="BACKGROUND-COLOR: #f0f0f0; PADDING: 10px; BORDER: black 3px solid">
-<p>
-<blockquote>
+    </p>
+    <div style="BACKGROUND-COLOR: #f0f0f0; PADDING: 10px; BORDER: black 3px solid">
+        <p>
+            <blockquote>
 {{ preview|safe }}
-</blockquote>
+            </blockquote>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by
 {{ author_name }}
 on {{ chicago_now|date:"F j, Y P" }}</small>
-</p>
-</div>
-<p>
+        </p>
+    </div>
+    <p>
 If this looks good to you, click on "Save".  Otherwise you can
 continue to edit the post in the form below.
-</p>
-<input type="submit" name="save" value="Save">
-<hr><br><br>
+    </p>
+    <input type="submit" name="save" value="Save"/>
+    <hr/><br/><br/>
 {% endif %}
-<p>
+    <p>
 You can use basic HTML markup in the body of your review; unsupported
 HTML will be stripped out automatically.
-</p>
-<p>
+    </p>
+    <p>
 The allowed HTML tags are: {{ valid_html_tags }}
-</p>
-<table>
+    </p>
+    <table>
   {{ form.as_table }}
-</table>
-<input id="id_author_key" type="hidden" name="author_key" value="{{ author_key }}"/>
-<input type="submit" name="preview" value="Preview">
+    </table>
+    <input id="id_author_key" type="hidden" name="author_key" value="{{ author_key }}"/>
+    <input type="submit" name="preview" value="Preview">
+</form>
 
 {% endblock %}

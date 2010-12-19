@@ -20,9 +20,13 @@
 <script type="text/javascript" 
     src="/media/common/js/jquery/jquery-1.3.1.js"></script>
 <script type="text/javascript" 
+    src="/media/common/js/jquery-autocomplete/jquery.autocomplete.js"></script>
+<script type="text/javascript" 
     src="/media/djdb/js/djdb.js"></script>
 <script type="text/javascript"
     src="/media/djdb/js/djdb_delete_review.js"></script>
+<script type="text/javascript"
+    src="/media/djdb/js/djdb_tags.js"></script>
 {% endblock %}
 
 {% if msg %}
@@ -93,12 +97,32 @@ No reviews yet!  You could be the first to
 <a href="/djdb/album/{{ album.album_id }}/new_review">write a review</a> of this album.
 {% endif %}
 
-{% if album.current_tags %}
 <h3>Album Tags</h3>
+<table><tr><td>
+<div class="tags" style="display: inline">
 {% for tag in album.sorted_current_tags %}
-[{{ tag }}]
+    <div class="tag">
+{{ tag }}
+        <img class="remove_tag" style="display: none" src="/media/common/img/remove.png" title="Remove tag"/>
+    </div>
 {% endfor %}
+{% if user.is_music_director %}
+    <select class="tag" style="display: none">
+        <option>-</option>
+  {% if user.is_music_director %}
+        <option>Other</option>
+  {% endif %}
+  {% for tag in album_tags %}
+        <option>{{ tag }}</option>
+  {% endfor %}
+    </select>
+    <input class="tag" style="display: none"/>
 {% endif %}
+</div>
+{% if user.is_music_director %}
+<img class="add_tag" src="/media/common/img/add.png" title="Add a new tag"/>
+{% endif %}
+</td></tr></table>
 
 <h3>Tracks</h3>
 <form method="post" name="djdbTracksForm" action="update">
@@ -118,8 +142,8 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
             class="checkbox{% if track.is_explicit %} explicit{% endif %}{% if track.is_recommended %} recommended{% endif %}"
             name="checkbox_{{ forloop.counter }}"/></td>
 <td>
-{% if track.is_explicit %}<img height="16" width="16" src="/media/common/img/bomb.png"/>{% endif %}
-{% if track.is_recommended %}<img height="16" width="16" src="/media/common/img/thumbsup.jpg"/>{% endif %}
+{% if track.is_explicit %}<img height="16" width="16" src="/media/common/img/explicit_icon.png" title="Explicit lyrics"/>{% endif %}
+{% if track.is_recommended %}<img height="16" width="16" src="/media/common/img/recommended_icon.png" title="Recommended track"/>{% endif %}
 </td>
 <td>{{ track.track_num }}.</td>
 <td>{{ track.title }}</td>

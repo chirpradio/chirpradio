@@ -15,7 +15,7 @@
 ### limitations under the License.
 ###
 
-import datetime
+from datetime import datetime, timedelta
 
 from google.appengine.ext import db
 from django import forms
@@ -48,21 +48,26 @@ class Form(forms.Form):
         if user.is_music_director:
             self.fields['author'] = forms.CharField(required=False)
 
-def fetch_recent(max_num_returned=10, author_key=None, bookmark=None, order="created"):
+def fetch_recent(max_num_returned=10, days=None, start_dt=None, author_key=None, order="created"):
     """Returns the most recent reviews, in reverse chronological order."""
+    if days is not None:
+        if start_dt:
+            end_dt = start_dt - timedelta(days=days)
+        else:
+            end_dt = datetime.now() - timedelta(days=days)
+    else:
+        end_dt = None
+
     rev_query = models.Document.all()
     rev_query.filter("doctype =", models.DOCTYPE_REVIEW)
     rev_query.order("-%s" % order)
     if author_key:
         author = db.get(author_key)
         rev_query.filter('author =', author)
-    if bookmark:
-        # %f only in Python 2.6
-        #date = datetime.datetime.strptime(bookmark, "%Y-%m-%d %H:%M:%S.%f")
-        parts = bookmark.split('.')
-        date = datetime.datetime.strptime(parts[0], "%Y-%m-%d %H:%M:%S")
-        date = date.replace(microsecond=int(parts[1]))
-        rev_query.filter('%s <=' % order, date)
+    if start_dt:
+        rev_query.filter('created <', start_dt)
+    if end_dt:
+        rev_query.filter('created >=', end_dt)
     return AutoRetry(rev_query).fetch(max_num_returned)
 
 def fetch_all():

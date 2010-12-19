@@ -31,8 +31,8 @@ import re
 DOCTYPE_REVIEW = "review"  # A review, subject must be an Album object.
 DOCTYPE_COMMENT = "comment" # An album comment, subject must be an Album object.
 
-EXPLICIT_TAG = "explicit"
-RECOMMENDED_TAG = "recommended"
+EXPLICIT_TAG = u"explicit"
+RECOMMENDED_TAG = u"recommended"
 
 # List of album categories.
 ALBUM_CATEGORIES = ['core', 'local_current', 'local_classic', 'heavy_rotation', 'light_rotation']
@@ -505,7 +505,7 @@ class Track(db.Model):
         """Returns True if the [Recommended] tag is set on this track."""
         return self.has_tag(RECOMMENDED_TAG)
 
-
+        
 ############################################################################
 
 
@@ -602,6 +602,18 @@ class Document(db.Model):
 ############################################################################
 
 
+class Tag(db.Model):
+    """A tag that may be assigned to albums and artists.
+
+    Attributes:
+      name: The name of the tag.
+      description: A short description of the tag.
+    """
+    name = db.StringProperty(required=True)
+    
+    description = db.StringProperty()
+
+    
 class TagEdit(db.Model):
     """A user edit to an object's tags.
 

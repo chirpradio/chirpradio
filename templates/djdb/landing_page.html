@@ -26,16 +26,17 @@
 {% endif %}
 
 {% if not query_str %}
-<h2>Recent Reviews</h2>
-<ul>
-  {% for rev in recent_reviews %}
-  <li> <a href="{{ rev.subject.url }}">{{ rev.subject.album_artist.name }} / {{ rev.subject.title }},</a>
-reviewed by {{ rev.author }}
-&nbsp;&nbsp;
-  <small>Posted {{ rev.created_display|date:"F j, Y P" }}</small> </li>
-  {% endfor %}
+<h2>Recent Activity</h2>
+  {% for dt, items in recent_activity %}
+{{ dt|date:"D F j, Y P" }}
+<ul class="activity">
+    {% for item in items %}
+  <li class="activity_comment">{{ item|safe }}</li>
+    {% endfor %}
 </ul>
-<a href="/djdb/reviews">Read more reviews...</a>
+  {% endfor %}
+
+<a href="/djdb/activity">See more recent activity...</a>
 {% endif %}
 
 <h2>Search the Database</h2>
@@ -67,8 +68,8 @@ Our query language is very simple. Here are some illustrative examples:
   
 <li>"-foo" means "exclude all entities whose text contains the term "foo".</li><br/>
   <li>"foo*" means "find all entities whose text contains a term starting with the prefix "foo".</li><br/>
-  <li>"label:blah" means "find all entities whose given field (e.g., label) contains the term "blah".</li><br/>
-  <li>"label:blah*" means "find all entities whose given field (e.g., label) conains a term starting with the prefix "blah".</li><br/>
+  <li>"field:blah" means "find all entities whose given field contains the term "blah". The field may be one of the following: name, title, year, or tag.</li><br/>
+  <li>"field:blah*" means "find all entities whose given field conains a term starting with the prefix "blah".</li><br/>
   <li>"year:1970-1979" means "find all entities whose given field (e.g., year) falls within the range "1970" to "1979".</li>
 </ol>
 </p>
@@ -92,7 +93,7 @@ matching artist{{ query_results.Artist|pluralize }}</i><br/>
 <table>
     {% for artist in query_results.Artist %}
   <tr>
-    <td><a href="{{ artist.url}}">{{ artist.pretty_name }}</a></td>
+    <td><a href="{{ artist.url }}">{{ artist.pretty_name }}</a></td>
     <td>{{ artist.num_albums }} album{{ artist.num_albums|pluralize }}</td>
     <td>
       {% ifincrate user artist %}
@@ -233,6 +234,9 @@ Starts with: [
 <a href="/djdb/browse/artist/other">Other</a>
 ]
 </h3>
+<form method="post" action="/djdb/browse/album/random">
+    <input type="submit" name="RandomAlbums" value="Fetch Random Albums"/>
+<form>
 {% endif %}
 
 {% endblock %}

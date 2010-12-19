@@ -35,18 +35,105 @@ from djdb import review
 from djdb import comment
 from djdb import forms
 from djdb.models import Album
+from datetime import datetime, timedelta
+import random
 import re
 import tag_util
 
 log = logging.getLogger(__name__)
 
+def fetch_activity(num=None, days=None, start_dt=None):
+    activity = {}
+    
+    if num is None:
+        num = 999
+        
+    # Get recent reviews.
+    revs = review.fetch_recent(num, days=days, start_dt=start_dt)
+    for rev in revs:
+        dt = rev.created.strftime('%Y-%m-%d %H:%M %p')
+        if len(rev.text) > 100:
+            text = rev.text[0:100] + '... <a href="%s">Read more</a>' % rev.subject.url
+        else:
+            text = rev.text
+        item = """
+<li class="activity_review"><a href="%s">%s / %s</a> <b>reviewed</b> by <a href="">%s</a>.
+<blockquote>
+%s
+</blockquote></li>
+            """ % (
+            rev.subject.url, rev.subject.album_artist.name, rev.subject.title,
+            rev.author_display, text)
+        activity.setdefault(dt, []).append(item)
+            
+    # Get recent comments.
+    comments = comment.fetch_recent(num, days=days, start_dt=start_dt)
+    for com in comments:
+        dt = com.created.strftime('%Y-%m-%d %H:%M %p')
+        if len(com.text) > 100:
+            text = com.text[0:100] + '... <a href="%s">Read more</a>' % com.subject.url
+        else:
+            text = com.text
+        item = """
+<li class="activity_comment"><a href="%s">%s / %s</a> <b>commented</b> on by <a href="">%s</a>.
+<blockquote>
+%s
+</blockquote></li>
+            """% (
+            com.subject.url, com.subject.album_artist.name, com.subject.title,
+            com.author_display, text)
+        activity.setdefault(dt, []).append(item)
+        
+    # Get recent tag edits.
+    tag_edits = tag_util.fetch_recent(num, days=days, start_dt=start_dt)
+    for tag_edit in tag_edits:
+        dt = tag_edit.timestamp.strftime('%Y-%m-%d %H:%M %p')
+        for tag in tag_edit.added:
+            if tag == 'recommended':
+                item = '<li class="activity_recommended"><a href="%s">%s / %s / %s</a> <b>recommended</b> by <a href="">%s</a>.</li>' % (
+                    tag_edit.subject.album.url, tag_edit.subject.album.album_artist.name,
+                    tag_edit.subject.album.title, tag_edit.subject.title,
+                    tag_edit.author)
+            elif tag == 'explicit':
+                item = '<li class="activity_explicit"><a href="%s">%s / %s / %s</a> <b>marked explicit</b> by <a href="">%s</a>.</li>' % (
+                    tag_edit.subject.album.url, tag_edit.subject.album.album_artist.name,
+                    tag_edit.subject.album.title, tag_edit.subject.title,
+                    tag_edit.author)
+            else:
+                item = '<li class="activity_tag_add"><a href="%s">%s / %s</a> <b>tagged</b> as <b>%s</b> by <a href="">%s</a>.</li>' % (
+                    tag_edit.subject.url, tag_edit.subject.album_artist.name,
+                    tag_edit.subject.title, tag, tag_edit.author)
+            activity.setdefault(dt, []).append(item)
+        
+        for tag in tag_edit.removed:
+            if tag == 'recommended':
+                item = '<li class="activity_unrecommended"><a href="%s">%s / %s / %s</a> <b>unrecommended</b> by <a href="">%s</a>.</li>' % (
+                    tag_edit.subject.album.url, tag_edit.subject.album.album_artist.name,
+                    tag_edit.subject.album.title, tag_edit.subject.title,
+                    tag_edit.author)
+            elif tag == 'explicit':
+                item = '<li class="activity_unexplicit"><a href="%s">%s / %s / %s</a> <b>ummarked explicit</b> by <a href="">%s</a>.</li>' % (
+                    tag_edit.subject.album.url, tag_edit.subject.album.album_artist.name,
+                    tag_edit.subject.album.title, tag_edit.subject.title,
+                    tag_edit.author)
+            else:
+                item = '<li class="activity_tag_remove"><a href="%s">%s / %s</a> <b>untagged</b> as <b>%s</b> by <a href="">%s</a>.</li>' % (
+                    tag_edit.subject.url, tag_edit.subject.album_artist.name,
+                    tag_edit.subject.title, tag, tag_edit.author)
+            activity.setdefault(dt, []).append(item)
+    
+    # Prepare a sorted list for the template.
+    activity_list = [(datetime.strptime(dt, '%Y-%m-%d %H:%M %p'), items) for dt, items in sorted(activity.iteritems(), reverse=True)]
+    
+    return activity_list
+    
 def landing_page(request, ctx_vars=None):
     template = loader.get_template('djdb/landing_page.html')
     if ctx_vars is None : ctx_vars = {}
     ctx_vars['title'] = 'DJ Database'
 
-    # Grab recent reviews.
-    ctx_vars["recent_reviews"] = review.fetch_recent()
+    # Fetch recent activity.
+    ctx_vars["recent_activity"] = fetch_activity(days=5)
 
     if request.method == "POST":
         query_str = request.POST.get("query")
@@ -71,6 +158,33 @@ def landing_page(request, ctx_vars=None):
 
     # Add categories.
     ctx_vars["categories"] = models.ALBUM_CATEGORIES
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+def activity_page(request, ctx_vars=None):
+    template = loader.get_template('djdb/activity.html')
+    if ctx_vars is None:
+        ctx_vars = {}
+    ctx_vars['title'] = 'DJ Database Activity'
+    
+    days = 5
+    if request.method == 'GET':
+        start_dt = datetime.now()
+    else:
+        old_start_dt = request.POST.get('start_dt')
+        if request.POST.get('next'):
+            start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d %H:%M %p') \
+                - timedelta(days=days)
+        else:
+            start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d %H:%M %p') \
+                + timedelta(days=days)
+            if start_dt > datetime.now():
+                start_dt = datetime.now()
+    
+    ctx_vars['start_dt'] = start_dt.strftime('%Y-%m-%d %H:%M %p')
+    ctx_vars['days'] = days
+    ctx_vars['recent_activity'] = fetch_activity(days=days, start_dt=start_dt)
+            
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
@@ -162,6 +276,15 @@ def update_albums(request) :
     else :
         return landing_page(request)
 
+def album_add_tag(request, album_id_str):
+    album = _get_album_or_404(album_id_str)
+    tag_util.add_tag_and_save(request.user, album, request.GET.get('tag'), True)
+    
+def album_remove_tag(request, album_id_str):
+    album = _get_album_or_404(album_id_str)
+    tag_util.remove_tag_and_save(request.user, album, request.GET.get('tag'))
+    return http.HttpResponse()
+
 def update_tracks(request, album_id_str):
     album = _get_album_or_404(album_id_str)
     mark_as = request.POST.get('mark_as')
@@ -189,11 +312,11 @@ def update_tracks(request, album_id_str):
 
 def browse_page(request, entity_kind, start_char, ctx_vars=None):
     allowed = map(chr, range(65, 91))
-    allowed.extend(['all', '0', 'other'])
+    allowed.extend(['all', '0', 'other', 'random'])
     if start_char not in allowed:
         return http.HttpResponse(status=404)
 
-    default_page_size = 25
+    default_page_size = 10
     
     template = loader.get_template('djdb/browse_page.html')
     if ctx_vars is None : ctx_vars = {}
@@ -227,28 +350,41 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
     else:
         return http.HttpResponse(status=404)
 
-    query = pager.PagerQuery(model)
-    if start_char == '0':
-        query.filter("%s >=" % field, "0")
-        query.filter("%s <" % field, u"9" + u"\uffff")
-    elif start_char == 'other':
-        query.filter("%s >=" % field, u"\u0021")
-        query.filter("%s <" % field, u"\u0030")
-    elif start_char != 'all':
-        query.filter("%s >=" % field, start_char)
-        query.filter("%s <" % field, start_char + u"\uffff")
-    if category is not None:
-        query.filter("category =", category)
-    query.filter("revoked =", False)
-    query.order(field)
-    prev, items, next = query.fetch(page_size, bookmark)
+    if start_char == 'random':
+        items = []
+        alb = models.Album.all().order('album_id').fetch(1)
+        min = alb[0].album_id
+        alb = models.Album.all().order('-album_id').fetch(1)
+        max = alb[0].album_id
+        for i in range(page_size):
+            r = random.randrange(min, max)
+            alb = models.Album.all().order('album_id').filter('album_id >=', r).fetch(1);
+            items.append(alb[0])
+        prev = None
+        next = None
+    else:
+        query = pager.PagerQuery(model)
+        if start_char == '0':
+            query.filter("%s >=" % field, "0")
+            query.filter("%s <" % field, u"9" + u"\uffff")
+        elif start_char == 'other':
+            query.filter("%s >=" % field, u"\u0021")
+            query.filter("%s <" % field, u"\u0030")
+        elif start_char != 'all':
+            query.filter("%s >=" % field, start_char)
+            query.filter("%s <" % field, start_char + u"\uffff")
+        if category is not None:
+            query.filter("category =", category)
+        query.filter("revoked =", False)
+        query.order(field)
+        prev, items, next = query.fetch(page_size, bookmark)
     
     ctx_vars["bookmark"] = bookmark
     ctx_vars["items"] = items
     ctx_vars["prev"] = prev
     ctx_vars["next"] = next
     ctx_vars["page_size"] = page_size
-    ctx_vars["page_sizes"] = [25, 50, 100]
+    ctx_vars["page_sizes"] = [10, 25, 50, 100]
     ctx_vars["category"] = category
 
     ctx = RequestContext(request, ctx_vars)
@@ -326,13 +462,17 @@ def album_info_page(request, album_id_str, ctx_vars=None):
 
     if ctx_vars is None : ctx_vars = {}
     ctx_vars["album"] = album
+    ctx_vars["album_tags"] = []
+    for tag in models.Tag.all().order('name'):
+        if tag.name not in album.current_tags:
+            ctx_vars["album_tags"].append(tag.name)
     ctx_vars["user"] = request.user
             
     if request.user.is_music_director:
         album_form = None
         if request.method == "GET":
             album_form = forms.PartialAlbumForm({'label': album.label,
-                                           'year': album.year})
+                                                 'year': album.year})
         else:
             album_form = forms.PartialAlbumForm(request.POST)
             if album_form.is_valid() and "update" in request.POST:
@@ -390,6 +530,7 @@ def album_edit_review(request, album_id_str, review_key=None):
                 else:
                     ctx_vars["author_key"] = request.user.key()
                     ctx_vars["author_name"] = request.user
+                ctx_vars["tags"] = request.POST.getlist("tags[]")
             elif "save" in request.POST:
                 if request.POST.get('author_key'):
                     author = AutoRetry(db).get(request.POST.get('author_key'))

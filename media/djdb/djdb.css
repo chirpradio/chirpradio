@@ -93,3 +93,54 @@ div.search_help {
   overflow: auto;
   height: 100px;
 }
+
+div.tag {
+  border: 1px solid #666;
+  margin: 2px;
+  padding: 2px;
+  display: inline;
+}
+
+ul.activity {
+  padding-left: 5px;
+}
+li.activity_comment {
+  list-style-type: none;
+  background: url('/media/common/img/comment_icon.png') left top no-repeat;
+  padding-left: 20px;
+}
+li.activity_review {
+  list-style-type: none;
+  background: url('/media/common/img/review_icon.png') left top no-repeat;
+  padding-left: 20px;
+}
+li.activity_tag_add {
+  list-style-type: none;
+  background: url('/media/common/img/tag_add_icon.png') left top no-repeat;
+  padding-left: 20px;
+}
+li.activity_tag_remove {
+  list-style-type: none;
+  background: url('/media/common/img/tag_remove_icon.png') left top no-repeat;
+  padding-left: 20px;
+}
+li.activity_recommended {
+  list-style-type: none;
+  background: url('/media/common/img/recommended_icon.png') left top no-repeat;
+  padding-left: 20px;
+}
+li.activity_unrecommended {
+  list-style-type: none;
+  background: url('/media/common/img/unrecommended_icon.png') left top no-repeat;
+  padding-left: 20px;
+}
+li.activity_explicit {
+  list-style-type: none;
+  background: url('/media/common/img/explicit_icon.png') left top no-repeat;
+  padding-left: 20px;
+}
+li.activity_unexplicit {
+  list-style-type: none;
+  background: url('/media/common/img/unexplicit_icon.png') left top no-repeat;
+  padding-left: 20px;
+}

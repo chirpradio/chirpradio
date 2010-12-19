@@ -205,6 +205,19 @@ class Indexer(object):
         self.add_key(track.key(), "artist", track.artist_name)
         self._txn_objects_to_save.append(track)
 
+    def remove_key(self, key, field, text):
+        for term in set(explode(text)):
+            sm = self._get_matches(key.kind(), field, term, key)
+            sm.matches.remove(key)
+            if not sm.matches:
+                # Remove empty search index from datastore.
+                AutoRetry(db).delete(sm)
+
+                # Remove cached entry.
+                _key = (key.kind(), field, term)
+                if _key in self._matches:
+                    del self._matches[_key]
+                    
     def update_key(self, key, field, old_text, text):
         """Update index content associated with a datastore key.
         
@@ -220,7 +233,8 @@ class Indexer(object):
             sm.matches.remove(key)
             
         # Add new terms.
-        self.add_key(key, field, text)
+        if text is not None:
+            self.add_key(key, field, text)
 
     def update_album(self, album, fields):
         """Update index metadata associated with an Album instance.
@@ -700,9 +714,10 @@ def simple_music_search(query_str, max_num_results=None, entity_kind=None,
         reviewed = True
 
     # Next, filter out the keys for tracks that do not have a title match.
+    # Allow search on the tag field for tracks.
     keys_to_fetch = []
     for key, fields in all_matches.iteritems():
-        if key.kind() != "Track" or "title" in fields:
+        if key.kind() != "Track" or "title" in fields or "tag" in fields:
             keys_to_fetch.append(key)
 
     # Fetch all of the specified keys from the datastore and construct a

@@ -32,6 +32,9 @@ urlpatterns = patterns(
     # Landing page
     (r'^/?$', 'djdb.views.landing_page'),
     
+    # Activity page
+    (r'activity', 'djdb.views.activity_page'),
+    
     # Reviews page
     (r'reviews', 'djdb.views.reviews_page'),
     
@@ -66,6 +69,10 @@ urlpatterns = patterns(
     (r'album/(.*)/unhide_comment/(.*)', 'djdb.views.album_hide_unhide_comment'),
     (r'album/(.*)/delete_comment/(.*)', 'djdb.views.album_delete_comment'),
     (r'album/(.*)/delete_comment', 'djdb.views.album_delete_comment'),
+    
+    # Album tags.
+    (r'album/(.*)/add_tag', 'djdb.views.album_add_tag'),
+    (r'album/(.*)/remove_tag', 'djdb.views.album_remove_tag'),
     
     # Album search for jquery.autocomplete
     (r'album/search\.txt', 'djdb.views.album_search_for_autocomplete'),

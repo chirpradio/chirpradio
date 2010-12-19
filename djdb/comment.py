@@ -15,8 +15,9 @@
 ### limitations under the License.
 ###
 
-from django import forms
+from datetime import datetime, timedelta
 
+from django import forms
 from djdb import models
 from common.autoretry import AutoRetry
 
@@ -41,12 +42,24 @@ class Form(forms.Form):
                            min_length=10, max_length=20000)
 
 
-def fetch_recent(max_num_returned=10):
+def fetch_recent(max_num_returned=10, days=None, start_dt=None):
     """Returns the most recent comments, in reverse chronological order."""
-    rev_query = models.Document.all()
-    rev_query.filter("doctype =", models.DOCTYPE_COMMENT)
-    rev_query.order("-created")
-    return AutoRetry(rev_query).fetch(max_num_returned)
+    if days is not None:
+        if start_dt:
+            end_dt = start_dt - timedelta(days=days)
+        else:
+            end_dt = datetime.now() - timedelta(days=days)
+    else:
+        end_dt = None
+
+    com_query = models.Document.all()
+    com_query.filter("doctype =", models.DOCTYPE_COMMENT)
+    com_query.order("-created")
+    if start_dt:
+        com_query.filter("created <", start_dt)
+    if end_dt:
+        com_query.filter("created >=", end_dt)
+    return AutoRetry(com_query).fetch(max_num_returned)
 
 def get_or_404(doc_key):
     doc = models.Document.get(doc_key)
