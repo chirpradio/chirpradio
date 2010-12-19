@@ -1,0 +1,37 @@
+{% extends "djdb/internal_page.html" %}
+
+{% load common_extras %}
+{% load djdb_extras %}
+
+{% block breadcrumbs %}
+<a href="/">chipradio home</a> /
+<a href="/djdb/">DJ Database home</a>
+{% endblock %}
+
+{% block content %}
+
+<form action="/djdb/activity" method="post">
+  <input type="submit" name="prev" onclick="document.paging.bookmark.value='{{ prev }}'" value="Previous"/>
+  <input type="submit" name="next" onclick="document.paging.bookmark.value='{{ next }}'" value="Next"/>
+  <input type="hidden" name="start_dt" value="{{ start_dt }}"/>
+  <input type="hidden" name="days" value="{{ days }}"/>
+</form>
+
+<br/>
+{% for dt, items in recent_activity %}
+{{ dt|date:"D F j, Y P" }}
+<ul class="activity">
+  {% for item in items %}
+  <li class="activity_comment">{{ item|safe }}</li>
+  {% endfor %}
+</ul>
+{% endfor %}
+
+<form action="/djdb/activity" method="post">
+  <input type="submit" name="prev" onclick="document.paging2.bookmark.value='{{ prev }}'" value="Previous"/>
+  <input type="submit" name="next" onclick="document.paging2.bookmark.value='{{ next }}'" value="Next"/>
+  <input type="hidden" name="start_dt" value="{{ start_dt }}"/>
+  <input type="hidden" name="days" value="{{ days }}"/>
+</form>
+
+{% endblock %}
