@@ -51,7 +51,7 @@ def fetch_activity(num=None, days=None, start_dt=None):
     # Get recent reviews.
     revs = review.fetch_recent(num, days=days, start_dt=start_dt)
     for rev in revs:
-        dt = rev.created.strftime('%Y-%m-%d %H:%M %p')
+        dt = rev.created.strftime('%Y-%m-%d %H:%M')
         if len(rev.text) > 100:
             text = rev.text[0:100] + '... <a href="%s">Read more</a>' % rev.subject.url
         else:
@@ -69,7 +69,7 @@ def fetch_activity(num=None, days=None, start_dt=None):
     # Get recent comments.
     comments = comment.fetch_recent(num, days=days, start_dt=start_dt)
     for com in comments:
-        dt = com.created.strftime('%Y-%m-%d %H:%M %p')
+        dt = com.created.strftime('%Y-%m-%d %H:%M')
         if len(com.text) > 100:
             text = com.text[0:100] + '... <a href="%s">Read more</a>' % com.subject.url
         else:
@@ -87,7 +87,7 @@ def fetch_activity(num=None, days=None, start_dt=None):
     # Get recent tag edits.
     tag_edits = tag_util.fetch_recent(num, days=days, start_dt=start_dt)
     for tag_edit in tag_edits:
-        dt = tag_edit.timestamp.strftime('%Y-%m-%d %H:%M %p')
+        dt = tag_edit.timestamp.strftime('%Y-%m-%d %H:%M')
         for tag in tag_edit.added:
             if tag == 'recommended':
                 item = '<li class="activity_recommended"><a href="%s">%s / %s / %s</a> <b>recommended</b> by <a href="">%s</a>.</li>' % (
@@ -123,7 +123,7 @@ def fetch_activity(num=None, days=None, start_dt=None):
             activity.setdefault(dt, []).append(item)
     
     # Prepare a sorted list for the template.
-    activity_list = [(datetime.strptime(dt, '%Y-%m-%d %H:%M %p'), items) for dt, items in sorted(activity.iteritems(), reverse=True)]
+    activity_list = [(datetime.strptime(dt, '%Y-%m-%d %H:%M'), items) for dt, items in sorted(activity.iteritems(), reverse=True)]
     
     return activity_list
     
@@ -173,15 +173,15 @@ def activity_page(request, ctx_vars=None):
     else:
         old_start_dt = request.POST.get('start_dt')
         if request.POST.get('next'):
-            start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d %H:%M %p') \
+            start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d %H:%M') \
                 - timedelta(days=days)
         else:
-            start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d %H:%M %p') \
+            start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d %H:%M') \
                 + timedelta(days=days)
             if start_dt > datetime.now():
                 start_dt = datetime.now()
     
-    ctx_vars['start_dt'] = start_dt.strftime('%Y-%m-%d %H:%M %p')
+    ctx_vars['start_dt'] = start_dt
     ctx_vars['days'] = days
     ctx_vars['recent_activity'] = fetch_activity(days=days, start_dt=start_dt)
             
