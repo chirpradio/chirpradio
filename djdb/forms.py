@@ -42,3 +42,7 @@ class ListReviewsForm(forms.Form):
 #    category = forms.ChoiceField(required=False, choices=ALBUM_CATEGORY_CHOICES)
     page_size = forms.ChoiceField(required=False, choices=PAGE_SIZE_CHOICES)
     order = forms.ChoiceField(required=False, choices=ORDER_CHOICES)
+
+class TagForm(forms.Form):
+    name = forms.CharField(required=True)
+    description = forms.CharField(widget=forms.Textarea, required=False)

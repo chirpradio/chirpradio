@@ -16,7 +16,10 @@
   <div class="breadcrumbs">{% block breadcrumbs %}{% endblock %}</div>
   <div id="djdb_header">
     <div id="djdb_links">
-      <a href="/djdb/crate">Go to your crate.</a>
+    {% if user.is_music_director %}
+      <a href="/djdb/tags">Edit tags</a> |
+    {% endif %}
+      <a href="/djdb/crate">Go to your crate</a>
     </div>
     <div id="djdb_search">
       <form action="/djdb/" method="post">

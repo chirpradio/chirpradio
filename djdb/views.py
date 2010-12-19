@@ -276,6 +276,74 @@ def update_albums(request) :
     else :
         return landing_page(request)
 
+def _get_tag_or_404(tag_name):
+    q = models.Tag.all().filter("name =", tag_name)
+    tag = None
+    for tag in AutoRetry(q).fetch(1):
+        pass
+    if tag is None:
+        return http.HttpResponse(status=404)
+    return tag
+
+@require_role(roles.MUSIC_DIRECTOR)
+def list_tags(request, tag_name=None):
+    template = loader.get_template('djdb/tags.html')
+    ctx_vars = {'title': 'Tags',
+                'tags': models.Tag.all().order('name')}
+    
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+@require_role(roles.MUSIC_DIRECTOR)
+def new_tag(request):
+    template = loader.get_template('djdb/tag_form.html')
+    ctx_vars = {'title': 'New Tag',
+                'new': True}
+    
+    if request.method == 'GET':
+        ctx_vars['form'] = forms.TagForm()
+    else:
+        form = forms.TagForm(request.POST)
+        ctx_vars['form'] = form
+        if form.is_valid():
+            # Check if already present.
+            q = models.Tag.all().filter('name =', form.cleaned_data['name'])
+            if len(q.fetch(1)) == 1:
+                ctx_vars['error'] = 'Tag already exists.'
+            else:
+                tag = models.Tag(name=form.cleaned_data['name'],
+                                 description=form.cleaned_data['description'])
+                AutoRetry(db).put(tag)
+                return http.HttpResponseRedirect('/djdb/tags')
+        
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+@require_role(roles.MUSIC_DIRECTOR)
+def edit_tag(request, tag_name):
+    template = loader.get_template('djdb/tag_form.html')
+    ctx_vars = {'title': 'Edit Tag',
+                'edit': True}
+    
+    # Get tag.
+    tag = _get_tag_or_404(tag_name)
+    ctx_vars['tag'] = tag
+
+    if request.method == 'GET':
+        ctx_vars['form'] = forms.TagForm({'name': tag.name,
+                                          'description': tag.description})
+    else:
+        form = forms.TagForm(request.POST)
+        ctx_vars['form'] = form
+        if form.is_valid():
+            tag.name = form.cleaned_data['name']
+            tag.description = form.cleaned_data['description']
+            AutoRetry(tag).save()
+            return http.HttpResponseRedirect('/djdb/tags')
+        
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
 def album_add_tag(request, album_id_str):
     album = _get_album_or_404(album_id_str)
     tag_util.add_tag_and_save(request.user, album, request.GET.get('tag'), True)

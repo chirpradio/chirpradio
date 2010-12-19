@@ -71,6 +71,9 @@ urlpatterns = patterns(
     (r'album/(.*)/delete_comment', 'djdb.views.album_delete_comment'),
     
     # Album tags.
+    (r'tags$', 'djdb.views.list_tags'),
+    (r'tags/new', 'djdb.views.new_tag'),
+    (r'tag/(.*)', 'djdb.views.edit_tag'),
     (r'album/(.*)/add_tag', 'djdb.views.album_add_tag'),
     (r'album/(.*)/remove_tag', 'djdb.views.album_remove_tag'),
     

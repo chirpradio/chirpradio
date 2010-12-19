@@ -17,15 +17,20 @@
 
 import unittest
 from google.appengine.ext import db
-from auth import User
+from auth import User, roles
 from djdb import models
-
+from django.test.client import Client
 
 class TagEditTestCase(unittest.TestCase):
-
+    def setUp(self):
+        # Log in.
+        self.client = Client()
+        assert self.client.login(email='test@test.com', roles=[roles.DJ])
+        
+        # Get user.
+        self.user = models.User.all().filter('email =', 'test@test.com')[0]
+        
     def test_basic(self):
-        user = User(email="foo@bar.com")
-        user.save()
         class MockObj(db.Model):
             import_tags = []
         obj = MockObj()
@@ -34,15 +39,55 @@ class TagEditTestCase(unittest.TestCase):
         self.assertEqual(set(obj.import_tags),
                          models.TagEdit.fetch_and_merge(obj))
 
-        te1 = models.TagEdit(subject=obj, author=user)
+        te1 = models.TagEdit(subject=obj, author=self.user)
         te1.added  = ["Baz"]
         te1.save()
         self.assertEqual(set(["Foo", "Bar", "Baz"]),
                          models.TagEdit.fetch_and_merge(obj))
 
-        te2 = models.TagEdit(subject=obj, author=user)
+        te2 = models.TagEdit(subject=obj, author=self.user)
         te2.added  = ["Zap"]
         te2.removed = ["Baz"]
         te2.save()
         self.assertEqual(set(["Foo", "Bar", "Zap"]),
                          models.TagEdit.fetch_and_merge(obj))
+
+    def test_add(self):
+        # Not music director.
+        response = self.client.post("/djdb/tags/new", {'name': 'TestTag',
+                                                       'description': 'descr'})
+        self.assertEqual(response.status_code, 403)
+
+        # Music director.
+        self.user.roles.append(roles.MUSIC_DIRECTOR)
+        self.user.save()
+        response = self.client.post("/djdb/tags/new", {'name': 'TestTag',
+                                                       'description': 'descr'})
+        self.assertEqual(response.status_code, 302)
+
+        tag = models.Tag.all().filter('name =', 'TestTag').fetch(1)[0]
+        self.assertEqual(tag.description, 'descr')
+        
+    def test_edit(self):
+        # Add a new tag.
+        tag = models.Tag(name='TestTag',
+                         description='descr')
+        tag.put()
+        
+        # Not music director.
+        response = self.client.post("/djdb/tag/TestTag",
+                                    {'name': 'TestTag2',
+                                     'description': 'descr2'})
+        self.assertEqual(response.status_code, 403)
+
+        # Music director.
+        self.user.roles.append(roles.MUSIC_DIRECTOR)
+        self.user.save()
+        response = self.client.post("/djdb/tag/TestTag",
+                                    {'name': 'TestTag2',
+                                     'description': 'descr2'})
+        self.assertEqual(response.status_code, 302)
+
+        tag = models.Tag.all().filter('name =', 'TestTag2').fetch(1)[0]
+        self.assertEqual(tag.description, 'descr2')
+
