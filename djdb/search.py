@@ -146,8 +146,10 @@ class Indexer(object):
                 q.filter("field =", field)
                 q.filter("term =", term)
                 q.filter("matches =", key)
-                sm = q.fetch(1)[0]
-            else:
+                sms = q.fetch(1)
+                if sms :
+                    sm = sms[0]
+            if sm is None:
                 sm = models.SearchMatches(generation=_GENERATION,
                                           entity_kind=entity_kind,
                                           field=field,
@@ -230,7 +232,8 @@ class Indexer(object):
         # Remove old terms.
         for term in set(explode(old_text)):
             sm = self._get_matches(key.kind(), field, term, key)
-            sm.matches.remove(key)
+            if key in sm.matches:
+                sm.matches.remove(key)
             
         # Add new terms.
         if text is not None:

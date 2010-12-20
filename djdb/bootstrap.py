@@ -77,8 +77,8 @@ def bootstrap(request):
                 counter += 1
                 alb = models.Album(
                     title=random_phrase(),
-                    label=_LABELS[random.randint(0, len(_LABELS) - 1)],
-                    year=_YEARS[random.randint(0, len(_YEARS) - 1)],
+                    #label=_LABELS[random.randint(0, len(_LABELS) - 1)],
+                    #year=_YEARS[random.randint(0, len(_YEARS) - 1)],
                     disc_number=disc_num,
                     album_id=counter,
                     import_timestamp=datetime.datetime.now(),
