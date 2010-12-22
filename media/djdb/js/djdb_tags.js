@@ -1,13 +1,13 @@
 $(document).ready(function() {
     $('img.add_tag').click(function(event) {
         $('.tags').append($('select.tag'));
-        $('select.tag option:first').attr("selected", true)
+        $('select.tag option:first').attr("selected", true);
         $('select.tag').show();
         event.stopImmediatePropagation();
     });
     
     $('select.tag').change(function(event) {
-        var tagName = $('select.tag option:selected').text()
+        var tagName = $('select.tag option:selected').text();
         
         if (tagName == 'Other') {
             $('.tags').append($('input.tag'));
@@ -20,10 +20,7 @@ $(document).ready(function() {
             $('input.tag').hide();
             
             // Append the new tag to the visible list.
-            $('.tags').append('<div class="tag">'
-                              + tagName
-                              + '<img class="remove_tag" style="display: none" src="/media/common/img/remove.png" title="Remove tag"/>'
-                              + '</div>');
+            $('.tags').append('<div class="tag">' + tagName + '<img class="remove_tag" style="display: none" src="/media/common/img/remove.png" title="Remove tag"/>' + '</div>');
             
             // Remove entry from select list.
             $('select.tag option:selected').remove();
@@ -48,10 +45,7 @@ $(document).ready(function() {
             $(this).hide();
             
             // Append the new tag to the visible list.
-            $('.tags').append('<div class="tag">'
-                              + tagName
-                              + '<img class="remove_tag" style="display: none" src="/media/common/img/remove.png" title="Remove tag"/>'
-                              + '</div>');
+            $('.tags').append('<div class="tag">' + tagName + '<img class="remove_tag" style="display: none" src="/media/common/img/remove.png" title="Remove tag"/>' + '</div>');
             
             // Hide the tags combo box.
             $('select.tag').hide();
@@ -96,8 +90,7 @@ $(document).ready(function() {
                 last = false;
                 return false;
             }
-            else if ($(this).text() != '-' && $(this).text() != 'Other'
-                     && tagName < $(this).text()) {
+            else if ($(this).text() != '-' && $(this).text() != 'Other' && tagName < $(this).text()) {
                 $(this).before('<option>' + tagName + '</option>');
                 last = false;
                 return false;
