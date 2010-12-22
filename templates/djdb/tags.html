@@ -1,0 +1,32 @@
+{% extends "djdb/internal_page.html" %}
+
+{% load common_extras %}
+{% load djdb_extras %}
+
+{% block breadcrumbs %}
+<a href="/">chipradio home</a>
+{% endblock %}
+
+{% block content %}
+  
+<a href="/djdb/tags/new">Add a New Tag</a>
+
+<table border="1">
+  <tr>
+    <th>Tag</th>
+    <th>Description</th>
+  </tr>
+  {% if tags %}
+    {% for tag in tags %}
+  <tr>
+    <td><a href="/djdb/tag/{{ tag.name }}">{{ tag.name }}</a></td>
+    <td>{% if tag.description %}{{ tag.description }}{% endif %}</td>
+  </tr>
+    {% endfor %}
+  {% else %}
+  <tr>
+    <td colspan="2">No tags.</td>
+  </tr>
+  {% endif %}
+
+{% endblock %}
