@@ -42,8 +42,9 @@ import tag_util
 
 log = logging.getLogger(__name__)
 
-def fetch_activity(num=None, days=None, start_dt=None):
-    activity = {}
+def fetch_activity(num=None, days=None, start_dt=None, max_num_items=None):
+    num_items = {}
+    activity = []
     
     if num is None:
         num = 999
@@ -57,14 +58,16 @@ def fetch_activity(num=None, days=None, start_dt=None):
         else:
             text = rev.text
         item = """
-<li class="activity_review"><a href="%s">%s / %s</a> <b>reviewed</b> by <a href="">%s</a>.
+<a href="%s">%s / %s</a> <b>reviewed</b> by <a href="">%s</a>.
 <blockquote>
 %s
-</blockquote></li>
+</blockquote>
             """ % (
             rev.subject.url, rev.subject.album_artist.name, rev.subject.title,
             rev.author_display, text)
-        activity.setdefault(dt, []).append(item)
+        type = 'review'
+        activity.append((dt, type, item))
+        num_items[type] = num_items.setdefault(type, 0) + 1
             
     # Get recent comments.
     comments = comment.fetch_recent(num, days=days, start_dt=start_dt)
@@ -75,57 +78,99 @@ def fetch_activity(num=None, days=None, start_dt=None):
         else:
             text = com.text
         item = """
-<li class="activity_comment"><a href="%s">%s / %s</a> <b>commented</b> on by <a href="">%s</a>.
+<a href="%s">%s / %s</a> <b>commented</b> on by <a href="">%s</a>.
 <blockquote>
 %s
-</blockquote></li>
+</blockquote>
             """% (
             com.subject.url, com.subject.album_artist.name, com.subject.title,
             com.author_display, text)
-        activity.setdefault(dt, []).append(item)
-        
+        type = 'comment'
+        activity.append((dt, type, item))
+        num_items[type] = num_items.setdefault(type, 0) + 1
+    
     # Get recent tag edits.
     tag_edits = tag_util.fetch_recent(num, days=days, start_dt=start_dt)
     for tag_edit in tag_edits:
         dt = tag_edit.timestamp.strftime('%Y-%m-%d %H:%M')
         for tag in tag_edit.added:
             if tag == 'recommended':
-                item = '<li class="activity_recommended"><a href="%s">%s / %s / %s</a> <b>recommended</b> by <a href="">%s</a>.</li>' % (
+                item = '<a href="%s">%s / %s / %s</a> <b>recommended</b> by <a href="">%s</a>.' % (
                     tag_edit.subject.album.url, tag_edit.subject.album.album_artist.name,
                     tag_edit.subject.album.title, tag_edit.subject.title,
                     tag_edit.author)
+                type = 'recommended'
             elif tag == 'explicit':
-                item = '<li class="activity_explicit"><a href="%s">%s / %s / %s</a> <b>marked explicit</b> by <a href="">%s</a>.</li>' % (
+                item = '<a href="%s">%s / %s / %s</a> <b>marked explicit</b> by <a href="">%s</a>.' % (
                     tag_edit.subject.album.url, tag_edit.subject.album.album_artist.name,
                     tag_edit.subject.album.title, tag_edit.subject.title,
                     tag_edit.author)
+                type = 'explicit'
             else:
-                item = '<li class="activity_tag_add"><a href="%s">%s / %s</a> <b>tagged</b> as <b>%s</b> by <a href="">%s</a>.</li>' % (
+                item = '<a href="%s">%s / %s</a> <b>tagged</b> as <b>%s</b> by <a href="">%s</a>.' % (
                     tag_edit.subject.url, tag_edit.subject.album_artist.name,
                     tag_edit.subject.title, tag, tag_edit.author)
-            activity.setdefault(dt, []).append(item)
+                type = 'tag'
+            activity.append((dt, type, item))
+            num_items[type] = num_items.setdefault(type, 0) + 1
         
         for tag in tag_edit.removed:
             if tag == 'recommended':
-                item = '<li class="activity_unrecommended"><a href="%s">%s / %s / %s</a> <b>unrecommended</b> by <a href="">%s</a>.</li>' % (
+                item = '<a href="%s">%s / %s / %s</a> <b>unrecommended</b> by <a href="">%s</a>.' % (
                     tag_edit.subject.album.url, tag_edit.subject.album.album_artist.name,
                     tag_edit.subject.album.title, tag_edit.subject.title,
                     tag_edit.author)
+                type = 'unrecommended'
             elif tag == 'explicit':
-                item = '<li class="activity_unexplicit"><a href="%s">%s / %s / %s</a> <b>ummarked explicit</b> by <a href="">%s</a>.</li>' % (
+                item = '<a href="%s">%s / %s / %s</a> <b>ummarked explicit</b> by <a href="">%s</a>.' % (
                     tag_edit.subject.album.url, tag_edit.subject.album.album_artist.name,
                     tag_edit.subject.album.title, tag_edit.subject.title,
                     tag_edit.author)
+                type = 'unexplicit'
             else:
-                item = '<li class="activity_tag_remove"><a href="%s">%s / %s</a> <b>untagged</b> as <b>%s</b> by <a href="">%s</a>.</li>' % (
+                item = '<a href="%s">%s / %s</a> <b>untagged</b> as <b>%s</b> by <a href="">%s</a>.' % (
                     tag_edit.subject.url, tag_edit.subject.album_artist.name,
                     tag_edit.subject.title, tag, tag_edit.author)
-            activity.setdefault(dt, []).append(item)
+                type = 'untag'
+            activity.append((dt, type, item))
+            num_items[type] = num_items.setdefault(type, 0) + 1
     
-    # Prepare a sorted list for the template.
-    activity_list = [(datetime.strptime(dt, '%Y-%m-%d %H:%M'), items) for dt, items in sorted(activity.iteritems(), reverse=True)]
+    # Sort activity list in place.
+    activity.sort(reverse=True)
     
-    return activity_list
+    # Prune activity list.
+    incomplete = False
+    if max_num_items and len(activity) > max_num_items:
+        total = 0
+        for item in ['review', 'comment', 'tag', 'recommended', 'explicit',
+                     'untag', 'unrecommended', 'unexplicit']:
+            if total >= max_num_items:
+                num_items[item] = 0
+            elif total + num_items[item] > max_num_items:
+                num_items[item] = max_num_items - total
+                total = max_num_items
+            else:
+                total += num_items[item]
+
+        incomplete = True
+    
+    # Prepare a list for the template.
+    activity_list = []
+    prev_dt = None
+    lst = []
+    for dt, type, item in activity:
+        if prev_dt and dt != prev_dt and lst:
+            activity_list.append((datetime.strptime(dt, '%Y-%m-%d %H:%M'), lst))
+            lst = []
+        if not max_num_items:
+            lst.append((type, item))
+        elif num_items[type]:
+            lst.append((type, item))
+            num_items[type] -= 1
+        prev_dt = dt
+    activity_list.append((datetime.strptime(dt, '%Y-%m-%d %H:%M'), lst))
+    
+    return activity_list, incomplete
     
 def landing_page(request, ctx_vars=None):
     template = loader.get_template('djdb/landing_page.html')
@@ -133,7 +178,8 @@ def landing_page(request, ctx_vars=None):
     ctx_vars['title'] = 'DJ Database'
 
     # Fetch recent activity.
-    ctx_vars["recent_activity"] = fetch_activity(days=5)
+    ctx_vars["recent_activity"], ctx_vars["activity_incomplete"] \
+        = fetch_activity(days=5, max_num_items=10)
 
     if request.method == "POST":
         query_str = request.POST.get("query")
@@ -183,7 +229,8 @@ def activity_page(request, ctx_vars=None):
     
     ctx_vars['start_dt'] = start_dt
     ctx_vars['days'] = days
-    ctx_vars['recent_activity'] = fetch_activity(days=days, start_dt=start_dt)
+    ctx_vars['recent_activity'], ctx_vars['activity_incomplete'] \
+        = fetch_activity(days=days, start_dt=start_dt)
             
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))

@@ -27,11 +27,16 @@
 
 {% if not query_str %}
 <h2>Recent Activity</h2>
+  {% if activity_incomplete %}
+  <p>
+  <i><b>This list of recent activity is incomplete.</b></i> <a href="/djdb/activity">See all recent activity...</a>
+  </p>
+  {% endif %}
   {% for dt, items in recent_activity %}
 {{ dt|date:"D F j, Y P" }}
 <ul class="activity">
-    {% for item in items %}
-  <li class="activity_comment">{{ item|safe }}</li>
+    {% for type, item in items %}
+  <li class="activity_{{ type }}">{{ item|safe }}</li>
     {% endfor %}
 </ul>
   {% endfor %}

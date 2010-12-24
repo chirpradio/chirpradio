@@ -115,12 +115,12 @@ li.activity_review {
   background: url('/media/common/img/review_icon.png') left top no-repeat;
   padding-left: 20px;
 }
-li.activity_tag_add {
+li.activity_tag {
   list-style-type: none;
   background: url('/media/common/img/tag_add_icon.png') left top no-repeat;
   padding-left: 20px;
 }
-li.activity_tag_remove {
+li.activity_untag {
   list-style-type: none;
   background: url('/media/common/img/tag_remove_icon.png') left top no-repeat;
   padding-left: 20px;
