@@ -584,6 +584,7 @@ def album_info_page(request, album_id_str, ctx_vars=None):
 
     lastfm = pylast.get_lastfm_network(api_key = LASTFM_API_KEY)
     try:
+        lastfm_album = lastfm.get_album(album.artist_name, album.title)
         ctx_vars["album_cover_m"] = lastfm_album.get_cover_image(pylast.COVER_MEDIUM)
         ctx_vars["album_cover_xl"] = lastfm_album.get_cover_image(pylast.COVER_EXTRA_LARGE)
     except:
