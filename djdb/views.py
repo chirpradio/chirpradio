@@ -169,7 +169,8 @@ def fetch_activity(num=None, days=None, start_dt=None, max_num_items=None):
             lst.append((type, item))
             num_items[type] -= 1
         prev_dt = dt
-    activity_list.append((datetime.strptime(dt, '%Y-%m-%d %H:%M'), lst))
+    if lst:
+        activity_list.append((datetime.strptime(dt, '%Y-%m-%d %H:%M'), lst))
     
     return activity_list, incomplete
     
