@@ -31,7 +31,7 @@ $.fn.image_box = function(options) {
        	});
       
         document.onkeyup = function(e) { 	
-      		if (e == null) { // ie
+      		if (e === null) { // ie
       			keycode = event.keyCode;
       		}
             else { // mozilla
@@ -39,8 +39,8 @@ $.fn.image_box = function(options) {
       		}
       		if (keycode == 27){
       			hide_image_box();
-      		}	
-      	}
+      		}
+      	};
       	  	
         function hide_image_box() {
           $('body').css('overflow', 'auto');

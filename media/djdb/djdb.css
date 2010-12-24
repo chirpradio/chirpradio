@@ -167,8 +167,8 @@ li.activity_unexplicit {
   background: none;
   color: #f00;
 }
-#image_box .contents {
-  background: #fff;
+#image_box .image {
+  background: #ddd;
 }
 
 #image_box_wrapper {
@@ -200,7 +200,6 @@ li.activity_unexplicit {
   display: block;
   width: 140px;
   float: right;
-  margin-top: 6px;
   text-align: right;
   padding-right: 5px;
 }
