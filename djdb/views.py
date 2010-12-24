@@ -27,7 +27,7 @@ from django.template import loader, Context, RequestContext
 
 from auth.decorators import require_role
 from auth import roles
-from common import sanitize_html, pager
+from common import dbconfig, sanitize_html, pager
 from common.autoretry import AutoRetry
 from djdb import models
 from djdb import search
@@ -40,8 +40,6 @@ import djdb.pylast as pylast
 import random
 import re
 import tag_util
-
-LASTFM_API_KEY = 'e68efd45e5176e6603eecc787d798bd5'
 
 log = logging.getLogger(__name__)
 
@@ -66,7 +64,7 @@ def fetch_activity(num=None, days=None, start_dt=None, max_num_items=None):
 %s
 </blockquote>
             """ % (
-            rev.subject.url, rev.subject.album_artist.name, rev.subject.title,
+            rev.subject.url, rev.subject.artist_name, rev.subject.title,
             rev.author_display, text)
         type = 'review'
         activity.append((dt, type, item))
@@ -86,7 +84,7 @@ def fetch_activity(num=None, days=None, start_dt=None, max_num_items=None):
 %s
 </blockquote>
             """% (
-            com.subject.url, com.subject.album_artist.name, com.subject.title,
+            com.subject.url, com.subject.artist_name, com.subject.title,
             com.author_display, text)
         type = 'comment'
         activity.append((dt, type, item))
@@ -97,21 +95,21 @@ def fetch_activity(num=None, days=None, start_dt=None, max_num_items=None):
     for tag_edit in tag_edits:
         dt = tag_edit.timestamp.strftime('%Y-%m-%d %H:%M')
         for tag in tag_edit.added:
-            if tag == 'recommended':
+            if tag == 'recommended':                    
                 item = '<a href="%s">%s / %s / %s</a> <b>recommended</b> by <a href="">%s</a>.' % (
-                    tag_edit.subject.album.url, tag_edit.subject.album.album_artist.name,
+                    tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
                     tag_edit.subject.album.title, tag_edit.subject.title,
                     tag_edit.author)
                 type = 'recommended'
             elif tag == 'explicit':
                 item = '<a href="%s">%s / %s / %s</a> <b>marked explicit</b> by <a href="">%s</a>.' % (
-                    tag_edit.subject.album.url, tag_edit.subject.album.album_artist.name,
+                    tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
                     tag_edit.subject.album.title, tag_edit.subject.title,
                     tag_edit.author)
                 type = 'explicit'
             else:
                 item = '<a href="%s">%s / %s</a> <b>tagged</b> as <b>%s</b> by <a href="">%s</a>.' % (
-                    tag_edit.subject.url, tag_edit.subject.album_artist.name,
+                    tag_edit.subject.url, tag_edit.subject.artist_name,
                     tag_edit.subject.title, tag, tag_edit.author)
                 type = 'tag'
             activity.append((dt, type, item))
@@ -120,19 +118,19 @@ def fetch_activity(num=None, days=None, start_dt=None, max_num_items=None):
         for tag in tag_edit.removed:
             if tag == 'recommended':
                 item = '<a href="%s">%s / %s / %s</a> <b>unrecommended</b> by <a href="">%s</a>.' % (
-                    tag_edit.subject.album.url, tag_edit.subject.album.album_artist.name,
+                    tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
                     tag_edit.subject.album.title, tag_edit.subject.title,
                     tag_edit.author)
                 type = 'unrecommended'
             elif tag == 'explicit':
                 item = '<a href="%s">%s / %s / %s</a> <b>ummarked explicit</b> by <a href="">%s</a>.' % (
-                    tag_edit.subject.album.url, tag_edit.subject.album.album_artist.name,
+                    tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
                     tag_edit.subject.album.title, tag_edit.subject.title,
                     tag_edit.author)
                 type = 'unexplicit'
             else:
                 item = '<a href="%s">%s / %s</a> <b>untagged</b> as <b>%s</b> by <a href="">%s</a>.' % (
-                    tag_edit.subject.url, tag_edit.subject.album_artist.name,
+                    tag_edit.subject.url, tag_edit.subject.artist_name,
                     tag_edit.subject.title, tag, tag_edit.author)
                 type = 'untag'
             activity.append((dt, type, item))
@@ -582,8 +580,8 @@ def album_info_page(request, album_id_str, ctx_vars=None):
 
     if ctx_vars is None : ctx_vars = {}
 
-    lastfm = pylast.get_lastfm_network(api_key = LASTFM_API_KEY)
     try:
+        lastfm = pylast.get_lastfm_network(api_key=dbconfig['lastfm.api_key'])
         lastfm_album = lastfm.get_album(album.artist_name, album.title)
         ctx_vars["album_cover_m"] = lastfm_album.get_cover_image(pylast.COVER_MEDIUM)
         ctx_vars["album_cover_xl"] = lastfm_album.get_cover_image(pylast.COVER_EXTRA_LARGE)
@@ -876,7 +874,7 @@ def add_crate_item(request):
         ctx_vars['query'] = request.GET.get('query')
         return landing_page(request, ctx_vars)
     elif response_page == 'artist':
-        return artist_info_page(request, item.album_artist.name, ctx_vars)
+        return artist_info_page(request, item.artist_name, ctx_vars)
     elif response_page == 'album':
         return album_info_page(request, str(item.album.album_id), ctx_vars)
     else:
@@ -918,7 +916,7 @@ def remove_crate_item(request):
         ctx_vars['query'] = request.GET.get('query')
         return landing_page(request, ctx_vars)
     elif response_page == 'artist':
-        return artist_info_page(request, item.album_artist.name, ctx_vars)
+        return artist_info_page(request, item.artist_name, ctx_vars)
     elif response_page == 'album':
         return album_info_page(request, str(item.album.album_id), ctx_vars)
     else:
