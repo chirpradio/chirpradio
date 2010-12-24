@@ -19,6 +19,7 @@ $.fn.image_box = function(options) {
         $('#image_box').css('top', y + $(window).scrollTop());
         $('#image_box_wrapper').css('left', $(window).scrollLeft());
         $('#image_box_wrapper').css('top', $(window).scrollTop());
+        $('body').css('overflow', 'hidden');
 
         $('#image_box_wrapper').click(function() {
             hide_image_box();
