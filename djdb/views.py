@@ -142,15 +142,16 @@ def fetch_activity(num=None, days=None, start_dt=None, max_num_items=None):
     incomplete = False
     if max_num_items and len(activity) > max_num_items:
         total = 0
-        for item in ['review', 'comment', 'tag', 'recommended', 'explicit',
+        for type in ['review', 'comment', 'tag', 'recommended', 'explicit',
                      'untag', 'unrecommended', 'unexplicit']:
-            if total >= max_num_items:
-                num_items[item] = 0
-            elif total + num_items[item] > max_num_items:
-                num_items[item] = max_num_items - total
-                total = max_num_items
-            else:
-                total += num_items[item]
+            if type in num_items:
+                if total >= max_num_items:
+                    num_items[type] = 0
+                elif total + num_items[type] > max_num_items:
+                    num_items[type] = max_num_items - total
+                    total = max_num_items
+                else:
+                    total += num_items[type]
 
         incomplete = True
     
