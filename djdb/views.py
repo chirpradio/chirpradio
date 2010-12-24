@@ -36,9 +36,12 @@ from djdb import comment
 from djdb import forms
 from djdb.models import Album
 from datetime import datetime, timedelta
+import djdb.pylast as pylast
 import random
 import re
 import tag_util
+
+LASTFM_API_KEY = 'e68efd45e5176e6603eecc787d798bd5'
 
 log = logging.getLogger(__name__)
 
@@ -578,6 +581,14 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     template = loader.get_template("djdb/album_info_page.html")
 
     if ctx_vars is None : ctx_vars = {}
+
+    lastfm = pylast.get_lastfm_network(api_key = LASTFM_API_KEY)
+    try:
+        ctx_vars["album_cover_m"] = lastfm_album.get_cover_image(pylast.COVER_MEDIUM)
+        ctx_vars["album_cover_xl"] = lastfm_album.get_cover_image(pylast.COVER_EXTRA_LARGE)
+    except:
+        pass
+
     ctx_vars["album"] = album
     ctx_vars["album_tags"] = []
     for tag in models.Tag.all().order('name'):

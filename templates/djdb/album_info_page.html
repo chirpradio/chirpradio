@@ -27,6 +27,8 @@
     src="/media/djdb/js/djdb_delete_review.js"></script>
 <script type="text/javascript"
     src="/media/djdb/js/djdb_tags.js"></script>
+<script type="text/javascript"
+    src="/media/djdb/js/djdb_image_box.js"></script>
 {% endblock %}
 
 {% if msg %}
@@ -136,36 +138,43 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
 </p>
 <input type="hidden" name="mark_as"/>
 <table>
+{% if album_cover_m %}
+  <tr>
+    <td rowspan="{{ tracks|length }}">
+      <a class="album_cover" href="{{ album_cover_xl }}"><img src="{{ album_cover_m }}" width="50" height="50"/></a>
+    </td>
+  </tr>
+{% endif %}
 {% for track in album.sorted_tracks %}
-<tr>
-<td><input type="checkbox"
-            class="checkbox{% if track.is_explicit %} explicit{% endif %}{% if track.is_recommended %} recommended{% endif %}"
-            name="checkbox_{{ forloop.counter }}"/></td>
-<td>
-{% if track.is_explicit %}<img height="16" width="16" src="/media/common/img/explicit_icon.png" title="Explicit lyrics"/>{% endif %}
-{% if track.is_recommended %}<img height="16" width="16" src="/media/common/img/recommended_icon.png" title="Recommended track"/>{% endif %}
-</td>
-<td>{{ track.track_num }}.</td>
-<td>{{ track.title }}</td>
-<td>{{ track.duration }}</td>
-<td><small>{{ track.bit_rate_kbps }} kbps</small></td>
-<td>
-{% for tag in track.sorted_current_tags %}
-  {% ifnotequal tag 'explicit' %}
-    {% ifnotequal tag 'recommended' %}
+  <tr>
+    <td><input type="checkbox"
+               class="checkbox{% if track.is_explicit %} explicit{% endif %}{% if track.is_recommended %} recommended{% endif %}"
+               name="checkbox_{{ forloop.counter }}"/></td>
+    <td>
+  {% if track.is_explicit %}<img height="16" width="16" src="/media/common/img/explicit_icon.png" title="Explicit lyrics"/>{% endif %}
+  {% if track.is_recommended %}<img height="16" width="16" src="/media/common/img/recommended_icon.png" title="Recommended track"/>{% endif %}
+    </td>
+    <td>{{ track.track_num }}.</td>
+    <td>{{ track.title }}</td>
+    <td>{{ track.duration }}</td>
+    <td><small>{{ track.bit_rate_kbps }} kbps</small></td>
+    <td>
+  {% for tag in track.sorted_current_tags %}
+    {% ifnotequal tag 'explicit' %}
+      {% ifnotequal tag 'recommended' %}
 [{{tag}}]
+      {% endifnotequal %}
     {% endifnotequal %}
-  {% endifnotequal %}
-{% endfor %}
-</td>
-<td>
-{% ifincrate user track %}
+  {% endfor %}
+    </td>
+    <td>
+  {% ifincrate user track %}
 <a href="/djdb/crate/remove_item?response_page=album&item_key={{ track.key }}"><img src="/media/common/img/remove.png" alt="Remove Track from Crate" title="Remove Track from Crate"/></a>
-{% else %}
+  {% else %}
 <a href="/djdb/crate/add_item?response_page=album&item_key={{ track.key }}"><img src="/media/common/img/add.png" alt="Add Track to Crate" title="Add Track to Crate"/></a>
-{% endifincrate %}
-</td>
-</tr>
+  {% endifincrate %}
+    </td>
+  </tr>
 {% endfor %}
 </table>
 </form>
