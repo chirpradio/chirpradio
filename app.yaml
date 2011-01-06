@@ -4,6 +4,9 @@ runtime: python
 api_version: 1
 
 handlers:
+    
+- url: /api/.*
+  script: api/handler.py
 
 # Support for remote datastore access.  For more information, please see
 # http://code.google.com/appengine/articles/remote_api.html
@@ -26,7 +29,11 @@ handlers:
 - url: /.*
   secure: always
   script: main.py
-  
+
+
+inbound_services:
+- warmup
+
 
 skip_files:
 - ^(.*/)?app\.yaml

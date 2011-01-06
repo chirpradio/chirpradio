@@ -51,6 +51,8 @@ urlpatterns = patterns(
     ('^jobs/', include('jobs.urls')),
     
     ('^errors/', include('errors.urls')),
+    
+    ('^_ah/warmup/?', 'common.views.appengine_warmup'),
 
     # A catch-all rule to generate a 404.
     (r'', 'landing_page.views.four_oh_four'),

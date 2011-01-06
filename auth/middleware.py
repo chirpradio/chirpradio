@@ -24,9 +24,12 @@ import auth
 class AuthenticationMiddleware(object):
 
     def process_request(self, request):
-        if request.path.startswith('/playlists/task'):
-            # auth is handled in app.yaml
-            # and this is necessary so that tasks are 
+        # TODO(Kumar) think of a way to use a decorator or something to
+        # grant access to non-login protected pages.
+        if (request.path.startswith('/playlists/task') or
+            request.path.startswith('/_ah/warmup')):
+            # auth is handled in app.yaml or not applicable.
+            # for tasks, this is necessary so they are 
             # executed by Admin user (internal Task Queue user)
             return None
         try:

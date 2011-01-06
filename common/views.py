@@ -15,9 +15,13 @@
 ### limitations under the License.
 ###
 
+import logging
+
 from django.http import HttpResponse, HttpResponseRedirect
 from common.models import Config
 from common.utilities import as_json
+
+log = logging.getLogger()
 
 def _init_config(request):
     q = Config.all()
@@ -33,8 +37,21 @@ def _init_config(request):
 @as_json
 def _make_json_error(request):
     """view for the tests that purposefully raises an exception while decorated as a JSON handler.
-    """    
+    """
     # TODO(kumar) set this up programmatically in the tests instead?
     raise RuntimeError(
             "When the moon shines on the 5th house on the 7th hour, "
             "your shoe laces will unravel.")
+
+
+def appengine_warmup(request):
+    """Called periodically on new app engine instances.
+
+    See Warming Requests in
+    http://code.google.com/appengine/docs/python/config/appconfig.html
+
+    Currently this doesn't do much more than load Django.
+    """
+    # TODO(Kumar) when we have some caching, pre-load a bunch of stuff here.
+    log.info("Warming up Django")
+    return HttpResponse("it's getting hot in here")
