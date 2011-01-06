@@ -22,7 +22,7 @@ import wsgiref.handlers
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from google.appengine.ext import webapp
-from google.appengine.api.labs import taskqueue
+from google.appengine.api import taskqueue
 from common import dbconfig, in_dev
 from playlists.models import PlaylistEvent
 from common.utilities import as_encoded_str

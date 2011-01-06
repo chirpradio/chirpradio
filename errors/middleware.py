@@ -28,7 +28,7 @@ from google.appengine.api.datastore_errors import InternalError
 from google.appengine.api.datastore_errors import Timeout
 from google.appengine.api.datastore_errors import TransactionFailedError
 from google.appengine.runtime.apiproxy_errors import CapabilityDisabledError
-import google.appengine.api.labs.taskqueue
+import google.appengine.api.taskqueue
 import google.appengine.runtime
 
 # each tuple item contains:
@@ -36,12 +36,12 @@ import google.appengine.runtime
 CATCHABLE = (
     (Timeout, 'datastore_errors.Timeout', 503),
     (InternalError, 'datastore_errors.InternalError', 500),
-    (google.appengine.api.labs.taskqueue.TransientError,
+    (google.appengine.api.taskqueue.TransientError,
      'taskqueue.TransientError', 503),
     (CapabilityDisabledError, 'CapabilityDisabledError', 503),
     (google.appengine.runtime.DeadlineExceededError,
      'runtime.DeadlineExceededError', 503),
-    (google.appengine.api.labs.taskqueue.InternalError,
+    (google.appengine.api.taskqueue.InternalError,
      'taskqueue.InternalError', 500),
     (TransactionFailedError, 'TransactionFailedError', 503),
 )
