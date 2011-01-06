@@ -48,6 +48,7 @@ class ModelC(BaseModel):
 
 
 class TestAllFormats(type):
+  __test__ = False # This itself is not a test (for Nose)
 
   def __new__(cls, name, bases, attrs):
     """Extends base test functions to be called for every serialisation format.
