@@ -117,4 +117,8 @@ if RUNNING_TESTS:
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
-NOSE_ARGS = ['--logging-clear-handlers']
+NOSE_ARGS = ['--logging-clear-handlers', '--with-nicedots']
+
+NOSE_PLUGINS = [
+    'nosenicedots.plugin.NiceDots',
+]
