@@ -1,2 +1,0 @@
-
-"""CHIRP volunteer administration website"""

@@ -1,9 +1,0 @@
-[
- {
-  "pk": 1, 
-  "model": "volunteers.meeting", 
-  "fields": {
-   "meeting_date": "2009-03-01"
-  }
- }
-]
