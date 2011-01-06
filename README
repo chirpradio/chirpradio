@@ -80,8 +80,6 @@ These are applications that are running in production.
 These are applications that are under development.
   landing_page/
     Where you end up when you go to "/".  Currently a test page.
-  volunteers/
-    Volunteer tracking.
 
 
 THIRD-PARTY CODE

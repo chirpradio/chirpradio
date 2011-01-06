@@ -21,10 +21,10 @@ urlpatterns = patterns(
     '',
     # To ensure that each the URL-spaces exposed by applications are
     # unique, URLs should be prefixed with a path component identical
-    # to the application's name.  For example: if the volunteer
-    # tracker app lives under the 'volunteers' subdirectory, each of
+    # to the application's name.  For example: if the DJ Database
+    # app lives under the 'djdb' subdirectory, each of
     # that app's URLs should be of the form
-    # http://host/volunteers/XXXXX.
+    # http://host/djdb/XXXXX.
 
     # The lone exception to our URL naming convention is the main
     # landing page.
@@ -43,9 +43,6 @@ urlpatterns = patterns(
     
     # DJ Playlists.
     ('^playlists/', include('playlists.urls')),
-
-    # The volunteer management app.
-    ('^volunteers/?', include('volunteers.urls')),
 
     (r'^traffic_log/', include('traffic_log.urls')),   
     

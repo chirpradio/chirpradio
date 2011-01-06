@@ -122,7 +122,7 @@ Your templates go under the directory templates/[application name].
 Your media files go under the directory media/[application name].
 
 All of your URLs are automatically mapped to be under
-http://HOST:PORT/volunteers/my/url
+http://HOST:PORT/appname/my/url
 
 To make your URLs visible, you need to:
 (1) Update the top-level urls.py to include your urls.
