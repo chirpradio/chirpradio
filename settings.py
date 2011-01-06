@@ -15,6 +15,7 @@
 # Django settings for chirpradio project.
 
 import os
+import sys
 from common import in_dev
 
 DEBUG = in_dev()
@@ -101,8 +102,19 @@ INSTALLED_APPS = (
      'djdb',
      'landing_page',
      'playlists',
-     'volunteers',
      'traffic_log',
      'errors',
      'jobs'
 )
+
+# Hmm, maybe there is a better way to detect that we're running tests.
+RUNNING_TESTS = 'test' in sys.argv
+
+if RUNNING_TESTS:
+    INSTALLED_APPS += (
+        'django_nose',
+    )
+
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+
+NOSE_ARGS = ['--logging-clear-handlers']
