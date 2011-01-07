@@ -20,10 +20,12 @@ from __future__ import with_statement
 import unittest
 
 from django.utils import simplejson
+from google.appengine.api import memcache
 from nose.tools import eq_
 from webtest import TestApp
 
 from api.handler import application
+import auth.roles
 from auth.models import User
 from playlists.models import Playlist, PlaylistTrack, ChirpBroadcast
 from playlists.tests.test_views import create_stevie_wonder_album_data
@@ -43,22 +45,30 @@ class APITest(unittest.TestCase):
     def setUp(self):
         self.client = TestApp(application)
 
+    def tearDown(self):
+        assert memcache.flush_all()
+
 
 class TestCurrentTrack(APITest):
 
     def setUp(self):
         super(TestCurrentTrack, self).setUp()
-        stevie, talking_book, tracks = create_stevie_wonder_album_data()
+
+        (self.stevie,
+         self.talking_book,
+         self.tracks) = create_stevie_wonder_album_data()
+
         self.dj = User(dj_name='DJ Night Moves', first_name='Steve',
-                       last_name='Dolfin', email='steve@dolfin.org')
+                       last_name='Dolfin', email='steve@dolfin.org',
+                       roles=[auth.roles.DJ])
         self.dj.save()
-        playlist = ChirpBroadcast()
+        self.playlist = ChirpBroadcast()
         self.playlist_track = PlaylistTrack(
-                playlist=playlist,
+                playlist=self.playlist,
                 selector=self.dj,
-                artist=stevie,
-                album=talking_book,
-                track=tracks['You Are The Sunshine Of My Life'],
+                artist=self.stevie,
+                album=self.talking_book,
+                track=self.tracks['You Are The Sunshine Of My Life'],
                 freeform_label='Motown')
         self.playlist_track.save()
 
@@ -97,3 +107,24 @@ class TestCurrentTrack(APITest):
         eq_(data['track'], unicode_text)
         eq_(data['release'], unicode_text)
         eq_(data['dj'], unicode_text)
+
+    def test_cache_flushing(self):
+        r = self.client.get('/api/current_track')
+        eq_(r.status, '200 OK')
+        data = simplejson.loads(r.body)
+        eq_(data['track'], 'You Are The Sunshine Of My Life')
+
+        # Play another track:
+        self.playlist_track = PlaylistTrack(
+                playlist=self.playlist,
+                selector=self.dj,
+                artist=self.stevie,
+                album=self.talking_book,
+                track=self.tracks['You And I (We Can Conquer The World)'],
+                freeform_label='Motown')
+        self.playlist_track.save()
+
+        r = self.client.get('/api/current_track')
+        eq_(r.status, '200 OK')
+        data = simplejson.loads(r.body)
+        eq_(data['track'], 'You And I (We Can Conquer The World)')

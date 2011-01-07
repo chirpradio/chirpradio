@@ -17,14 +17,16 @@
 
 """Datastore model for DJ Playlists."""
 
+from google.appengine.ext.db import polymodel
+from google.appengine.api import memcache
+from google.appengine.ext import db
+from google.appengine.api.datastore_types import Key
+
 from auth.models import User
 import auth
 from djdb.models import Artist, Album, Track
-from google.appengine.ext import db
-from google.appengine.api.datastore_types import Key
 from common import time_util
 from common.autoretry import AutoRetry
-from google.appengine.ext.db import polymodel
 
 class Playlist(polymodel.PolyModel):
     """A playlist of songs.
@@ -219,4 +221,8 @@ class PlaylistTrack(PlaylistEvent):
     def put(self, *args, **kwargs):
         self.validate()
         super(PlaylistTrack, self).put(*args, **kwargs)
+        memcache.delete('api.current_track')
+    
+    def save(self, *args, **kwargs):
+        return self.put(*args, **kwargs)
 

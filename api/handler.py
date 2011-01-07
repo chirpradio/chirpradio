@@ -17,21 +17,43 @@
 ###
 
 from google.appengine.ext import webapp
+from google.appengine.api import memcache
 from google.appengine.ext.webapp.util import run_wsgi_app
 from django.utils import simplejson
 
 from playlists.models import ChirpBroadcast, PlaylistTrack
 
+
 class ApiHandler(webapp.RequestHandler):
+    use_cache = False
 
     def get(self):
-        data = self.get_json()
         self.response.headers['Content-Type'] = 'application/json'
-        # Default encoding is UTF-8
-        self.response.out.write(simplejson.dumps(data))
+        if not self.use_cache:
+            reponse = self._get_json_response()
+        else:
+            if self.cache_key is None:
+                raise NotImplementedError("cache_key was not set")
+            response = memcache.get(self.cache_key)
+            if not response:
+                response = self._get_json_response()
+                memcache.set(self.cache_key, response)
+        self.response.out.write(response)
 
-class CurrentTrack(ApiHandler):
+    def _get_json_response(self):
+        data = self.get_json()
+        # Default encoding is UTF-8
+        return simplejson.dumps(data)
+
+
+class CachedApiHandler(ApiHandler):
+    use_cache = True
+    cache_key = None
+
+
+class CurrentTrack(CachedApiHandler):
     """Current track playing on CHIRP."""
+    cache_key = 'api.current_track'
 
     def get_json(self):
         broadcast = ChirpBroadcast()
@@ -48,6 +70,7 @@ class CurrentTrack(ApiHandler):
             'played_at_local': current_track.established_display.isoformat()
         }
 
+
 class Index(ApiHandler):
     """Lists available resources."""
 
@@ -55,6 +78,7 @@ class Index(ApiHandler):
         self.json_response({
             'services': [(url, s.__doc__) for url, s in services]
         })
+
 
 services = [('/api/', Index),
             ('/api/current_track', CurrentTrack)]
