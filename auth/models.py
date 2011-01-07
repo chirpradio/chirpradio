@@ -108,6 +108,13 @@ class User(db.Model):
         else:
             raise LookupError('User email collision for %s' % email)
 
+    @property
+    def effective_dj_name(self):
+        if self.dj_name:
+            return self.dj_name
+        else:
+            return u"%s %s" % (self.first_name, self.last_name)
+
 # Patch the User class to provide properties for checking roles.
 # These are useful in templates.
 for role in roles.ALL_ROLES:

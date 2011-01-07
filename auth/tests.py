@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 ###
 ### Copyright 2009 The Chicago Independent Radio Project
 ### All Rights Reserved.
@@ -282,7 +283,36 @@ class AuthTestCase(DjangoTestCase):
         self.now += 365 * 24 * 60 * 60  # 1 year should be enough time
         self.assertTrue(ks is not KeyStorage.get())
 
-        
+
+class UserTestCase(unittest.TestCase):
+    
+    def setUp(self):
+        for u in User.all().fetch(1000):
+            u.delete()
+
+    def test_dj_name(self):
+        user = User(email='someone@somewhere',
+                    first_name='Steve',
+                    last_name='Dolfin')
+        user.save()
+        self.assertEquals(user.effective_dj_name, 'Steve Dolfin')
+        user.dj_name = 'DJ Night Moves'
+        user.save()
+        self.assertEquals(user.effective_dj_name, 'DJ Night Moves')
+
+    def test_non_ascii_dj_name(self):
+        unicode_text = 'フォクすけといっしょ'.decode('utf8')
+        user = User(email='someone@somewhere',
+                    first_name=unicode_text,
+                    last_name=unicode_text)
+        user.save()
+        self.assertEquals(user.effective_dj_name,
+                          u'%s %s' % (unicode_text, unicode_text))
+        user.dj_name = unicode_text
+        user.save()
+        self.assertEquals(user.effective_dj_name, unicode_text)
+
+
 class FormsTestCase(unittest.TestCase):
     
     def setUp(self):

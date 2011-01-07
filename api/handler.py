@@ -65,7 +65,7 @@ class CurrentTrack(CachedApiHandler):
             'track': current_track.track_title,
             'release': current_track.album_title,
             'label': current_track.label_display,
-            'dj': current_track.selector.dj_name,
+            'dj': current_track.selector.effective_dj_name,
             'played_at_gmt': current_track.established.isoformat(),
             'played_at_local': current_track.established_display.isoformat()
         }
