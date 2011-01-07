@@ -18,6 +18,8 @@
 import logging
 
 from django.http import HttpResponse, HttpResponseRedirect
+from google.appengine.api import taskqueue
+
 from common.models import Config
 from common.utilities import as_json
 
@@ -50,8 +52,7 @@ def appengine_warmup(request):
     See Warming Requests in
     http://code.google.com/appengine/docs/python/config/appconfig.html
 
-    Currently this doesn't do much more than load Django.
     """
-    # TODO(Kumar) when we have some caching, pre-load a bunch of stuff here.
-    log.info("Warming up Django")
+    log.info("Warming up")
+    taskqueue.add(url='/api/current_track')
     return HttpResponse("it's getting hot in here")

@@ -14,11 +14,24 @@
 ### See the License for the specific language governing permissions and
 ### limitations under the License.
 ###
+import time
 
 from django.test import TestCase
+from google.appengine.api import memcache
 
-class TestWarmup(TestCase):
+from gaetestbed import TaskQueueTestCase
+
+class TestWarmup(TaskQueueTestCase, TestCase):
+
+    def setUp(self):
+        super(TestWarmup, self).setUp()
+        assert memcache.flush_all()
+
+    def tearDown(self):
+        super(TestWarmup, self).tearDown()
+        assert memcache.flush_all()
 
     def test_success(self):
         r = self.client.get('/_ah/warmup')
         self.assertEquals(r.status_code, 200)
+        self.assertTasksInQueue(1, url='/api/current_track')
