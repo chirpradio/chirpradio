@@ -30,7 +30,7 @@ class ApiHandler(webapp.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'application/json'
         if not self.use_cache:
-            reponse = self._get_json_response()
+            response = self._get_json_response()
         else:
             if self.cache_key is None:
                 raise NotImplementedError("cache_key was not set")
@@ -51,37 +51,45 @@ class CachedApiHandler(ApiHandler):
     cache_key = None
 
 
-class CurrentTrack(CachedApiHandler):
-    """Current track playing on CHIRP."""
+class CurrentPlaylist(CachedApiHandler):
+    """Current track playing on CHIRP and recently played tracks."""
     cache_key = 'api.current_track'
+
+    def track_as_data(self, track):
+        return {
+            'artist': track.artist_name,
+            'track': track.track_title,
+            'release': track.album_title,
+            'label': track.label_display,
+            'dj': track.selector.effective_dj_name,
+            'played_at_gmt': track.established.isoformat(),
+            'played_at_local': track.established_display.isoformat()
+        }
 
     def get_json(self):
         broadcast = ChirpBroadcast()
-        current_track = (PlaylistTrack.all()
-                            .filter('playlist =', broadcast)
-                            .order('-established'))[0]
+        recent_tracks = list(PlaylistTrack.all()
+                                .filter('playlist =', broadcast)
+                                .order('-established')
+                                .fetch(6))
         return {
-            'artist': current_track.artist_name,
-            'track': current_track.track_title,
-            'release': current_track.album_title,
-            'label': current_track.label_display,
-            'dj': current_track.selector.effective_dj_name,
-            'played_at_gmt': current_track.established.isoformat(),
-            'played_at_local': current_track.established_display.isoformat()
+            'now_playing': self.track_as_data(recent_tracks.pop(0)),
+            # Last 5 played tracks:
+            'recently_played': [self.track_as_data(t) for t in recent_tracks]
         }
 
 
 class Index(ApiHandler):
     """Lists available resources."""
 
-    def get(self):
-        self.json_response({
+    def get_json(self):
+        return {
             'services': [(url, s.__doc__) for url, s in services]
-        })
+        }
 
 
 services = [('/api/', Index),
-            ('/api/current_track', CurrentTrack)]
+            ('/api/current_playlist', CurrentPlaylist)]
 debug = False
 application = webapp.WSGIApplication(services, debug=debug)
 

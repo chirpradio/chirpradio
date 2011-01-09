@@ -34,4 +34,4 @@ class TestWarmup(TaskQueueTestCase, TestCase):
     def test_success(self):
         r = self.client.get('/_ah/warmup')
         self.assertEquals(r.status_code, 200)
-        self.assertTasksInQueue(1, url='/api/current_track')
+        self.assertTasksInQueue(1, url='/api/current_playlist')

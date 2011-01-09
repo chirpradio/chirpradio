@@ -77,8 +77,14 @@ def create_stevie_wonder_album_data():
     for idx, title in enumerate([
             'You Are The Sunshine Of My Life',
             'Maybe Your Baby',
-            'You And I (We Can Conquer The World)'
-            # ...etc...
+            'You And I (We Can Conquer The World)',
+            'Tuesday Heartbreak',
+            "You've Got It Bad Girl",
+            'Superstition',
+            'Big Brother',
+            'Blame It On The Sun',
+            "Lookin' For Another Pure Love",
+            'I Believe (When I Fall In Love It Will Be Forever)'
             ]):
         track = Track(
                     album=talking_book,
