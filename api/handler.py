@@ -57,6 +57,7 @@ class CurrentPlaylist(CachedApiHandler):
 
     def track_as_data(self, track):
         return {
+            'id': str(track.key()),
             'artist': track.artist_name,
             'track': track.track_title,
             'release': track.album_title,

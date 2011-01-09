@@ -103,6 +103,7 @@ class TestTrackPlayingNow(APITest):
             self.playlist_track.established.strftime('%Y-%m-%d'))
         eq_(current['played_at_local'].split('T')[0],
             self.playlist_track.established_display.strftime('%Y-%m-%d'))
+        assert 'id' in current
 
     def test_non_ascii(self):
         unicode_text = 'フォクすけといっしょ'.decode('utf8')
