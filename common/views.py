@@ -54,5 +54,5 @@ def appengine_warmup(request):
 
     """
     log.info("Warming up")
-    taskqueue.add(url='/api/current_playlist')
+    taskqueue.add(url='/api/current_playlist', method='GET')
     return HttpResponse("it's getting hot in here")
