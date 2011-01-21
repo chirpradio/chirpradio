@@ -14,6 +14,9 @@
 # limitations under the License.
 
 
+# WARNING: This script is not run in production.
+# See main.py for that.
+
 from appengine_django import InstallAppengineHelperForDjango
 InstallAppengineHelperForDjango()
 
