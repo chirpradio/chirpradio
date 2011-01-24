@@ -29,11 +29,19 @@
     src="/media/djdb/js/djdb_tags.js"></script>
 <script type="text/javascript"
     src="/media/djdb/js/djdb_image_box.js"></script>
+<script type="text/javascript"
+    src="/media/djdb/js/djdb_edit_track.js"></script>
 {% endblock %}
 
 {% if msg %}
 <div class="success">
 {{ msg }}
+</div>
+{% endif %}
+
+{% if error %}
+<div class="warning">
+{{ error }}
 </div>
 {% endif %}
 
@@ -44,7 +52,7 @@
   <table>
 {{ album_form.as_table }}
   </table>
-  <input type="submit" name="update" value="Update">
+  <input type="submit" name="update_album" value="Update Album">
 </form>
 {% endif %}
 
@@ -128,6 +136,7 @@ No reviews yet!  You could be the first to
 
 <h3>Tracks</h3>
 <form method="post" name="djdbTracksForm" action="update">
+<input type="hidden" id="id_artist_key" name="artist_key"/>
 <p>
 Select: <a id="checkbox_all" href="">All</a>, 
         <a id="checkbox_none" href="">None</a>, 
@@ -155,7 +164,33 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
   {% if track.is_recommended %}<img height="16" width="16" src="/media/common/img/recommended_icon.png" title="Recommended track"/>{% endif %}
     </td>
     <td>{{ track.track_num }}.</td>
-    <td>{{ track.title }}</td>
+    <td>{{ track.title }}
+  {% if user.is_music_director %}
+<a href="" class="edit_track_{{ forloop.counter }}"><img src="/media/common/img/page_white_edit.png"/></a>
+      <div class="edit_track_{{ forloop.counter }}" style="display: none">
+        <input type="hidden" name="track_key_{{ forloop.counter }}" value="{{ track.key }}"/>
+        <table>
+          <tr>
+            <td>Track artist:</td>
+    {% if track.track_artist %}
+            <td><input type="input" name="track_artist_{{ forloop.counter }}" value="{{ track.track_artist }}"/></td>
+    {% else %}
+            <td><input type="input" name="track_artist_{{ forloop.counter }}"/></td>
+    {% endif %}
+          </tr>
+        </table>
+        <input type="submit" name="update_track_{{ forloop.counter }}" value="Update Track"/>
+        <input type="submit" class="edit_track_{{ forloop.counter }}" value="Cancel"/>
+      </div>
+  {% endif %}
+    </td>
+  {% if album.is_compilation %}
+    {% if track.track_artist %}
+    <td>{{ track.track_artist }}</td>
+    {% else %}
+    <td><font color="red">No track artist</font></td>
+    {% endif %}
+  {% endif %}
     <td>{{ track.duration }}</td>
     <td><small>{{ track.bit_rate_kbps }} kbps</small></td>
     <td>

@@ -255,6 +255,22 @@ class Indexer(object):
             setattr(album, field, value)
         self._txn_objects_to_save.append(album)
 
+    def update_track(self, track, fields):
+        """Update index metadata associated with a Track instance.
+
+        Args:
+            track: A Track instance.
+            fields: A dictionary of field/properties to update and new values.
+
+        track must have the indexer's transaction as its parent key.
+        track is saved when the indexer's save() method is called.
+        """
+        assert track.parent_key() == self.transaction
+        for field, value in fields.iteritems():
+            self.update_key(track.key(), field, unicode(getattr(track, field)), unicode(value))
+            setattr(track, field, value)
+        self._txn_objects_to_save.append(track)
+
     def save(self):
         """Write all pending index data into the Datastore."""
         self._txn_objects_to_save.extend(self._matches.itervalues())

@@ -405,6 +405,27 @@ def album_remove_tag(request, album_id_str):
 
 def update_tracks(request, album_id_str):
     album = _get_album_or_404(album_id_str)
+
+    ctx_vars = {}
+
+    # Update track information.
+    if request.user.is_music_director:
+        for name in request.POST.keys() :
+            m = re.match('update_track_(\d+)', name)
+            if m:
+                artist_key = request.POST.get("artist_key")
+                if artist_key:
+                    artist = db.get(artist_key)
+                    track_num = m.group(1)
+                    track = db.get(request.POST.get("track_key_%s" % track_num))
+                    idx = search.Indexer(track.parent_key())
+                    idx.update_track(track, {"track_artist" : artist})
+                    idx.save()
+                else:
+                    ctx_vars['error'] = 'Artist specified not in DJ database. Note, you must click one of the auto-complete entries.'
+                break
+
+    # Update track explicit and recommended tags.
     mark_as = request.POST.get('mark_as')
     for name in request.POST.keys() :
         if re.match('checkbox_', name) :
@@ -420,13 +441,9 @@ def update_tracks(request, album_id_str):
                     tag_util.remove_tag_and_save(request.user, track, models.RECOMMENDED_TAG)
                 else :
                     tag_util.add_tag_and_save(request.user, track, models.RECOMMENDED_TAG)
-            
-    template = loader.get_template("djdb/album_info_page.html")
-    ctx_vars = { "title": u"%s / %s" % (album.title, album.artist_name),
-                 "album": album,
-                 "user": request.user }
-    ctx = RequestContext(request, ctx_vars)
-    return http.HttpResponse(template.render(ctx))
+
+    request.method = 'GET'            
+    return album_info_page(request, album_id_str, ctx_vars)
 
 def browse_page(request, entity_kind, start_char, ctx_vars=None):
     allowed = map(chr, range(65, 91))
@@ -599,14 +616,16 @@ def album_info_page(request, album_id_str, ctx_vars=None):
         album_form = None
         if request.method == "GET":
             album_form = forms.PartialAlbumForm({'label': album.label,
-                                                 'year': album.year})
+                                                 'year': album.year,
+                                                 'is_compilation': album.is_compilation})
         else:
             album_form = forms.PartialAlbumForm(request.POST)
-            if album_form.is_valid() and "update" in request.POST:
+            if album_form.is_valid() and "update_album" in request.POST:
                 # Update album and search index.
                 idx = search.Indexer(album.parent_key())
                 idx.update_album(album, {"label" : album_form.cleaned_data["label"],
-                                         "year" : album_form.cleaned_data["year"]})
+                                         "year" : album_form.cleaned_data["year"],
+                                         "is_compilation" : album_form.cleaned_data["is_compilation"]})
                 idx.save()
         ctx_vars["album_form"] = album_form
     

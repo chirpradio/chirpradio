@@ -26,22 +26,36 @@
 {% endif %}
 
 {% if not query_str %}
-<h2>Recent Activity</h2>
-  {% if activity_incomplete %}
-  <p>
-  <i><b>This list of recent activity is incomplete.</b></i> <a href="/djdb/activity">See all recent activity...</a>
-  </p>
-  {% endif %}
-  {% for dt, items in recent_activity %}
-{{ dt|date:"D F j, Y P" }}
-<ul class="activity">
-    {% for type, item in items %}
-  <li class="activity_{{ type }}">{{ item|safe }}</li>
-    {% endfor %}
-</ul>
-  {% endfor %}
+<h2>Browse the Database</h2>
 
-<a href="/djdb/activity">See more recent activity...</a>
+<h3>
+By: [
+<a href="/djdb/browse/artist/all">Artist</a> |
+<a href="/djdb/browse/album/all">Album</a> |
+<a href="/djdb/browse/track/all">Track</a>
+]
+<br/>
+
+Category: [
+  {% for category in categories %}
+    {% if not forloop.first %} | {% endif %}
+<a href="/djdb/browse/album/all?category={{ category }}">{{ category|replace:"/_/ "|capfirst }}</a>
+  {% endfor %}
+]
+<br/>
+
+Starts with: [
+<a href="/djdb/browse/artist/all">All</a> |
+<a href="/djdb/browse/artist/0">0-9</a> |
+  {% for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
+<a href="/djdb/browse/artist/{{ letter }}">{{ letter }}</a> |
+  {% endfor %}
+<a href="/djdb/browse/artist/other">Other</a>
+]
+</h3>
+<form method="post" action="/djdb/browse/album/random">
+    <input type="submit" name="RandomAlbums" value="Fetch Random Albums"/>
+</form>
 {% endif %}
 
 <h2>Search the Database</h2>
@@ -212,36 +226,22 @@ matching track{{ query_results.Track|pluralize }}</i>
 {% endif %}
 
 {% if not query_str %}
-<h2>Browse the Database</h2>
-
-<h3>
-By: [
-<a href="/djdb/browse/artist/all">Artist</a> |
-<a href="/djdb/browse/album/all">Album</a> |
-<a href="/djdb/browse/track/all">Track</a>
-]
-<br/>
-
-Category: [
-  {% for category in categories %}
-    {% if not forloop.first %} | {% endif %}
-<a href="/djdb/browse/album/all?category={{ category }}">{{ category|replace:"/_/ "|capfirst }}</a>
+<h2>Recent Activity</h2>
+  {% if activity_incomplete %}
+  <p>
+  <i><b>This list of recent activity is incomplete.</b></i> <a href="/djdb/activity">See all recent activity...</a>
+  </p>
+  {% endif %}
+  {% for dt, items in recent_activity %}
+{{ dt|date:"D F j, Y P" }}
+<ul class="activity">
+    {% for type, item in items %}
+  <li class="activity_{{ type }}">{{ item|safe }}</li>
+    {% endfor %}
+</ul>
   {% endfor %}
-]
-<br/>
 
-Starts with: [
-<a href="/djdb/browse/artist/all">All</a> |
-<a href="/djdb/browse/artist/0">0-9</a> |
-  {% for letter in 'ABCDEFGHIJKLMNOPQRSTUV' %}
-<a href="/djdb/browse/artist/{{ letter }}">{{ letter }}</a> |
-  {% endfor %}
-<a href="/djdb/browse/artist/other">Other</a>
-]
-</h3>
-<form method="post" action="/djdb/browse/album/random">
-    <input type="submit" name="RandomAlbums" value="Fetch Random Albums"/>
-<form>
+<a href="/djdb/activity">See more recent activity...</a>
 {% endif %}
 
 {% endblock %}

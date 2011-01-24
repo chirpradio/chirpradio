@@ -67,12 +67,12 @@
     {% else %}
       {% ifequal item.kind 'Album' %}
         <img src="/media/common/img/album.png" alt="An album" title="An album"/>
-        {{ item.album_artist }} / {{ item }}
+        {{ item.album_artist }} / {{ item }} / {{ item.label }} / {{ item.year }}
         <a href="{{ item.url }}" alt="Go to album." title="Go to album."><img src="/media/common/img/link.png"/></a>
       {% else %}
         {% ifequal item.kind 'Track' %}
         <img src="/media/common/img/track.png" alt="A track" title="A track"/>
-        {{ item.album.album_artist }} / {{ item.album }} / {{ item }}
+        {{ item.album.album_artist }} / {{ item }} / {{ item.album }} / {{ item.album.label }} / {{ item.album.year }}
         <a href="{{ item.album.url }}" alt="Go to track." title="Go to track."><img src="/media/common/img/link.png"/></a>
         {% else %}
           {% ifequal item.kind 'CrateItem' %}

@@ -35,6 +35,7 @@ class PartialAlbumForm(forms.Form):
                             widget=forms.TextInput(attrs={'size': 40}))
     year = forms.IntegerField(required=False,
                               widget=forms.TextInput(attrs={'size': 4, 'maxlength': 4}))
+    is_compilation = forms.BooleanField(required=False, label='Is a compilation:')
 
 class ListReviewsForm(forms.Form):
     author = forms.CharField(required=False)
