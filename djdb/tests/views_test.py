@@ -207,25 +207,29 @@ class UpdateAlbumViewsTestCase(TestCase):
     def test_update_album(self):
         vars = {'label': 'New Label',
                 'year': 2009,
-                'update': 'Update'}
+                'is_compilation': True,
+                'update_album': 'Update Album'}
         response = self.client.post(
             '/djdb/album/%d/info' % self.album.album_id, vars)
         self.assertEqual(response.status_code, 200)
         album = db.get(self.album.key())
         self.assertEqual(self.album.label, 'Label')
         self.assertEqual(self.album.year, 2010)
+        self.assertEqual(self.album.is_compilation, False)
 
         self.user.roles.append(roles.MUSIC_DIRECTOR)
         self.user.save()
         vars = {'label': 'New Label',
                 'year': 2009,
-                'update': 'Update'}
+                'is_compilation': True, 
+                'update_album': 'Update Album'}
         response = self.client.post(
             '/djdb/album/%d/info' % self.album.album_id, vars)
         self.assertEqual(response.status_code, 200)
         album = db.get(self.album.key())
         self.assertEqual(album.label, 'New Label')
         self.assertEqual(album.year, 2009)
+        self.assertEqual(album.is_compilation, True)
 
 
 class ReviewViewsTestCase(TestCase):
@@ -636,6 +640,56 @@ class  AlbumCategoryViewsTestCase(TestCase):
 class TrackViewsTestCase(TestCase):
 
     def setUp(self):
+        assert self.client.login(email="test@test.com", roles=[roles.DJ])
+        
+        idx = search.Indexer()
+        
+        # Create some test artists.
+        art1 = models.Artist(name=u"Fall, The", parent=idx.transaction,
+                             key_name="art1")
+        self.the_fall = art1
+        art2 = models.Artist(name=u"Eno, Brian", parent=idx.transaction,
+                             key_name="art2")
+        self.eno = art2
+        
+        # Create some test albums.
+        alb1 = models.Album(title=u"This Nation's Saving Grace",
+                            album_id=12345,
+                            label=u"Some Label",
+                            import_timestamp=datetime.datetime.now(),
+                            album_artist=art1,
+                            num_tracks=123,
+                            parent=idx.transaction)
+        alb2 = models.Album(title=u"Another Green World",
+                            album_id=67890,
+                            label=u"Some Label",
+                            import_timestamp=datetime.datetime.now(),
+                            album_artist=art2,
+                            num_tracks=456,
+                            parent=idx.transaction)
+        
+        for i, track_title in enumerate((u"Spider And I", 
+                                         u"Running To Tie Your Shoes", 
+                                         u"Kings Lead Hat")):
+            idx.add_track(models.Track(ufid="test3-%d" % i,
+                                       album=alb2,
+                                       sampling_rate_hz=44110,
+                                       bit_rate_kbps=128,
+                                       channels="mono",
+                                       duration_ms=789,
+                                       title=track_title,
+                                       track_artist=art2,
+                                       track_num=i+1,
+                                       parent=idx.transaction))
+        
+        idx.add_artist(art1)
+        idx.add_artist(art2)
+        idx.add_album(alb1)
+        idx.add_album(alb2)
+        
+        idx.save() # this also saves all objects
+
+    def setUp(self):
         # Log in.
         self.client = Client()
         assert self.client.login(email='test@test.com', roles=[roles.DJ])
@@ -643,29 +697,39 @@ class TrackViewsTestCase(TestCase):
         # Get user.
         self.user = models.User.all().filter('email =', 'test@test.com')[0]
 
+        idx = search.Indexer()
+        
         # Create an artist.
-        self.artist = models.Artist(name='Artist')
-        self.artist.put()
+        artist = models.Artist(name=u'Artist', parent=idx.transaction,
+                               key_name='artist')
+        self.artist = artist
 
         # Create an album.
-        self.album = models.Album(title='Album',
-                                  album_id=1,
-                                  import_timestamp=datetime.datetime.now(),
-                                  album_artist=self.artist,
-                                  num_tracks=1)
-        self.album.put()
+        album = models.Album(title=u'Album',
+                             album_id=1,
+                             import_timestamp=datetime.datetime.now(),
+                             album_artist=artist,
+                             num_tracks=1,
+                             parent=idx.transaction)
+        self.album = album
 
         # Create some tracks.
-        for track_num, title in enumerate(
-            ['Track 1', 'Track 2', 'Track 3', 'Track 4']):
-            self.track = models.Track(album=self.album,
-                                      title=title,
-                                      track_num=track_num+1,
-                                      sampling_rate_hz=44000,
-                                      bit_rate_kbps=256,
-                                      channels='stereo',
-                                      duration_ms=60*60*3)
-            self.track.put()
+        for i, track_title in enumerate([u'Track 1', u'Track 2', u'Track 3', 
+                                         u'Track 4']):
+            idx.add_track(models.Track(ufid="test3-%d" % i,
+                                       album=album,
+                                       sampling_rate_hz=44110,
+                                       bit_rate_kbps=128,
+                                       channels="mono",
+                                       duration_ms=789,
+                                       title=track_title,
+                                       track_num=i+1,
+                                       parent=idx.transaction))
+        
+        idx.add_artist(artist)
+        idx.add_album(album)
+        
+        idx.save() # this also saves all objects
 
     def test_update_tracks_recommended(self):
         # Mark as recommended.
@@ -718,6 +782,36 @@ class TrackViewsTestCase(TestCase):
         self.assertEqual(tracks[1].current_tags, [])
         self.assertEqual(tracks[2].current_tags, [])
         self.assertEqual(tracks[3].current_tags, [])
+
+    def test_update_track_info(self):
+        # Test for non-music director.
+        tracks = self.album.sorted_tracks
+        vars = {'track_key_3': tracks[2].key(),
+                'artist_key': self.artist.key(),
+                'update_track_3': 'Update Track'}
+        response = self.client.post(
+            '/djdb/album/%d/update_tracks' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 200)
+        tracks = self.album.sorted_tracks
+        self.assertEqual(tracks[0].track_artist, None)
+        self.assertEqual(tracks[1].track_artist, None)
+        self.assertEqual(tracks[2].track_artist, None)
+        self.assertEqual(tracks[3].track_artist, None)
+        
+        # Test for music director.
+        self.user.roles.append(roles.MUSIC_DIRECTOR)
+        self.user.save()
+        vars = {'track_key_3': tracks[2].key(),
+                'artist_key': self.artist.key(),
+                'update_track_3': 'Update Track'}
+        response = self.client.post(
+            '/djdb/album/%d/update_tracks' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 200)
+        tracks = self.album.sorted_tracks
+        self.assertEqual(tracks[0].track_artist, None)
+        self.assertEqual(tracks[1].track_artist, None)
+        self.assertEqual(tracks[2].track_artist.key(), self.artist.key())
+        self.assertEqual(tracks[3].track_artist, None)
 
 
 class CrateViewsTestCase(TestCase):
