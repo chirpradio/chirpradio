@@ -179,7 +179,8 @@ jQuery.autocomplete = function(input, options) {
 		$results.html("");
 		$input.val(v);
 		hideResultsNow();
-		if (options.onItemSelect) setTimeout(function() { options.onItemSelect(li) }, 1);
+        // jawaxman 11.01.26 Pass input to callback.
+		if (options.onItemSelect) setTimeout(function() { options.onItemSelect(li, input) }, 1);
 	};
 
 	// selects a portion of the input string

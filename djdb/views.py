@@ -283,9 +283,26 @@ def artist_info_page(request, artist_name, ctx_vars=None):
         return http.HttpResponse(status=404)
     template = loader.get_template("djdb/artist_info_page.html")
     if ctx_vars is None : ctx_vars = {}
-    ctx_vars["title"] = artist.pretty_name
+    title = artist.pretty_name
+    if request.user.is_music_director:
+        title += ' <a href="" class="edit_artist"><img src="/media/common/img/page_white_edit.png"/></a>'
+    ctx_vars["title"] = title
     ctx_vars["artist"] = artist
     ctx_vars["categories"] = models.ALBUM_CATEGORIES
+
+    if request.user.is_music_director:
+        artist_form = None
+        if request.method == "GET":
+            artist_form = forms.PartialArtistForm({'pronunciation': artist.pronunciation})
+        else:
+            artist_form = forms.PartialArtistForm(request.POST)
+            if artist_form.is_valid() and "update_artist" in request.POST:
+                # Update artist and search index.
+                idx = search.Indexer(artist.parent_key())
+                idx.update_artist(artist, {"pronunciation" : artist_form.cleaned_data["pronunciation"]})
+                idx.save()
+        ctx_vars["artist_form"] = artist_form
+
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
@@ -413,16 +430,17 @@ def update_tracks(request, album_id_str):
         for name in request.POST.keys() :
             m = re.match('update_track_(\d+)', name)
             if m:
-                artist_key = request.POST.get("artist_key")
-                if artist_key:
-                    artist = db.get(artist_key)
-                    track_num = m.group(1)
-                    track = db.get(request.POST.get("track_key_%s" % track_num))
-                    idx = search.Indexer(track.parent_key())
-                    idx.update_track(track, {"track_artist" : artist})
-                    idx.save()
-                else:
-                    ctx_vars['error'] = 'Artist specified not in DJ database. Note, you must click one of the auto-complete entries.'
+                track_num = m.group(1)
+                pronunciation = request.POST.get("pronunciation_%s" % track_num)
+                artist_key = request.POST.get("track_artist_key_%s" % track_num)
+                artist = db.get(artist_key)
+                track = db.get(request.POST.get("track_key_%s" % track_num))
+                idx = search.Indexer(track.parent_key())
+                idx.update_track(track, {"pronunciation": pronunciation,
+                                         "track_artist" : artist})
+                idx.save()
+#                else:
+#                    ctx_vars['error'] = 'Artist specified not in DJ database. Note, you must click one of the auto-complete entries.'
                 break
 
     # Update track explicit and recommended tags.
@@ -615,7 +633,8 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     if request.user.is_music_director:
         album_form = None
         if request.method == "GET":
-            album_form = forms.PartialAlbumForm({'label': album.label,
+            album_form = forms.PartialAlbumForm({'pronunciation': album.pronunciation,
+                                                 'label': album.label,
                                                  'year': album.year,
                                                  'is_compilation': album.is_compilation})
         else:
@@ -623,7 +642,8 @@ def album_info_page(request, album_id_str, ctx_vars=None):
             if album_form.is_valid() and "update_album" in request.POST:
                 # Update album and search index.
                 idx = search.Indexer(album.parent_key())
-                idx.update_album(album, {"label" : album_form.cleaned_data["label"],
+                idx.update_album(album, {"pronunciation" : album_form.cleaned_data["pronunciation"],
+                                         "label" : album_form.cleaned_data["label"],
                                          "year" : album_form.cleaned_data["year"],
                                          "is_compilation" : album_form.cleaned_data["is_compilation"]})
                 idx.save()
@@ -635,8 +655,12 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     year = album.year
     if year is None:
         year = ''
-    ctx_vars["title"] = u'<a href="%s">%s</a> / %s / %s / %s' \
+
+    title = u'<a href="%s">%s</a> / %s / %s / %s' \
       % (album.artist_url, album.artist_name, album, label, str(year))
+    if request.user.is_music_director:
+        title += ' <a href="" class="edit_album"><img src="/media/common/img/page_white_edit.png"/></a>'
+    ctx_vars["title"] = title
 
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
@@ -663,6 +687,9 @@ def album_edit_review(request, album_id_str, review_key=None):
             attrs = {'text': doc.text}
             if request.user.is_music_director:
                 attrs['author'] = doc.author_display
+            if request.user.is_music_director or request.user.is_reviewer:
+                attrs['label'] = doc.subject.label
+                attrs['year'] = doc.subject.year
         form = review.Form(request.user, attrs)
     else:
         form = review.Form(request.user, request.POST)
@@ -676,6 +703,9 @@ def album_edit_review(request, album_id_str, review_key=None):
                 else:
                     ctx_vars["author_key"] = request.user.key()
                     ctx_vars["author_name"] = request.user
+                if request.user.is_music_director or request.user.is_reviewer:
+                    ctx_vars["label"] = request.POST.get("label")
+                    ctx_vars["year"] = request.POST.get("year")
                 ctx_vars["tags"] = request.POST.getlist("tags[]")
             elif "save" in request.POST:
                 if request.POST.get('author_key'):
@@ -715,6 +745,13 @@ def album_edit_review(request, album_id_str, review_key=None):
                     # is atomic.
                     AutoRetry(db).put([album, doc])
                 
+                # Update album info.
+                if request.user.is_music_director or request.user.is_reviewer:
+                    idx = search.Indexer(album.parent_key())
+                    idx.update_album(album, {"label" : form.cleaned_data["label"],
+                                             "year" : form.cleaned_data["year"]})
+                    idx.save()
+
                 # Redirect back to the album info page.
                 return http.HttpResponseRedirect(album.url)
     ctx_vars["form"] = form

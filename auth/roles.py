@@ -24,6 +24,7 @@ We use these roles to define a very simple set of permissions.
 # a more-or-less human-readable string.
 DJ = 'dj'
 MUSIC_DIRECTOR = 'music_director'
+REVIEWER = 'reviewer'
 VOLUNTEER_COORDINATOR = 'volunteer_coordinator'
 TRAFFIC_LOG_ADMIN = 'traffic_log_admin'
 
@@ -31,6 +32,7 @@ TRAFFIC_LOG_ADMIN = 'traffic_log_admin'
 ALL_ROLES = (
     DJ,
     MUSIC_DIRECTOR,
+    REVIEWER,
     VOLUNTEER_COORDINATOR,
     TRAFFIC_LOG_ADMIN,
 )

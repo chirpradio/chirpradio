@@ -171,6 +171,45 @@ class AutocompleteViewsTestCase(TestCase):
         self.assertEqual(response.content, "")
 
 
+class UpdateArtistViewsTestCase(TestCase):
+    def setUp(self):
+        # Log in.
+        self.client = Client()
+        assert self.client.login(email='test@test.com', roles=[roles.DJ])
+        
+        # Get user.
+        self.user = models.User.all().filter('email =', 'test@test.com')[0]
+
+        # Create an search indexer.
+        idx = search.Indexer()
+
+        # Create an artist.
+        self.artist = models.Artist(name=u'Artist',
+                                    parent=idx.transaction)
+        self.artist.put()
+
+        idx.add_artist(self.artist)
+        idx.save()
+
+    def test_update_artist(self):
+        vars = {'pronunciation': 'pronunciation',
+                'update_artist': 'Update Artist'}
+        response = self.client.post(self.artist.url, vars)
+        self.assertEqual(response.status_code, 200)
+        artist = db.get(self.artist.key())
+        self.assertEqual(artist.pronunciation, None)
+
+        self.user.roles.append(roles.MUSIC_DIRECTOR)
+        self.user.save()
+
+        vars = {'pronunciation': 'pronunciation',
+                'update_artist': 'Update Artist'}
+        response = self.client.post(self.artist.url, vars)
+        self.assertEqual(response.status_code, 200)
+        artist = db.get(self.artist.key())
+        self.assertEqual(artist.pronunciation, 'pronunciation')
+
+
 class UpdateAlbumViewsTestCase(TestCase):
 
     def setUp(self):
@@ -199,13 +238,13 @@ class UpdateAlbumViewsTestCase(TestCase):
                                   album_artist=self.artist,
                                   num_tracks=1,
                                   parent=idx.transaction)
-        self.album.put()
         idx.add_album(self.album)
 
         idx.save()
 
     def test_update_album(self):
-        vars = {'label': 'New Label',
+        vars = {'pronunciation': 'pronunciation',
+                'label': 'New Label',
                 'year': 2009,
                 'is_compilation': True,
                 'update_album': 'Update Album'}
@@ -213,13 +252,15 @@ class UpdateAlbumViewsTestCase(TestCase):
             '/djdb/album/%d/info' % self.album.album_id, vars)
         self.assertEqual(response.status_code, 200)
         album = db.get(self.album.key())
+        self.assertEqual(self.album.pronunciation, None)
         self.assertEqual(self.album.label, 'Label')
         self.assertEqual(self.album.year, 2010)
         self.assertEqual(self.album.is_compilation, False)
 
         self.user.roles.append(roles.MUSIC_DIRECTOR)
         self.user.save()
-        vars = {'label': 'New Label',
+        vars = {'pronunciation': 'pronunciation',
+                'label': 'New Label',
                 'year': 2009,
                 'is_compilation': True, 
                 'update_album': 'Update Album'}
@@ -227,6 +268,7 @@ class UpdateAlbumViewsTestCase(TestCase):
             '/djdb/album/%d/info' % self.album.album_id, vars)
         self.assertEqual(response.status_code, 200)
         album = db.get(self.album.key())
+        self.assertEqual(album.pronunciation, 'pronunciation')
         self.assertEqual(album.label, 'New Label')
         self.assertEqual(album.year, 2009)
         self.assertEqual(album.is_compilation, True)
@@ -246,19 +288,27 @@ class ReviewViewsTestCase(TestCase):
                                        first_name='Test',
                                        last_name='User')
         self.review_user.put()
-        
-        # Create an artist.
-        self.artist = models.Artist(name='Artist')
-        self.artist.put()
-        
-        # Create an album.
-        self.album = models.Album(title='Album',
-                                  album_id=1,
-                                  import_timestamp=datetime.datetime.now(),
-                                  album_artist=self.artist,
-                                  num_tracks=1)
-        self.album.put()
 
+        idx = search.Indexer()
+        
+        # Create some test artists.
+        artist = models.Artist(name=u"Artist", parent=idx.transaction,
+                               key_name="artist")
+        self.artist = artist
+
+        # Create an album.
+        album = models.Album(title=u"Album",
+                             album_id=1,
+                             import_timestamp=datetime.datetime.now(),
+                             album_artist=self.artist,
+                             num_tracks=1,
+                             parent=idx.transaction)
+        self.album = album
+
+        idx.add_artist(artist)
+        idx.add_album(album)        
+        idx.save()
+                
     def tearDown(self):
         for o in models.Document.all():
             o.delete()
@@ -272,8 +322,11 @@ class ReviewViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         
         # Test save review with no user field.
+        # Non-reviewer.
         vars = {'save': 'Save',
                 'text': 'Album review.',
+                'label': 'Label',
+                'year': 1977,
                 'author_key': self.user.key()}
         response = self.client.post(
             '/djdb/album/%d/new_review' % self.album.album_id, vars)
@@ -282,6 +335,26 @@ class ReviewViewsTestCase(TestCase):
             'album_id =', self.album.album_id).fetch(1)[0]
         self.assertEqual(album.reviews[-1].text, 'Album review.')
         self.assertEqual(album.reviews[-1].author.key(), self.user.key())
+        self.assertEqual(album.label, None)
+        self.assertEqual(album.year, None)
+
+        # Reviewer
+        self.user.roles.append(roles.REVIEWER)
+        self.user.save()
+        vars = {'save': 'Save',
+                'text': 'Album review.',
+                'label': 'Label',
+                'year': 1977,
+                'author_key': self.user.key()}
+        response = self.client.post(
+            '/djdb/album/%d/new_review' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 302)
+        album = models.Album.all().filter(
+            'album_id =', self.album.album_id).fetch(1)[0]
+        self.assertEqual(album.reviews[-1].text, 'Album review.')
+        self.assertEqual(album.reviews[-1].author.key(), self.user.key())
+        self.assertEqual(album.label, 'Label')
+        self.assertEqual(album.year, 1977)
 
     def test_new_review_with_user(self):
         # Test save review with user field of existing user.
@@ -787,7 +860,8 @@ class TrackViewsTestCase(TestCase):
         # Test for non-music director.
         tracks = self.album.sorted_tracks
         vars = {'track_key_3': tracks[2].key(),
-                'artist_key': self.artist.key(),
+                'track_artist_key_3': self.artist.key(),
+                'pronunciation_3': 'pronunciation',
                 'update_track_3': 'Update Track'}
         response = self.client.post(
             '/djdb/album/%d/update_tracks' % self.album.album_id, vars)
@@ -797,12 +871,17 @@ class TrackViewsTestCase(TestCase):
         self.assertEqual(tracks[1].track_artist, None)
         self.assertEqual(tracks[2].track_artist, None)
         self.assertEqual(tracks[3].track_artist, None)
+        self.assertEqual(tracks[0].pronunciation, None)
+        self.assertEqual(tracks[1].pronunciation, None)
+        self.assertEqual(tracks[2].pronunciation, None)
+        self.assertEqual(tracks[3].pronunciation, None)
         
         # Test for music director.
         self.user.roles.append(roles.MUSIC_DIRECTOR)
         self.user.save()
         vars = {'track_key_3': tracks[2].key(),
-                'artist_key': self.artist.key(),
+                'track_artist_key_3': self.artist.key(),
+                'pronunciation_3': 'pronunciation',
                 'update_track_3': 'Update Track'}
         response = self.client.post(
             '/djdb/album/%d/update_tracks' % self.album.album_id, vars)
@@ -812,6 +891,10 @@ class TrackViewsTestCase(TestCase):
         self.assertEqual(tracks[1].track_artist, None)
         self.assertEqual(tracks[2].track_artist.key(), self.artist.key())
         self.assertEqual(tracks[3].track_artist, None)
+        self.assertEqual(tracks[0].pronunciation, None)
+        self.assertEqual(tracks[1].pronunciation, None)
+        self.assertEqual(tracks[2].pronunciation, 'pronunciation')
+        self.assertEqual(tracks[3].pronunciation, None)
 
 
 class CrateViewsTestCase(TestCase):

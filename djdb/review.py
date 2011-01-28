@@ -47,6 +47,11 @@ class Form(forms.Form):
         super(Form, self).__init__(*args, **kwargs)
         if user.is_music_director:
             self.fields['author'] = forms.CharField(required=False)
+        if user.is_reviewer:
+            self.fields['label'] = forms.CharField(required=False,
+                                   widget=forms.TextInput(attrs={'size': 40}))
+            self.fields['year'] = forms.IntegerField(required=False,
+                                  widget=forms.TextInput(attrs={'size': 4, 'maxlength': 4}))
 
 def fetch_recent(max_num_returned=10, days=None, start_dt=None, author_key=None, order="created"):
     """Returns the most recent reviews, in reverse chronological order."""

@@ -15,11 +15,29 @@
     src="/media/common/js/jquery/jquery-1.3.1.js"></script>
 <script type="text/javascript" 
     src="/media/djdb/js/djdb.js"></script>
+<script type="text/javascript"
+    src="/media/djdb/js/djdb_edit_artist.js"></script>
 {% endblock %}
+
+{% if artist.pronunciation %}
+<i>Pronunciation: {{ artist.pronunciation }}</i>
+{% endif %}
 
 {% if msg %}
 <div class="success">
 {{ msg }}
+</div>
+{% endif %}
+
+{% if user.is_music_director %}
+<div class="edit_artist" style="display: none">
+  <form action="" method="post">
+    <table>
+{{ artist_form.as_table }}
+    </table>
+    <input type="submit" name="update_artist" value="Update Artist">
+    <input class="edit_artist" type="submit" name="cancel" value="Cancel">
+  </form>
 </div>
 {% endif %}
 

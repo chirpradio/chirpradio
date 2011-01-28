@@ -39,7 +39,7 @@ class User(db.Model):
     first_name = db.StringProperty()
     last_name = db.StringProperty()
 
-    dj_name = db.StringProperty()
+    dj_name = db.StringProperty(required=False)
     
     # This is an index of searchable terms for the user. Used by autocomplete.
     index = db.StringListProperty()

@@ -31,11 +31,17 @@ ORDER_CHOICES = [['created', 'created'],
                  ['author', 'author']]
 
 class PartialAlbumForm(forms.Form):
+    pronunciation = forms.CharField(required=False,
+                                    widget=forms.TextInput(attrs={'size': 40}))
     label = forms.CharField(required=False,
                             widget=forms.TextInput(attrs={'size': 40}))
     year = forms.IntegerField(required=False,
                               widget=forms.TextInput(attrs={'size': 4, 'maxlength': 4}))
     is_compilation = forms.BooleanField(required=False, label='Is a compilation:')
+
+class PartialArtistForm(forms.Form):
+    pronunciation = forms.CharField(required=False,
+                                    widget=forms.TextInput(attrs={'size': 40}))
 
 class ListReviewsForm(forms.Form):
     author = forms.CharField(required=False)
@@ -47,3 +53,4 @@ class ListReviewsForm(forms.Form):
 class TagForm(forms.Form):
     name = forms.CharField(required=True)
     description = forms.CharField(widget=forms.Textarea, required=False)
+

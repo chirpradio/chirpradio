@@ -10,12 +10,6 @@
 
 {% block content %}
 
-{% if album.category %}
-<p>
-  <h3>Category: {{ album.category|replace:"/_/ "|capfirst }}</h3>
-</p>
-{% endif %}
-
 {% block extrahead %}
 <script type="text/javascript" 
     src="/media/common/js/jquery/jquery-1.3.1.js"></script>
@@ -30,8 +24,20 @@
 <script type="text/javascript"
     src="/media/djdb/js/djdb_image_box.js"></script>
 <script type="text/javascript"
+    src="/media/djdb/js/djdb_edit_album.js"></script>
+<script type="text/javascript"
     src="/media/djdb/js/djdb_edit_track.js"></script>
 {% endblock %}
+
+{% if album.pronunciation %}
+<i>Pronunciation: {{ album.pronunciation }}</i>
+{% endif %}
+
+{% if album.category %}
+<p>
+  <h3>Category: {{ album.category|replace:"/_/ "|capfirst }}</h3>
+</p>
+{% endif %}
 
 {% if msg %}
 <div class="success">
@@ -46,14 +52,15 @@
 {% endif %}
 
 {% if user.is_music_director %}
-<h3>Edit Album</h3>
-
-<form action="" method="post">
-  <table>
+<div class="edit_album" style="display: none">
+  <form action="" method="post">
+    <table>
 {{ album_form.as_table }}
-  </table>
-  <input type="submit" name="update_album" value="Update Album">
-</form>
+    </table>
+    <input type="submit" name="update_album" value="Update Album">
+    <input class="edit_album" type="submit" name="cancel" value="Cancel">
+  </form>
+</div>
 {% endif %}
 
 <h3>Reviews</h3>
@@ -71,7 +78,7 @@
 </blockquote>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author_display }} on {{ doc.created_display|date:"F j, Y P" }}</small>
       {% ifequal user.key doc.author.key %}
-[ <a href="/djdb/album/{{ album.album_id }}/edit_review/{{ doc.key }}">Edit</a>
+[ <a href="/djdb/album/{{ album.album_id }}/edit_review/{{ doc.key }}">Edit</a> ]
       {% else %}
         {% if user.is_music_director %}
 [ <a href="/djdb/album/{{ album.album_id }}/edit_review/{{ doc.key }}">Edit</a> 
@@ -83,9 +90,8 @@
         {% else %}
 | <a href="/djdb/album/{{ album.album_id }}/hide_review/{{ doc.key }}">Hide</a>
         {% endif %}
-| <a class="delete_review_{{ forloop.counter }}" href="/djdb/album/{{ album.album_id }}/delete_review/{{ doc.key }}">Delete</a>
+| <a class="delete_review_{{ forloop.counter }}" href="/djdb/album/{{ album.album_id }}/delete_review/{{ doc.key }}">Delete</a> ]
       {% endif %}
-]
       {% if user.is_music_director %}
   <div class="warning delete_review_{{ forloop.counter }}" style="display: none">
     <form action="/djdb/album/{{ album.album_id }}/delete_review" method="post">
@@ -136,7 +142,6 @@ No reviews yet!  You could be the first to
 
 <h3>Tracks</h3>
 <form method="post" name="djdbTracksForm" action="update">
-<input type="hidden" id="id_artist_key" name="artist_key"/>
 <p>
 Select: <a id="checkbox_all" href="">All</a>, 
         <a id="checkbox_none" href="">None</a>, 
@@ -167,16 +172,33 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
     <td>{{ track.title }}
   {% if user.is_music_director %}
 <a href="" class="edit_track_{{ forloop.counter }}"><img src="/media/common/img/page_white_edit.png"/></a>
+  {% endif %}
+  {% if track.pronunciation %}
+<br/><i>Pronunciation: {{ track.pronunciation }}</i>
+  {% endif %}
+  {% if user.is_music_director %}
       <div class="edit_track_{{ forloop.counter }}" style="display: none">
         <input type="hidden" name="track_key_{{ forloop.counter }}" value="{{ track.key }}"/>
         <table>
           <tr>
-            <td>Track artist:</td>
-    {% if track.track_artist %}
-            <td><input type="input" name="track_artist_{{ forloop.counter }}" value="{{ track.track_artist }}"/></td>
+            <td>Pronunciation:</td>
+    {% if track.pronunciation %}
+            <td><input type="input" name="pronunciation_{{ forloop.counter }}" value="{{ track.pronunciation }}"/></td>
     {% else %}
-            <td><input type="input" name="track_artist_{{ forloop.counter }}"/></td>
+            <td><input type="input" name="pronunciation_{{ forloop.counter }}"/></td>
     {% endif %}
+          </tr>
+          <tr>
+            <td>Track artist:</td>
+            <td>
+              <input type="hidden" name="track_artist_key_{{ forloop.counter }}" value="{{ track.track_artist.key }}"/>
+    {% if track.track_artist %}
+              <input type="input" name="track_artist_{{ forloop.counter }}" id="track_artist_key_{{ forloop.counter }}" value="{{ track.track_artist }}"/>
+    {% else %}
+              <input type="input" name="track_artist_{{ forloop.counter }}" id="track_artist_key_{{ forloop.counter }}"/>
+    {% endif %}
+              <i>(Note: You <b>must</b> select an artist from the autocomplete list.)</i>
+            </td>
           </tr>
         </table>
         <input type="submit" name="update_track_{{ forloop.counter }}" value="Update Track"/>

@@ -104,12 +104,15 @@ class Artist(db.Model):
     Attributes:
       name: The canonical name used to describe this artist in TPE1 tags.
         This name should follow the music committee's naming style guide.
+      pronunciation: How to pronounce the artist name.
       image: An image associated with this artist.
       revoked: If true, this object has been revoked.  Revoked items should
         not be returned in search results, and should be otherwise hidden
         from users when possible.
     """
     name = db.StringProperty(required=True)
+
+    pronunciation = db.StringProperty(required=False)
 
     image = db.ReferenceProperty(DjDbImage)
 
@@ -214,6 +217,7 @@ class Album(db.Model):
       category: The category of the album. May be core, local_current,
         local_classic, heavy, light.
       title: The name of the album.  This is used in TALB tags.
+      pronunciation: How to pronounce the album title.
       label: The label of the album.
       year: The year of the album.
       disc_number: If specified, this album is one part of a multi-disc
@@ -238,6 +242,8 @@ class Album(db.Model):
     category = db.StringProperty(required=False)
     
     title = db.StringProperty(required=True)
+
+    pronunciation = db.StringProperty(required=False)
 
     label = db.StringProperty(required=False)
     
@@ -388,6 +394,7 @@ class Track(db.Model):
     Attributes:
       album: A reference to the Album entity that this track is a part of.
       title: The name of the track, as stored in the MP3 file's TIT2 tag.
+      pronunciation: How to pronounce the track title.
       track_artist: A reference to the Artist entity of the track's creator.
         This must be set if self.album.is_compilation is True.
         It may be set if self.album.is_compilation is False.
@@ -407,6 +414,8 @@ class Track(db.Model):
     album = db.ReferenceProperty(Album, required=True)
 
     title = db.StringProperty(required=True)
+
+    pronunciation = db.StringProperty(required=False)
 
     track_artist = db.ReferenceProperty(Artist, required=False)
 

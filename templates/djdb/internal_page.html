@@ -6,12 +6,12 @@
 
 {% block page_content %}
   <div id="header">
-      <a href="/">
-	<img src="/media/common/img/chirp-logo-small.gif" style="float:left;">
-      </a>
-      <h1>chirpradio: CHIRP internal applications</h1>
-      <small>(Know HTML and CSS?  Have good taste?  If so, 
-      please volunteer to make this page look better!)</small>
+    <a href="/">
+	  <img src="/media/common/img/chirp-logo-small.gif" style="float:left;">
+    </a>
+    <h1>CHIRP Radio internal applications</h1>
+    &nbsp;
+    <div class="bugreport"><a href="http://code.google.com/p/chirpradio/issues/entry">file a bug report</a></div>
   </div> {# end of header #}
   <div class="breadcrumbs">{% block breadcrumbs %}{% endblock %}</div>
   <div id="djdb_header">
@@ -30,9 +30,11 @@
   </div>
   <div id="content">
     {% if title %}
+    <h1>
       {% autoescape off %}
-    <h1>{{ title }}</h1>
+{{ title }}
       {% endautoescape %}
+    </h1>
     {% endif %}
     {% block content %}{% endblock %}
   </div> {# end of content #}

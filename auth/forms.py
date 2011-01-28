@@ -95,7 +95,7 @@ class UserForm(forms.Form):
     email = forms.EmailField()
     first_name = forms.CharField()
     last_name = forms.CharField()
-    dj_name = forms.CharField()
+    dj_name = forms.CharField(required=False)
     password = forms.CharField(required=False)
     is_active = forms.BooleanField(initial=True, required=False)
     # We also plug in synthetic fields for all of our various roles.

@@ -239,6 +239,22 @@ class Indexer(object):
         if text is not None:
             self.add_key(key, field, text)
 
+    def update_artist(self, artist, fields):
+        """Update index metadata associated with an Artist instance.
+        
+        Args:
+          artist: An Artist instance.
+          fields: A dictionary of field/property names to update and new values.
+          
+        artist must have the indexer's transaction as its parent key.
+        artist is saved when the indexer's save() method is called.
+        """
+        assert artist.parent_key() == self.transaction
+        for field, value in fields.iteritems():
+            self.update_key(artist.key(), field, unicode(getattr(artist, field)), unicode(value))
+            setattr(artist, field, value)
+        self._txn_objects_to_save.append(artist)
+
     def update_album(self, album, fields):
         """Update index metadata associated with an Album instance.
         
