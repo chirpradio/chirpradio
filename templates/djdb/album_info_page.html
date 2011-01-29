@@ -53,7 +53,7 @@
 
 {% if user.is_music_director %}
 <div class="edit_album" style="display: none">
-  <form action="" method="post">
+  <form action="{{ album.url }}" method="post">
     <table>
 {{ album_form.as_table }}
     </table>
@@ -63,36 +63,35 @@
 </div>
 {% endif %}
 
+{% if reviews_allowed %}
 <h3>Reviews</h3>
-{% if album.reviews %}
+  {% if album.reviews %}
 <a href="/djdb/album/{{ album.album_id }}/new_review">Write another review</a> of this album.
-  {% for doc in album.reviews %}
-    {% if user.is_music_director or not doc.is_hidden %}
+    {% for doc in album.reviews %}
+      {% if user.is_music_director or not doc.is_hidden %}
 <p>
-      {% if doc.is_hidden %}
+        {% if doc.is_hidden %}
 <div style="background-color: #ffdddd">
 <font color="#ff5555">This review is hidden.</font><br/>
-      {% endif %}
+        {% endif %}
 <blockquote>
 {{ doc.text|safe }}
 </blockquote>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author_display }} on {{ doc.created_display|date:"F j, Y P" }}</small>
-      {% ifequal user.key doc.author.key %}
-[ <a href="/djdb/album/{{ album.album_id }}/edit_review/{{ doc.key }}">Edit</a> ]
-      {% else %}
         {% if user.is_music_director %}
 [ <a href="/djdb/album/{{ album.album_id }}/edit_review/{{ doc.key }}">Edit</a> 
-        {% endif %}    
-      {% endifequal %}
-      {% if user.is_music_director %}
-        {% if doc.is_hidden %}
+          {% if doc.is_hidden %}
 | <a href="/djdb/album/{{ album.album_id }}/unhide_review/{{ doc.key }}">Unhide</a>
-        {% else %}
+          {% else %}
 | <a href="/djdb/album/{{ album.album_id }}/hide_review/{{ doc.key }}">Hide</a>
-        {% endif %}
+          {% endif %}
 | <a class="delete_review_{{ forloop.counter }}" href="/djdb/album/{{ album.album_id }}/delete_review/{{ doc.key }}">Delete</a> ]
-      {% endif %}
-      {% if user.is_music_director %}
+        {% else %}
+          {% ifequal user.key doc.author.key %}
+[ <a href="/djdb/album/{{ album.album_id }}/edit_review/{{ doc.key }}">Edit</a> ]
+          {% endifequal %}
+        {% endif %}
+        {% if user.is_music_director %}
   <div class="warning delete_review_{{ forloop.counter }}" style="display: none">
     <form action="/djdb/album/{{ album.album_id }}/delete_review" method="post">
       <input type="hidden" name="review_key" value="{{ doc.key }}"/>
@@ -101,16 +100,17 @@
       <input class="delete_review_{{ forloop.counter }}" type="submit" name="cancel" value="Cancel"/>
     </form>
   </div>
-      {% endif %}
-      {% if doc.is_hidden %}
+        {% endif %}
+        {% if doc.is_hidden %}
 </div>
-      {% endif %}
+        {% endif %}
 </p>
-    {% endif %}
-  {% endfor %}
-{% else %}
+      {% endif %}
+    {% endfor %}
+  {% else %}
 No reviews yet!  You could be the first to
 <a href="/djdb/album/{{ album.album_id }}/new_review">write a review</a> of this album.
+  {% endif %}
 {% endif %}
 
 <h3>Album Tags</h3>
@@ -122,22 +122,18 @@ No reviews yet!  You could be the first to
         <img class="remove_tag" style="display: none" src="/media/common/img/remove.png" title="Remove tag"/>
     </div>
 {% endfor %}
-{% if user.is_music_director %}
     <select class="tag" style="display: none">
         <option>-</option>
-  {% if user.is_music_director %}
+{% if user.is_music_director %}
         <option>Other</option>
-  {% endif %}
-  {% for tag in album_tags %}
+{% endif %}
+{% for tag in album_tags %}
         <option>{{ tag }}</option>
-  {% endfor %}
+{% endfor %}
     </select>
     <input class="tag" style="display: none"/>
-{% endif %}
 </div>
-{% if user.is_music_director %}
 <img class="add_tag" src="/media/common/img/add.png" title="Add a new tag"/>
-{% endif %}
 </td></tr></table>
 
 <h3>Tracks</h3>

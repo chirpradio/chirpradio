@@ -433,7 +433,10 @@ def update_tracks(request, album_id_str):
                 track_num = m.group(1)
                 pronunciation = request.POST.get("pronunciation_%s" % track_num)
                 artist_key = request.POST.get("track_artist_key_%s" % track_num)
-                artist = db.get(artist_key)
+                if artist_key != "":
+                    artist = db.get(artist_key)
+                else:
+                    artist = None
                 track = db.get(request.POST.get("track_key_%s" % track_num))
                 idx = search.Indexer(track.parent_key())
                 idx.update_track(track, {"pronunciation": pronunciation,
@@ -661,6 +664,8 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     if request.user.is_music_director:
         title += ' <a href="" class="edit_album"><img src="/media/common/img/page_white_edit.png"/></a>'
     ctx_vars["title"] = title
+    ctx_vars["reviews_allowed"] = request.user.is_music_director or request.user.is_reviewer
+    ctx_vars["show_album_tags"] = request.user.is_music_director or bool(album.sorted_current_tags)
 
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
