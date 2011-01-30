@@ -688,6 +688,7 @@ def album_edit_review(request, album_id_str, review_key=None):
     form = None
     if request.method == "GET":
         attrs = None
+        initial = None
         if review_key:
             attrs = {'text': doc.text}
             if request.user.is_music_director:
@@ -695,7 +696,10 @@ def album_edit_review(request, album_id_str, review_key=None):
             if request.user.is_music_director or request.user.is_reviewer:
                 attrs['label'] = doc.subject.label
                 attrs['year'] = doc.subject.year
-        form = review.Form(request.user, attrs)
+        else:
+            initial = {'label': album.label,
+                       'year': album.year}
+        form = review.Form(request.user, attrs, initial=initial)
     else:
         form = review.Form(request.user, request.POST)
         if form.is_valid():
