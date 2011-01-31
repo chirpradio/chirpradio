@@ -63,10 +63,12 @@
 </div>
 {% endif %}
 
-{% if reviews_allowed %}
+{% if show_reviews %}
 <h3>Reviews</h3>
   {% if album.reviews %}
+    {% if show_review_link %}
 <a href="/djdb/album/{{ album.album_id }}/new_review">Write another review</a> of this album.
+    {% endif %}
     {% for doc in album.reviews %}
       {% if user.is_music_director or not doc.is_hidden %}
 <p>
@@ -108,8 +110,10 @@
       {% endif %}
     {% endfor %}
   {% else %}
+    {% if show_review_link %}
 No reviews yet!  You could be the first to
 <a href="/djdb/album/{{ album.album_id }}/new_review">write a review</a> of this album.
+    {% endif %}
   {% endif %}
 {% endif %}
 

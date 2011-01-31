@@ -664,7 +664,8 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     if request.user.is_music_director:
         title += ' <a href="" class="edit_album"><img src="/media/common/img/page_white_edit.png"/></a>'
     ctx_vars["title"] = title
-    ctx_vars["reviews_allowed"] = request.user.is_music_director or request.user.is_reviewer
+    ctx_vars["show_reviews"] = album.reviews or request.user.is_music_director or request.user.is_reviewer
+    ctx_vars["show_review_link"] = request.user.is_music_director or request.user.is_reviewer
     ctx_vars["show_album_tags"] = request.user.is_music_director or bool(album.sorted_current_tags)
 
     ctx = RequestContext(request, ctx_vars)
