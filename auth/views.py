@@ -342,7 +342,7 @@ def user_search_for_autocomplete(request):
     terms = [term for term in search.scrub(request.GET.get('q', '')).split()]
     for term in terms:
         query = User.all()
-        query.filter("index =", term)
+        query.filter("is_active =", True).filter("index =", term)
         users = AutoRetry(query).fetch(999)
         if (len(users) > 0):
             for user in users:

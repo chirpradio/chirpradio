@@ -31,6 +31,7 @@ import auth
 from auth import forms as auth_forms
 from auth import roles
 from auth.models import User, KeyStorage
+from auth.views import _reindex
 
 
 # These are needed by the App Engine local user service stub.
@@ -543,3 +544,36 @@ class UserViewsTestCase(FormTestCaseHelper, DjangoTestCase):
         # password was changed:
         self.assertEqual(user.check_password('1234567'), True)
         
+
+class AutocompleteViewsTestCase(DjangoTestCase):
+
+    def setUp(self):
+#        assert self.client.login(email="test@test.com")
+        self.activeUser = User(
+            email='foo@bar.com',
+            first_name='Active',
+            last_name='User',
+            is_active=True,
+            password='123456'
+        )
+        _reindex(self.activeUser)
+        self.activeUser.save()
+        self.inactiveUser = User(
+            email='blah@blah.com',
+            first_name='Inactive',
+            last_name='User',
+            is_active=False,
+            password='123456'
+        )
+        _reindex(self.inactiveUser)
+        self.inactiveUser.save()
+
+    def test_active_user(self):
+        response = self.client.get("/auth/search.txt", {'q': 'Active'})
+        self.assertEqual(response.content,
+            "%s|%s\n" % (self.activeUser, self.activeUser.key()))
+
+    def test_inactive_user(self):
+        response = self.client.get("/auth/search.txt", {'q': 'Inactive'})
+        self.assertEqual(response.content, "")
+
