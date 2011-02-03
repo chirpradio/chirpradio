@@ -251,7 +251,7 @@ def reviews_page(request, ctx_vars=None):
 
     if request.method == "GET":
         form = forms.ListReviewsForm()
-        author_key = request.POST.get('author_key')
+        author_key = request.GET.get('author_key')
         page_size = default_page_size
         order = default_order
         bookmark = None
