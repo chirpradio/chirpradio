@@ -35,6 +35,7 @@ from djdb import review
 from djdb import comment
 from djdb import forms
 from djdb.models import Album
+from playlists.models import PlaylistTrack
 from datetime import datetime, timedelta
 import djdb.pylast as pylast
 import random
@@ -58,14 +59,16 @@ def fetch_activity(num=None, days=None, start_dt=None, max_num_items=None):
             text = rev.text[0:100] + '... <a href="%s">Read more</a>' % rev.subject.url
         else:
             text = rev.text
-        item = """
-<a href="%s">%s / %s</a> <b>reviewed</b> by <a href="">%s</a>.
+        item = '<a href="%s">%s / %s</a> <b>reviewed</b> by ' % (rev.subject.url, rev.subject.artist_name, rev.subject.title)
+        if rev.author:
+            item += '<a href="/djdb/user/%s">%s</a>.' % (rev.author.key().id(), rev.author_display)
+        else:
+            item += rev.author_display
+        item += """
 <blockquote>
 %s
 </blockquote>
-            """ % (
-            rev.subject.url, rev.subject.artist_name, rev.subject.title,
-            rev.author_display, text)
+            """ % (text)
         type = 'review'
         activity.append((dt, type, item))
         num_items[type] = num_items.setdefault(type, 0) + 1
@@ -248,7 +251,7 @@ def reviews_page(request, ctx_vars=None):
 
     if request.method == "GET":
         form = forms.ListReviewsForm()
-        author_key = ""
+        author_key = request.POST.get('author_key')
         page_size = default_page_size
         order = default_order
         bookmark = None
@@ -274,6 +277,41 @@ def reviews_page(request, ctx_vars=None):
     ctx_vars["author_key"] = author_key
     ctx_vars["page_size"] = page_size
     ctx_vars["order"] = order
+    ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+def user_info_page(request, user_id, ctx_vars=None):
+    if ctx_vars is None:
+        ctx_vars = {}
+    
+    # Get user and check if exists and authorized.
+    user = models.User.get_by_id(int(user_id))
+    if user is None or (not user.is_superuser and roles.DJ not in user.roles):
+        return http.HttpResponse(status=404)
+
+    # Get tracks played.
+#    page_size = 10
+#    bookmark = None
+#    query = pager.PagerQuery(PlaylistTrack)
+#    query.filter('selector =', user)
+#    query.order('-established')
+#    prev, playlist, next = query.fetch(page_size, bookmark)
+#    ctx_vars['playlist'] = playlist
+    query = PlaylistTrack.all().filter("selector =", user).order("-established")
+    ctx_vars["playlist"] = query.fetch(10)
+
+    # Get reviews.
+    query = models.Document.all().filter("doctype =", models.DOCTYPE_REVIEW) \
+                                 .filter("revoked =", False) \
+                                 .filter("author =", user) \
+                                 .order("-created")
+    ctx_vars["reviews"] = query.fetch(10)
+
+    # Set page title.
+    ctx_vars['title'] = user
+
+    # Return rendered page.
+    template = loader.get_template('djdb/user_info_page.html')
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 

@@ -38,6 +38,9 @@ urlpatterns = patterns(
     # Reviews page
     (r'reviews', 'djdb.views.reviews_page'),
     
+    # DJ home pgae
+    (r'user/(.*)', 'djdb.views.user_info_page'),
+
     # Artist information page
     (r'artist/(.*)/info', 'djdb.views.artist_info_page'),
 

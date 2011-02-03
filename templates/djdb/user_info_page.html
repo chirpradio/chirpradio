@@ -1,0 +1,65 @@
+{% extends "djdb/internal_page.html" %}
+
+{% load common_extras %}
+{% load djdb_extras %}
+
+{% block breadcrumbs %}
+<a href="/">chipradio home</a> /
+<a href="/djdb/">DJ Database home</a>
+{% endblock %}
+
+{% block content %}
+
+{% block extrahead %}
+<script type="text/javascript" 
+    src="/media/common/js/jquery/jquery-1.3.1.js"></script>
+<script type="text/javascript" 
+    src="/media/djdb/js/djdb.js"></script>
+{% endblock %}
+
+<h3>Tracks Played</h3>
+
+<table>
+{% for item in playlist %}
+  <tr>
+    <td>{{ item.established }}</td>
+  {% if item.artist %}
+    <td><a href="{{ item.artist.url }}">{{ item.artist_name }}</a></td>
+  {% else %}
+    <td>{{ item.artist_name }}</td>
+  {% endif %}
+  {% if item.album %}
+    <td><a href="{{ item.album.url }}">{{ item.album_title }}</a></td>
+  {% else %}
+    <td>{{ item.album_title }}</td>
+  {% endif %}
+    <td>{{ item.track_title }}</td>
+    <td>{{ item.label }}</td>
+  </tr>
+{% endfor %}
+</table>
+
+<a href="">See more tracks...</a>
+
+<h3>Reviews</h3>
+
+{% if reviews %}
+<ul>
+{% for rev in reviews %}
+  <li>
+    <a href="{{ rev.subject.url }}">{{ rev.subject.album_artist.name }} / {{ rev.subject.title }},</a> Posted {{ rev.created_display|date:"F j, Y P" }}
+  {% ifequal user.key rev.author.key %}
+[ <a href="/djdb/album/{{ rev.subject.album_id }}/edit_review/{{ rev.key }}">Edit</a> ]
+  {% endifequal %}
+    <blockquote>{{ rev.truncated_text }}</blockquote>
+
+  </li>
+{% endfor %}
+</ul>
+
+<a href="/djdb/reviews?author_key={{ user.key }}">See more reviews...</a>
+{% else %}
+None!
+{% endif %}
+
+{% endblock %}

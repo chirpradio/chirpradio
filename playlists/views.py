@@ -35,6 +35,7 @@ from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpB
 from playlists.tasks import playlist_event_listeners
 from common.utilities import as_encoded_str, http_send_csv_file
 from common.autoretry import AutoRetry
+from djdb.models import Track
 
 log = logging.getLogger()
 
@@ -251,4 +252,28 @@ def query_group_by_track_key(from_date, to_date):
         seen[key][key_counter] += 1
 
     return items
+
+def bootstrap(request):
+    # Don't create dummy playlist tracks if playlist tracks already exist!
+    pl_tracks = PlaylistTrack.all().fetch(1)
+    if len(pl_tracks) > 0:
+        return HttpResponse(status=404)
+
+    playlist = ChirpBroadcast()
+    playlist.put()
+
+    minutes = 0
+    tracks = Track.all().fetch(100)
+    for track in tracks:
+        pl_track = PlaylistTrack(
+                       playlist=playlist,
+                       selector=request.user,
+                       established = datetime.now() - timedelta(minutes=minutes),
+                       artist=track.album.album_artist,
+                       album=track.album,
+                       track=track)
+        pl_track.put()
+        minutes += 5
+
+    return HttpResponseRedirect("/playlists/")
 

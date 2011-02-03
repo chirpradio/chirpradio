@@ -603,6 +603,15 @@ class Document(db.Model):
         return sanitize_html.sanitize_html(self.unsafe_text)
 
     @property
+    def truncated_text(self):
+        """Returns truncated text."""
+        if len(self.text) > 100:
+            text = self.text[0:100] + "..."
+        else:
+            text = self.text
+        return text
+
+    @property
     def sort_key(self):
         # We want to sort documents in reverse chronological order.
         return tuple(-x for x in self.created.utctimetuple())
