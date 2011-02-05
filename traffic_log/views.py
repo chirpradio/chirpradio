@@ -523,27 +523,35 @@ def report(request):
         report_form = forms.ReportForm(request.POST)
         if report_form.is_valid():
             query = (models.TrafficLogEntry.all()
-                        .filter('log_date >= ', report_form.cleaned_data['start_date'])
-                        .filter('log_date <= ', report_form.cleaned_data['end_date']))            
+                        .filter('log_date >= ',
+                                report_form.cleaned_data['start_date'])
+                        .filter('log_date <= ',
+                                report_form.cleaned_data['end_date']))            
             filter_type = report_form.cleaned_data['type'] != "Spot Type"
             filter_underwriter = report_form.cleaned_data['underwriter'] != ""
             if filter_type or filter_underwriter:
                 for entry in AutoRetry(query):
-                    if (not filter_type or entry.spot.type == report_form.cleaned_data['type']) \
-                       and (not filter_underwriter or entry.spot_copy.underwriter == report_form.cleaned_data['underwriter']):
+                    if ((not filter_type or
+                         entry.spot.type == report_form.cleaned_data['type'])
+                         and (not filter_underwriter or 
+                              entry.spot_copy.underwriter == 
+                                    report_form.cleaned_data['underwriter'])):
                        entries.append(report_entry_to_csv_dict(entry))
             else:
                 for entry in AutoRetry(query):
                     entries.append(report_entry_to_csv_dict(entry))
             if request.POST.get('download'):
-                fields = ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'excerpt']
-                fname = "chirp-traffic_log_%s_%s" % (report_form.cleaned_data['start_date'],
-                                                     report_form.cleaned_data['end_date'])
+                fields = ['readtime', 'dow', 'slot_time', 'underwriter',
+                          'title', 'type', 'excerpt']
+                fname = "chirp-traffic_log_%s_%s" % (
+                                    report_form.cleaned_data['start_date'],
+                                    report_form.cleaned_data['end_date'])
                 return http_send_csv_file(fname, fields, entries)
     else :
         end_date = datetime.datetime.now().date()
         start_date = end_date - datetime.timedelta(days=30)
-        report_form = forms.ReportForm({'start_date': start_date, 'end_date': end_date})
+        report_form = forms.ReportForm({'start_date': start_date,
+                                        'end_date': end_date})
     return render_to_response('traffic_log/report.html', 
                               {'form': report_form},
                               context_instance=RequestContext(request))
