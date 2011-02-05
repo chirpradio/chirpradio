@@ -60,7 +60,8 @@ class JobTestCase(object):
             attempts += 1
             if attempts > 30:
                 raise RuntimeError(
-                        "Job %r did not finish after %s attempts" % ())
+                        "Job %r did not finish after %s attempts" % (
+                                                    job_name, attempts))
             r = self.client.post(reverse('jobs.work'),
                                  data={'job_key': job['job_key'],
                                        'params': simplejson.dumps(params)})
