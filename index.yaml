@@ -383,6 +383,11 @@ indexes:
 
 - kind: TrafficLogEntry
   properties:
+  - name: spot
+  - name: log_date
+
+- kind: TrafficLogEntry
+  properties:
   - name: spot.type
   - name: log_date
 
