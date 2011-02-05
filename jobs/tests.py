@@ -24,11 +24,54 @@ from django.test import TestCase as DjangoTestCase
 from django.core.urlresolvers import reverse
 from django.utils import simplejson
 from django import http
+from nose.tools import eq_
 
 from auth import roles
 import jobs
 from jobs.models import Job
 from jobs import worker_registry, job_worker, job_product
+
+
+_worker_registry = {}
+
+
+def setup():
+    _worker_registry.update(jobs.worker_registry)
+
+
+def teardown():
+    jobs.worker_registry.update(_worker_registry)
+
+
+class JobTestCase(object):
+    """Mixin for tests that use jobs/workers."""
+
+    def get_job_product(self, job_name, params):
+        """Simulates the requests made by JavaScript code 
+        to get the final job product.
+        """
+        r = self.client.post(reverse('jobs.start'),
+                             data={'job_name': 'build-trafficlog-report'})
+        eq_(r.status_code, 200)
+        job = simplejson.loads(r.content)
+        done = False
+        attempts = 0
+        while not done:
+            attempts += 1
+            if attempts > 30:
+                raise RuntimeError(
+                        "Job %r did not finish after %s attempts" % ())
+            r = self.client.post(reverse('jobs.work'),
+                                 data={'job_key': job['job_key'],
+                                       'params': simplejson.dumps(params)})
+            eq_(r.status_code, 200)
+            work = simplejson.loads(r.content)
+            done = work['finished']
+        # TODO(kumar) check work['success']
+        r = self.client.post(reverse('jobs.product', args=[job['job_key']]))
+        eq_(r.status_code, 200)
+        return r
+
 
 def teardown_data():
     for ob in Job.all():
@@ -48,7 +91,7 @@ class TestJobModel(TestCase):
     def tearDown(self):
         teardown_data()
 
-class JobsTestCase(DjangoTestCase):
+class JobSelfTestCase(DjangoTestCase):
     
     def tearDown(self):
         teardown_data()
@@ -57,7 +100,7 @@ class JobsTestCase(DjangoTestCase):
         self.assertEqual(json_response['success'], True,
                     "Unsuccessful response, error=%r" % json_response.get('error'))
     
-class TestJobs(JobsTestCase):
+class TestJobs(JobSelfTestCase):
     
     def setUp(self):
         assert self.client.login(email="test@test.com", roles=[roles.DJ])
@@ -185,7 +228,7 @@ class TestJobs(JobsTestCase):
         self.assertEqual(Job.get(old_job_key), None)
 
     
-class TestJobsWithParams(JobsTestCase):
+class TestJobsWithParams(JobSelfTestCase):
     
     def setUp(self):
         assert self.client.login(email="test@test.com", roles=[roles.DJ])
