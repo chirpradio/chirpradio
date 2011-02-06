@@ -26,6 +26,7 @@ import csv
 
 from google.appengine.ext import db
 
+from django import http
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.conf import settings
@@ -34,7 +35,8 @@ from django.template import RequestContext
 from django.utils import simplejson
 import django.forms
 
-from common.utilities import as_json, http_send_csv_file, as_encoded_str
+from common.utilities import (as_json, http_send_csv_file, as_encoded_str,
+                              restricted_job_worker, restricted_job_product)
 from common import time_util
 from common.autoretry import AutoRetry
 import auth
@@ -42,7 +44,6 @@ from auth.models import User
 from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
 from auth.decorators import require_role
 from traffic_log import models, forms, constants
-from jobs import job_worker, job_product
 
 log = logging.getLogger()
 
@@ -466,7 +467,7 @@ def traffic_log(request, date):
         context_instance=RequestContext(request))
 
 
-@job_worker('build-trafficlog-report')
+@restricted_job_worker('build-trafficlog-report', TRAFFIC_LOG_ADMIN)
 def trafficlog_report_worker(results, request_params):
     fields = ['readtime', 'dow', 'slot_time', 'underwriter',
               'title', 'type', 'excerpt']
@@ -528,7 +529,7 @@ def trafficlog_report_worker(results, request_params):
     return finished, results
 
 
-@job_product('build-trafficlog-report')
+@restricted_job_product('build-trafficlog-report', TRAFFIC_LOG_ADMIN)
 def playlist_report_product(results):
     fname = "chirp-traffic_log"
     response = HttpResponse(content_type='text/csv; charset=utf-8')

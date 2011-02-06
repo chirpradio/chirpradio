@@ -16,11 +16,17 @@
 ###
 
 import traceback
-from django.utils import simplejson
-from django.http import HttpResponse
 import logging
 
+from django.utils import simplejson
+from django import http
+from django.http import HttpResponse
+
+from jobs import job_worker, job_product
+
+
 log = logging.getLogger()
+
 
 def as_json(handler):
     def makejson(*args, **kwargs):
@@ -28,7 +34,8 @@ def as_json(handler):
             r = handler(*args, **kwargs)
             status = 200
         except Exception, err:
-            # @TODO(kumar) really REALLY need to hook into Django's email mailer here
+            # @TODO(kumar) really REALLY need to hook into
+            # Django's email mailer here
             log.exception("in JSON response")
             r = {
                 'success':False,
@@ -51,6 +58,7 @@ def as_encoded_str(s, encoding='utf8', errors='strict'):
         s = s.encode(encoding, errors)
     return s
 
+
 def http_send_csv_file(fname, fields, items):
     import csv
 
@@ -69,3 +77,21 @@ def http_send_csv_file(fname, fields, items):
         out.writerow(item2row(item))
     #
     return response
+
+
+def _access_restrictor(role):
+    def restrict_access(request):
+        if role not in request.user.roles:
+            return http.HttpResponseForbidden(
+                    'Page requires role "%s"' % role)
+    return restrict_access
+
+
+def restricted_job_worker(job_name, required_role):
+    return job_worker(job_name,
+                      pre_request=_access_restrictor(required_role))
+
+
+def restricted_job_product(job_name, required_role):
+    return job_product(job_name,
+                       pre_request=_access_restrictor(required_role))

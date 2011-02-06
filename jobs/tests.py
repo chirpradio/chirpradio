@@ -279,5 +279,45 @@ class TestJobsWithParams(JobSelfTestCase):
         
         # get the product:
         response = self.client.get(reverse('jobs.product', args=(job_key,)))
-        self.assertEqual(response.content, "Results from 2010-08-01 to 2010-08-31")
+        self.assertEqual(response.content,
+                         "Results from 2010-08-01 to 2010-08-31")
 
+    
+class TestAccessRestriction(JobSelfTestCase):
+    
+    def setUp(self):
+        assert self.client.login(email="test@test.com", roles=[roles.DJ])
+        
+        def restricted(request):
+            assert isinstance(request, http.HttpRequest)
+            return http.HttpResponseForbidden('no access')
+        
+        @job_worker('some-job', pre_request=restricted)
+        def _worker(data, request_params):
+            return data
+        
+        @job_product('some-job', pre_request=restricted)
+        def _product(data):
+            return http.HttpResponse('<product>')
+    
+    def test_start(self):
+        response = self.client.post(reverse('jobs.start'), {
+            'job_name': 'some-job'
+        })
+        self.assertEqual(response.status_code, 403)
+    
+    def test_work(self):
+        job = Job(job_name='some-job')
+        job.put()
+        response = self.client.post(reverse('jobs.work'), {
+            'job_key': str(job.key()),
+            'params': '{}'
+        })
+        self.assertEqual(response.status_code, 403)
+    
+    def test_product(self):
+        job = Job(job_name='some-job')
+        job.put()
+        response = self.client.get(reverse('jobs.product',
+                                   args=[str(job.key())]))
+        self.assertEqual(response.status_code, 403)

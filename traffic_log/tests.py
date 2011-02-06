@@ -35,6 +35,8 @@ from auth import roles
 from auth.models import User
 from traffic_log import views, models, constants
 from jobs.tests import JobTestCase
+from jobs.models import Job
+
 
 def clear_data():
     for x in models.TrafficLogEntry.all():
@@ -705,6 +707,22 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
             reader = author
         )
         logged_spot.put()
+    
+    def test_only_admin_can_access(self):
+        self.client.logout()
+        assert self.client.login(email="dj@test.com",
+                                 roles=[roles.DJ])
+        r = self.client.post(reverse('jobs.start'),
+                             data={'job_name': 'build-trafficlog-report'})
+        eq_(r.status_code, 403)
+        job = Job(job_name='build-trafficlog-report')
+        job.put()
+        r = self.client.post(reverse('jobs.work'),
+                             data={'job_key': job.key(),
+                                   'params': '{}'})
+        eq_(r.status_code, 403)
+        r = self.client.post(reverse('jobs.product', args=[str(job.key())]))
+        eq_(r.status_code, 403)
     
     def test_download_report_of_all_spots(self):
         from_date = datetime.date.today() - timedelta(days=1)
