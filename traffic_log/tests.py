@@ -683,6 +683,7 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
         self.dow = self.today.isoweekday()
         
         constraint = self.add_spot_to_constraint(spot)
+        self.constraint = constraint
         spot_copy = models.SpotCopy(
                         body='You are listening to chirpradio.org',
                         spot=spot,
@@ -824,6 +825,44 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
         header = report.next()
         underwriters = set([row[3] for row in report])
         self.assertEquals(underwriters, set(['reckless']))
+    
+    def test_many_spots(self):
+        copy = []
+        for i in range(65):
+            txt = 'PSA %s' % i
+            copy.append(txt)
+            spot_copy = models.SpotCopy(
+                    body=txt,
+                    spot=self.spot,
+                    author=self.author)
+            spot_copy.put()
+            logged_spot = models.TrafficLogEntry(
+                log_date = self.today,
+                spot = spot_copy.spot,
+                spot_copy = spot_copy,
+                dow = self.dow,
+                hour = self.now.hour,
+                slot = 0,
+                scheduled = self.constraint,
+                readtime = time_util.chicago_now() - timedelta(days=1), 
+                reader = self.author
+            )
+            logged_spot.put()
+
+        from_date = datetime.date.today() - timedelta(days=30)
+        to_date = datetime.date.today()
+        
+        params = {'start_date': from_date.strftime("%Y-%m-%d"),
+                  'end_date': to_date.strftime("%Y-%m-%d"),
+                  # All:
+                  'type': constants.SPOT_TYPE_CHOICES[0],
+                  'underwriter': '',
+                  'download': 'Download'}
+        response = self.get_job_product('build-trafficlog-report', params)
+        report = csv.reader(StringIO(response.content))
+        header = report.next()
+        self.assertEquals([r[6] for r in report],
+                          ['You are listening to chirpradio.org'] + copy)
 
 
 class TestAddHour(unittest.TestCase):
