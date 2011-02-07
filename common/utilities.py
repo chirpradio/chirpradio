@@ -81,7 +81,8 @@ def http_send_csv_file(fname, fields, items):
 
 def _access_restrictor(role):
     def restrict_access(request):
-        if role not in request.user.roles:
+        if (role not in request.user.roles and
+            not request.user.is_superuser):
             return http.HttpResponseForbidden(
                     'Page requires role "%s"' % role)
     return restrict_access
