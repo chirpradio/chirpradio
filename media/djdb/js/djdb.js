@@ -35,14 +35,14 @@ $(document).ready(function() {
 		});
         return false;
     });
-    $("#checkbox_heavy").click(function() {
-		$("input.heavy").each(function() {
+    $("#checkbox_heavy_rotation").click(function() {
+		$("input.heavy_rotation").each(function() {
 			this.checked = true;
 		});
         return false;
     });
-    $("#checkbox_light").click(function() {
-		$("input.light").each(function() {
+    $("#checkbox_light_rotation").click(function() {
+		$("input.light_rotation").each(function() {
 			this.checked = true;
 		});
         return false;
@@ -80,13 +80,13 @@ $(document).ready(function() {
         $(this).parents("form").submit();
         return false;
     });
-    $("#mark_heavy").click(function() {
-        $("input[name=mark_as]").val('heavy');
+    $("#mark_heavy_rotation").click(function() {
+        $("input[name=mark_as]").val('heavy_rotation');
         $(this).parents("form").submit();
         return false;
     });
-    $("#mark_light").click(function() {
-        $("input[name=mark_as]").val('light');
+    $("#mark_light_rotation").click(function() {
+        $("input[name=mark_as]").val('light_rotation');
         $(this).parents("form").submit();
         return false;
     });

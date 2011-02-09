@@ -35,7 +35,8 @@ from djdb import review
 from djdb import comment
 from djdb import forms
 from djdb.models import Album
-from playlists.models import PlaylistTrack
+from playlists.models import ChirpBroadcast, PlaylistEvent
+from playlists.views import PlaylistEventView
 from datetime import datetime, timedelta
 import djdb.pylast as pylast
 import random
@@ -68,7 +69,7 @@ def fetch_activity(num=None, days=None, start_dt=None, max_num_items=None):
 <blockquote>
 %s
 </blockquote>
-            """ % (text)
+            """ % text
         type = 'review'
         activity.append((dt, type, item))
         num_items[type] = num_items.setdefault(type, 0) + 1
@@ -81,14 +82,16 @@ def fetch_activity(num=None, days=None, start_dt=None, max_num_items=None):
             text = com.text[0:100] + '... <a href="%s">Read more</a>' % com.subject.url
         else:
             text = com.text
-        item = """
-<a href="%s">%s / %s</a> <b>commented</b> on by <a href="">%s</a>.
+        item = '<a href="%s">%s / %s</a> <b>commented</b> on by ' % (com.subject.url, com.subject.artist_name, com.subject.title)
+        if com.author:
+            item += '<a href="/djdb/user/%s">%s</a>.' % (com.author.key().id(), com.author_display)
+        else:
+            item += com.author_display
+        item += """
 <blockquote>
 %s
 </blockquote>
-            """% (
-            com.subject.url, com.subject.artist_name, com.subject.title,
-            com.author_display, text)
+            """ % text
         type = 'comment'
         activity.append((dt, type, item))
         num_items[type] = num_items.setdefault(type, 0) + 1
@@ -280,6 +283,22 @@ def reviews_page(request, ctx_vars=None):
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
+def get_played_tracks(events):
+    played_tracks = []
+    prev_dt = None
+    tracks = []
+    for event in events:
+        pl_view = PlaylistEventView(event)
+        dt = pl_view.established.strftime('%Y-%m-%d %H')
+        if prev_dt is not None and dt != prev_dt:
+            played_tracks.append((datetime.strptime(prev_dt, '%Y-%m-%d %H'), tracks))
+            tracks = []
+        tracks.append(event)
+        prev_dt = dt
+    if tracks:
+        played_tracks.append((datetime.strptime(dt, '%Y-%m-%d %H'), tracks))
+    return played_tracks
+
 def user_info_page(request, user_id, ctx_vars=None):
     if ctx_vars is None:
         ctx_vars = {}
@@ -289,16 +308,11 @@ def user_info_page(request, user_id, ctx_vars=None):
     if user is None or (not user.is_superuser and roles.DJ not in user.roles):
         return http.HttpResponse(status=404)
 
-    # Get tracks played.
-#    page_size = 10
-#    bookmark = None
-#    query = pager.PagerQuery(PlaylistTrack)
-#    query.filter('selector =', user)
-#    query.order('-established')
-#    prev, playlist, next = query.fetch(page_size, bookmark)
-#    ctx_vars['playlist'] = playlist
-    query = PlaylistTrack.all().filter("selector =", user).order("-established")
-    ctx_vars["playlist"] = query.fetch(10)
+    ctx_vars["dj"] = user
+
+    query = PlaylistEvent.all().filter("playlist =", ChirpBroadcast()) \
+                               .filter("selector =", user).order("-established")
+    ctx_vars["playlist_events"] = get_played_tracks(query.fetch(10))
 
     # Get reviews.
     query = models.Document.all().filter("doctype =", models.DOCTYPE_REVIEW) \
@@ -313,6 +327,53 @@ def user_info_page(request, user_id, ctx_vars=None):
     # Return rendered page.
     template = loader.get_template('djdb/user_info_page.html')
     ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+def tracks_played_page(request, user_id, ctx_vars=None): 
+    default_page_size = 10
+    default_month = 1
+    default_day = 1
+    default_year = 2009
+    
+    if ctx_vars is None:
+        ctx_vars = {}
+    ctx_vars['title'] = 'Tracks Played'
+
+    user = models.User.get_by_id(int(user_id))
+    if user is None or (not user.is_superuser and roles.DJ not in user.roles):
+        return http.HttpResponse(status=404)
+
+    if request.method == "GET":
+        form = forms.ListTracksPlayedForm()
+        page_size = default_page_size
+        from_month = default_month
+        from_day = default_day
+        from_year = default_year
+        bookmark = None
+    else:
+        page_size = int(request.POST.get('page_size', default_page_size))
+        from_month = int(request.POST.get('from_month', default_month))
+        from_day = int(request.POST.get('from_day', default_day))
+        from_year = int(request.POST.get('from_year', default_year))
+        form = forms.ListTracksPlayedForm(request.POST)
+        if form.is_valid():
+            order = request.POST.get('order')
+            bookmark = request.POST.get('bookmark')
+    dt = datetime(from_year, from_month, from_day, 0, 0, 0)
+    query = pager.PagerQuery(PlaylistEvent).filter('playlist =', ChirpBroadcast()) \
+                                           .filter('selector =', user.key()) \
+                                           .filter('established >=', dt)
+    query.order("-established")
+    prev, events, next = query.fetch(page_size, bookmark)
+    ctx_vars["playlist_events"] = get_played_tracks(events)
+    ctx_vars["prev"] = prev
+    ctx_vars["next"] = next
+    ctx_vars["form"] = form
+    ctx_vars["dj"] = user
+
+    # Display page.
+    ctx = RequestContext(request, ctx_vars)
+    template = loader.get_template('djdb/tracks_played.html')
     return http.HttpResponse(template.render(ctx))
 
 def artist_info_page(request, artist_name, ctx_vars=None):
@@ -358,8 +419,21 @@ def album_search_for_autocomplete(request):
                                             request.GET.get('q', ''),
                                             'Album')        
     response = http.HttpResponse(mimetype="text/plain")
+    unique_entities = set()
     for ent in matching_entities:
-        response.write("%s|%s\n" % (ent.title, ent.key()))
+        response.write("%s|%s|%s\n" % (ent.title, ent.key(), ent.category))
+    return response
+
+def label_search_for_autocomplete(request):
+    matching_entities = _get_matches_for_partial_entity_search(
+                            'label:%s' % request.GET.get('q', ''),
+                            'Album')
+    response = http.HttpResponse(mimetype="text/plain")
+    unique_labels = set()
+    for ent in matching_entities:
+        unique_labels.add(ent.label)
+    for label in unique_labels:
+        response.write("%s\n" % label)
     return response
 
 @require_role(roles.MUSIC_DIRECTOR)
@@ -617,7 +691,7 @@ def track_search_for_autocomplete(request):
                 if str(track_artist_key) != str(artist_key):
                     continue
                     
-        response.write("%s|%s\n" % (track.title, track.key()))
+        response.write("%s|%s|%s\n" % (track.title, track.key(), track.album.category))
     return response
 
 def _get_matches_for_partial_entity_search(query, entity_kind):

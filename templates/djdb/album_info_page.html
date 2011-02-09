@@ -79,7 +79,14 @@
 <blockquote>
 {{ doc.text|safe }}
 </blockquote>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author_display }} on {{ doc.created_display|date:"F j, Y P" }}</small>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by
+{% if doc.author %}
+<a href="/djdb/user/{{ doc.author.key.id }}">{{ doc.author_display }}</a>
+{% else %}
+{{ doc.author_display }}
+{% endif %}
+
+on {{ doc.created_display|date:"F j, Y P" }}</small>
         {% if user.is_music_director %}
 [ <a href="/djdb/album/{{ album.album_id }}/edit_review/{{ doc.key }}">Edit</a> 
           {% if doc.is_hidden %}
@@ -250,7 +257,13 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
 <blockquote>
 {{ doc.text|safe }}
 </blockquote>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author }} on {{ doc.created_display|date:"F j, Y P" }}</small>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by
+{% if doc.author %}
+<a href="/djdb/user/{{ doc.author.key.id }}">{{ doc.author }}</a>
+{% else %}
+{{ doc.author }}
+{% endif %}
+on {{ doc.created_display|date:"F j, Y P" }}</small>
         {% ifequal user.key doc.author.key %}
 [ <a href="/djdb/album/{{ album.album_id }}/edit_comment/{{ doc.key }}">Edit</a>
         {% else %}

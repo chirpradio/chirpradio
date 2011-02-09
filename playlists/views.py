@@ -30,12 +30,19 @@ from google.appengine.api.datastore_errors import BadKeyError
 from auth.decorators import require_role
 import auth
 from auth import roles
+from djdb.models import Album
 from playlists.forms import PlaylistTrackForm
 from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast
 from playlists.tasks import playlist_event_listeners
 from common.utilities import as_encoded_str, http_send_csv_file
 from common.autoretry import AutoRetry
+from common.time_util import chicago_now
 from djdb.models import Track
+
+TRACKS_HEAVY_ROTATION_TARGET = 3
+TRACKS_LIGHT_ROTATION_TARGET = 2
+TRACKS_LOCAL_CURRENT_TARGET = 1
+TRACKS_LOCAL_CLASSIC_TARGET = 1
 
 log = logging.getLogger()
 
@@ -81,8 +88,6 @@ def iter_playlist_events_for_view(query):
             pl_view.is_new = True
         yield pl_view
 
-
-
 def get_vars(request):
     current_user = auth.get_current_user(request)
 
@@ -100,6 +105,31 @@ def get_vars(request):
     vars.update(common_context)
     return vars
 
+def get_quotas(playlist):
+    quotas = {'heavy_rotation_played': 0,
+              'heavy_rotation_target': TRACKS_HEAVY_ROTATION_TARGET,
+              'light_rotation_played': 0,
+              'light_rotation_target': TRACKS_LIGHT_ROTATION_TARGET,
+              'local_current_played': 0,
+              'local_current_target': TRACKS_LOCAL_CURRENT_TARGET,
+              'local_classic_played': 0,
+              'local_classic_target': TRACKS_LOCAL_CLASSIC_TARGET}
+    pl = PlaylistEvent.all().filter('playlist =', playlist)
+    now = chicago_now()
+    pl.filter('established >=', now - timedelta(seconds=60 * now.minute))
+    pl.filter('established <', now + timedelta(seconds=60 * (60 - now.minute)))
+    for event in iter_playlist_events_for_view(pl):
+        if not event.is_break:
+            if 'heavy_rotation' in event.categories:
+                quotas['heavy_rotation_played'] += 1
+            if 'light_rotation' in event.categories:
+                quotas['light_rotation_played'] += 1
+            if 'local_current' in event.categories:
+                quotas['local_current_played'] += 1
+            if 'local_classic' in event.categories:
+                quotas['local_classic_played'] += 1
+
+    return quotas
 
 def get_playlist_history(playlist):
     pl = PlaylistEvent.all().filter('playlist =', playlist)
@@ -108,15 +138,20 @@ def get_playlist_history(playlist):
     return list(iter_playlist_events_for_view(pl))
 
 @require_role(roles.DJ)
-def landing_page(request):
-    vars = get_vars(request)
+def landing_page(request, vars=None):
+    if vars is None:
+        vars = get_vars(request)
+
+    # Load quotas for tracks played.
+    vars['quotas'] = get_quotas(vars['playlist'])
+    now = chicago_now()
+    vars['last_dt'] = datetime(now.year, now.month, now.day, now.hour)
 
     # load the playlist history
     vars['playlist_events'] = get_playlist_history(vars['playlist'])
 
     return render_to_response('playlists/landing_page.html', vars,
             context_instance=RequestContext(request))
-
 
 @require_role(roles.DJ)
 def create_event(request):
@@ -139,9 +174,7 @@ def create_event(request):
 
     vars['playlist_events'] = get_playlist_history(vars['playlist'])
 
-    return render_to_response('playlists/landing_page.html', vars,
-            context_instance=RequestContext(request))
-
+    return landing_page(request, vars)
 
 @require_role(roles.DJ)
 def delete_event(request, event_key):
@@ -273,6 +306,11 @@ def bootstrap(request):
                        album=track.album,
                        track=track)
         pl_track.put()
+        if minutes > 0 and minutes % 25 == 0:
+            pl_break = PlaylistBreak(
+                           playlist=playlist,
+                           established = datetime.now() - timedelta(minutes=minutes - 1))
+            pl_break.put()
         minutes += 5
 
     return HttpResponseRedirect("/playlists/")

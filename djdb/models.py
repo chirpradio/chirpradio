@@ -35,7 +35,8 @@ EXPLICIT_TAG = u"explicit"
 RECOMMENDED_TAG = u"recommended"
 
 # List of album categories.
-ALBUM_CATEGORIES = ['core', 'local_current', 'local_classic', 'heavy_rotation', 'light_rotation']
+ALBUM_CATEGORIES = ['core', 'local_current', 'local_classic', 'heavy_rotation',
+                    'light_rotation']
 
 class DjDbImage(db.Model):
     """An image (usually a JPEG or PNG) associated with an artist or album.
@@ -215,7 +216,7 @@ class Album(db.Model):
 
     Attributes:
       category: The category of the album. May be core, local_current,
-        local_classic, heavy, light.
+        local_classic, heavy_rotation, light_rotation.
       title: The name of the album.  This is used in TALB tags.
       pronunciation: How to pronounce the album title.
       label: The label of the album.

@@ -17,37 +17,54 @@
     src="/media/djdb/js/djdb.js"></script>
 {% endblock %}
 
+{% ifequal dj.key user.key %}
+  {% if user.is_superuser %}
+<h3>You are a superuser!</h3>
+  {% endif %}
+
+<h3>Roles</h3>
+  {% if dj.roles %}
+{{ dj.roles|join:", " }}
+  {% else %}
+None
+  {% endif %}
+{% endifequal %}
+
 <h3>Tracks Played</h3>
 
-<table>
-{% for item in playlist %}
-  <tr>
-    <td>{{ item.established }}</td>
-  {% if item.artist %}
-    <td><a href="{{ item.artist.url }}">{{ item.artist_name }}</a></td>
-  {% else %}
-    <td>{{ item.artist_name }}</td>
-  {% endif %}
-  {% if item.album %}
-    <td><a href="{{ item.album.url }}">{{ item.album_title }}</a></td>
-  {% else %}
-    <td>{{ item.album_title }}</td>
-  {% endif %}
-    <td>{{ item.track_title }}</td>
-    <td>{{ item.label }}</td>
-  </tr>
-{% endfor %}
-</table>
 
-<a href="">See more tracks...</a>
+{% for dt, events in playlist_events %}
+{{ dt|date:"D F j, Y P" }}
+<table>
+  {% for event in events %}
+  <tr>
+    <td>{{ event.established|date:"P" }}</td>
+  {% if event.artist %}
+    <td><a href="{{ event.artist.url }}">{{ event.artist_name }}</a></td>
+  {% else %}
+    <td>{{ event.artist_name }}</td>
+  {% endif %}
+  {% if event.album %}
+    <td><a href="{{ event.album.url }}">{{ event.album_title }}</a></td>
+  {% else %}
+    <td>{{ event.album_title }}</td>
+  {% endif %}
+    <td>{{ event.track_title }}</td>
+    <td>{{ event.label_display }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endfor %}
+
+<a href="/djdb/tracks_played/{{ dj.key.id }}">See more tracks...</a>
 
 <h3>Reviews</h3>
 
 {% if reviews %}
-<ul>
+<ul style="padding-left: 15px">
 {% for rev in reviews %}
   <li>
-    <a href="{{ rev.subject.url }}">{{ rev.subject.album_artist.name }} / {{ rev.subject.title }},</a> Posted {{ rev.created_display|date:"F j, Y P" }}
+    <a href="{{ rev.subject.url }}">{{ rev.subject.album_artist.name }} / {{ rev.subject.title }},</a> posted Posted {{ rev.created_display|date:"F j, Y P" }}
   {% ifequal user.key rev.author.key %}
 [ <a href="/djdb/album/{{ rev.subject.album_id }}/edit_review/{{ rev.key }}">Edit</a> ]
   {% endifequal %}
@@ -57,7 +74,7 @@
 {% endfor %}
 </ul>
 
-<a href="/djdb/reviews?author_key={{ user.key }}">See more reviews...</a>
+<a href="/djdb/reviews?author_key={{ dj.key }}">See more reviews...</a>
 {% else %}
 None!
 {% endif %}
