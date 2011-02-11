@@ -39,8 +39,8 @@ from common.autoretry import AutoRetry
 from common.time_util import chicago_now
 from djdb.models import Track
 
-TRACKS_HEAVY_ROTATION_TARGET = 3
-TRACKS_LIGHT_ROTATION_TARGET = 2
+TRACKS_HEAVY_ROTATION_TARGET = 2
+TRACKS_LIGHT_ROTATION_TARGET = 3
 TRACKS_LOCAL_CURRENT_TARGET = 1
 TRACKS_LOCAL_CLASSIC_TARGET = 1
 

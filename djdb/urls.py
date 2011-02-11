@@ -39,7 +39,7 @@ urlpatterns = patterns(
     (r'reviews', 'djdb.views.reviews_page'),
     
     # DJ home pgae
-    (r'user/(.*)', 'djdb.views.user_info_page'),
+    (r'user/?(.*)', 'djdb.views.user_info_page'),
 
     # Tracks played page.
     ('tracks_played/(.*)', 'djdb.views.tracks_played_page'),

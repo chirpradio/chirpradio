@@ -304,25 +304,39 @@ def user_info_page(request, user_id, ctx_vars=None):
         ctx_vars = {}
     
     # Get user and check if exists and authorized.
-    user = models.User.get_by_id(int(user_id))
-    if user is None or (not user.is_superuser and roles.DJ not in user.roles):
-        return http.HttpResponse(status=404)
+    if user_id == '':
+        if request.method == "POST":
+            user_key = request.POST.get("user_key")
+            if user_key == '':
+                return http.HttpResponse(status=404)
+            user = db.get(request.POST.get("user_key"))
+            if user is None:
+                return http.HttpResponse(status=404)
+            return http.HttpResponseRedirect('/djdb/user/%d' % user.key().id())
+        else:
+            user = None
+            ctx_vars["title"] = 'Find a DJ'
+    else:
+        user = models.User.get_by_id(int(user_id))
+        if user is None or (not user.is_superuser and roles.DJ not in user.roles):
+            return http.HttpResponse(status=404)
+
+    if user is not None:
+        query = PlaylistEvent.all().filter("playlist =", ChirpBroadcast()) \
+                                   .filter("selector =", user).order("-established")
+        ctx_vars["playlist_events"] = get_played_tracks(query.fetch(10))
+
+        # Get reviews.
+        query = models.Document.all().filter("doctype =", models.DOCTYPE_REVIEW) \
+                                     .filter("revoked =", False) \
+                                     .filter("author =", user) \
+                                     .order("-created")
+        ctx_vars["reviews"] = query.fetch(10)
+
+        # Set page title.
+        ctx_vars["title"] = user
 
     ctx_vars["dj"] = user
-
-    query = PlaylistEvent.all().filter("playlist =", ChirpBroadcast()) \
-                               .filter("selector =", user).order("-established")
-    ctx_vars["playlist_events"] = get_played_tracks(query.fetch(10))
-
-    # Get reviews.
-    query = models.Document.all().filter("doctype =", models.DOCTYPE_REVIEW) \
-                                 .filter("revoked =", False) \
-                                 .filter("author =", user) \
-                                 .order("-created")
-    ctx_vars["reviews"] = query.fetch(10)
-
-    # Set page title.
-    ctx_vars['title'] = user
 
     # Return rendered page.
     template = loader.get_template('djdb/user_info_page.html')

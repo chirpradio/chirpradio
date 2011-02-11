@@ -14,69 +14,80 @@
 <script type="text/javascript" 
     src="/media/common/js/jquery/jquery-1.3.1.js"></script>
 <script type="text/javascript" 
-    src="/media/djdb/js/djdb.js"></script>
+    src="/media/common/js/jquery-autocomplete/jquery.autocomplete.js"></script>
+<script type="text/javascript" src="/media/djdb/js/djdb.js"></script>
+<script type="text/javascript" src="/media/djdb/js/djdb_user.js"></script>
 {% endblock %}
 
-{% ifequal dj.key user.key %}
-  {% if user.is_superuser %}
+{% ifequal dj None %}
+<form method="post" action="/djdb/user">
+  DJ Name: <input id="id_user" name="user"/>
+  <input id="id_user_key" type="hidden" name="user_key"/>
+  <input type="submit" name="go" value="Go"/>
+</form>
+
+{% else %}
+  {% ifequal dj.key user.key %}
+    {% if user.is_superuser %}
 <h3>You are a superuser!</h3>
-  {% endif %}
+    {% endif %}
 
 <h3>Roles</h3>
-  {% if dj.roles %}
+    {% if dj.roles %}
 {{ dj.roles|join:", " }}
-  {% else %}
+    {% else %}
 None
-  {% endif %}
-{% endifequal %}
+    {% endif %}
+  {% endifequal %}
 
 <h3>Tracks Played</h3>
 
-
-{% for dt, events in playlist_events %}
+  {% for dt, events in playlist_events %}
 {{ dt|date:"D F j, Y P" }}
 <table>
-  {% for event in events %}
+    {% for event in events %}
   <tr>
     <td>{{ event.established|date:"P" }}</td>
-  {% if event.artist %}
+    {% if event.artist %}
     <td><a href="{{ event.artist.url }}">{{ event.artist_name }}</a></td>
-  {% else %}
+    {% else %}
     <td>{{ event.artist_name }}</td>
-  {% endif %}
-  {% if event.album %}
+    {% endif %}
+    {% if event.album %}
     <td><a href="{{ event.album.url }}">{{ event.album_title }}</a></td>
-  {% else %}
+    {% else %}
     <td>{{ event.album_title }}</td>
-  {% endif %}
+    {% endif %}
     <td>{{ event.track_title }}</td>
     <td>{{ event.label_display }}</td>
   </tr>
-  {% endfor %}
+    {% endfor %}
 </table>
-{% endfor %}
+  {% endfor %}
 
 <a href="/djdb/tracks_played/{{ dj.key.id }}">See more tracks...</a>
 
 <h3>Reviews</h3>
 
-{% if reviews %}
+  {% if reviews %}
 <ul style="padding-left: 15px">
-{% for rev in reviews %}
+  {% for rev in reviews %}
   <li>
     <a href="{{ rev.subject.url }}">{{ rev.subject.album_artist.name }} / {{ rev.subject.title }},</a> posted Posted {{ rev.created_display|date:"F j, Y P" }}
-  {% ifequal user.key rev.author.key %}
+    {% ifequal user.key rev.author.key %}
 [ <a href="/djdb/album/{{ rev.subject.album_id }}/edit_review/{{ rev.key }}">Edit</a> ]
-  {% endifequal %}
+    {% endifequal %}
     <blockquote>{{ rev.truncated_text }}</blockquote>
 
   </li>
-{% endfor %}
+  {% endfor %}
 </ul>
 
 <a href="/djdb/reviews?author_key={{ dj.key }}">See more reviews...</a>
-{% else %}
+  {% else %}
 None!
-{% endif %}
+  {% endif %}
+{% endifequal %}
 
 {% endblock %}
+
