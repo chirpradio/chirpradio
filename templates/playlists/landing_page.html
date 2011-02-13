@@ -19,6 +19,9 @@
 {% block content %}
 
 <div id="playlist"> <!-- site wrapper -->
+{% if not is_in_studio %}
+<h1 class="errornote">WARNING! You are not in the studio, you sure you want to modify this playlist?</h1>
+{% endif %}
 <div id="form-column"> <!-- form column -->
 
 <form method="post" id="playlist-form" action="{% url playlists_add_event %}">

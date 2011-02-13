@@ -36,7 +36,9 @@ from playlists.tasks import playlist_event_listeners
 from common.utilities import as_encoded_str, http_send_csv_file
 from common.autoretry import AutoRetry
 from djdb.models import Track
+from common.models import DBConfig
 
+dbconfig = DBConfig()
 log = logging.getLogger()
 
 common_context = {
@@ -85,6 +87,9 @@ def iter_playlist_events_for_view(query):
 
 def get_vars(request):
     current_user = auth.get_current_user(request)
+    is_in_studio = True
+    studio_ip_range = ['127.0.0.1', '192.168.1.109']
+    current_user_ip = '169.1.2.3' # dummy IP
 
     if request.method == 'POST':
         form = PlaylistTrackForm(data=request.POST)
@@ -93,9 +98,23 @@ def get_vars(request):
     form.current_user = current_user
     form.playlist = ChirpBroadcast()
 
+    try:
+        # chirp_studio_ip_range is comma delimited string
+        studio_ip_range = dbconfig['chirp_studio_ip_range'].split(',')
+        current_user_ip = request.META['REMOTE_ADDR'] 
+    except KeyError:
+        log.warning("Could not find key '%s' in dbconfig or current IP." % 'chirp_studio_ip_range')
+        pass
+    else:
+        if current_user_ip not in studio_ip_range:
+            is_in_studio = False
+            log.warning("This person %s %s is not in the studio ip range %s." % (
+                current_user, current_user_ip, studio_ip_range))
+
     vars = {
         'form': form,
-        'playlist': form.playlist
+        'playlist': form.playlist,
+        'is_in_studio': is_in_studio
     }
     vars.update(common_context)
     return vars
