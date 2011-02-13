@@ -20,15 +20,19 @@ from __future__ import with_statement
 import unittest
 
 from django.utils import simplejson
+import fudge
 from google.appengine.api import memcache
 from nose.tools import eq_
 from webtest import TestApp
 
+import api.handler
 from api.handler import application
 import auth.roles
 from auth.models import User
 from playlists.models import Playlist, PlaylistTrack, ChirpBroadcast
 from playlists.tests.test_views import create_stevie_wonder_album_data
+from common import dbconfig
+from djdb import pylast
 
 
 def clear_data():
@@ -43,6 +47,7 @@ def clear_data():
 class APITest(unittest.TestCase):
 
     def setUp(self):
+        dbconfig['lastfm.api_key'] = 'SEKRET_LASTFM_KEY'
         self.client = TestApp(application)
         self.dj = User(dj_name='DJ Night Moves', first_name='Steve',
                        last_name='Dolfin', email='steve@dolfin.org',
@@ -56,6 +61,7 @@ class APITest(unittest.TestCase):
     def tearDown(self):
         assert memcache.flush_all()
         clear_data()
+        fudge.clear_expectations()
 
     def play_stevie_song(self, song_name):
         self.playlist_track = PlaylistTrack(
@@ -104,6 +110,29 @@ class TestTrackPlayingNow(APITest):
         eq_(current['played_at_local'].split('T')[0],
             self.playlist_track.established_display.strftime('%Y-%m-%d'))
         assert 'id' in current
+
+    @fudge.with_fakes
+    def test_build_lastfm_links(self):
+        fake_tq = (fudge.Fake('taskqueue').expects('add')
+                        .with_args(url='/api/_check_lastfm_links'))
+        with fudge.patched_context(api.handler, 'taskqueue', fake_tq):
+            data = self.request('/api/current_playlist')
+            current = data['now_playing']
+            eq_(current['lastfm_urls'], {
+                'sm_image': None,
+                'med_image': None
+            })
+
+    @fudge.with_fakes
+    def test_build_partial_lastfm_links(self):
+        fake_tq = (fudge.Fake('taskqueue').expects('add')
+                        .with_args(url='/api/_check_lastfm_links')
+                        .times_called(2))
+        with fudge.patched_context(api.handler, 'taskqueue', fake_tq):
+            data = self.request('/api/current_playlist')
+            data['now_playing']['lastfm_urls']['sm_image'] = 'http://.../'
+            memcache.set('api.current_track', data)
+            data = self.request('/api/current_playlist')
 
     def test_non_ascii(self):
         unicode_text = 'フォクすけといっしょ'.decode('utf8')
@@ -171,3 +200,50 @@ class TestRecentlyPlayedTracks(APITest):
              'Superstition',
              "You've Got It Bad Girl",
              "Tuesday Heartbreak"])
+
+
+class TestCheckLastFMLinks(APITest):
+
+    def setUp(self):
+        super(TestCheckLastFMLinks, self).setUp()
+        self.play_stevie_song('Tuesday Heartbreak')
+        self.play_stevie_song('Big Brother')
+
+    @fudge.with_fakes
+    def test_build_links(self):
+        data = self.request('/api/current_playlist')
+        fm_getter = (fudge.Fake('get_lastfm_network', expect_call=True)
+                          .with_args(api_key=dbconfig['lastfm.api_key']))
+        (fm_getter.returns_fake()
+                  .expects('get_album')
+                  .with_args('Stevie Wonder', 
+                             'Talking Book')
+                  .returns_fake()
+                  .expects('get_cover_image')
+                  # First album images:
+                  .with_args(pylast.COVER_SMALL)
+                  .returns('http://last.fm/sm1.jpg')
+                  .next_call()
+                  .with_args(pylast.COVER_MEDIUM)
+                  .returns('http://last.fm/med1.jpg')
+                  .next_call()
+                  # Second album images:
+                  .with_args(pylast.COVER_SMALL)
+                  .returns('http://last.fm/sm2.jpg')
+                  .next_call()
+                  .with_args(pylast.COVER_MEDIUM)
+                  .returns('http://last.fm/med2.jpg'))
+        with fudge.patched_context(api.handler.pylast, 'get_lastfm_network',
+                                   fm_getter):
+            self.client.post('/api/_check_lastfm_links')
+
+        data = self.request('/api/current_playlist')
+        current = data['now_playing']
+        eq_(current['lastfm_urls'], {
+            'sm_image': 'http://last.fm/sm1.jpg',
+            'med_image': 'http://last.fm/med1.jpg'
+        })
+        eq_(data['recently_played'][0]['lastfm_urls'], {
+            'sm_image': 'http://last.fm/sm2.jpg',
+            'med_image': 'http://last.fm/med2.jpg'
+        })
