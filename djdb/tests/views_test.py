@@ -130,18 +130,18 @@ class AutocompleteViewsTestCase(TestCase):
         response = self.client.get(
             "/djdb/album/search.txt", {'q':'another green world'})
         ent = models.Album.all().filter("title =", "Another Green World")[0]
-        self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
+        self.assertEqual(response.content, "%s|%s|None\n" % (ent.title, ent.key()))
     
     def test_album_partial_name(self):
         response = self.client.get("/djdb/album/search.txt", {'q':'another'})
         ent = models.Album.all().filter("title =", "Another Green World")[0]
-        self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
+        self.assertEqual(response.content, "%s|%s|None\n" % (ent.title, ent.key()))
     
     def test_track_full_name(self):
         response = self.client.get(
             "/djdb/track/search.txt", {'q':'spider and I'})
         ent = models.Track.all().filter("title =", "Spider And I")[0]
-        self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
+        self.assertEqual(response.content, "%s|%s|None\n" % (ent.title, ent.key()))
     
     def test_track_full_name_by_artist(self):
         response = self.client.get(
@@ -149,7 +149,7 @@ class AutocompleteViewsTestCase(TestCase):
                                         'artist_key': self.eno.key()})
                                         
         ent = models.Track.all().filter("title =", "Spider And I")[0]
-        self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
+        self.assertEqual(response.content, "%s|%s|None\n" % (ent.title, ent.key()))
     
     def test_track_full_name_by_wrong_artist(self):
         response = self.client.get(
@@ -162,7 +162,7 @@ class AutocompleteViewsTestCase(TestCase):
     def test_track_partial_name(self):
         response = self.client.get("/djdb/track/search.txt", {'q':'spid'})
         ent = models.Track.all().filter("title =", "Spider And I")[0]
-        self.assertEqual(response.content, "%s|%s\n" % (ent.title, ent.key()))
+        self.assertEqual(response.content, "%s|%s|None\n" % (ent.title, ent.key()))
     
     def test_track_no_matches(self):
         # when there are no Track matches but there are Artist matches, 
