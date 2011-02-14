@@ -49,7 +49,11 @@ def fetch_activity(num=None, days=None, start_dt=None):
     activity = []
     
     # Get recent reviews.
-    revs = review.fetch_recent(num, days=days, start_dt=start_dt)
+    if num is None:
+        num_reviews = 999
+    else:
+        num_reviews = num
+    revs = review.fetch_recent(num_reviews, days=days, start_dt=start_dt)
     for rev in revs:
         dt = rev.created.strftime('%Y-%m-%d %H:%M')
         if len(rev.text) > 100:
@@ -71,10 +75,10 @@ def fetch_activity(num=None, days=None, start_dt=None):
     # Get recent comments.
     if num is None or len(activity) < num:
         if num is None:
-            numCom = None
+            num_comments = 999
         else:
-            numCom = num - len(activity)        
-        comments = comment.fetch_recent(numCom, days=days, start_dt=start_dt)
+            num_comments = num - len(activity)        
+        comments = comment.fetch_recent(num_comments, days=days, start_dt=start_dt)
         for com in comments:
             dt = com.created.strftime('%Y-%m-%d %H:%M')
             if len(com.text) > 100:
@@ -96,10 +100,10 @@ def fetch_activity(num=None, days=None, start_dt=None):
     # Get recent tag edits.
     if num is None or len(activity) < num:
         if num is None:
-            numTags = None
+            num_tags = 999
         else:
-            numTags = num - len(activity)
-        tag_edits = tag_util.fetch_recent(numTags, days=days, start_dt=start_dt)
+            num_tags = num - len(activity)
+        tag_edits = tag_util.fetch_recent(num_tags, days=days, start_dt=start_dt)
         for tag_edit in tag_edits:
             dt = tag_edit.timestamp.strftime('%Y-%m-%d %H:%M')
             for tag in tag_edit.added:
