@@ -19,8 +19,8 @@
 {% block content %}
 
 <div id="playlist"> <!-- site wrapper -->
-{% if not is_in_studio %}
-<h1 class="errornote">WARNING! You are not in the studio, you sure you want to modify this playlist?</h1>
+{% if not request.is_from_studio and not request.session.is_from_studio_override %}
+<h1 class="errornote">WARNING! You are not in the studio, you sure you want to modify this playlist? <input type="checkbox" name="is_from_studio_override" /> Yes, I know, don't bug me.</h1>
 {% endif %}
 <div id="form-column"> <!-- form column -->
 
