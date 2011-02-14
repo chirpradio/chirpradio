@@ -24,11 +24,55 @@ from django.test import TestCase as DjangoTestCase
 from django.core.urlresolvers import reverse
 from django.utils import simplejson
 from django import http
+from nose.tools import eq_
 
 from auth import roles
 import jobs
 from jobs.models import Job
 from jobs import worker_registry, job_worker, job_product
+
+
+_worker_registry = {}
+
+
+def setup():
+    _worker_registry.update(jobs.worker_registry)
+
+
+def teardown():
+    jobs.worker_registry.update(_worker_registry)
+
+
+class JobTestCase(object):
+    """Mixin for tests that use jobs/workers."""
+
+    def get_job_product(self, job_name, params):
+        """Simulates the requests made by JavaScript code 
+        to get the final job product.
+        """
+        r = self.client.post(reverse('jobs.start'),
+                             data={'job_name': 'build-trafficlog-report'})
+        eq_(r.status_code, 200)
+        job = simplejson.loads(r.content)
+        done = False
+        attempts = 0
+        while not done:
+            attempts += 1
+            if attempts > 30:
+                raise RuntimeError(
+                        "Job %r did not finish after %s attempts" % (
+                                                    job_name, attempts))
+            r = self.client.post(reverse('jobs.work'),
+                                 data={'job_key': job['job_key'],
+                                       'params': simplejson.dumps(params)})
+            eq_(r.status_code, 200)
+            work = simplejson.loads(r.content)
+            done = work['finished']
+        # TODO(kumar) check work['success']
+        r = self.client.post(reverse('jobs.product', args=[job['job_key']]))
+        eq_(r.status_code, 200)
+        return r
+
 
 def teardown_data():
     for ob in Job.all():
@@ -48,7 +92,7 @@ class TestJobModel(TestCase):
     def tearDown(self):
         teardown_data()
 
-class JobsTestCase(DjangoTestCase):
+class JobSelfTestCase(DjangoTestCase):
     
     def tearDown(self):
         teardown_data()
@@ -57,7 +101,7 @@ class JobsTestCase(DjangoTestCase):
         self.assertEqual(json_response['success'], True,
                     "Unsuccessful response, error=%r" % json_response.get('error'))
     
-class TestJobs(JobsTestCase):
+class TestJobs(JobSelfTestCase):
     
     def setUp(self):
         assert self.client.login(email="test@test.com", roles=[roles.DJ])
@@ -185,7 +229,7 @@ class TestJobs(JobsTestCase):
         self.assertEqual(Job.get(old_job_key), None)
 
     
-class TestJobsWithParams(JobsTestCase):
+class TestJobsWithParams(JobSelfTestCase):
     
     def setUp(self):
         assert self.client.login(email="test@test.com", roles=[roles.DJ])
@@ -235,5 +279,45 @@ class TestJobsWithParams(JobsTestCase):
         
         # get the product:
         response = self.client.get(reverse('jobs.product', args=(job_key,)))
-        self.assertEqual(response.content, "Results from 2010-08-01 to 2010-08-31")
+        self.assertEqual(response.content,
+                         "Results from 2010-08-01 to 2010-08-31")
 
+    
+class TestAccessRestriction(JobSelfTestCase):
+    
+    def setUp(self):
+        assert self.client.login(email="test@test.com", roles=[roles.DJ])
+        
+        def restricted(request):
+            assert isinstance(request, http.HttpRequest)
+            return http.HttpResponseForbidden('no access')
+        
+        @job_worker('some-job', pre_request=restricted)
+        def _worker(data, request_params):
+            return data
+        
+        @job_product('some-job', pre_request=restricted)
+        def _product(data):
+            return http.HttpResponse('<product>')
+    
+    def test_start(self):
+        response = self.client.post(reverse('jobs.start'), {
+            'job_name': 'some-job'
+        })
+        self.assertEqual(response.status_code, 403)
+    
+    def test_work(self):
+        job = Job(job_name='some-job')
+        job.put()
+        response = self.client.post(reverse('jobs.work'), {
+            'job_key': str(job.key()),
+            'params': '{}'
+        })
+        self.assertEqual(response.status_code, 403)
+    
+    def test_product(self):
+        job = Job(job_name='some-job')
+        job.put()
+        response = self.client.get(reverse('jobs.product',
+                                   args=[str(job.key())]))
+        self.assertEqual(response.status_code, 403)

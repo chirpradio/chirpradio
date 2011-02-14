@@ -17,7 +17,9 @@
 
 """Data model for CHIRP's DJ database."""
 
+from datetime import datetime
 import hashlib
+import re
 
 from google.appengine.ext import db
 
@@ -25,7 +27,8 @@ from auth.models import User
 from common import sanitize_html
 from common import time_util
 from common.autoretry import AutoRetry
-import re
+from common import dbconfig
+from djdb import pylast
 
 # A list of standard doctypes.
 DOCTYPE_REVIEW = "review"  # A review, subject must be an Album object.
@@ -42,6 +45,9 @@ class DjDbImage(db.Model):
     """An image (usually a JPEG or PNG) associated with an artist or album.
 
     Images are uniquely defined by their SHA1 checksums.
+    
+    NOTE: Cached images have not been used since we started linking directly
+    to Last FM image URLs.
 
     Attributes:
       image_data: A binary blob containing the image data.
@@ -284,6 +290,13 @@ class Album(db.Model):
 
     revoked = db.BooleanProperty(required=False, default=False)
 
+    # Cached Last FM image URLs for this album
+    lastfm_sm_image_url = db.StringProperty(required=False)
+    lastfm_med_image_url = db.StringProperty(required=False)
+    lastfm_lg_image_url = db.StringProperty(required=False)
+    lastfm_xl_image_url = db.StringProperty(required=False)
+    lastfm_retrieval_time = db.DateTimeProperty(required=False)
+
     # Keys are automatically assigned. 
     _KEY_FORMAT = u"djdb/a:%x"
 
@@ -381,6 +394,20 @@ class Album(db.Model):
         """Returns true if tag 'tag' is currently set."""
         tag = tag.lower()
         return any(tag == t.lower() for t in self.current_tags)
+
+    def get_lastfm_image_urls(self):
+        fm = pylast.get_lastfm_network(api_key=dbconfig['lastfm.api_key'])
+        fm_album = fm.get_album(self.artist_name, self.title)
+        self.lastfm_sm_image_url = fm_album.get_cover_image(
+                                                    pylast.COVER_SMALL)
+        self.lastfm_med_image_url = fm_album.get_cover_image(
+                                                    pylast.COVER_MEDIUM)
+        self.lastfm_lg_image_url = fm_album.get_cover_image(
+                                                    pylast.COVER_LARGE)
+        self.lastfm_xl_image_url = fm_album.get_cover_image(
+                                                    pylast.COVER_EXTRA_LARGE)
+        self.lastfm_retrieval_time = datetime.now()
+        self.save()
 
 
 _CHANNEL_CHOICES = ("stereo", "joint_stereo", "dual_mono", "mono")

@@ -26,6 +26,7 @@ import csv
 
 from google.appengine.ext import db
 
+from django import http
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.conf import settings
@@ -34,7 +35,8 @@ from django.template import RequestContext
 from django.utils import simplejson
 import django.forms
 
-from common.utilities import as_json, http_send_csv_file, as_encoded_str
+from common.utilities import (as_json, http_send_csv_file, as_encoded_str,
+                              restricted_job_worker, restricted_job_product)
 from common import time_util
 from common.autoretry import AutoRetry
 import auth
@@ -42,7 +44,6 @@ from auth.models import User
 from auth.roles  import DJ, TRAFFIC_LOG_ADMIN
 from auth.decorators import require_role
 from traffic_log import models, forms, constants
-from jobs import job_worker, job_product
 
 log = logging.getLogger()
 
@@ -465,9 +466,11 @@ def traffic_log(request, date):
         dict(spots=spots_for_date), 
         context_instance=RequestContext(request))
 
-@job_worker('build-trafficlog-report')
+
+@restricted_job_worker('build-trafficlog-report', TRAFFIC_LOG_ADMIN)
 def trafficlog_report_worker(results, request_params):
-    fields = ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'excerpt']
+    fields = ['readtime', 'dow', 'slot_time', 'underwriter',
+              'title', 'type', 'excerpt']
     if results is None:
         # when starting the job, init file lines with the header row...
         results = {
@@ -486,9 +489,23 @@ def trafficlog_report_worker(results, request_params):
         return datetime.datetime(*parts)
         
     query = (models.TrafficLogEntry.all()
-                .filter('log_date >= ', mkdt(request_params['start_date']))
-                .filter('log_date <= ', mkdt(request_params['end_date']))
+                .filter('log_date >=', mkdt(request_params['start_date']))
+                .filter('log_date <',
+                        mkdt(request_params['end_date']) +
+                        datetime.timedelta(days=1))
     )
+    if request_params['type']:
+        index = constants.SPOT_TYPE_CHOICES.index(request_params['type'])
+        if index > 0:
+            # -1 = not found, 0 = ALL
+            spots = models.Spot.all().filter(
+                        'type =', constants.SPOT_TYPE_CHOICES[index])
+            query = query.filter('spot IN', list(spots))
+    # TODO(Kumar) figure out why this doesn't work!
+    # if request_params['underwriter']:
+    #     copies = models.SpotCopy.all().filter('underwriter =',
+    #                                           request_params['underwriter'])
+    #     query = query.filter('spot_copy IN', list(copies))
                         
     all_entries = query[ offset: last_offset ]
     if len(all_entries) == 0:
@@ -497,6 +514,10 @@ def trafficlog_report_worker(results, request_params):
         finished = False
     
     for entry in all_entries:
+        # TODO(Kumar) - see above
+        if request_params['underwriter']:
+            if entry.spot_copy.underwriter != request_params['underwriter']:
+                continue
         buf = StringIO()
         writer = csv.DictWriter(buf, fields)
         row = report_entry_to_csv_dict(entry)
@@ -507,7 +528,8 @@ def trafficlog_report_worker(results, request_params):
     
     return finished, results
 
-@job_product('build-trafficlog-report')
+
+@restricted_job_product('build-trafficlog-report', TRAFFIC_LOG_ADMIN)
 def playlist_report_product(results):
     fname = "chirp-traffic_log"
     response = HttpResponse(content_type='text/csv; charset=utf-8')
@@ -516,34 +538,14 @@ def playlist_report_product(results):
         response.write(line)
     return response
 
+
 @require_role(TRAFFIC_LOG_ADMIN)
 def report(request):
-    entries = []
-    if request.method == 'POST':
-        report_form = forms.ReportForm(request.POST)
-        if report_form.is_valid():
-            query = (models.TrafficLogEntry.all()
-                        .filter('log_date >= ', report_form.cleaned_data['start_date'])
-                        .filter('log_date <= ', report_form.cleaned_data['end_date']))            
-            filter_type = report_form.cleaned_data['type'] != "Spot Type"
-            filter_underwriter = report_form.cleaned_data['underwriter'] != ""
-            if filter_type or filter_underwriter:
-                for entry in AutoRetry(query):
-                    if (not filter_type or entry.spot.type == report_form.cleaned_data['type']) \
-                       and (not filter_underwriter or entry.spot_copy.underwriter == report_form.cleaned_data['underwriter']):
-                       entries.append(report_entry_to_csv_dict(entry))
-            else:
-                for entry in AutoRetry(query):
-                    entries.append(report_entry_to_csv_dict(entry))
-            if request.POST.get('download'):
-                fields = ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'excerpt']
-                fname = "chirp-traffic_log_%s_%s" % (report_form.cleaned_data['start_date'],
-                                                     report_form.cleaned_data['end_date'])
-                return http_send_csv_file(fname, fields, entries)
-    else :
-        end_date = datetime.datetime.now().date()
-        start_date = end_date - datetime.timedelta(days=30)
-        report_form = forms.ReportForm({'start_date': start_date, 'end_date': end_date})
+    # See job/worker code above for generating actual report
+    end_date = datetime.datetime.now().date()
+    start_date = end_date - datetime.timedelta(days=30)
+    report_form = forms.ReportForm({'start_date': start_date,
+                                    'end_date': end_date})
     return render_to_response('traffic_log/report.html', 
                               {'form': report_form},
                               context_instance=RequestContext(request))

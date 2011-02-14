@@ -17,11 +17,13 @@
 ###
 
 from google.appengine.ext import webapp
-from google.appengine.api import memcache
+from google.appengine.api import memcache, taskqueue
 from google.appengine.ext.webapp.util import run_wsgi_app
 from django.utils import simplejson
 
 from playlists.models import ChirpBroadcast, PlaylistTrack
+from djdb import pylast
+from common import dbconfig
 
 
 class ApiHandler(webapp.RequestHandler):
@@ -30,20 +32,24 @@ class ApiHandler(webapp.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'application/json'
         if not self.use_cache:
-            response = self._get_json_response()
+            data = self.get_json()
         else:
             if self.cache_key is None:
                 raise NotImplementedError("cache_key was not set")
-            response = memcache.get(self.cache_key)
-            if not response:
-                response = self._get_json_response()
-                memcache.set(self.cache_key, response)
-        self.response.out.write(response)
-
-    def _get_json_response(self):
-        data = self.get_json()
+            data = memcache.get(self.cache_key)
+            if not data:
+                data = self.get_json()
+                memcache.set(self.cache_key, data)
         # Default encoding is UTF-8
-        return simplejson.dumps(data)
+        self.check_data(data)
+        self.response.out.write(simplejson.dumps(data))
+
+    def check_data(self, data):
+        """Optional hook to do something with the view's data.
+
+        This hook will be called even if the data was cached
+        so be careful not to use expensive resources.
+        """
 
 
 class CachedApiHandler(ApiHandler):
@@ -51,9 +57,25 @@ class CachedApiHandler(ApiHandler):
     cache_key = None
 
 
+def iter_tracks(data):
+    yield data['now_playing']
+    for track in data['recently_played']:
+        yield track
+
+
+def iter_lastfm_links(data):
+    for track in iter_tracks(data):
+        for k,v in data['now_playing']['lastfm_urls'].items():
+            yield (k,v)
+
+
 class CurrentPlaylist(CachedApiHandler):
     """Current track playing on CHIRP and recently played tracks."""
     cache_key = 'api.current_track'
+
+    def check_data(self, data):
+        if any((v is None) for k,v in iter_lastfm_links(data)):
+            taskqueue.add(url='/api/_check_lastfm_links')
 
     def track_as_data(self, track):
         return {
@@ -64,7 +86,11 @@ class CurrentPlaylist(CachedApiHandler):
             'label': track.label_display,
             'dj': track.selector.effective_dj_name,
             'played_at_gmt': track.established.isoformat(),
-            'played_at_local': track.established_display.isoformat()
+            'played_at_local': track.established_display.isoformat(),
+            'lastfm_urls': {
+                'sm_image': None,
+                'med_image': None
+            }
         }
 
     def get_json(self):
@@ -85,12 +111,35 @@ class Index(ApiHandler):
 
     def get_json(self):
         return {
-            'services': [(url, s.__doc__) for url, s in services]
+            'services': [(url, s.__doc__)
+                         for url, s in services if issubclass(s, ApiHandler)]
         }
 
 
+class CheckLastFMLinks(webapp.RequestHandler):
+
+    def post(self):
+        links_fetched = 0
+        data = memcache.get(CurrentPlaylist.cache_key)
+        if data:
+            fm = pylast.get_lastfm_network(api_key=dbconfig['lastfm.api_key'])
+            for track in iter_tracks(data):
+                links_fetched += 1
+                fm_album = fm.get_album(track['artist'], track['release'])
+                track['lastfm_urls']['sm_image'] = fm_album.get_cover_image(
+                                                        pylast.COVER_SMALL)
+                track['lastfm_urls']['med_image'] = fm_album.get_cover_image(
+                                                        pylast.COVER_MEDIUM)
+            memcache.set(CurrentPlaylist.cache_key, data)
+        self.response.out.write(simplejson.dumps({
+            'success': True,
+            'links_fetched': links_fetched
+        }))
+
+
 services = [('/api/', Index),
-            ('/api/current_playlist', CurrentPlaylist)]
+            ('/api/current_playlist', CurrentPlaylist),
+            ('/api/_check_lastfm_links', CheckLastFMLinks)]
 debug = False
 application = webapp.WSGIApplication(services, debug=debug)
 

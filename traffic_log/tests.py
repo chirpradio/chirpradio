@@ -24,14 +24,19 @@ from StringIO import StringIO
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase as DjangoTestCase
+from django.utils import simplejson
 from django import http
 from django.test.client import Client
+from nose.tools import eq_
 
 from common.testutil import FormTestCaseHelper
 from common import time_util
 from auth import roles
 from auth.models import User
 from traffic_log import views, models, constants
+from jobs.tests import JobTestCase
+from jobs.models import Job
+
 
 def clear_data():
     for x in models.TrafficLogEntry.all():
@@ -646,13 +651,28 @@ class TrafficLogTestCase(unittest.TestCase):
         pass
 
     
-class TestTrafficLogReport(FormTestCaseHelper, DjangoTestCase):
+class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
+    
+    def add_spot_to_constraint(self, spot):
+        # make a constraint closest to now:
+        today = self.now.date()
+        current_hour = self.now.hour
+        
+        hour = current_hour
+        slot = 0
+        
+        constraint = models.SpotConstraint(
+            dow=self.dow, hour=hour, slot=slot, spots=[spot.key()])
+        constraint.put()
+        return constraint
     
     def setUp(self):
-        assert self.client.login(email="test@test.com", roles=[roles.TRAFFIC_LOG_ADMIN])
+        assert self.client.login(email="test@test.com",
+                                 roles=[roles.TRAFFIC_LOG_ADMIN])
         
         author = User(email='test')
         author.save()
+        self.author = author
         spot = models.Spot(
                         title='Legal ID',
                         type='Station ID', 
@@ -660,19 +680,12 @@ class TestTrafficLogReport(FormTestCaseHelper, DjangoTestCase):
         self.spot = spot
         spot.put()
         
-        # make a constraint closest to now:
-        now = time_util.chicago_now()
-        today = now.date()
-        current_hour = now.hour
+        self.now = time_util.chicago_now()
+        self.today = self.now.date()
+        self.dow = self.today.isoweekday()
         
-        dow = today.isoweekday()
-        self.dow = dow
-        hour = current_hour
-        slot = 0
-        
-        constraint = models.SpotConstraint(
-            dow=dow, hour=hour, slot=slot, spots=[spot.key()])
-        constraint.put()
+        constraint = self.add_spot_to_constraint(spot)
+        self.constraint = constraint
         spot_copy = models.SpotCopy(
                         body='You are listening to chirpradio.org',
                         spot=spot,
@@ -683,37 +696,51 @@ class TestTrafficLogReport(FormTestCaseHelper, DjangoTestCase):
         spot.save()
         
         logged_spot = models.TrafficLogEntry(
-            log_date = today,
+            log_date = self.today,
             spot = spot_copy.spot,
             spot_copy = spot_copy,
-            dow = dow,
-            hour = hour,
-            slot = slot,
+            dow = self.dow,
+            hour = self.now.hour,
+            slot = 0,
             scheduled = constraint,
             readtime = time_util.chicago_now(), 
             reader = author
         )
         logged_spot.put()
     
+    def test_only_admin_can_access(self):
+        self.client.logout()
+        assert self.client.login(email="dj@test.com",
+                                 roles=[roles.DJ])
+        r = self.client.post(reverse('jobs.start'),
+                             data={'job_name': 'build-trafficlog-report'})
+        eq_(r.status_code, 403)
+        job = Job(job_name='build-trafficlog-report')
+        job.put()
+        r = self.client.post(reverse('jobs.work'),
+                             data={'job_key': job.key(),
+                                   'params': '{}'})
+        eq_(r.status_code, 403)
+        r = self.client.post(reverse('jobs.product', args=[str(job.key())]))
+        eq_(r.status_code, 403)
+    
     def test_download_report_of_all_spots(self):
-        
         from_date = datetime.date.today() - timedelta(days=1)
         to_date = datetime.date.today() + timedelta(days=1)
         
-        response = self.client.post(reverse('traffic_log.report'), {
-            'start_date': from_date,
-            'end_date': to_date,
-            'type': constants.SPOT_TYPE_CHOICES[0], # all
-            'underwriter': '',
-            'download': 'Download'
-        })
-        self.assertNoFormErrors(response)
-        
+        params = {'start_date': from_date.strftime("%Y-%m-%d"),
+                  'end_date': to_date.strftime("%Y-%m-%d"),
+                  # all types:
+                  'type': constants.SPOT_TYPE_CHOICES[0],
+                  'underwriter': '',
+                  'download': 'Download'}
+        response = self.get_job_product('build-trafficlog-report', params)
         self.assertEquals(response['Content-Type'], 'text/csv; charset=utf-8')
         
         report = csv.reader(StringIO(response.content))
         self.assertEquals(
-            ['readtime', 'dow', 'slot_time', 'underwriter', 'title', 'type', 'excerpt'],
+            ['readtime', 'dow', 'slot_time', 'underwriter',
+             'title', 'type', 'excerpt'],
             report.next())
         row = report.next()
         
@@ -721,6 +748,140 @@ class TestTrafficLogReport(FormTestCaseHelper, DjangoTestCase):
         self.assertEquals(row[4], self.spot.title)
         self.assertEquals(row[5], self.spot.type)
         self.assertEquals(row[6], self.spot_copy.body)
+    
+    def test_filter_by_type(self):
+        # Make another type of spot:
+        spot = models.Spot(
+                        title='PSA',
+                        type='Live Read PSA', 
+                        author=self.author)
+        spot.put()
+        constraint = self.add_spot_to_constraint(spot)
+        spot_copy = models.SpotCopy(
+                    body='Save the children from bad music. Listen to CHIRP',
+                    spot=spot,
+                    author=self.author)
+        spot_copy.put()
+        
+        today = self.now.date()
+        current_hour = self.now.hour
+        hour = current_hour
+        
+        logged_spot = models.TrafficLogEntry(
+            log_date = self.today,
+            spot = spot_copy.spot,
+            spot_copy = spot_copy,
+            dow = self.dow,
+            hour = self.now.hour,
+            slot = 0,
+            scheduled = constraint,
+            readtime = time_util.chicago_now(), 
+            reader = self.author
+        )
+        logged_spot.put()
+        
+        from_date = datetime.date.today() - timedelta(days=1)
+        to_date = datetime.date.today() + timedelta(days=1)
+        
+        params = {'start_date': from_date.strftime("%Y-%m-%d"),
+                  'end_date': to_date.strftime("%Y-%m-%d"),
+                  # Live Read PSA:
+                  'type': constants.SPOT_TYPE_CHOICES[3],
+                  'underwriter': '',
+                  'download': 'Download'}
+        response = self.get_job_product('build-trafficlog-report', params)
+        report = csv.reader(StringIO(response.content))
+        header = report.next()
+        row = report.next()
+        self.assertEquals(row[4], spot.title)
+        self.assertEquals(row[5], spot.type)
+        self.assertEquals(row[6], spot_copy.body)
+    
+    def test_filter_by_underwriter(self):
+        # Make another type of spot:
+        spot = models.Spot(
+                        title='PSA',
+                        type='Live Read PSA', 
+                        author=self.author)
+        spot.put()
+        constraint = self.add_spot_to_constraint(spot)
+        spot_copy = models.SpotCopy(
+            body='Pst, Reckless Records has killer hip hop in the cutout bin',
+            spot=spot,
+            author=self.author,
+            underwriter='reckless')
+        spot_copy.put()
+        
+        today = self.now.date()
+        current_hour = self.now.hour
+        hour = current_hour
+        
+        logged_spot = models.TrafficLogEntry(
+            log_date = self.today,
+            spot = spot_copy.spot,
+            spot_copy = spot_copy,
+            dow = self.dow,
+            hour = self.now.hour,
+            slot = 0,
+            scheduled = constraint,
+            readtime = time_util.chicago_now(), 
+            reader = self.author
+        )
+        logged_spot.put()
+        
+        from_date = datetime.date.today() - timedelta(days=1)
+        to_date = datetime.date.today() + timedelta(days=1)
+        
+        params = {'start_date': from_date.strftime("%Y-%m-%d"),
+                  'end_date': to_date.strftime("%Y-%m-%d"),
+                  # All:
+                  'type': constants.SPOT_TYPE_CHOICES[0],
+                  'underwriter': 'reckless',
+                  'download': 'Download'}
+        response = self.get_job_product('build-trafficlog-report', params)
+        report = csv.reader(StringIO(response.content))
+        header = report.next()
+        underwriters = set([row[3] for row in report])
+        self.assertEquals(underwriters, set(['reckless']))
+    
+    def test_many_spots(self):
+        copy = []
+        for i in range(65):
+            txt = 'PSA %s' % i
+            copy.append(txt)
+            spot_copy = models.SpotCopy(
+                    body=txt,
+                    spot=self.spot,
+                    author=self.author)
+            spot_copy.put()
+            logged_spot = models.TrafficLogEntry(
+                log_date = self.today,
+                spot = spot_copy.spot,
+                spot_copy = spot_copy,
+                dow = self.dow,
+                hour = self.now.hour,
+                slot = 0,
+                scheduled = self.constraint,
+                readtime = time_util.chicago_now() - timedelta(days=1), 
+                reader = self.author
+            )
+            logged_spot.put()
+
+        from_date = datetime.date.today() - timedelta(days=30)
+        to_date = datetime.date.today()
+        
+        params = {'start_date': from_date.strftime("%Y-%m-%d"),
+                  'end_date': to_date.strftime("%Y-%m-%d"),
+                  # All:
+                  'type': constants.SPOT_TYPE_CHOICES[0],
+                  'underwriter': '',
+                  'download': 'Download'}
+        response = self.get_job_product('build-trafficlog-report', params)
+        report = csv.reader(StringIO(response.content))
+        header = report.next()
+        self.assertEquals([r[6] for r in report],
+                          ['You are listening to chirpradio.org'] + copy)
+
 
 class TestAddHour(unittest.TestCase):
     

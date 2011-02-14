@@ -94,36 +94,89 @@ On the server, all you have to do is implement a worker method::
     @job_product('build-playlist-report')
     def playlist_report_product(results):
         csv_file = "\n".join(results['file_lines'])
-        # respond with the CSV file...
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        response.write(csv_file)
+        return response
         
 """
 
+
 worker_registry = {}
+
 
 def _reset_registry():
     worker_registry['workers'] = {}
     worker_registry['producers'] = {}
 
+
 _reset_registry()
 
-def job_product(job_name):
+
+def job_product(job_name, pre_request=None):
+    """Decorator to register a function as a job product handler.
+    
+    Example::
+
+        @job_product('build-playlist-report')
+        def playlist_report_product(results):
+            csv_file = "\n".join(results['file_lines'])
+            response = HttpResponse(content_type='text/csv; charset=utf-8')
+            response.write(csv_file)
+            return response
+    
+    **job_name**
+    Name of the job with which a worker is already registered.
+    
+    **pre_request=None**
+    Optional callback that accepts the web request.  If the callback
+    returns an http response (any value but None), the response will be
+    returned instead of the job product.  This is useful for access
+    restriction.
+    """
     def fn_decorator(fn):
-        worker_registry['producers'][job_name] = fn
+        worker_registry['producers'][job_name] = {'callback': fn,
+                                                  'pre_request': pre_request}
         return fn
     return fn_decorator
 
-def job_worker(job_name):
+
+def job_worker(job_name, pre_request=None):
+    """Decorator to register a function as a job worker.
+    
+    Example::
+            
+        @job_worker('build-playlist-report')
+        def playlist_report_worker(results, request_params):
+            if results is None:
+                results = {}
+            # Do something with results and params
+            return results
+
+    **job_name**
+    Name of the job to do work for.
+    
+    **pre_request=None**
+    Optional callback that accepts the web request.  If the callback
+    returns an http response (any value but None), the response will be
+    returned instead of the job work result.  This is useful for access
+    restriction.
+    """
     def fn_decorator(fn):
-        worker_registry['workers'][job_name] = fn
+        worker_registry['workers'][job_name] = {'callback': fn,
+                                                'pre_request': pre_request}
         return fn
     return fn_decorator
+
 
 def get_worker(job_name):
     if job_name not in worker_registry['workers']:
-        raise LookupError("No worker has been registered for job %r" % job_name)
+        raise LookupError(
+            "No worker has been registered for job %r" % job_name)
     return worker_registry['workers'][job_name]
+
 
 def get_producer(job_name):
     if job_name not in worker_registry['producers']:
-        raise LookupError("No producer has been registered for job %r" % job_name)
+        raise LookupError(
+            "No producer has been registered for job %r" % job_name)
     return worker_registry['producers'][job_name]

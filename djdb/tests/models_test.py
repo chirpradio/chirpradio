@@ -1,3 +1,4 @@
+from __future__ import with_statement
 ###
 ### Copyright 2009 The Chicago Independent Radio Project
 ### All Rights Reserved.
@@ -17,8 +18,16 @@
 
 import datetime
 import unittest
+
+import fudge
 from google.appengine.ext import db
-from djdb import models
+
+from djdb import models, pylast
+from common import dbconfig
+
+
+def setup_dbconfig():
+    dbconfig['lastfm.api_key'] = 'SEKRET_LASTFM_KEY'
 
 
 class ModelsTestCase(unittest.TestCase):
@@ -29,6 +38,11 @@ class ModelsTestCase(unittest.TestCase):
         # Create and save a test artist.
         self.test_artist = models.Artist(name=self.TEST_ARTIST_NAME)
         self.test_artist.save()
+        fudge.clear_expectations()
+        setup_dbconfig()
+
+    def tearDown(self):
+        fudge.clear_expectations()
 
     def test_djdb_image(self):
         # Create and save a test image.
@@ -88,6 +102,51 @@ class ModelsTestCase(unittest.TestCase):
         self.assertEqual(models.Album.get_key_name(54321), alb.key().name())
         # Check the artist_name property.
         self.assertEqual(alb._COMPILATION_ARTIST_NAME, alb.artist_name)
+
+    @fudge.with_fakes
+    def test_lastfm_album_image(self):
+        alb = models.Album(title='test album',
+                           album_id=12345,
+                           import_timestamp=datetime.datetime.now(),
+                           album_artist=self.test_artist,
+                           num_tracks=13)
+        self.assertEquals(alb.lastfm_sm_image_url, None)
+        self.assertEquals(alb.lastfm_med_image_url, None)
+        self.assertEquals(alb.lastfm_lg_image_url, None)
+        self.assertEquals(alb.lastfm_xl_image_url, None)
+        fm_getter = (fudge.Fake('get_lastfm_network', expect_call=True)
+                          .with_args(api_key=dbconfig['lastfm.api_key']))
+        (fm_getter.returns_fake()
+                  .expects('get_album')
+                  .with_args(self.test_artist.name, 
+                             alb.title)
+                  .returns_fake()
+                  .expects('get_cover_image')
+                  .with_args(pylast.COVER_SMALL)
+                  .returns('http://serve.last.fm/100x100/30098655.jpg')
+                  .next_call()
+                  .with_args(pylast.COVER_MEDIUM)
+                  .returns('http://serve.last.fm/300x300/30098655.jpg')
+                  .next_call()
+                  .with_args(pylast.COVER_LARGE)
+                  .returns('http://serve.last.fm/600x600/30098655.jpg')
+                  .next_call()
+                  .with_args(pylast.COVER_EXTRA_LARGE)
+                  .returns('http://serve.last.fm/1200x1200/30098655.jpg'))
+        with fudge.patched_context('djdb.pylast', 'get_lastfm_network',
+                                   fm_getter):
+            alb.get_lastfm_image_urls()
+            alb = models.Album.get(alb.key())
+            self.assertEquals(alb.lastfm_sm_image_url,
+                              'http://serve.last.fm/100x100/30098655.jpg')
+            self.assertEquals(alb.lastfm_med_image_url,
+                              'http://serve.last.fm/300x300/30098655.jpg')
+            self.assertEquals(alb.lastfm_lg_image_url,
+                              'http://serve.last.fm/600x600/30098655.jpg')
+            self.assertEquals(alb.lastfm_xl_image_url,
+                              'http://serve.last.fm/1200x1200/30098655.jpg')
+            self.assertEquals(alb.lastfm_retrieval_time.timetuple()[0:4],
+                              datetime.datetime.now().timetuple()[0:4])
 
     def test_track(self):
         # Check key generation against a known case.

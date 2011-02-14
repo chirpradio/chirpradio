@@ -7,6 +7,8 @@ $(document).ready(function() {
     
     $("#download").click(function(event) {
         event.preventDefault();
+        $("#ready-link").html('');
+        $("#ready-link").addClass('report-loading');
         var values = {};
         $.each($('.contents form').serializeArray(), function(i, field) {
             values[field.name] = field.value;
@@ -21,14 +23,12 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(result, textStatus) {
                 job_key = result.job_key;
-                console.log("starting work on job key", job_key);
                 work(job_key, values);
             }
         });
     });
     
     var work = function(job_key, form_values) {
-        console.log("working...");
         chirp.request({
             type: 'POST',
             url: '/jobs/work',
@@ -48,6 +48,7 @@ $(document).ready(function() {
     };
     
     var show_product = function(job_key) {
+        $("#ready-link").removeClass('report-loading');
         $("#ready-link").html('<a href="/jobs/product/' + job_key + '">Download CSV</a>');
     };
 });
