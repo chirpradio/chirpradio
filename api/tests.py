@@ -247,3 +247,22 @@ class TestCheckLastFMLinks(APITest):
             'sm_image': 'http://last.fm/sm2.jpg',
             'med_image': 'http://last.fm/med2.jpg'
         })
+
+    @fudge.with_fakes
+    def test_recover_from_errors(self):
+        data = self.request('/api/current_playlist')
+        fm_getter = (fudge.Fake('get_lastfm_network', expect_call=True)
+                          .with_args(api_key=dbconfig['lastfm.api_key']))
+        (fm_getter.returns_fake()
+                  .expects('get_album')
+                  .raises(pylast.WSError('', '', 'Album not found')))
+        with fudge.patched_context(api.handler.pylast, 'get_lastfm_network',
+                                   fm_getter):
+            self.client.post('/api/_check_lastfm_links')
+
+        data = self.request('/api/current_playlist')
+        current = data['now_playing']
+        eq_(current['lastfm_urls'], {
+            'sm_image': None,
+            'med_image': None
+        })

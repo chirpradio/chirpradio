@@ -15,6 +15,7 @@
 ### See the License for the specific language governing permissions and
 ### limitations under the License.
 ###
+import logging
 
 from google.appengine.ext import webapp
 from google.appengine.api import memcache, taskqueue
@@ -24,6 +25,9 @@ from django.utils import simplejson
 from playlists.models import ChirpBroadcast, PlaylistTrack
 from djdb import pylast
 from common import dbconfig
+
+
+log = logging.getLogger()
 
 
 class ApiHandler(webapp.RequestHandler):
@@ -122,14 +126,19 @@ class CheckLastFMLinks(webapp.RequestHandler):
         links_fetched = 0
         data = memcache.get(CurrentPlaylist.cache_key)
         if data:
-            fm = pylast.get_lastfm_network(api_key=dbconfig['lastfm.api_key'])
-            for track in iter_tracks(data):
-                links_fetched += 1
-                fm_album = fm.get_album(track['artist'], track['release'])
-                track['lastfm_urls']['sm_image'] = fm_album.get_cover_image(
-                                                        pylast.COVER_SMALL)
-                track['lastfm_urls']['med_image'] = fm_album.get_cover_image(
-                                                        pylast.COVER_MEDIUM)
+            try:
+                fm = pylast.get_lastfm_network(
+                                    api_key=dbconfig['lastfm.api_key'])
+                for track in iter_tracks(data):
+                    links_fetched += 1
+                    fm_album = fm.get_album(track['artist'], track['release'])
+                    track['lastfm_urls']['sm_image'] = \
+                            fm_album.get_cover_image(pylast.COVER_SMALL)
+                    track['lastfm_urls']['med_image'] = \
+                            fm_album.get_cover_image(pylast.COVER_MEDIUM)
+            except pylast.WSError:
+                # Probably album not found
+                log.exception('fetching LastFM data')
             memcache.set(CurrentPlaylist.cache_key, data)
         self.response.out.write(simplejson.dumps({
             'success': True,
