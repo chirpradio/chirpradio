@@ -36,7 +36,9 @@ from playlists.tasks import playlist_event_listeners
 from common.utilities import as_encoded_str, http_send_csv_file
 from common.autoretry import AutoRetry
 from djdb.models import Track
+from common.models import DBConfig
 
+dbconfig = DBConfig()
 log = logging.getLogger()
 
 common_context = {
@@ -82,7 +84,6 @@ def iter_playlist_events_for_view(query):
         yield pl_view
 
 
-
 def get_vars(request):
     current_user = auth.get_current_user(request)
 
@@ -92,6 +93,7 @@ def get_vars(request):
         form = PlaylistTrackForm()
     form.current_user = current_user
     form.playlist = ChirpBroadcast()
+
 
     vars = {
         'form': form,
