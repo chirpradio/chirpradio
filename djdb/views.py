@@ -46,7 +46,6 @@ import tag_util
 log = logging.getLogger(__name__)
 
 def fetch_activity(num=None, days=None, start_dt=None):
-    num_items = {}
     activity = []
     
     # Get recent reviews.
@@ -109,42 +108,44 @@ def fetch_activity(num=None, days=None, start_dt=None):
             dt = tag_edit.timestamp.strftime('%Y-%m-%d %H:%M')
             for tag in tag_edit.added:
                 if tag == 'recommended':                    
-                    item = '<a href="%s">%s / %s / %s</a> <b>recommended</b> by <a href="">%s</a>.' % (
+                    item = '<a href="%s">%s / %s / %s</a> <b>recommended</b> by <a href="/djdb/user/%s">%s</a>.' % (
                         tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
                         tag_edit.subject.album.title, tag_edit.subject.title,
-                        tag_edit.author)
+                        tag_edit.author.key().id(), tag_edit.author)
                     type = 'recommended'
                 elif tag == 'explicit':
-                    item = '<a href="%s">%s / %s / %s</a> <b>marked explicit</b> by <a href="">%s</a>.' % (
+                    item = '<a href="%s">%s / %s / %s</a> <b>marked explicit</b> by <a href="/djdb/user/%s">%s</a>.' % (
                         tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
                         tag_edit.subject.album.title, tag_edit.subject.title,
-                        tag_edit.author)
+                        tag_edit.author.key().id(), tag_edit.author)
                     type = 'explicit'
                 else:
-                    item = '<a href="%s">%s / %s</a> <b>tagged</b> as <b>%s</b> by <a href="">%s</a>.' % (
+                    item = '<a href="%s">%s / %s</a> <b>tagged</b> as <b>%s</b> by <a href="/djdb/user/%s">%s</a>.' % (
                         tag_edit.subject.url, tag_edit.subject.artist_name,
-                        tag_edit.subject.title, tag, tag_edit.author)
+                        tag_edit.subject.title, tag, tag_edit.author.key().id(),
+                        tag_edit.author)
                     type = 'tag'
+                
                 activity.append((dt, type, item))
-                num_items[type] = num_items.setdefault(type, 0) + 1
             
             for tag in tag_edit.removed:
                 if tag == 'recommended':
-                    item = '<a href="%s">%s / %s / %s</a> <b>unrecommended</b> by <a href="">%s</a>.' % (
+                    item = '<a href="%s">%s / %s / %s</a> <b>unrecommended</b> by <a href="/djdb/user/%s">%s</a>.' % (
                         tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
                         tag_edit.subject.album.title, tag_edit.subject.title,
-                        tag_edit.author)
+                        tag_edit.author.key().id(), tag_edit.author)
                     type = 'unrecommended'
                 elif tag == 'explicit':
-                    item = '<a href="%s">%s / %s / %s</a> <b>ummarked explicit</b> by <a href="">%s</a>.' % (
+                    item = '<a href="%s">%s / %s / %s</a> <b>ummarked explicit</b> by <a href="/djdb/user/%s">%s</a>.' % (
                         tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
                         tag_edit.subject.album.title, tag_edit.subject.title,
-                        tag_edit.author)
+                        tag_edit.author.key().id(), tag_edit.author)
                     type = 'unexplicit'
                 else:
-                    item = '<a href="%s">%s / %s</a> <b>untagged</b> as <b>%s</b> by <a href="">%s</a>.' % (
+                    item = '<a href="%s">%s / %s</a> <b>untagged</b> as <b>%s</b> by <a href="/djdb/user/%s">%s</a>.' % (
                         tag_edit.subject.url, tag_edit.subject.artist_name,
-                        tag_edit.subject.title, tag, tag_edit.author)
+                        tag_edit.subject.title, tag, tag_edit.author.key().id(),
+                        tag_edit.author)
                     type = 'untag'
                 activity.append((dt, type, item))
     
