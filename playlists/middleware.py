@@ -19,9 +19,10 @@
 
 from django import http
 from common.models import DBConfig
+import logging
 
 dbconfig = DBConfig()
-
+log = logging.getLogger()
 
 class FromStudioMiddleware(object):
 
@@ -46,20 +47,18 @@ class FromStudioMiddleware(object):
                 # chirp_studio_ip_range is comma delimited string
                 studio_ip_range = dbconfig[key_ip_range].split(',')
             except KeyError:
-                log.warning("Could not find key '%s' in dbconfig." % key_ip_range)
+                log.error("Could not find key '%s' in dbconfig." % key_ip_range)
                 pass
             else:
                 if current_user_ip in studio_ip_range:
                     request.is_from_studio = True
-                else:
-                    log.warning("This person %s %s is not in the studio ip range %s." % (
-                        current_user, current_user_ip, studio_ip_range))
 
         # check override in POST
         if not request.is_from_studio and not sess_val_override:
              if post_val_override:
                 request.SESSION['is_from_studio_override'] = True
-
+                log.warning("This person %s %s is overriding the studio ip range %s." % (
+                    current_user, current_user_ip, studio_ip_range))
 
         # Might be good to only allow session var to be set if privs are right.
         #user = auth.get_current_user(request)
