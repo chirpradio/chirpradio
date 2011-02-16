@@ -204,3 +204,16 @@ li.activity_unexplicit {
   padding-right: 5px;
 }
 
+div.track_heavy_rotation {
+  color: red;
+}
+div.track_light_rotation {
+  color: green;
+}
+div.track_local_current {
+  color: darkcyan;
+}
+div.track_local_classic {
+  color: orange;
+}
+

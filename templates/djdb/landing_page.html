@@ -134,17 +134,16 @@ matching album{{ query_results.Album|pluralize }}</i>
     {% if user.is_music_director %}
 <form method="post" name="djdbForm" action="/djdb/update_albums">
 <p/>
-Select: <a id="checkbox_all" href="">All</a>,
-        <a id="checkbox_none" href="">None</a>,
-        <a id="checkbox_nocat" href="">No category</a>,
+Select: <a id="select_all" href="">All</a>,
+        <a id="select_none" href="">None</a>,
       {% for category in categories %}
         {% if not forloop.first %}, {% endif %}
-        <a id="checkbox_{{ category }}" href="">{{ category|replace:"/_/ "|capfirst }}</a>
+        <a id="select_{{ category }}" href="">{{ category|replace:"/_/ "|capfirst }}</a>
       {% endfor %}<br/>
-Mark selected as: <a id="mark_nocat" href="/djdb/update_albums">No category</a>,
+Mark/Unmark selected as:
       {% for category in categories %}
         {% if not forloop.first %}, {% endif %}
-                  <a id="mark_{{ category }}" href="/djdb/update_albums">{{ category|replace:"/_/ "|capfirst }}</a>
+        <a id="mark_{{ category }}" href="/djdb/update_albums">{{ category|replace:"/_/ "|capfirst }}</a>
       {% endfor %}
 <p/>
     {% endif %}
@@ -158,18 +157,23 @@ Mark selected as: <a id="mark_nocat" href="/djdb/update_albums">No category</a>,
     <tr>
       {% if user.is_music_director %}
       <td>
-        <input type="checkbox" class="checkbox {{ album.category|lower}}"
+        <input type="checkbox" class="checkbox
+        {% for tag in album.current_tags %}
+          {% if tag in categories %}
+            {{ tag }}
+          {% endif %}
+        {% endfor %}"
                name="checkbox_{{ forloop.counter }}"/>
-      </td>
-      <td>
         <input type="hidden" name="album_key_{{ forloop.counter }}" value="{{ album.key }}"/>
-        {% ifequal album.category None %}
-        No category
-        {% else %}
-        {{ album.category|replace:"/_/ "|capfirst }}
-        {% endifequal %}
       </td>
       {% endif %}
+      <td>
+      {% for tag in album.current_tags %}
+        {% if tag in categories %}
+        <div class="track_{{ tag }}">{{ tag|replace:"/_/ "|capfirst }}</div>
+        {% endif %}
+      {% endfor %}
+      </td>
       <td><a href="{{ album.artist_url}}">{{ album.artist_name }}</a></td>
       <td><a href="{{ album.url }}">{{ album }}</a></td>
       <td>

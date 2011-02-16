@@ -442,11 +442,45 @@ def update_albums(request) :
             type, num = name.split('_')
             album_key = request.POST.get('album_key_%s' % num)
             album = AutoRetry(Album).get(album_key)
-            if mark_as == 'none':
-                album.category = None
-            else:
-                album.category = mark_as
-            AutoRetry(album).save()
+            if mark_as == models.CORE_TAG:
+                if models.CORE_TAG in models.TagEdit.fetch_and_merge(album):
+                    tag_util.remove_tag_and_save(request.user, album,
+                                                 models.CORE_TAG)
+                else:
+                    tag_util.add_tag_and_save(request.user, album,
+                                              models.CORE_TAG)
+            elif mark_as == models.LOCAL_CURRENT_TAG:
+                if models.LOCAL_CURRENT_TAG in models.TagEdit.fetch_and_merge(album):
+                    tag_util.remove_tag_and_save(request.user, album,
+                                                 models.LOCAL_CURRENT_TAG)
+                else:
+                    tag_util.modify_tags_and_save(request.user, album,
+                                                  [models.LOCAL_CURRENT_TAG],
+                                                  [models.LOCAL_CLASSIC_TAG])
+            elif mark_as == models.LOCAL_CLASSIC_TAG:
+                if models.LOCAL_CLASSIC_TAG in models.TagEdit.fetch_and_merge(album):
+                    tag_util.remove_tag_and_save(request.user, album,
+                                                 models.LOCAL_CLASSIC_TAG)
+                else:
+                    tag_util.modify_tags_and_save(request.user, album,
+                                                  [models.LOCAL_CLASSIC_TAG],
+                                                  [models.LOCAL_CURRENT_TAG])
+            elif mark_as == models.HEAVY_ROTATION_TAG:
+                if models.HEAVY_ROTATION_TAG in models.TagEdit.fetch_and_merge(album):
+                    tag_util.remove_tag_and_save(request.user, album,
+                                                 models.HEAVY_ROTATION_TAG)
+                else:
+                    tag_util.modify_tags_and_save(request.user, album,
+                                                  [models.HEAVY_ROTATION_TAG],
+                                                  [models.LIGHT_ROTATION_TAG])
+            elif mark_as == models.LIGHT_ROTATION_TAG:
+                if models.LIGHT_ROTATION_TAG in models.TagEdit.fetch_and_merge(album):
+                    tag_util.remove_tag_and_save(request.user, album,
+                                                 models.LIGHT_ROTATION_TAG)
+                else:
+                    tag_util.modify_tags_and_save(request.user, album,
+                                                  [models.LIGHT_ROTATION_TAG],
+                                                  [models.HEAVY_ROTATION_TAG])
 
     if request.POST.get('response_page') == 'artist' :
         return artist_info_page(request, request.POST.get('artist_name'))
@@ -777,6 +811,12 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     ctx_vars["show_reviews"] = album.reviews or request.user.is_music_director or request.user.is_reviewer
     ctx_vars["show_review_link"] = request.user.is_music_director or request.user.is_reviewer
     ctx_vars["show_album_tags"] = request.user.is_music_director or bool(album.sorted_current_tags)
+
+    ctx_vars["categories"] = models.ALBUM_CATEGORIES
+    for tag in models.ALBUM_CATEGORIES:
+        if tag in album.current_tags:
+            ctx_vars["has_category"] = True
+            break
 
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
