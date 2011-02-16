@@ -20,14 +20,6 @@
 
 <div id="playlist"> <!-- site wrapper -->
 
-<div class="tracks_played">
-Tracks played since {{ last_dt|date:"P" }}:<br/>
-  <div class="tracks_heavy_rotation">Heavy Rotation:</div> {{ quotas.heavy_rotation_played }} / {{ quotas.heavy_rotation_target }}
-  <div class="tracks_light_rotation">Light Rotation:</div> {{ quotas.light_rotation_played }} / {{ quotas.light_rotation_target }}
-  <div class="tracks_local_current">Local Current:</div> {{ quotas.local_current_played }} / {{ quotas.local_current_target }}
-  <div class="tracks_local_classic">Local Classic:</div> {{ quotas.local_classic_played }} / {{ quotas.local_classic_target }}
-</div><br/>
-
 <div id="form-column"> <!-- form column -->
 
 <form method="post" id="playlist-form" action="{% url playlists_add_event %}">
@@ -89,6 +81,14 @@ Tracks played since {{ last_dt|date:"P" }}:<br/>
 
 </div> <!-- end form column -->
 <div id="playlist-column"> <!-- playlist column -->
+
+<div class="tracks_played">
+Tracks played since {{ last_dt|date:"P" }}:<br/>
+  <div class="tracks_heavy_rotation" title="Heavy Rotation">{{ quotas.heavy_rotation_played }} / {{ quotas.heavy_rotation_target }}</div>
+  <div class="tracks_light_rotation" title="Light Rotation">{{ quotas.light_rotation_played }} / {{ quotas.light_rotation_target }}</div>
+  <div class="tracks_local_current" title="Local Current">{{ quotas.local_current_played }} / {{ quotas.local_current_target }}</div>
+  <div class="tracks_local_classic" title="Local Classic">{{ quotas.local_classic_played }} / {{ quotas.local_classic_target }}</div>
+</div>
 
 <h2>Artist &bull; Song Title &bull; Album &bull; Label</h2>
 

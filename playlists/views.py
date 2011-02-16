@@ -116,6 +116,7 @@ def get_quotas(playlist):
               'local_classic_target': TRACKS_LOCAL_CLASSIC_TARGET}
     pl = PlaylistEvent.all().filter('playlist =', playlist)
     now = chicago_now()
+    now.replace(second=0, microsecond=0)
     pl.filter('established >=', now - timedelta(seconds=60 * now.minute))
     pl.filter('established <', now + timedelta(seconds=60 * (60 - now.minute)))
     for event in iter_playlist_events_for_view(pl):
