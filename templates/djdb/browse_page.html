@@ -151,7 +151,13 @@ Other
     <td><a href="{{ item.url }}">{{ item.name }}</a></td>
     {% endifequal %}
     {% ifequal entity_kind "album" %}
-    <td>[{{ item.category|replace:"/_/ "|capfirst }}]</td>
+    <td>
+  {% for tag in item.current_tags %}
+    {% if tag in categories %}
+      <div class="track_{{ tag }}">{{ tag|replace:"/_/ "|capfirst }}</div>
+    {% endif %}
+  {% endfor %}
+    </td>
     <td><a href="{{ item.url }}">{{ item.title }}</a> / <a href="{{ item.album_artist.url }}">{{ item.album_artist }}</a></td>
     <td>
     {% if item.num_reviews %}

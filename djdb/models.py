@@ -228,6 +228,7 @@ class Album(db.Model):
     Attributes:
       category: The category of the album. May be core, local_current,
         local_classic, heavy_rotation, light_rotation.
+        NOTE: This field is obsolete. Categories are now indicated by tags.
       title: The name of the album.  This is used in TALB tags.
       pronunciation: How to pronounce the album title.
       label: The label of the album.
@@ -251,6 +252,7 @@ class Album(db.Model):
         not be returned in search results, and should be otherwise hidden
         from users when possible.
     """
+    # NOTE: This field is obsolete. Categories are indicated by tags.
     category = db.StringProperty(required=False)
     
     title = db.StringProperty(required=True)
