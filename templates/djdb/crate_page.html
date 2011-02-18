@@ -77,7 +77,7 @@
         {% else %}
           {% ifequal item.kind 'CrateItem' %}
         <img src="/media/common/img/track.png" alt="A track" title="A track"/>
-        {{ item.artist }} / {{ item.album }} / {{ item.track }}
+        {{ item.artist }} / {{ item.track }} / {{ item.album }} / {{ item.label }}
           {% else %}
         Unrecognized item.
           {% endifequal %}

@@ -37,8 +37,14 @@ DOCTYPE_COMMENT = "comment" # An album comment, subject must be an Album object.
 EXPLICIT_TAG = u"explicit"
 RECOMMENDED_TAG = u"recommended"
 
-# List of album categories.
-ALBUM_CATEGORIES = ['core', 'local_current', 'local_classic', 'heavy_rotation', 'light_rotation']
+# Define album categories.
+CORE_TAG = u"core"
+HEAVY_ROTATION_TAG = u"heavy_rotation"
+LIGHT_ROTATION_TAG = u"light_rotation"
+LOCAL_CURRENT_TAG = u"local_current"
+LOCAL_CLASSIC_TAG = u"local_classic"
+ALBUM_CATEGORIES = [CORE_TAG, HEAVY_ROTATION_TAG, LIGHT_ROTATION_TAG,
+                    LOCAL_CURRENT_TAG, LOCAL_CLASSIC_TAG]
 
 class DjDbImage(db.Model):
     """An image (usually a JPEG or PNG) associated with an artist or album.
@@ -221,7 +227,7 @@ class Album(db.Model):
 
     Attributes:
       category: The category of the album. May be core, local_current,
-        local_classic, heavy, light.
+        local_classic, heavy_rotation, light_rotation.
       title: The name of the album.  This is used in TALB tags.
       pronunciation: How to pronounce the album title.
       label: The label of the album.

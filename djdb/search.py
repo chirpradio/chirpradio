@@ -67,10 +67,6 @@ def _scrub_char(c):
     elif c == "'":
         # Filter out apostrophes, so "foo's" will become "foos".
         return ""
-    elif c in ':-':
-        # Keep colons, since they are used for searching on properties(fields).
-        # Keep dashes, since they are used for searching in a range.
-        return c
     else:
         # Other types of characters are replaced by whitespace.
         return " "
@@ -439,41 +435,52 @@ def _parse_query_string(query_str):
         if qp.endswith("*"):
             is_prefix = True
             qp = qp.rstrip("*")
-        subparts = scrub(qp).split()
-        for i, subp in enumerate(subparts):
-            flavor = IS_TERM
-            logic = IS_REQUIRED
-            field = None
-            end = None
-            if i == 0 and not is_required:
+
+        # Check if a field:value is given.
+        field_qp = qp.split(':')
+        if len(field_qp) == 2:
+            if is_prefix:
+                flavor = IS_PREFIX
+            else:
+                flavor = IS_TERM
+            if is_required:
+                logic = IS_REQUIRED
+            else:
                 logic = IS_FORBIDDEN
-            # Check if searching on a property (field).
-            field_subp = subp.split(':')
-            if len(field_subp) == 2:
-                field = field_subp[0]
-                subp = field_subp[1]
-            if i == len(subparts)-1 and is_prefix:
-                # We need to filter out any prefix which might match a
-                # stop word.  Otherwise a prefix search like "mott
-                # th*" would fail to match "Mott the Hoople".
-                if _is_stop_word_prefix(subp):
+            end = None
+            field, qp = field_qp
+
+            if not is_prefix or not _is_stop_word_prefix(qp):
+                # Check if a range is given.
+                start_end = qp.split('-')
+                if len(start_end) == 2:
+                    qp, end = start_end
+
+                if not _is_stop_word(qp):
+                    query.append((logic, flavor, scrub(qp), field, end))
+
+        else:
+            subparts = scrub(qp).split()
+            for i, subp in enumerate(subparts):
+                flavor = IS_TERM
+                logic = IS_REQUIRED
+                if i == 0 and not is_required:
+                    logic = IS_FORBIDDEN
+                if i == len(subparts)-1 and is_prefix:
+                    # We need to filter out any prefix which might match a
+                    # stop word.  Otherwise a prefix search like "mott
+                    # th*" would fail to match "Mott the Hoople".
+                    if _is_stop_word_prefix(subp):
+                        continue
+                    flavor = IS_PREFIX                
+                # Skip stop words when building a query 
+                # because no stop words exist in the index.
+                if _is_stop_word(subp):
                     continue
-                flavor = IS_PREFIX                
-            # Check if range and get start and end values.
-            start_end = subp.split('-')
-            if len(start_end) == 2:
-                subp = start_end[0]
-                end = start_end[1]
-                if _is_stop_word(end):
-                    continue                
-            # Skip stop words when building a query 
-            # because no stop words exist in the index.
-            if _is_stop_word(subp):
-                continue
-            # Skip parts where the search term or prefix is empty.
-            if not subp:
-                continue
-            query.append((logic, flavor, subp, field, end))
+                # Skip parts where the search term or prefix is empty.
+                if not subp:
+                    continue
+                query.append((logic, flavor, subp, None, None))
 
     return query
 

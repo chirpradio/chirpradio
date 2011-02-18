@@ -93,7 +93,7 @@ class SearchTestCase(unittest.TestCase):
 
     def test_explode(self):
         self.assertEqual([u"foo", u"bar"], search.explode(u"  foo \t  bar "))
-        self.assertEqual([u"foo-bar", u"17"],
+        self.assertEqual([u"foo", u"bar", u"17"],
                          search.explode(u"foo-bar 17"))
         # Check that we filter out stop words when exploding a string.
         self.assertEqual([u"foo"], search.explode(u"the foo"))
@@ -130,7 +130,8 @@ class SearchTestCase(unittest.TestCase):
         # Make sure that - and * are stripped out and treated like whitespace
         # unless they appear at the beginning or end of a string.
         self.assertEqual(
-            [(search.IS_REQUIRED, search.IS_TERM, u"foo", None, u"bar"),
+            [(search.IS_REQUIRED, search.IS_TERM, u"foo", None, None),
+             (search.IS_REQUIRED, search.IS_TERM, u"bar", None, None),
              (search.IS_REQUIRED, search.IS_TERM, u"baz", None, None),
              (search.IS_REQUIRED, search.IS_TERM, u"zoo", None, None),
              ],
@@ -158,17 +159,27 @@ class SearchTestCase(unittest.TestCase):
 
         # Check some corner cases.
         self.assertEqual([], search._parse_query_string(u"- * -*"))
+        self.assertEqual(
+            [(search.IS_FORBIDDEN, search.IS_TERM, u"foo", None, None)],
+            search._parse_query_string(u"-*,-Foo"))
+        self.assertEqual(
+            [(search.IS_REQUIRED, search.IS_PREFIX, u"foo", None, None)],
+            search._parse_query_string(u"FOO!!!--*"))
 
-        ## kumar: I'm not sure what these inputs are supposed to do
-        ## after Jon W's dash separated label syntax changes.
-        ## see rev 42298db17dc986ff0fb215e2239274d4a5b937e8#
+        # Check field:value cases.
+        self.assertEqual([(search.IS_REQUIRED, search.IS_TERM, u"2011", u"year", None)],
+            search._parse_query_string(u"year:2011"))
+        self.assertEqual([(search.IS_REQUIRED, search.IS_TERM, u"2000", u"year", u"2011")],
+            search._parse_query_string(u"year:2000-2011"))
+        self.assertEqual([(search.IS_REQUIRED, search.IS_PREFIX, u"rec", u"label", None)],
+            search._parse_query_string(u"label:Rec*"))
+        self.assertEqual([(search.IS_FORBIDDEN, search.IS_TERM, u"2011", u"year", None)],
+            search._parse_query_string(u"-year:2011"))
+        self.assertEqual([(search.IS_FORBIDDEN, search.IS_TERM, u"2000", u"year", u"2011")],
+            search._parse_query_string(u"-year:2000-2011"))
+        self.assertEqual([(search.IS_FORBIDDEN, search.IS_PREFIX, u"rec", u"label", None)],
+            search._parse_query_string(u"-label:Rec*"))
 
-        # self.assertEqual(
-        #     [(search.IS_FORBIDDEN, search.IS_TERM, u"foo", None, None)],
-        #     search._parse_query_string(u"-*,-Foo"))
-        # self.assertEqual(
-        #     [(search.IS_REQUIRED, search.IS_PREFIX, u"foo", None, None)],
-        #     search._parse_query_string(u"FOO!!!--*"))
 
     def test_basic_indexing_and_search(self):
         key1 = db.Key.from_path("kind_Foo", "key1")

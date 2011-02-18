@@ -35,7 +35,8 @@ from djdb import review
 from djdb import comment
 from djdb import forms
 from djdb.models import Album
-from playlists.models import PlaylistTrack
+from playlists.models import ChirpBroadcast, PlaylistEvent
+from playlists.views import PlaylistEventView
 from datetime import datetime, timedelta
 import djdb.pylast as pylast
 import random
@@ -45,7 +46,6 @@ import tag_util
 log = logging.getLogger(__name__)
 
 def fetch_activity(num=None, days=None, start_dt=None):
-    num_items = {}
     activity = []
     
     # Get recent reviews.
@@ -108,42 +108,44 @@ def fetch_activity(num=None, days=None, start_dt=None):
             dt = tag_edit.timestamp.strftime('%Y-%m-%d %H:%M')
             for tag in tag_edit.added:
                 if tag == 'recommended':                    
-                    item = '<a href="%s">%s / %s / %s</a> <b>recommended</b> by <a href="">%s</a>.' % (
+                    item = '<a href="%s">%s / %s / %s</a> <b>recommended</b> by <a href="/djdb/user/%s">%s</a>.' % (
                         tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
                         tag_edit.subject.album.title, tag_edit.subject.title,
-                        tag_edit.author)
+                        tag_edit.author.key().id(), tag_edit.author)
                     type = 'recommended'
                 elif tag == 'explicit':
-                    item = '<a href="%s">%s / %s / %s</a> <b>marked explicit</b> by <a href="">%s</a>.' % (
+                    item = '<a href="%s">%s / %s / %s</a> <b>marked explicit</b> by <a href="/djdb/user/%s">%s</a>.' % (
                         tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
                         tag_edit.subject.album.title, tag_edit.subject.title,
-                        tag_edit.author)
+                        tag_edit.author.key().id(), tag_edit.author)
                     type = 'explicit'
                 else:
-                    item = '<a href="%s">%s / %s</a> <b>tagged</b> as <b>%s</b> by <a href="">%s</a>.' % (
+                    item = '<a href="%s">%s / %s</a> <b>tagged</b> as <b>%s</b> by <a href="/djdb/user/%s">%s</a>.' % (
                         tag_edit.subject.url, tag_edit.subject.artist_name,
-                        tag_edit.subject.title, tag, tag_edit.author)
+                        tag_edit.subject.title, tag, tag_edit.author.key().id(),
+                        tag_edit.author)
                     type = 'tag'
+                
                 activity.append((dt, type, item))
-                num_items[type] = num_items.setdefault(type, 0) + 1
             
             for tag in tag_edit.removed:
                 if tag == 'recommended':
-                    item = '<a href="%s">%s / %s / %s</a> <b>unrecommended</b> by <a href="">%s</a>.' % (
+                    item = '<a href="%s">%s / %s / %s</a> <b>unrecommended</b> by <a href="/djdb/user/%s">%s</a>.' % (
                         tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
                         tag_edit.subject.album.title, tag_edit.subject.title,
-                        tag_edit.author)
+                        tag_edit.author.key().id(), tag_edit.author)
                     type = 'unrecommended'
                 elif tag == 'explicit':
-                    item = '<a href="%s">%s / %s / %s</a> <b>ummarked explicit</b> by <a href="">%s</a>.' % (
+                    item = '<a href="%s">%s / %s / %s</a> <b>ummarked explicit</b> by <a href="/djdb/user/%s">%s</a>.' % (
                         tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
                         tag_edit.subject.album.title, tag_edit.subject.title,
-                        tag_edit.author)
+                        tag_edit.author.key().id(), tag_edit.author)
                     type = 'unexplicit'
                 else:
-                    item = '<a href="%s">%s / %s</a> <b>untagged</b> as <b>%s</b> by <a href="">%s</a>.' % (
+                    item = '<a href="%s">%s / %s</a> <b>untagged</b> as <b>%s</b> by <a href="/djdb/user/%s">%s</a>.' % (
                         tag_edit.subject.url, tag_edit.subject.artist_name,
-                        tag_edit.subject.title, tag, tag_edit.author)
+                        tag_edit.subject.title, tag, tag_edit.author.key().id(),
+                        tag_edit.author)
                     type = 'untag'
                 activity.append((dt, type, item))
     
@@ -236,7 +238,7 @@ def reviews_page(request, ctx_vars=None):
 
     if request.method == "GET":
         form = forms.ListReviewsForm()
-        author_key = request.POST.get('author_key')
+        author_key = request.GET.get('author_key')
         page_size = default_page_size
         order = default_order
         bookmark = None
@@ -265,39 +267,111 @@ def reviews_page(request, ctx_vars=None):
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
+def get_played_tracks(events):
+    played_tracks = []
+    prev_dt = None
+    tracks = []
+    for event in events:
+        pl_view = PlaylistEventView(event)
+        dt = pl_view.established.strftime('%Y-%m-%d %H')
+        if prev_dt is not None and dt != prev_dt:
+            played_tracks.append((datetime.strptime(prev_dt, '%Y-%m-%d %H'), tracks))
+            tracks = []
+        tracks.append(event)
+        prev_dt = dt
+    if tracks:
+        played_tracks.append((datetime.strptime(dt, '%Y-%m-%d %H'), tracks))
+    return played_tracks
+
 def user_info_page(request, user_id, ctx_vars=None):
     if ctx_vars is None:
         ctx_vars = {}
     
     # Get user and check if exists and authorized.
-    user = models.User.get_by_id(int(user_id))
-    if user is None or (not user.is_superuser and roles.DJ not in user.roles):
-        return http.HttpResponse(status=404)
+    if user_id == '':
+        if request.method == "POST":
+            user_key = request.POST.get("user_key")
+            if user_key == '':
+                return http.HttpResponse(status=404)
+            user = db.get(request.POST.get("user_key"))
+            if user is None:
+                return http.HttpResponse(status=404)
+            return http.HttpResponseRedirect('/djdb/user/%d' % user.key().id())
+        else:
+            user = None
+            ctx_vars["title"] = 'Find a DJ'
+    else:
+        user = models.User.get_by_id(int(user_id))
+        if user is None or (not user.is_superuser and roles.DJ not in user.roles):
+            return http.HttpResponse(status=404)
 
-    # Get tracks played.
-#    page_size = 10
-#    bookmark = None
-#    query = pager.PagerQuery(PlaylistTrack)
-#    query.filter('selector =', user)
-#    query.order('-established')
-#    prev, playlist, next = query.fetch(page_size, bookmark)
-#    ctx_vars['playlist'] = playlist
-    query = PlaylistTrack.all().filter("selector =", user).order("-established")
-    ctx_vars["playlist"] = query.fetch(10)
+    if user is not None:
+        query = PlaylistEvent.all().filter("playlist =", ChirpBroadcast()) \
+                                   .filter("selector =", user).order("-established")
+        ctx_vars["playlist_events"] = get_played_tracks(query.fetch(10))
 
-    # Get reviews.
-    query = models.Document.all().filter("doctype =", models.DOCTYPE_REVIEW) \
-                                 .filter("revoked =", False) \
-                                 .filter("author =", user) \
-                                 .order("-created")
-    ctx_vars["reviews"] = query.fetch(10)
+        # Get reviews.
+        query = models.Document.all().filter("doctype =", models.DOCTYPE_REVIEW) \
+                                     .filter("revoked =", False) \
+                                     .filter("author =", user) \
+                                     .order("-created")
+        ctx_vars["reviews"] = query.fetch(10)
 
-    # Set page title.
-    ctx_vars['title'] = user
+        # Set page title.
+        ctx_vars["title"] = user
+
+    ctx_vars["dj"] = user
 
     # Return rendered page.
     template = loader.get_template('djdb/user_info_page.html')
     ctx = RequestContext(request, ctx_vars)
+    return http.HttpResponse(template.render(ctx))
+
+def tracks_played_page(request, user_id, ctx_vars=None): 
+    default_page_size = 10
+    default_month = 1
+    default_day = 1
+    default_year = 2009
+    
+    if ctx_vars is None:
+        ctx_vars = {}
+    ctx_vars['title'] = 'Tracks Played'
+
+    user = models.User.get_by_id(int(user_id))
+    if user is None or (not user.is_superuser and roles.DJ not in user.roles):
+        return http.HttpResponse(status=404)
+
+    if request.method == "GET":
+        form = forms.ListTracksPlayedForm()
+        page_size = default_page_size
+        from_month = default_month
+        from_day = default_day
+        from_year = default_year
+        bookmark = None
+    else:
+        page_size = int(request.POST.get('page_size', default_page_size))
+        from_month = int(request.POST.get('from_month', default_month))
+        from_day = int(request.POST.get('from_day', default_day))
+        from_year = int(request.POST.get('from_year', default_year))
+        form = forms.ListTracksPlayedForm(request.POST)
+        if form.is_valid():
+            order = request.POST.get('order')
+            bookmark = request.POST.get('bookmark')
+    dt = datetime(from_year, from_month, from_day, 0, 0, 0)
+    query = pager.PagerQuery(PlaylistEvent).filter('playlist =', ChirpBroadcast()) \
+                                           .filter('selector =', user.key()) \
+                                           .filter('established >=', dt)
+    query.order("-established")
+    prev, events, next = query.fetch(page_size, bookmark)
+    ctx_vars["playlist_events"] = get_played_tracks(events)
+    ctx_vars["prev"] = prev
+    ctx_vars["next"] = next
+    ctx_vars["form"] = form
+    ctx_vars["dj"] = user
+
+    # Display page.
+    ctx = RequestContext(request, ctx_vars)
+    template = loader.get_template('djdb/tracks_played.html')
     return http.HttpResponse(template.render(ctx))
 
 def artist_info_page(request, artist_name, ctx_vars=None):
@@ -343,8 +417,21 @@ def album_search_for_autocomplete(request):
                                             request.GET.get('q', ''),
                                             'Album')        
     response = http.HttpResponse(mimetype="text/plain")
+    unique_entities = set()
     for ent in matching_entities:
-        response.write("%s|%s\n" % (ent.title, ent.key()))
+        response.write("%s|%s|%s\n" % (ent.title, ent.key(), ent.category))
+    return response
+
+def label_search_for_autocomplete(request):
+    matching_entities = _get_matches_for_partial_entity_search(
+                            'label:%s' % request.GET.get('q', ''),
+                            'Album')
+    response = http.HttpResponse(mimetype="text/plain")
+    unique_labels = set()
+    for ent in matching_entities:
+        unique_labels.add(ent.label)
+    for label in unique_labels:
+        response.write("%s\n" % label)
     return response
 
 @require_role(roles.MUSIC_DIRECTOR)
@@ -355,11 +442,45 @@ def update_albums(request) :
             type, num = name.split('_')
             album_key = request.POST.get('album_key_%s' % num)
             album = AutoRetry(Album).get(album_key)
-            if mark_as == 'none':
-                album.category = None
-            else:
-                album.category = mark_as
-            AutoRetry(album).save()
+            if mark_as == models.CORE_TAG:
+                if models.CORE_TAG in models.TagEdit.fetch_and_merge(album):
+                    tag_util.remove_tag_and_save(request.user, album,
+                                                 models.CORE_TAG)
+                else:
+                    tag_util.add_tag_and_save(request.user, album,
+                                              models.CORE_TAG)
+            elif mark_as == models.LOCAL_CURRENT_TAG:
+                if models.LOCAL_CURRENT_TAG in models.TagEdit.fetch_and_merge(album):
+                    tag_util.remove_tag_and_save(request.user, album,
+                                                 models.LOCAL_CURRENT_TAG)
+                else:
+                    tag_util.modify_tags_and_save(request.user, album,
+                                                  [models.LOCAL_CURRENT_TAG],
+                                                  [models.LOCAL_CLASSIC_TAG])
+            elif mark_as == models.LOCAL_CLASSIC_TAG:
+                if models.LOCAL_CLASSIC_TAG in models.TagEdit.fetch_and_merge(album):
+                    tag_util.remove_tag_and_save(request.user, album,
+                                                 models.LOCAL_CLASSIC_TAG)
+                else:
+                    tag_util.modify_tags_and_save(request.user, album,
+                                                  [models.LOCAL_CLASSIC_TAG],
+                                                  [models.LOCAL_CURRENT_TAG])
+            elif mark_as == models.HEAVY_ROTATION_TAG:
+                if models.HEAVY_ROTATION_TAG in models.TagEdit.fetch_and_merge(album):
+                    tag_util.remove_tag_and_save(request.user, album,
+                                                 models.HEAVY_ROTATION_TAG)
+                else:
+                    tag_util.modify_tags_and_save(request.user, album,
+                                                  [models.HEAVY_ROTATION_TAG],
+                                                  [models.LIGHT_ROTATION_TAG])
+            elif mark_as == models.LIGHT_ROTATION_TAG:
+                if models.LIGHT_ROTATION_TAG in models.TagEdit.fetch_and_merge(album):
+                    tag_util.remove_tag_and_save(request.user, album,
+                                                 models.LIGHT_ROTATION_TAG)
+                else:
+                    tag_util.modify_tags_and_save(request.user, album,
+                                                  [models.LIGHT_ROTATION_TAG],
+                                                  [models.HEAVY_ROTATION_TAG])
 
     if request.POST.get('response_page') == 'artist' :
         return artist_info_page(request, request.POST.get('artist_name'))
@@ -602,7 +723,7 @@ def track_search_for_autocomplete(request):
                 if str(track_artist_key) != str(artist_key):
                     continue
                     
-        response.write("%s|%s\n" % (track.title, track.key()))
+        response.write("%s|%s|%s\n" % (track.title, track.key(), track.album.category))
     return response
 
 def _get_matches_for_partial_entity_search(query, entity_kind):
@@ -690,6 +811,12 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     ctx_vars["show_reviews"] = album.reviews or request.user.is_music_director or request.user.is_reviewer
     ctx_vars["show_review_link"] = request.user.is_music_director or request.user.is_reviewer
     ctx_vars["show_album_tags"] = request.user.is_music_director or bool(album.sorted_current_tags)
+
+    ctx_vars["categories"] = models.ALBUM_CATEGORIES
+    for tag in models.ALBUM_CATEGORIES:
+        if tag in album.current_tags:
+            ctx_vars["has_category"] = True
+            break
 
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))

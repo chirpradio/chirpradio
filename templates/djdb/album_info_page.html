@@ -33,9 +33,15 @@
 <i>Pronunciation: {{ album.pronunciation }}</i>
 {% endif %}
 
-{% if album.category %}
+{% if has_category %}
 <p>
-  <h3>Category: {{ album.category|replace:"/_/ "|capfirst }}</h3>
+  <h3>Category:
+{% for tag in album.current_tags %}
+  {% if tag in album_categories %}
+    <div class="track_{{ tag }}">{{ tag|replace:"/_/ "|capfirst }}</div>
+  {% endif %}
+{% endfor %}
+  </h3>
 </p>
 {% endif %}
 
@@ -79,7 +85,14 @@
 <blockquote>
 {{ doc.text|safe }}
 </blockquote>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author_display }} on {{ doc.created_display|date:"F j, Y P" }}</small>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by
+{% if doc.author %}
+<a href="/djdb/user/{{ doc.author.key.id }}">{{ doc.author_display }}</a>
+{% else %}
+{{ doc.author_display }}
+{% endif %}
+
+on {{ doc.created_display|date:"F j, Y P" }}</small>
         {% if user.is_music_director %}
 [ <a href="/djdb/album/{{ album.album_id }}/edit_review/{{ doc.key }}">Edit</a> 
           {% if doc.is_hidden %}
@@ -143,10 +156,10 @@ No reviews yet!  You could be the first to
 <h3>Tracks</h3>
 <form method="post" name="djdbTracksForm" action="update">
 <p>
-Select: <a id="checkbox_all" href="">All</a>, 
-        <a id="checkbox_none" href="">None</a>, 
-        <a id="checkbox_explicit" href="">Explicit</a>, 
-        <a id="checkbox_recommended" href=" ">Recommended</a><br/>
+Select: <a id="select_all" href="">All</a>, 
+        <a id="select_none" href="">None</a>, 
+        <a id="select_explicit" href="">Explicit</a>, 
+        <a id="select_recommended" href=" ">Recommended</a><br/>
 Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>, 
                          <a id="mark_recommended" href="update">Recommended</a>
 </p>
@@ -250,7 +263,13 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
 <blockquote>
 {{ doc.text|safe }}
 </blockquote>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by {{ doc.author }} on {{ doc.created_display|date:"F j, Y P" }}</small>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>--posted by
+{% if doc.author %}
+<a href="/djdb/user/{{ doc.author.key.id }}">{{ doc.author }}</a>
+{% else %}
+{{ doc.author }}
+{% endif %}
+on {{ doc.created_display|date:"F j, Y P" }}</small>
         {% ifequal user.key doc.author.key %}
 [ <a href="/djdb/album/{{ album.album_id }}/edit_comment/{{ doc.key }}">Edit</a>
         {% else %}

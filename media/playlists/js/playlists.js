@@ -13,14 +13,29 @@ $(document).ready(function() {
                             // result is "Eno, Brian")
     };
     
-    $("#id_artist").keydown(function() {
-        $(this).addClass('freeform');
+    $("#id_artist").keyup(function() {
+        if ($(this).val() == "")
+            $(this).removeClass('freeform');
+        else
+            $(this).addClass('freeform');
     });
-    $("#id_album").keydown(function() {
-       $(this).addClass('freeform');
+    $("#id_album").keyup(function() {
+        if ($(this).val() == "")
+            $(this).removeClass('freeform');
+        else        
+            $(this).addClass('freeform');
     });
-    $("#id_song").keydown(function() {
-        $(this).addClass('freeform');
+    $("#id_song").keyup(function() {
+        if ($(this).val() == "")
+            $(this).removeClass('freeform');
+        else
+            $(this).addClass('freeform');
+    });
+    $("#id_label").keyup(function() {
+        if ($(this).val() == "")
+            $(this).removeClass('freeform');
+        else
+            $(this).addClass('freeform');
     });
 
     $("#id_artist").autocomplete("/djdb/artist/search.txt", 
@@ -43,6 +58,23 @@ $(document).ready(function() {
                 $("#id_album_key").attr("value", entity_key);
                 $("#id_album").focus();
                 $("#id_album").removeClass('freeform');
+                var category = li.extra[1];
+                if (category == 'heavy_rotation') {
+                    $("#id_is_heavy_rotation").attr("checked", true);
+                    $("#id_is_light_rotation").attr("checked", false);
+                }
+                else if (category == 'light_rotation') {
+                    $("#id_is_light_rotation").attr("checked", true);
+                    $("#id_is_heavy_rotation").attr("checked", false);
+                }
+                if (category == 'local_current') {
+                    $("#id_is_local_current").attr("checked", true);
+                    $("#id_is_local_classic").attr("checked", false);
+                }
+                else if (category == 'local_classic') {
+                    $("#id_is_local_classic").attr("checked", true);
+                    $("#id_is_local_current").attr("checked", false);
+                }
             }
         }, default_opt));
     
@@ -53,9 +85,34 @@ $(document).ready(function() {
                 $("#id_song_key").attr("value", entity_key);
                 $("#id_song").focus();
                 $("#id_song").removeClass('freeform');
+                var category = li.extra[1];
+                if (category == 'heavy_rotation') {
+                    $("#id_is_heavy_rotation").attr("checked", true);
+                    $("#id_is_light_rotation").attr("checked", false);
+                }
+                else if (category == 'light_rotation') {
+                    $("#id_is_light_rotation").attr("checked", true);
+                    $("#id_is_heavy_rotation").attr("checked", false);
+                }
+                if (category == 'local_current') {
+                    $("#id_is_local_current").attr("checked", true);
+                    $("#id_is_local_classic").attr("checked", false);
+                }
+                else if (category == 'local_classic') {
+                    $("#id_is_local_classic").attr("checked", true);
+                    $("#id_is_local_current").attr("checked", false);
+                }
             }
         }, default_opt));
     
+    $("#id_label").autocomplete("/djdb/label/search.txt", 
+        $.extend({
+            onItemSelect: function(li) {
+                $("#id_label").focus();
+                $("#id_label").removeClass('freeform');
+            }
+        }, default_opt));
+
     // be sure that freeform entry always clears out any 
     // previously auto-completed keys :
     
@@ -116,5 +173,26 @@ $(document).ready(function() {
             return;
         }
         this.href = url + '?q=' + escape(artist + " pronounced");
+    });
+
+    $('#id_is_heavy_rotation').click(function(e) {
+        if ($(this).is(':checked')) {
+            $('#id_is_light_rotation').attr('checked', false);
+        }
+    });
+    $('#id_is_light_rotation').click(function(e) {
+        if ($(this).is(':checked')) {
+            $('#id_is_heavy_rotation').attr('checked', false);
+        }
+    });
+    $('#id_is_local_current').click(function(e) {
+        if ($(this).is(':checked')) {
+            $('#id_is_local_classic').attr('checked', false);
+        }
+    });
+    $('#id_is_local_classic').click(function(e) {
+        if ($(this).is(':checked')) {
+            $('#id_is_local_current').attr('checked', false);
+        }
     });
 });

@@ -13,22 +13,16 @@
 {% block extrahead %}
 <script type="text/javascript" 
     src="/media/common/js/jquery/jquery-1.3.1.js"></script>
-<script type="text/javascript" 
-    src="/media/common/js/jquery-autocomplete/jquery.autocomplete.js"></script>
 <script type="text/javascript" src="/media/djdb/js/djdb.js"></script>
-<script type="text/javascript" src="/media/djdb/js/djdb_user.js"></script>
 {% endblock %}
 
-<form action="" method="post">
+<h3>DJ: <a href="/djdb/user/{{ dj.key.id }}">{{ dj }}</a></h3>
+
+<form action="/djdb/tracks_played/{{ dj.key.id }}" name="paging" method="post">
 {{ form.as_table }}
   <input type="submit" name="search" value="Search"/>
-</form>
+  <br/>
 
-<br/>
-<hr/>
-<br/>
-
-<form action="/djdb/reviews" name="paging" method="post">
 {% ifequal prev None %}
   <input disabled="disabled" type="submit" name="prev" onclick="document.paging.bookmark.value='{{ prev }}'" value="Previous Page"/>
 {% else %}
@@ -40,26 +34,37 @@
   <input type="submit" name="next" onclick="document.paging.bookmark.value='{{ next }}'" value="Next Page"/>
 {% endifequal %}
   <input type="hidden" id="bookmark" name="bookmark" value=""/>
-  <input type="hidden" name="author_key" value="{{ author_key }}"/>
-  <input type="hidden" name="page_size" value="{{ page_size }}"/>
-  <input type="hidden" name="order" value="{{ order }}"/>
+  <input type="hidden" name="user_id" value="{{ dj.key.id }}"/>
 </form>
 
-<ul>
-{% for rev in reviews %}
-  <li> <a href="{{ rev.subject.url }}">{{ rev.subject.album_artist.name }} / {{ rev.subject.title }},</a>
-reviewed by
-{% if rev.author %}
-<a href="/djdb/user/{{ rev.author.key.id }}">{{ rev.author_display }}</a>
-{% else %}
-{{ rev.author_display }}
-{% endif %}
-&nbsp;&nbsp;
-  <small>Posted {{ rev.created_display|date:"F j, Y P" }}</small> </li>
+{% for dt, events in playlist_events %}
+{{ dt|date:"D F j, Y P" }}
+<table>
+  {% for event in events %}
+  <tr>
+    <td>{{ event.established|date:"P" }}</td>
+  {% if event.artist %}
+    <td><a href="{{ event.artist.url }}">{{ event.artist_name }}</a></td>
+  {% else %}
+    <td>{{ event.artist_name }}</td>
+  {% endif %}
+  {% if event.album %}
+    <td><a href="{{ event.album.url }}">{{ event.album_title }}</a></td>
+  {% else %}
+    <td>{{ event.album_title }}</td>
+  {% endif %}
+    <td>{{ event.track_title }}</td>
+    {% if event.label %}
+    <td>{{ event.label }}</td>
+    {% else %}
+    <td>[ Unknown label ]</td>
+    {% endif %}
+  </tr>
+  {% endfor %}
+</table>
 {% endfor %}
-</ul>
 
-<form action="/djdb/reviews" name="paging2" method="post">
+<form action="/djdb/tracks_played/{{ dj.key.id }}" name="paging2" method="post">
 {% ifequal prev None %}
   <input disabled="disabled" type="submit" name="prev" onclick="document.paging2.bookmark.value='{{ prev }}'" value="Previous Page"/>
 {% else %}
@@ -71,9 +76,8 @@ reviewed by
   <input type="submit" name="next" onclick="document.paging2.bookmark.value='{{ next }}'" value="Next Page"/>
 {% endifequal %}
   <input type="hidden" id="bookmark" name="bookmark" value=""/>
-  <input type="hidden" name="author_key" value="{{ author_key }}"/>
-  <input type="hidden" name="page_size" value="{{ page_size }}"/>
-  <input type="hidden" name="order" value="{{ order }}"/>
+  <input type="hidden" name="user_id" value="{{ dj.key.id }}"/>
 </form>
 
 {% endblock %}
+

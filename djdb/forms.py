@@ -17,6 +17,7 @@
 
 """Forms for DJ Database."""
 
+from datetime import datetime
 from django import forms
 from djdb import models
 from common.autoretry import AutoRetry
@@ -29,6 +30,14 @@ PAGE_SIZE_CHOICES = [[10, 10],
                      [100, 100]]
 ORDER_CHOICES = [['created', 'created'],
                  ['author', 'author']]
+months =['January', 'February', 'March', 'April', 'May', 'June', 'July',
+         'August', 'September', 'October', 'November', 'December']
+MONTH_CHOICES = zip(range(1, 13), months)
+days = range(1, 32)
+DAY_CHOICES = zip(days, days)
+years = range(2009, datetime.now().year + 1)
+YEAR_CHOICES = zip(years, years)
+
 
 class PartialAlbumForm(forms.Form):
     pronunciation = forms.CharField(required=False,
@@ -53,4 +62,10 @@ class ListReviewsForm(forms.Form):
 class TagForm(forms.Form):
     name = forms.CharField(required=True)
     description = forms.CharField(widget=forms.Textarea, required=False)
+
+class ListTracksPlayedForm(forms.Form):
+    from_month = forms.ChoiceField(required=False, choices=MONTH_CHOICES)
+    from_day = forms.ChoiceField(required=False, choices=DAY_CHOICES)
+    from_year = forms.ChoiceField(required=False, choices=YEAR_CHOICES)
+    page_size = forms.ChoiceField(required=False, choices=PAGE_SIZE_CHOICES)
 

@@ -6,8 +6,8 @@ input, textarea { margin: 0; }
 
 /* BUILDING BLOCKS */
 
-#playlist { width: 800px; margin: 0 auto; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
-#form-column { float: left; width: 334px; margin-top: 20px; }
+#playlist { width: 800px; margin: 0 auto; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif }
+#form-column { float: left; width: 334px; margin-top: 20px }
 #playlist-column { float: right; width: 450px; }
 .song-info { border-bottom: 1px solid #aaa; padding: 20px 10px 16px; width: 430px; }
 .new { background-color: #ffffd0; }
@@ -23,6 +23,13 @@ p.break { padding: 1px 10px 2px; margin-top: 0px; font-weight: bold; color: #fff
 .song-info span { color: #2a2a2a; }
 span.artist { font-weight: bold; }
 p.links { border-top: 1px solid #aaa; margin-top: 1px; padding-top: 10px; font-size: 1.2em; text-align: right; }
+.tracks_played { padding: 5px; background-color: #eee; font-weight: bold; font-size: 1.5em; border: solid 1px #000 }
+.tracks_heavy_rotation { color: red; display: inline }
+.tracks_light_rotation { color: green; display: inline }
+.tracks_local_current { color: darkcyan; display: inline }
+.tracks_local_classic { color: orange; display: inline }
+.tracks_played div.tracks_heavy_rotation { padding-left: 0 }
+.tracks_played div { padding-left: 70px; }
 
 /* LINKS */
 
@@ -37,6 +44,7 @@ p.links a:hover { color: #fff; background: #ec3005; }
 #playlist-form input:focus.text, #playlist-form textarea:focus { background-color: #ddf8ff; }
 #playlist-form input.button { width: 200px; display: block; margin-bottom: 15px; }
 #playlist-form input.freeform, #playlist-form input.freeform:focus { border-color: #ff0000; background-color: #f08080; }
+#playlist-form div.category { background: #fff; border: 1px solid #5ed4f3; width: 293px; font-size: 1.2em; line-height: 1.5em; color: #4a4a4a; padding: 3px; margin-bottom: 15px }
 
 /* ERRORS */
 
@@ -80,3 +88,4 @@ p.playlist-event-management {
     background: #ffffc8;
     border: 1px solid #5ed4f3;
 }
+

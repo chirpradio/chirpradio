@@ -39,7 +39,10 @@ urlpatterns = patterns(
     (r'reviews', 'djdb.views.reviews_page'),
     
     # DJ home pgae
-    (r'user/(.*)', 'djdb.views.user_info_page'),
+    (r'user/?(.*)', 'djdb.views.user_info_page'),
+
+    # Tracks played page.
+    ('tracks_played/(.*)', 'djdb.views.tracks_played_page'),
 
     # Artist information page
     (r'artist/(.*)/info', 'djdb.views.artist_info_page'),
@@ -92,6 +95,9 @@ urlpatterns = patterns(
     # Track search for jquery.autocomplete
     (r'track/search\.txt', 'djdb.views.track_search_for_autocomplete'),
     
+    # Label search for jquery.autocomplete
+    (r'label/search\.txt', 'djdb.views.label_search_for_autocomplete'),
+
     # Crate.
     (r'^crate/?$', 'djdb.views.crate_page'),
     (r'crate/add_item', 'djdb.views.add_crate_item'),

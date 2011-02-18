@@ -154,6 +154,8 @@ class PlaylistTrack(PlaylistEvent):
     freeform_label = db.StringProperty(required=False)
     # Notes about this track
     notes = db.TextProperty(required=False)
+    # Categories
+    categories = db.StringListProperty(required=True)
     
     @property
     def artist_name(self):
