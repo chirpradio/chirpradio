@@ -25,42 +25,52 @@ dbconfig = DBConfig()
 log = logging.getLogger()
 
 class FromStudioMiddleware(object):
+    """Manage the request.is_from_studio based on IP address and POST override variables.   People should only submit new items to the playlist if they are in the studio.  This is managed by a list of IP addresses in the Config entity.  If someone is not in the studio they are presented with a warning and override checkbox. The playlist view should only process a request if request.is_in_studio is True."""
 
+    DB_KEY = 'chirp.studio_ip_range'
+    COOKIE_NAME = 'is_from_studio'
+
+    def __init__(self):
+        self.is_from_studio = False
+        self.set_cookie = False
+        
     def process_request(self, request):
-        """Manage the request.is_from_studio and request.is_from_studio_override attributes based on IP address and POST variables.   People should only submit new items to the playlist if they are in the studio.  This is managed by a list of IP addresses in the Config entity.  If someone is not in the studio they are presented with a warning and override checkbox. The playlist form should only process a request if request.is_in_studio or request.is_in_studio_override are True."""
 
-        request.is_from_studio = False
-        request.is_from_studio_override = False
-        key_ip_range = 'chirp_studio_ip_range'
         studio_ip_range = []
         current_user_ip = request.META.get('REMOTE_ADDR', '')
-        current_user = request.user
-        sess_val = request.SESSION.get('is_from_studio', False)
-        sess_val_override = request.SESSION.get('is_from_studio_override', False)
         post_val_override = request.POST.get('is_from_studio_override', False)
 
-        # process is_from_studio attr if not in the session
-        if sess_val:
-            request.is_from_studio = True
+        if request.COOKIES.get(self.COOKIE_NAME, 'False') == 'True':
+            self.is_from_studio = True
+            log.warning('Found %s cookie.' % self.COOKIE_NAME)
         else:
             try:
                 # chirp_studio_ip_range is comma delimited string
-                studio_ip_range = dbconfig[key_ip_range].split(',')
+                studio_ip_range = dbconfig[self.DB_KEY].split(',')
             except KeyError:
-                log.error("Could not find key '%s' in dbconfig." % key_ip_range)
+                log.error("Could not find key '%s' in dbconfig." % self.DB_KEY)
                 pass
             else:
-                if current_user_ip in studio_ip_range:
-                    request.is_from_studio = True
+                if current_user_ip and current_user_ip in studio_ip_range:
+                    self.set_cookie = True
+                    self.is_from_studio = True
 
         # check override in POST
-        if not request.is_from_studio and not sess_val_override:
-             if post_val_override:
-                request.SESSION['is_from_studio_override'] = True
-                log.warning("This person %s %s is overriding the studio ip range %s." % (
-                    current_user, current_user_ip, studio_ip_range))
+        if not self.is_from_studio and post_val_override:
+            self.set_cookie = True
+            log.warning("This person %s %s is overriding the studio ip range %s." % (
+                request.user, current_user_ip, studio_ip_range))
 
-        # Might be good to only allow session var to be set if privs are right.
-        #user = auth.get_current_user(request)
-        #except auth.UserNotAllowedError:
-        #    return http.HttpResponseForbidden('Access Denied!')
+        request.is_from_studio = self.is_from_studio
+        log.warning("request.is_from_studio is %s." % request.is_from_studio)
+
+    def process_response(self, request, response):
+        if self.set_cookie:
+            log.warning('Setting %s cookie.' % self.COOKIE_NAME)
+            response.cookies[self.COOKIE_NAME] = self.is_from_studio
+            #response.cookies.add_header(
+            #    'Set-Cookie',
+            #    'is_from_studio=%s; expires=Fri, 31-Dec-2020 23:59:59 GMT' % \
+            #    self.is_from_studio)
+        return response
+

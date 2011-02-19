@@ -19,7 +19,7 @@
 {% block content %}
 
 <div id="playlist"> <!-- site wrapper -->
-{% if not request.is_from_studio and not request.session.is_from_studio_override %}
+{% if not is_from_studio %}
 <h1 class="errornote">
     WARNING! You are not in the studio, you sure you want to modify this playlist?
     <input type="checkbox" name="is_from_studio_override" id="id_is_from_studio_override" /> 
