@@ -10,6 +10,12 @@ indexes:
 
 ### Djdb ###
 
+- kind: Album
+  properties:
+  - name: current_tags
+  - name: revoked
+  - name: title
+
 - kind: Document
   properties:
   - name: doctype
@@ -25,6 +31,12 @@ indexes:
   properties:
   - name: subject
   - name: timestamp
+
+- kind: SearchMatches
+  properties:
+  - name: entity_kind
+  - name: field
+  - name: term
 
 ### Playlists ###
 

@@ -69,3 +69,8 @@ class ListTracksPlayedForm(forms.Form):
     from_year = forms.ChoiceField(required=False, choices=YEAR_CHOICES)
     page_size = forms.ChoiceField(required=False, choices=PAGE_SIZE_CHOICES)
 
+class ListActivityForm(forms.Form):
+    from_month = forms.ChoiceField(required=False, choices=MONTH_CHOICES)
+    from_day = forms.ChoiceField(required=False, choices=DAY_CHOICES)
+    from_year = forms.ChoiceField(required=False, choices=YEAR_CHOICES)
+

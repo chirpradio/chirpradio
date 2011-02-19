@@ -710,6 +710,10 @@ class TagEdit(db.Model):
         obj.save()
         return current_tags
 
+    @property
+    def timestamp_display(self):
+        """This is the time to show to users."""
+        return time_util.convert_utc_to_chicago(self.timestamp)
 
 class Crate(db.Model):
     """Mode for a crate, which contains artists, albums, or tracks.

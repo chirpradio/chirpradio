@@ -29,6 +29,7 @@ from auth.decorators import require_role
 from auth import roles
 from common import dbconfig, sanitize_html, pager
 from common.autoretry import AutoRetry
+from common.time_util import chicago_now
 from djdb import models
 from djdb import search
 from djdb import review
@@ -55,7 +56,7 @@ def fetch_activity(num=None, days=None, start_dt=None):
         num_reviews = num
     revs = review.fetch_recent(num_reviews, days=days, start_dt=start_dt)
     for rev in revs:
-        dt = rev.created.strftime('%Y-%m-%d %H:%M')
+        dt = rev.created_display.strftime('%Y-%m-%d %H:%M')
         if len(rev.text) > 100:
             text = rev.text[0:100] + '... <a href="%s">Read more</a>' % rev.subject.url
         else:
@@ -80,7 +81,7 @@ def fetch_activity(num=None, days=None, start_dt=None):
             num_comments = num - len(activity)        
         comments = comment.fetch_recent(num_comments, days=days, start_dt=start_dt)
         for com in comments:
-            dt = com.created.strftime('%Y-%m-%d %H:%M')
+            dt = com.created_display.strftime('%Y-%m-%d %H:%M')
             if len(com.text) > 100:
                 text = com.text[0:100] + '... <a href="%s">Read more</a>' % com.subject.url
             else:
@@ -105,7 +106,7 @@ def fetch_activity(num=None, days=None, start_dt=None):
             num_tags = num - len(activity)
         tag_edits = tag_util.fetch_recent(num_tags, days=days, start_dt=start_dt)
         for tag_edit in tag_edits:
-            dt = tag_edit.timestamp.strftime('%Y-%m-%d %H:%M')
+            dt = tag_edit.timestamp_display.strftime('%Y-%m-%d %H:%M')
             for tag in tag_edit.added:
                 if tag == 'recommended':                    
                     item = '<a href="%s">%s / %s / %s</a> <b>recommended</b> by <a href="/djdb/user/%s">%s</a>.' % (
@@ -207,22 +208,38 @@ def activity_page(request, ctx_vars=None):
         ctx_vars = {}
     ctx_vars['title'] = 'DJ Database Activity'
     
-    days = 5
+    now = datetime.now().replace(hour=0, minute=0, second=0,
+                                 microsecond=0)
+    days = 1
     if request.method == 'GET':
-        start_dt = datetime.now()
+        form = forms.ListActivityForm({'from_month': now.month,
+                                       'from_day': now.day,
+                                       'from_year': now.year})
+        start_dt = now
     else:
-        old_start_dt = request.POST.get('start_dt')
-        if request.POST.get('next'):
-            start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d %H:%M') \
-                - timedelta(days=days)
+        if request.POST.get('search'):
+            form = forms.ListActivityForm(request.POST)
+            if form.is_valid():
+                from_month = int(form.cleaned_data['from_month'])
+                from_day = int(form.cleaned_data['from_day'])
+                from_year = int(form.cleaned_data['from_year'])
+                start_dt = datetime(from_year, from_month, from_day)
         else:
-            start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d %H:%M') \
-                + timedelta(days=days)
-            if start_dt > datetime.now():
-                start_dt = datetime.now()
+            old_start_dt = request.POST.get('start_dt')
+            if request.POST.get('next'):
+                start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d') \
+                    - timedelta(days=days)
+            else:
+                start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d') \
+                    + timedelta(days=days)
+                if start_dt > now:
+                    start_dt = now
+            form = forms.ListActivityForm({'from_month': start_dt.month,
+                                           'from_day': start_dt.day,
+                                           'from_year': start_dt.year})
     
+    ctx_vars['form'] = form
     ctx_vars['start_dt'] = start_dt
-    ctx_vars['days'] = days
     ctx_vars['recent_activity'] = fetch_activity(days=days, start_dt=start_dt)
             
     ctx = RequestContext(request, ctx_vars)
