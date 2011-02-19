@@ -33,5 +33,5 @@ def base(request):
         'logout_url': logout_url,
         'MEDIA_URL': settings.MEDIA_URL,
         'chicago_now': time_util.chicago_now(),
-        'is_from_studio': request.is_from_studio
+        'request_is_from_studio': request.is_from_studio
         }

@@ -42,7 +42,7 @@ class FromStudioMiddleware(object):
 
         if request.COOKIES.get(self.COOKIE_NAME, 'False') == 'True':
             self.is_from_studio = True
-            log.warning('Found %s cookie.' % self.COOKIE_NAME)
+            log.info('Found %s cookie.' % self.COOKIE_NAME)
         else:
             try:
                 # chirp_studio_ip_range is comma delimited string
@@ -66,7 +66,7 @@ class FromStudioMiddleware(object):
 
     def process_response(self, request, response):
         if self.set_cookie:
-            log.warning('Setting %s cookie.' % self.COOKIE_NAME)
+            log.info('Setting %s cookie.' % self.COOKIE_NAME)
             response.cookies[self.COOKIE_NAME] = self.is_from_studio
             #response.cookies.add_header(
             #    'Set-Cookie',
