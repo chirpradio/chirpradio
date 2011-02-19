@@ -22,6 +22,7 @@ import unittest
 from django.utils import simplejson
 import fudge
 from google.appengine.api import memcache
+from google.appengine.api.taskqueue import TransientError
 from nose.tools import eq_
 from webtest import TestApp
 
@@ -119,6 +120,13 @@ class TestTrackPlayingNow(APITest):
             'sm_image': None,
             'med_image': None
         })
+
+    @fudge.patch('api.handler.taskqueue.add',
+                 'api.handler.log')
+    def test_build_lastfm_links_logs_errors(self, fake_add, fake_log):
+        fake_add.expects_call().raises(TransientError)
+        fake_log.expects('exception')
+        data = self.request('/api/current_playlist')
 
     @fudge.patch('api.handler.taskqueue')
     def test_build_partial_lastfm_links(self, fake_tq):

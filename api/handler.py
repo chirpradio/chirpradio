@@ -79,7 +79,10 @@ class CurrentPlaylist(CachedApiHandler):
 
     def check_data(self, data):
         if any((v is None) for k,v in iter_lastfm_links(data)):
-            taskqueue.add(url='/api/_check_lastfm_links')
+            try:
+                taskqueue.add(url='/api/_check_lastfm_links')
+            except:
+                log.exception('While adding task')
 
     def track_as_data(self, track):
         return {
