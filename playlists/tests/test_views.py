@@ -821,11 +821,11 @@ class TestLive365PlaylistTasks(TaskTest, TestCase):
         self.assertEqual(resp.status_code, 200)
 
 class IsFromStudioTests(FormTestCaseHelper, TestCase):
+    """Test the FromStudioMiddleware playlists middleware."""
 
     def setUp(self):
         assert self.client.login(email="test@test.com", roles=[roles.DJ])
         dbconfig['chirp.ip_studio_range'] = '192.168.0.1,192.168.0.2'
-        self.c = Client()
 
     def test_warning_present_when_offsite(self):
         pass
@@ -834,9 +834,13 @@ class IsFromStudioTests(FormTestCaseHelper, TestCase):
         pass
 
     def test_override_form_is_present(self):
-        resp = self.c.get('/playlists/', {}, REMOTE_ADDR='127.0.0.1')
-        print 'resp.content is %s' % resp
+        resp = self.client.get('/playlists/', {}, REMOTE_ADDR='127.0.0.1')
         assert 'name="is_from_studio_override"' in resp.content
+
+    def test_override_form_is_not_present(self):
+        resp = self.client.get('/playlists/', {}, REMOTE_ADDR='192.168.0.2')
+        print 'resp.content is %s' % resp.content
+        assert 'name="is_from_studio_override"' not in resp.content
 
     def test_override_form_submit_sets_cookie(self):
         pass
