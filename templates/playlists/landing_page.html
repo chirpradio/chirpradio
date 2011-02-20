@@ -19,7 +19,13 @@
 {% block content %}
 
 <div id="playlist"> <!-- site wrapper -->
-
+{% if not request_is_from_studio %}
+<h1 class="errornote">
+    WARNING! You are not in the studio, you sure you want to modify this playlist?
+    <input type="checkbox" name="is_from_studio_override" />
+    <label for="is_from_studio_override">Yes, I know, don't bug me.</label>
+</h1> 
+{% endif %}
 <div id="form-column"> <!-- form column -->
 
 <form method="post" id="playlist-form" action="{% url playlists_add_event %}">

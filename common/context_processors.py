@@ -32,5 +32,6 @@ def base(request):
         'login_url': auth.create_login_url('/'),
         'logout_url': logout_url,
         'MEDIA_URL': settings.MEDIA_URL,
-        'chicago_now': time_util.chicago_now()
+        'chicago_now': time_util.chicago_now(),
+        'request_is_from_studio': request.is_from_studio
         }
