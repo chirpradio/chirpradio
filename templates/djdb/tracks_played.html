@@ -19,7 +19,7 @@
 <h3>DJ: <a href="/djdb/user/{{ dj.key.id }}">{{ dj }}</a></h3>
 
 <form action="/djdb/tracks_played/{{ dj.key.id }}" name="paging" method="post">
-{{ form.as_table }}
+{{ form }}
   <input type="submit" name="search" value="Search"/>
   <br/>
 

@@ -53,13 +53,14 @@ class Form(forms.Form):
             self.fields['year'] = forms.IntegerField(required=False,
                                   widget=forms.TextInput(attrs={'size': 4, 'maxlength': 4}))
 
-def fetch_recent(max_num_returned=10, days=None, start_dt=None, author_key=None, order="created"):
+def fetch_recent(max_num_returned=10, days=None, start_dt=None, author_key=None,
+                 order="created"):
     """Returns the most recent reviews, in reverse chronological order."""
     if days is not None:
         if start_dt:
-            end_dt = start_dt - timedelta(days=days)
+            end_dt = start_dt + timedelta(days=days)
         else:
-            end_dt = datetime.now() - timedelta(days=days)
+            end_dt = datetime.now() + timedelta(days=days)
     else:
         end_dt = None
 
@@ -70,9 +71,10 @@ def fetch_recent(max_num_returned=10, days=None, start_dt=None, author_key=None,
         author = db.get(author_key)
         rev_query.filter('author =', author)
     if start_dt:
-        rev_query.filter('created <', start_dt)
+        rev_query.filter('created >=', start_dt)
     if end_dt:
-        rev_query.filter('created >=', end_dt)
+        rev_query.filter('created <', end_dt)
+
     return AutoRetry(rev_query).fetch(max_num_returned)
 
 def fetch_all():

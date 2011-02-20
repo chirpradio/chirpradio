@@ -22,26 +22,9 @@
 <div id="crate">
   <div id="add-crate-item-column">
     <form method="post" action="/djdb/crate/add_item">
-      <label for="artist">Artist</label>
-      <input id="id_artist" type="text" name="artist" />
-
-      <p/>
-      <label for="song">Song Title</label>
-      <input id="id_song" type="text" name="track" />
-
-      <p/>
-      <label for="album">Album</label>
-      <input id="id_album" type="text" name="album" />
-
-      <p/>
-      <label for="label">Label</label>
-      <input id="id_label" type="text" name="label" />
-
-      <p/>
-      <label for="song_notes">Song Notes</label>
-      <textarea id="id_song_notes" rows="10" cols="40" name="song_notes"></textarea>
-
-      <p/>
+      <table>
+        {{ form }}
+      </table>
       <input type="submit" class="button" name="save" value="Save To Crate"/>
     </form>
   </div>

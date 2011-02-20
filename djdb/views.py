@@ -29,6 +29,7 @@ from auth.decorators import require_role
 from auth import roles
 from common import dbconfig, sanitize_html, pager
 from common.autoretry import AutoRetry
+from common.time_util import chicago_now
 from djdb import models
 from djdb import search
 from djdb import review
@@ -55,7 +56,7 @@ def fetch_activity(num=None, days=None, start_dt=None):
         num_reviews = num
     revs = review.fetch_recent(num_reviews, days=days, start_dt=start_dt)
     for rev in revs:
-        dt = rev.created.strftime('%Y-%m-%d %H:%M')
+        dt = rev.created_display.strftime('%Y-%m-%d %H:%M')
         if len(rev.text) > 100:
             text = rev.text[0:100] + '... <a href="%s">Read more</a>' % rev.subject.url
         else:
@@ -80,7 +81,7 @@ def fetch_activity(num=None, days=None, start_dt=None):
             num_comments = num - len(activity)        
         comments = comment.fetch_recent(num_comments, days=days, start_dt=start_dt)
         for com in comments:
-            dt = com.created.strftime('%Y-%m-%d %H:%M')
+            dt = com.created_display.strftime('%Y-%m-%d %H:%M')
             if len(com.text) > 100:
                 text = com.text[0:100] + '... <a href="%s">Read more</a>' % com.subject.url
             else:
@@ -105,7 +106,7 @@ def fetch_activity(num=None, days=None, start_dt=None):
             num_tags = num - len(activity)
         tag_edits = tag_util.fetch_recent(num_tags, days=days, start_dt=start_dt)
         for tag_edit in tag_edits:
-            dt = tag_edit.timestamp.strftime('%Y-%m-%d %H:%M')
+            dt = tag_edit.timestamp_display.strftime('%Y-%m-%d %H:%M')
             for tag in tag_edit.added:
                 if tag == 'recommended':                    
                     item = '<a href="%s">%s / %s / %s</a> <b>recommended</b> by <a href="/djdb/user/%s">%s</a>.' % (
@@ -207,22 +208,38 @@ def activity_page(request, ctx_vars=None):
         ctx_vars = {}
     ctx_vars['title'] = 'DJ Database Activity'
     
-    days = 5
+    now = datetime.now().replace(hour=0, minute=0, second=0,
+                                 microsecond=0)
+    days = 1
     if request.method == 'GET':
-        start_dt = datetime.now()
+        form = forms.ListActivityForm({'from_month': now.month,
+                                       'from_day': now.day,
+                                       'from_year': now.year})
+        start_dt = now
     else:
-        old_start_dt = request.POST.get('start_dt')
-        if request.POST.get('next'):
-            start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d %H:%M') \
-                - timedelta(days=days)
+        if request.POST.get('search'):
+            form = forms.ListActivityForm(request.POST)
+            if form.is_valid():
+                from_month = int(form.cleaned_data['from_month'])
+                from_day = int(form.cleaned_data['from_day'])
+                from_year = int(form.cleaned_data['from_year'])
+                start_dt = datetime(from_year, from_month, from_day)
         else:
-            start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d %H:%M') \
-                + timedelta(days=days)
-            if start_dt > datetime.now():
-                start_dt = datetime.now()
+            old_start_dt = request.POST.get('start_dt')
+            if request.POST.get('next'):
+                start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d') \
+                    - timedelta(days=days)
+            else:
+                start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d') \
+                    + timedelta(days=days)
+                if start_dt > now:
+                    start_dt = now
+            form = forms.ListActivityForm({'from_month': start_dt.month,
+                                           'from_day': start_dt.day,
+                                           'from_year': start_dt.year})
     
+    ctx_vars['form'] = form
     ctx_vars['start_dt'] = start_dt
-    ctx_vars['days'] = days
     ctx_vars['recent_activity'] = fetch_activity(days=days, start_dt=start_dt)
             
     ctx = RequestContext(request, ctx_vars)
@@ -634,6 +651,12 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
         page_size = int(request.POST.get('page_size', default_page_size))
         bookmark = request.POST.get('bookmark')
         category = request.POST.get('category')
+
+    if start_char == "random" and (entity_kind != "album" or category is not None):
+        url = "/djdb/browse/%s/all?page_size=%d" % (entity_kind, page_size)
+        if entity_kind == "album":
+            url += "&category=%s" % category
+        return http.HttpResponseRedirect(url)
     
     if category is not None and category not in models.ALBUM_CATEGORIES:
         return http.HttpResponse(status=404)
@@ -768,6 +791,7 @@ def album_info_page(request, album_id_str, ctx_vars=None):
         ctx_vars["album_cover_m"] = lastfm_album.get_cover_image(pylast.COVER_MEDIUM)
         ctx_vars["album_cover_xl"] = lastfm_album.get_cover_image(pylast.COVER_EXTRA_LARGE)
     except:
+        ctx_vars["album_cover_m"] = "/media/common/img/album.png"
         pass
 
     ctx_vars["album"] = album
@@ -1026,6 +1050,9 @@ def _get_crate(user):
     return crate
 
 def crate_page(request, ctx_vars=None):
+    if ctx_vars is None:
+        ctx_vars = {}
+
     crate_items = AutoRetry(models.CrateItem.all().filter("user =", request.user)).fetch(999)
     template = loader.get_template("djdb/crate_page.html")
     crate = _get_crate(request.user)
@@ -1038,27 +1065,30 @@ def crate_page(request, ctx_vars=None):
     crate.items = new_crate_items
     crate.order = range(1, len(crate.items)+1)
     crate.save()
-    
-    if ctx_vars is None : ctx_vars = {}
+
+    ctx_vars["form"] = forms.CrateForm()    
     ctx_vars["title"] = "Your Crate"
     ctx_vars["crate_items"] = crate_items
     ctx_vars["user"] = request.user
+
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
 def add_crate_item(request):
+    item = None
     if request.method == 'POST':
         artist = request.POST.get('artist')
         album = request.POST.get('album')
         track = request.POST.get('track')
         label = request.POST.get('label')
         notes = request.POST.get('notes')
-        item = models.CrateItem(artist=artist,
-                                album=album,
-                                track=track,
-                                label=label,
-                                notes=notes)
-        AutoRetry(db).put(item)
+        if artist != "" or album != "" or track != "" or label != "":
+            item = models.CrateItem(artist=artist,
+                                    album=album,
+                                    track=track,
+                                    label=label,
+                                    notes=notes)
+            AutoRetry(db).put(item)
     else:
         item_key = request.GET.get('item_key')
         if not item_key:
@@ -1069,7 +1099,7 @@ def add_crate_item(request):
 
     msg = ''
     crate = _get_crate(request.user)
-    if item.key() not in crate.items:
+    if item is not None and item.key() not in crate.items:
         crate.items.append(item.key())
         if crate.order:
             crate.order.append(max(crate.order) + 1)

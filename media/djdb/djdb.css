@@ -217,3 +217,9 @@ div.track_local_classic {
   color: orange;
 }
 
+tr.track_list td {
+  border: none;
+  padding-bottom: 0;
+  margin-bottom: 0
+}
+

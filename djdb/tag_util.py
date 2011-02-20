@@ -120,17 +120,17 @@ def remove_tag_and_save(user, obj, tag_to_remove):
 def fetch_recent(max_num_returned=10, days=None, start_dt=None):
     if days is not None:
         if start_dt:
-            end_dt = start_dt - timedelta(days=days)
+            end_dt = start_dt + timedelta(days=days)
         else:
-            end_dt = datetime.now() - timedelta(days=days)
+            end_dt = datetime.now() + timedelta(days=days)
     else:
         end_dt = None
 
     q = models.TagEdit.all().order('-timestamp')
     if start_dt:
-        q.filter('timestamp <', start_dt)
+        q.filter('timestamp >=', start_dt)
     if end_dt:
-        q.filter('timestamp >=', end_dt)
+        q.filter('timestamp <', end_dt)
     tag_edits = q.fetch(max_num_returned);
 
     return tag_edits
