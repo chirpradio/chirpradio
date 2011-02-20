@@ -705,9 +705,9 @@ class  AlbumCategoryViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         
         albums = self.artist.sorted_albums
-        self.assertEqual(albums[0].category, models.ALBUM_CATEGORIES[1])
-        self.assertEqual(albums[1].category, None)
-        self.assertEqual(albums[2].category, models.ALBUM_CATEGORIES[1])
+        self.assertEqual(models.ALBUM_CATEGORIES[1] in albums[0].current_tags, True)
+        self.assertEqual(models.ALBUM_CATEGORIES[1] in albums[1].current_tags, False)
+        self.assertEqual(models.ALBUM_CATEGORIES[1] in albums[2].current_tags, True)
 
 
 class TrackViewsTestCase(TestCase):

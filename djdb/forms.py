@@ -19,6 +19,7 @@
 
 from datetime import datetime
 from django import forms
+from django.utils.translation import ugettext_lazy as _
 from djdb import models
 from common.autoretry import AutoRetry
 
@@ -73,4 +74,17 @@ class ListActivityForm(forms.Form):
     from_month = forms.ChoiceField(required=False, choices=MONTH_CHOICES)
     from_day = forms.ChoiceField(required=False, choices=DAY_CHOICES)
     from_year = forms.ChoiceField(required=False, choices=YEAR_CHOICES)
+
+class CrateForm(forms.Form):
+    artist = forms.CharField(required=False,
+                             label=_("Artist"))
+    track = forms.CharField(required=False,
+                            label=_("Song Title"))
+    album = forms.CharField(required=False,
+                            label=_("Album"))
+    label = forms.CharField(required=False,
+                            label=_("Label"))
+    notes = forms.CharField(required=False,
+                            label=_("Song Notes"),
+                            widget=forms.Textarea(attrs={'class':'text'}))
 

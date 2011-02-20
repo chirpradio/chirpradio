@@ -14,25 +14,25 @@ $(document).ready(function() {
     };
     
     $("#id_artist").keyup(function() {
-        if ($(this).val() == "")
+        if ($(this).val() === "")
             $(this).removeClass('freeform');
         else
             $(this).addClass('freeform');
     });
     $("#id_album").keyup(function() {
-        if ($(this).val() == "")
+        if ($(this).val() === "")
             $(this).removeClass('freeform');
         else        
             $(this).addClass('freeform');
     });
     $("#id_song").keyup(function() {
-        if ($(this).val() == "")
+        if ($(this).val() === "")
             $(this).removeClass('freeform');
         else
             $(this).addClass('freeform');
     });
     $("#id_label").keyup(function() {
-        if ($(this).val() == "")
+        if ($(this).val() === "")
             $(this).removeClass('freeform');
         else
             $(this).addClass('freeform');

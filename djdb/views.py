@@ -651,6 +651,12 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
         page_size = int(request.POST.get('page_size', default_page_size))
         bookmark = request.POST.get('bookmark')
         category = request.POST.get('category')
+
+    if start_char == "random" and (entity_kind != "album" or category is not None):
+        url = "/djdb/browse/%s/all?page_size=%d" % (entity_kind, page_size)
+        if entity_kind == "album":
+            url += "&category=%s" % category
+        return http.HttpResponseRedirect(url)
     
     if category is not None and category not in models.ALBUM_CATEGORIES:
         return http.HttpResponse(status=404)
@@ -785,6 +791,7 @@ def album_info_page(request, album_id_str, ctx_vars=None):
         ctx_vars["album_cover_m"] = lastfm_album.get_cover_image(pylast.COVER_MEDIUM)
         ctx_vars["album_cover_xl"] = lastfm_album.get_cover_image(pylast.COVER_EXTRA_LARGE)
     except:
+        ctx_vars["album_cover_m"] = "/media/common/img/album.png"
         pass
 
     ctx_vars["album"] = album
@@ -1043,6 +1050,9 @@ def _get_crate(user):
     return crate
 
 def crate_page(request, ctx_vars=None):
+    if ctx_vars is None:
+        ctx_vars = {}
+
     crate_items = AutoRetry(models.CrateItem.all().filter("user =", request.user)).fetch(999)
     template = loader.get_template("djdb/crate_page.html")
     crate = _get_crate(request.user)
@@ -1055,27 +1065,30 @@ def crate_page(request, ctx_vars=None):
     crate.items = new_crate_items
     crate.order = range(1, len(crate.items)+1)
     crate.save()
-    
-    if ctx_vars is None : ctx_vars = {}
+
+    ctx_vars["form"] = forms.CrateForm()    
     ctx_vars["title"] = "Your Crate"
     ctx_vars["crate_items"] = crate_items
     ctx_vars["user"] = request.user
+
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
 
 def add_crate_item(request):
+    item = None
     if request.method == 'POST':
         artist = request.POST.get('artist')
         album = request.POST.get('album')
         track = request.POST.get('track')
         label = request.POST.get('label')
         notes = request.POST.get('notes')
-        item = models.CrateItem(artist=artist,
-                                album=album,
-                                track=track,
-                                label=label,
-                                notes=notes)
-        AutoRetry(db).put(item)
+        if artist != "" or album != "" or track != "" or label != "":
+            item = models.CrateItem(artist=artist,
+                                    album=album,
+                                    track=track,
+                                    label=label,
+                                    notes=notes)
+            AutoRetry(db).put(item)
     else:
         item_key = request.GET.get('item_key')
         if not item_key:
@@ -1086,7 +1099,7 @@ def add_crate_item(request):
 
     msg = ''
     crate = _get_crate(request.user)
-    if item.key() not in crate.items:
+    if item is not None and item.key() not in crate.items:
         crate.items.append(item.key())
         if crate.order:
             crate.order.append(max(crate.order) + 1)
