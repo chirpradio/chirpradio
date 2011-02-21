@@ -32,9 +32,13 @@ def _init_config(request):
         c.varname = "dummy"
         c.value = "you can safely delete this after creating new var/vals"
         c.put()
-        return HttpResponse("Config initialized. You can now add new values in the Datastore admin.")
+        return HttpResponse(
+            """Config initialized. You can now add new values 
+            in the <a href="/_ah/admin">Datastore admin</a>.""")
     else:
-        return HttpResponse("Config does not need initialization")
+        return HttpResponse(
+            """Config does not need initialization. You can
+            edit the config in the <a href="/_ah/admin">Datastore admin</a>.""")
 
 @as_json
 def _make_json_error(request):

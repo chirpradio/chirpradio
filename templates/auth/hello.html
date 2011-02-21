@@ -21,5 +21,14 @@ Welcome to CHIRP.  Please log in below.
 <small><a href="/auth/forgot_password">Forgot your password?</a></small>
 </p>
 
+{% if settings.IN_DEV %}
+<p style="background: pink; color: red">Hello developers!
+  Load <a href="/_ah/login">http://...//_ah/login</a> to create a test user
+  then load <a href="/auth/_bootstrap">http://.../auth/_bootstrap</a> to make
+  that a CHIRP user. After that, you can login here with that same email
+  plus the password 'test'.
+</p>
+{% endif %}
+
 </body>
 </html>

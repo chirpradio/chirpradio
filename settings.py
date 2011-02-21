@@ -18,7 +18,8 @@ import os
 import sys
 from common import in_dev
 
-DEBUG = in_dev()
+IN_DEV = in_dev()
+DEBUG = IN_DEV
 # DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 

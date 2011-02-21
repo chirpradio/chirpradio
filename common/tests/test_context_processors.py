@@ -1,4 +1,5 @@
 
+from django.conf import settings
 from django.http import HttpRequest
 from django.test import TestCase as DjangoTestCase
 from django.template import RequestContext
@@ -11,4 +12,5 @@ class TestBaseContext(DjangoTestCase):
         request.path = "/elsewhere/in/site"
         request.user = None
         ctx = RequestContext(request)
+        self.assertEqual(ctx['settings'], settings)
         self.assertEqual(ctx['logout_url'], '/auth/goodbye/?redirect=/elsewhere/in/site')
