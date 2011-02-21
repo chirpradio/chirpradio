@@ -35,7 +35,7 @@
 
 {% if has_category %}
 <p>
-  <h3>Category:
+  <h3 class="categories">Category:
 {% for tag in album.current_tags %}
   {% if tag in album_categories %}
     <div class="track_{{ tag }}">{{ tag|replace:"/_/ "|capfirst }}</div>

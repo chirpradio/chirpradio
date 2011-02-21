@@ -204,6 +204,9 @@ li.activity_unexplicit {
   padding-right: 5px;
 }
 
+h3.categories div {
+  display: inline;
+}
 div.track_heavy_rotation {
   color: red;
 }

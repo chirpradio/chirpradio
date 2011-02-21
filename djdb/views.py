@@ -836,7 +836,7 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     ctx_vars["show_review_link"] = request.user.is_music_director or request.user.is_reviewer
     ctx_vars["show_album_tags"] = request.user.is_music_director or bool(album.sorted_current_tags)
 
-    ctx_vars["categories"] = models.ALBUM_CATEGORIES
+    ctx_vars["album_categories"] = models.ALBUM_CATEGORIES
     for tag in models.ALBUM_CATEGORIES:
         if tag in album.current_tags:
             ctx_vars["has_category"] = True
