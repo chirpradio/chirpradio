@@ -247,7 +247,7 @@ onair.post = function(url, data, onSuccess) {
     // retry loop to post data to server then send data response to callback
 
     // simulate:
-    console.log('pseudo-POST ' + url + ' ' + data);
+    //console.log('pseudo-POST ' + url + ' ' + data);
     setTimeout(function() {
         onSuccess(data);
     }, 500);
