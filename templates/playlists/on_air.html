@@ -1,0 +1,140 @@
+{% extends 'common/internal_page.html' %}
+{% load playlists_extras %}
+
+{% block extrastyle %}
+<link rel="stylesheet" href="/media/playlists/onair.css" />
+{% endblock %}
+
+{% block extrahead %}
+<script type="text/javascript"
+    src="/media/common/js/jquery/jquery-1.3.1.js"></script>
+<script type="text/javascript"
+    src="/media/common/js/chirp/chirp.js"></script>
+<script type="text/javascript"
+    src="/media/playlists/js/onair.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<div class="offair" id="mode">
+  <div class="colmask leftmenu" id="onair">
+    <div class="colleft">
+  		<div class="col1">
+        <div id="queue" class="queue">
+          <div class="col1header">
+            <h2>Queue</h2>
+          </div>
+          <div id="queued-tracks">
+            <!-- See queued-track-template -->
+          </div>
+        </div>
+      </div>  <!-- col1 -->
+  		<div class="col2">
+        <div class="col2header">
+    		  <div id="onair-control">
+    		    <button class="onair off" type="submit">On Air</button>
+    		    <button class="offair on" type="submit">Off Air</button>
+    	    </div>
+  	    </div>
+        <div id="new-track">
+          <form id="new-track-form">
+            <div id="freeform-entry">
+              <div id="faux-input">
+                <input name="freeform" autocomplete="off" id="new-track-freeform" />
+              </div>
+              <button id="play-new-track" type="submit">Play</button>
+              <button id="queue-new-track" type="submit">Queue</button>
+              <div class="clear"></div>
+              <div class="track-value" id="artist">
+                <span class="heading">Artist</span>
+                <span class="value"></span>
+              </div>
+              <div class="track-value" id="song">
+                <span class="heading">Song Title</span>
+                <span class="value"></span>
+              </div>
+              <div class="track-value" id="album">
+                <span class="heading">Album</span>
+                <span class="value"></span>
+              </div>
+              <div class="track-value" id="label">
+                <span class="heading">Label</span>
+                <span class="value"></span>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div id="recently-played">
+          <h2>Recently Played</h2>
+          <div id="recent-playlist">
+          </div>
+        </div>
+        <div id="onair-queued" class="queue">
+          <h2>Queued</h2>
+          <div id="onair-queued-list">
+          </div>
+        </div>
+        <div id="upcoming-spots">
+          <h2>Upcoming Spots</h2>
+          <div class="spot">
+            <span class="time">11:00AM</span>
+            <h3>Legal ID</h3>
+            <ul class="controls">
+              <li><a class="make-smaller" href="#">-</a></li>
+              <li><a class="make-bigger" href="#">+</a></li>
+              <li><a class="hide-show" href="#">Hide</a></li>
+            </ul>
+            <div class="clear"></div>
+            <p>
+              You are listening to CHIRP Radio dot org.
+            </p>
+          </div>
+          <div class="spot">
+            <span class="time">11:24AM</span>
+            <h3>Station Promo</h3>
+            <ul class="controls">
+              <li><a class="make-smaller" href="#">-</a></li>
+              <li><a class="make-bigger" href="#">+</a></li>
+              <li><a class="hide-show" href="#">Hide</a></li>
+            </ul>
+            <div class="clear"></div>
+            <p>
+              Do you have an old record or CD collection that you want to get rid of? Consider donating your vinyl or CDs to CHIRP. We're happy to have them, and we'll even make arrangements to pick them up. Plus, your donation is tax-deductible. E-mail record fair at CHIRP radio dot org to find out more.
+            </p>
+          </div>
+        </div>
+        <button class="onair off" type="submit">On Air</button>
+		    <button class="offair on" type="submit">Off Air</button>
+        <button id="finish-break" type="submit">Finish Break</button>
+  	  </div> <!-- col2 -->
+    </div> <!-- colleft -->
+  </div> <!-- colmask leftmenu -->
+</div> <!-- mode -->
+<div id="templates">
+  <div id="queued-track-template">
+    <div class="track">
+      <button class="play" type="submit">Play</button>
+      <div class="track-info">
+        <span class="artist"></span> &bull;
+        <span class="song"></span> &bull;
+        <span class="album"></span> &bull;
+        <span class="label"></span>
+      </div>
+      <div class="clear"></div>
+    </div>
+  </div>
+  <div id="track-loading-template">
+    <div class="track track-loading"></div>
+  </div>
+  <div id="played-track-template">
+    <div class="track">
+      <span class="time">9:50AM</span> &bull;
+      <span class="artist">David Bowie</span> &bull;
+      <span class="song">Changes</span> &bull;
+      <span class="album">Changes</span> &bull;
+      <span class="label">EMI</span>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
