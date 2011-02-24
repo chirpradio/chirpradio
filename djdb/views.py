@@ -792,6 +792,7 @@ def album_info_page(request, album_id_str, ctx_vars=None):
         ctx_vars["album_cover_xl"] = lastfm_album.get_cover_image(pylast.COVER_EXTRA_LARGE)
     except:
         ctx_vars["album_cover_m"] = "/media/common/img/no_cover_art.png"
+        ctx_vars["album_cover_xl"] = "/media/common/img/no_cover_art.png"
         pass
 
     ctx_vars["album"] = album

@@ -1,12 +1,12 @@
 // Based on Lumen by Kelli Shaver.
 $.fn.image_box = function(options) {
     $(this).unbind('click').click(function() {
-        var opt = $.extend({width: 600,
-                            height: 400}, options);
+        var opt = $.extend({width: 300,
+                            height: 300}, options);
         var image_box  = '<div id="image_box_wrapper"></div>';
         image_box     += '<div id="image_box">';
         image_box     += '  <div class="close"><a href="#">close</a> or escape</div>';
-        image_box     += '  <div class="image"><img src="' + $(this).attr('href') + '" width="' + opt.width + '" height="' + opt.height + '"/></div>';
+        image_box     += '  <div class="image"><img src="' + $(this).attr('href') + '"/></div>';
         image_box     += '</div>';
 
         $('body').append(image_box);
@@ -54,8 +54,8 @@ $.fn.image_box = function(options) {
 };
 
 $(document).ready(function() {
-    var options = {width: 600,
-                   height: 400};
+    var options = {width: 300,
+                   height: 300};
     $('a.album_cover').image_box(options);
 });
 
