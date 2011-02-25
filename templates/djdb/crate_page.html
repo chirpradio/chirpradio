@@ -50,17 +50,17 @@
     {% else %}
       {% ifequal item.kind 'Album' %}
         <img src="/media/common/img/album.png" alt="An album" title="An album"/>
-        {{ item.album_artist }} / {{ item }} / {{ item.label }} / {{ item.year }}
+        {{ item.album_artist }} / {{ item }} / {{ item.label_display }} / {{ item.year_display }}
         <a href="{{ item.url }}" alt="Go to album." title="Go to album."><img src="/media/common/img/link.png"/></a>
       {% else %}
         {% ifequal item.kind 'Track' %}
         <img src="/media/common/img/track.png" alt="A track" title="A track"/>
-        {{ item.album.album_artist }} / {{ item }} / {{ item.album }} / {{ item.album.label }} / {{ item.album.year }}
+        {{ item.album.album_artist }} / {{ item }} / {{ item.album }} / {{ item.album.label_display }} / {{ item.album.year_display }}
         <a href="{{ item.album.url }}" alt="Go to track." title="Go to track."><img src="/media/common/img/link.png"/></a>
         {% else %}
           {% ifequal item.kind 'CrateItem' %}
         <img src="/media/common/img/track.png" alt="A track" title="A track"/>
-        {{ item.artist }} / {{ item.track }} / {{ item.album }} / {{ item.label }}
+        {{ item.artist }} / {{ item.track }} / {{ item.album }} / {{ item.label_display }}
           {% else %}
         Unrecognized item.
           {% endifequal %}
@@ -68,7 +68,7 @@
       {% endifequal %}
     {% endifequal %}
         <span>
-          <a href=""><img src="/media/common/img/play.png" alt="Send to Playlist" title="Send to Playlist"/></a>
+          <a class="send_to_playlist" href="/djdb/crate/send_to_playlist/{{ item.key }}"><img src="/media/common/img/play.png" alt="Send to Playlist" title="Send to Playlist"/></a>
           <a href="/djdb/crate/remove_item?response_page=crate&item_key={{ item.key }}"><img src="/media/common/img/remove.png" alt="Remove Item from Crate" title="Remove Item from Crate"/></a>
         </span>
       </li>

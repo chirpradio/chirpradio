@@ -42,7 +42,7 @@
 <table>
   {% for event in events %}
   <tr>
-    <td>{{ event.established|date:"P" }}</td>
+    <td>{{ event.established_display|date:"P" }}</td>
   {% if event.artist %}
     <td><a href="{{ event.artist.url }}">{{ event.artist_name }}</a></td>
   {% else %}

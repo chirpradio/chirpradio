@@ -6,7 +6,7 @@ $.fn.image_box = function(options) {
         var image_box  = '<div id="image_box_wrapper"></div>';
         image_box     += '<div id="image_box">';
         image_box     += '  <div class="close"><a href="#">close</a> or escape</div>';
-        image_box     += '  <div class="image"><img src="' + $(this).attr('href') + '"/></div>';
+        image_box     += '  <div class="image"><img src="' + $(this).attr('href') + '" width="' + opt.width + '" height="' + opt.height + '"/></div>';
         image_box     += '</div>';
 
         $('body').append(image_box);

@@ -13,4 +13,18 @@ $(document).ready(function() {
         $("div.remove_all_crate_items").slideUp("slow");        
         return false;
     });
+    $("a.send_to_playlist").click(function() {
+        $.ajax({
+            url: $(this).attr("href"),
+            type: 'GET',
+            error: function(data) {
+                $('div.error').append(data.responseText);
+            },
+            success: function(data) {
+                document.cookie = "chirp_track_to_play=" + data + "; path=/";
+            }
+        });
+
+        return false;
+    });
 });
