@@ -608,6 +608,7 @@ def update_tracks(request, album_id_str):
                 break
 
     # Update track explicit and recommended tags.
+    error = ''
     mark_as = request.POST.get('mark_as')
     for name in request.POST.keys() :
         if re.match('checkbox_', name) :
@@ -617,13 +618,19 @@ def update_tracks(request, album_id_str):
                 if models.EXPLICIT_TAG in models.TagEdit.fetch_and_merge(track) :
                     tag_util.remove_tag_and_save(request.user, track, models.EXPLICIT_TAG)
                 else :
-                    tag_util.add_tag_and_save(request.user, track, models.EXPLICIT_TAG)
+                    tag_util.modify_tags_and_save(request.user, track,
+                                                  [models.EXPLICIT_TAG],
+                                                  [models.RECOMMENDED_TAG])
             elif mark_as == 'recommended' :
-                if models.RECOMMENDED_TAG in models.TagEdit.fetch_and_merge(track) :
-                    tag_util.remove_tag_and_save(request.user, track, models.RECOMMENDED_TAG)
-                else :
-                    tag_util.add_tag_and_save(request.user, track, models.RECOMMENDED_TAG)
-
+                if models.EXPLICIT_TAG in models.TagEdit.fetch_and_merge(track):
+                    error = 'Cannot recommend an explicit track.'
+                else:
+                    if models.RECOMMENDED_TAG in models.TagEdit.fetch_and_merge(track) :
+                        tag_util.remove_tag_and_save(request.user, track, models.RECOMMENDED_TAG)
+                    else :
+                        tag_util.add_tag_and_save(request.user, track, models.RECOMMENDED_TAG)
+    ctx_vars['error'] = error
+    
     request.method = 'GET'            
     return album_info_page(request, album_id_str, ctx_vars)
 
