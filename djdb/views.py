@@ -1188,38 +1188,48 @@ def remove_all_crate_items(request):
     
 def send_to_playlist(request, key):
     """
-    This actually just returns the track info, presumably to an AJAX call.
+    Returns item info, presumably to an AJAX call.
     """
     entity = AutoRetry(db).get(key)
-    if entity.kind() == 'Track':
+    artist_name = ''
+    artist_key = ''
+    track_title = ''
+    track_key = ''
+    album_title = ''
+    album_key = ''
+    label = ''
+    notes = ''
+    categories = ''
+    if entity.kind() == 'Artist':
+        artist_name = entity.name.strip().replace('/', '//')
+        artist_key = entity.key()
+    elif entity.kind() == 'Album':
+        artist_name = entity.artist_name.strip().replace('/', '//')
+        if entity.album_artist:
+            artist_key = entity.album_artist.key()
+        album_title = entity.title.strip().replace('/', '//')
+        album_key = entity.key()
+        categories = ','.join(entity.category_tags)
+    elif entity.kind() == 'Track':
         artist_name = entity.artist_name.strip().replace('/', '//')
         if entity.track_artist:
             artist_key = entity.track_artist.key()
         else:
             if entity.album.album_artist:
                 artist_key = entity.album.album_artist.key()
-            else:
-                artist_key = ''
         track_title = entity.title.strip().replace('/', '//')
         track_key = entity.key()
         album_title = entity.album.title.strip().replace('/', '//')
         album_key = entity.album.key()
         if entity.album.label:
             label = entity.album.label.strip().replace('/', '//')
-        else:
-            label = ''
-        notes = ''
         categories = ','.join(entity.album.category_tags)
     elif entity.kind() == 'CrateItem':
         artist_name = entity.artist.strip().replace('/', '//')
-        artist_key = ''
         track_title = entity.track.strip().replace('/', '//')
-        track_key = ''
         album_title = entity.album.strip().replace('/', '//')
-        album_key = ''
         label = entity.label.strip().replace('/', '//')
         notes = entity.notes.strip().replace('/', '//')
-        categories = ''
     else:
         raise Exception('Invalid entity sent to playlist')
     response = '"%s / %s / %s / %s / %s / %s / %s / %s / %s"' % (artist_name, artist_key, track_title, track_key, album_title, album_key, label, notes, categories)
