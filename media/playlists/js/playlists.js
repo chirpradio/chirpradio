@@ -198,13 +198,13 @@ $(document).ready(function() {
 
     String.prototype.ltrim = function() {
 	    return this.replace(/^\s+/,"");
-    }
+    };
 
     function getCookie(cname) {
         var cookies = document.cookie.split(';');
         for (var i = 0; i < cookies.length; i++) {
             var cookie = cookies[i].ltrim();
-            if (cookie.indexOf(cname) == 0) {
+            if (cookie.indexOf(cname) === 0) {
                 return cookie.substring(cname.length + 1, cookie.length);
             }
         }
@@ -212,9 +212,9 @@ $(document).ready(function() {
     }
     
     function updateSentItem() {
-        if ($("#id_allow_receive").attr("checked") == true) {
+        if ($("#id_allow_receive").attr("checked") === true) {
             item = getCookie("chirp_track_to_play");
-            if (item != null) {
+            if (item !== null) {
                 item = item.replace(/"/g, '');
                 var fields = item.split(' / ');
                 var artist_name = fields[0].trim().replace(/\/\//g, '/');
