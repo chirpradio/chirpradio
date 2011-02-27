@@ -820,30 +820,34 @@ class TestLive365PlaylistTasks(TaskTest, TestCase):
         })
         self.assertEqual(resp.status_code, 200)
 
-class IsFromStudioTests(FormTestCaseHelper, TestCase):
+class IsFromStudioTests(TestCase):
     """Test the FromStudioMiddleware playlists middleware."""
 
     def setUp(self):
         assert self.client.login(email="test@test.com", roles=[roles.DJ])
-        dbconfig['chirp.ip_studio_range'] = '192.168.0.1,192.168.0.2'
+        dbconfig['chirp.studio_ip_range'] = '192.168.0.1,192.168.0.2'
 
     def test_warning_present_when_offsite(self):
-        pass
-
-    def test_warning_not_present_when_in_studio(self):
-        pass
-
-    def test_override_form_is_present(self):
         resp = self.client.get('/playlists/', {}, REMOTE_ADDR='127.0.0.1')
         assert 'name="is_from_studio_override"' in resp.content
 
-    def test_override_form_is_not_present(self):
+    def test_warning_not_present_when_in_studio(self):
         resp = self.client.get('/playlists/', {}, REMOTE_ADDR='192.168.0.2')
-        print 'resp.content is %s' % resp.content
         assert 'name="is_from_studio_override"' not in resp.content
 
-    def test_override_form_submit_sets_cookie(self):
-        pass
+    def test_override_post_sets_cookie(self):
+        resp = self.client.get('/playlists/', {}, REMOTE_ADDR='127.0.0.1')
+        resp = self.client.post('/playlists/', {'is_from_studio_override':True})
+        assert  'is_from_studio' in self.client.cookies.keys()
 
-    def test_warning_not_present_when_cookie_is_set(self):
-        pass
+    def test_cookie_is_set_when_in_studio(self):
+        resp = self.client.get('/playlists/', {}, REMOTE_ADDR='192.168.0.2')
+        assert  'is_from_studio' in self.client.cookies.keys()
+
+    def test_cookie_not_set_when_offsite(self):
+        resp = self.client.get('/playlists/', {}, REMOTE_ADDR='127.0.0.1')
+        assert 'is_from_studio' not in self.client.cookies.keys()
+
+    def tearDown(self):
+        clear_data()
+        fudge.clear_expectations()
