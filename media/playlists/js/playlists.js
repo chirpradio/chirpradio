@@ -270,10 +270,12 @@ $(document).ready(function() {
         }
     });
 
-    $('#id_is_from_studio_override').click(function(e) {
+    $('button[name=is_from_studio_override]').click(function(e) {
         // send POST to playlists app so middleware catches the studio ip override
+        var button = $(this);
+        e.preventDefault();
         $.post('/playlists/', {'is_from_studio_override': true}, function(data) {
-          $('#id_is_from_studio_override').parent().fade(300);
+          button.parent().parent().hide(300);
         });
     });
     
