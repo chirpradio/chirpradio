@@ -275,7 +275,7 @@ $(document).ready(function() {
         var button = $(this);
         e.preventDefault();
         $.post('/playlists/', {'is_from_studio_override': true}, function(data) {
-          button.parent().parent().hide(300);
+          button.parent().parent().fadeOut();
         });
     });
     
