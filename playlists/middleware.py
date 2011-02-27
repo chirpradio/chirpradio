@@ -40,7 +40,7 @@ class FromStudioMiddleware(object):
         current_user_ip = request.META.get('REMOTE_ADDR', '')
         post_val_override = request.POST.get('is_from_studio_override', False)
 
-        if request.COOKIES.get(self.COOKIE_NAME, 'False') == 'True':
+        if request.COOKIES.get(self.COOKIE_NAME, False):
             self.is_from_studio = True
             log.info('Found %s cookie.' % self.COOKIE_NAME)
         else:
@@ -51,6 +51,8 @@ class FromStudioMiddleware(object):
                 log.error("Could not find key '%s' in dbconfig." % self.DB_KEY)
                 pass
             else:
+                log.info('current_user_ip is %s' % current_user_ip)
+                log.info('studio_ip_range is %s' % studio_ip_range)
                 if current_user_ip and current_user_ip in studio_ip_range:
                     self.set_cookie = True
                     self.is_from_studio = True
@@ -62,7 +64,7 @@ class FromStudioMiddleware(object):
                 request.user, current_user_ip, studio_ip_range))
 
         request.is_from_studio = self.is_from_studio
-        log.warning("request.is_from_studio is %s." % request.is_from_studio)
+        log.info("request.is_from_studio is %s." % request.is_from_studio)
 
     def process_response(self, request, response):
         if self.set_cookie:
