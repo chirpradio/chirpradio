@@ -269,6 +269,13 @@ $(document).ready(function() {
             updateSentItem();
         }
     });
+
+    $('#id_is_from_studio_override').click(function(e) {
+        // send POST to playlists app so middleware catches the studio ip override
+        $.post('/playlists/', {'is_from_studio_override': true}, function(data) {
+          $('#id_is_from_studio_override').parent().fade(300);
+        });
+    });
     
     updateSentItem();
 });
