@@ -11,13 +11,15 @@
 {% block content %}
 
 <form action="/djdb/activity" method="post">
-  <input type="submit" name="prev" onclick="document.paging.bookmark.value='{{ prev }}'" value="Previous"/>
-  <input type="submit" name="next" onclick="document.paging.bookmark.value='{{ next }}'" value="Next"/>
-  <input type="hidden" name="start_dt" value="{{ start_dt|date:"Y-m-d H:i" }}"/>
-  <input type="hidden" name="days" value="{{ days }}"/>
+  {{ form }}
+  <input type="submit" name="search" value="Search"/>
+  <br/>
+  <input type="submit" name="prev" onclick="document.paging.bookmark.value='{{ prev }}'" value="Previous Page"/>
+  <input type="submit" name="next" onclick="document.paging.bookmark.value='{{ next }}'" value="Next Page"/>
+  <input type="hidden" name="start_dt" value="{{ start_dt|date:"Y-m-d" }}"/>
 </form>
 
-<h3>Activity starting from {{ start_dt|date:"D F j, Y P" }} for {{ days }} days:</h3>
+<h3>Activity for {{ start_dt|date:"D F j, Y" }}:</h3>
 
 {% if recent_activity %}
   {% for dt, items in recent_activity %}
@@ -34,10 +36,9 @@
 {% endif %}
 
 <form action="/djdb/activity" method="post">
-  <input type="submit" name="prev" onclick="document.paging2.bookmark.value='{{ prev }}'" value="Previous"/>
-  <input type="submit" name="next" onclick="document.paging2.bookmark.value='{{ next }}'" value="Next"/>
+  <input type="submit" name="prev" onclick="document.paging2.bookmark.value='{{ prev }}'" value="Previous Page"/>
+  <input type="submit" name="next" onclick="document.paging2.bookmark.value='{{ next }}'" value="Next Page"/>
   <input type="hidden" name="start_dt" value="{{ start_dt|date:"Y-m-d H:i" }}"/>
-  <input type="hidden" name="days" value="{{ days }}"/>
 </form>
 
 {% endblock %}

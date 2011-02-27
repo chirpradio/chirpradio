@@ -19,7 +19,7 @@
 <h3>DJ: <a href="/djdb/user/{{ dj.key.id }}">{{ dj }}</a></h3>
 
 <form action="/djdb/tracks_played/{{ dj.key.id }}" name="paging" method="post">
-{{ form.as_table }}
+{{ form }}
   <input type="submit" name="search" value="Search"/>
   <br/>
 
@@ -42,7 +42,7 @@
 <table>
   {% for event in events %}
   <tr>
-    <td>{{ event.established|date:"P" }}</td>
+    <td>{{ event.established_display|date:"P" }}</td>
   {% if event.artist %}
     <td><a href="{{ event.artist.url }}">{{ event.artist_name }}</a></td>
   {% else %}

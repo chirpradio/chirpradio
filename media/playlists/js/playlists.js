@@ -14,25 +14,25 @@ $(document).ready(function() {
     };
     
     $("#id_artist").keyup(function() {
-        if ($(this).val() == "")
+        if ($(this).val() === "")
             $(this).removeClass('freeform');
         else
             $(this).addClass('freeform');
     });
     $("#id_album").keyup(function() {
-        if ($(this).val() == "")
+        if ($(this).val() === "")
             $(this).removeClass('freeform');
         else        
             $(this).addClass('freeform');
     });
     $("#id_song").keyup(function() {
-        if ($(this).val() == "")
+        if ($(this).val() === "")
             $(this).removeClass('freeform');
         else
             $(this).addClass('freeform');
     });
     $("#id_label").keyup(function() {
-        if ($(this).val() == "")
+        if ($(this).val() === "")
             $(this).removeClass('freeform');
         else
             $(this).addClass('freeform');
@@ -195,4 +195,80 @@ $(document).ready(function() {
             $('#id_is_local_current').attr('checked', false);
         }
     });
+
+    String.prototype.ltrim = function() {
+	    return this.replace(/^\s+/,"");
+    };
+
+    function getCookie(cname) {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].ltrim();
+            if (cookie.indexOf(cname) === 0) {
+                return cookie.substring(cname.length + 1, cookie.length);
+            }
+        }
+        return null;
+    }
+    
+    function updateSentItem() {
+        if ($("#id_allow_receive").attr("checked") === true) {
+            item = getCookie("chirp_track_to_play");
+            if (item !== null) {
+                item = item.replace(/"/g, '');
+                var fields = item.split(' / ');
+                var artist_name = fields[0].trim().replace(/\/\//g, '/');
+                var artist_key = fields[1].trim();
+                var track_title = fields[2].trim().replace(/\/\//g, '/');
+                var track_key = fields[3].trim();
+                var album_title = fields[4].trim().replace(/\/\//g, '/');
+                var album_key = fields[5].trim();
+                var label = fields[6].trim().replace(/\/\//g, '/');
+                var notes = fields[7].trim().replace(/\/\//g, '/');
+                var categories = fields[8].trim().split(',');
+                
+                $("#id_artist").val(artist_name);
+                $("#id_artist_key").val(artist_key);
+                $("#id_song").val(track_title);
+                $("#id_song_key").val(track_key);
+                $("#id_album").val(album_title);
+                $("#id_album_key").val(album_key);
+                $("#id_label").val(label);
+                $("#id_song_notes").val(notes);
+                $("#id_is_heavy_rotation").attr("checked", false);
+                $("#id_is_light_rotation").attr("checked", false);
+                $("#id_is_local_current").attr("checked", false);
+                $("#id_is_local_classic").attr("checked", false);            
+                for (var i = 0; i < categories.length; i++) {
+                    if (categories[i] == 'heavy_rotation') {
+                        $("#id_is_heavy_rotation").attr("checked", true);
+                        $("#id_is_light_rotation").attr("checked", false);
+                    }
+                    else if (categories[i] == 'light_rotation') {
+                        $("#id_is_light_rotation").attr("checked", true);
+                        $("#id_is_heavy_rotation").attr("checked", false);
+                    }
+                    if (categories[i] == 'local_current') {
+                        $("#id_is_local_current").attr("checked", true);
+                        $("#id_is_local_classic").attr("checked", false);
+                    }
+                    else if (categories[i] == 'local_classic') {
+                        $("#id_is_local_classic").attr("checked", true);
+                        $("#id_is_local_current").attr("checked", false);
+                    }
+                }
+                document.cookie = 'chirp_track_to_play=; path=/; expires=Thu, 01-Jan-70 00:00:01 GMT;';
+            }
+            setTimeout(updateSentItem, 100);
+        }
+    }
+    
+    $("#id_allow_receive").click(function(e) {
+        if ($(this).is(':checked')) {
+            document.cookie = 'chirp_track_to_play=; path=/; expires=Thu, 01-Jan-70 00:00:01 GMT;';        
+            updateSentItem();
+        }
+    });
+    
+    updateSentItem();
 });

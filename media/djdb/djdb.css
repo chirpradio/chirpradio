@@ -198,12 +198,14 @@ li.activity_unexplicit {
 }
 #image_box .close {
   display: block;
-  width: 140px;
   float: right;
   text-align: right;
   padding-right: 5px;
 }
 
+h3.categories div {
+  display: inline;
+}
 div.track_heavy_rotation {
   color: red;
 }
@@ -215,5 +217,11 @@ div.track_local_current {
 }
 div.track_local_classic {
   color: orange;
+}
+
+tr.track_list td {
+  border: none;
+  padding-bottom: 0;
+  margin-bottom: 0
 }
 

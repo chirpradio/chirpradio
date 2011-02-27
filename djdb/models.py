@@ -232,7 +232,9 @@ class Album(db.Model):
       title: The name of the album.  This is used in TALB tags.
       pronunciation: How to pronounce the album title.
       label: The label of the album.
+      label_display: The displayed label.
       year: The year of the album.
+      year_display: The displayed year.
       disc_number: If specified, this album is one part of a multi-disc
         set.
       album_id: A unique integer identifier that is assigned to the
@@ -397,6 +399,31 @@ class Album(db.Model):
         """Returns a sorted list of tags."""
         return sorted(self.current_tags, key=unicode.lower)
 
+    @property
+    def label_display(self):
+        """Returns the displayed label."""
+        if self.label is None:
+            return ""
+        else:
+            return self.label
+            
+    @property
+    def year_display(self):
+        """Returns the displayed year."""
+        if self.year is None:
+            return ""
+        else:
+            return self.year
+            
+    @property
+    def category_tags(self):
+        """Returns a list of category tags."""
+        tags = []
+        for tag in self.current_tags:
+            if tag in ALBUM_CATEGORIES:
+                tags.append(tag)
+        return tags
+        
     def has_tag(self, tag):
         """Returns true if tag 'tag' is currently set."""
         tag = tag.lower()
@@ -710,6 +737,10 @@ class TagEdit(db.Model):
         obj.save()
         return current_tags
 
+    @property
+    def timestamp_display(self):
+        """This is the time to show to users."""
+        return time_util.convert_utc_to_chicago(self.timestamp)
 
 class Crate(db.Model):
     """Mode for a crate, which contains artists, albums, or tracks.

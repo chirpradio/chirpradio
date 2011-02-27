@@ -35,7 +35,7 @@
 
 {% if has_category %}
 <p>
-  <h3>Category:
+  <h3 class="categories">Category:
 {% for tag in album.current_tags %}
   {% if tag in album_categories %}
     <div class="track_{{ tag }}">{{ tag|replace:"/_/ "|capfirst }}</div>
@@ -134,10 +134,12 @@ No reviews yet!  You could be the first to
 <table><tr><td>
 <div class="tags" style="display: inline">
 {% for tag in album.sorted_current_tags %}
+  {% if tag not in album_categories %}
     <div class="tag">
 {{ tag }}
         <img class="remove_tag" style="display: none" src="/media/common/img/remove.png" title="Remove tag"/>
     </div>
+  {% endif %}
 {% endfor %}
     <select class="tag" style="display: none">
         <option>-</option>
@@ -173,7 +175,7 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
   </tr>
 {% endif %}
 {% for track in album.sorted_tracks %}
-  <tr>
+  <tr class="track_list">
     <td><input type="checkbox"
                class="checkbox{% if track.is_explicit %} explicit{% endif %}{% if track.is_recommended %} recommended{% endif %}"
                name="checkbox_{{ forloop.counter }}"/></td>
@@ -189,36 +191,6 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
   {% if track.pronunciation %}
 <br/><i>Pronunciation: {{ track.pronunciation }}</i>
   {% endif %}
-  {% if user.is_music_director %}
-      <div class="edit_track_{{ forloop.counter }}" style="display: none">
-        <input type="hidden" name="track_key_{{ forloop.counter }}" value="{{ track.key }}"/>
-        <table>
-          <tr>
-            <td>Pronunciation:</td>
-    {% if track.pronunciation %}
-            <td><input type="input" name="pronunciation_{{ forloop.counter }}" value="{{ track.pronunciation }}"/></td>
-    {% else %}
-            <td><input type="input" name="pronunciation_{{ forloop.counter }}"/></td>
-    {% endif %}
-          </tr>
-          <tr>
-            <td>Track artist:</td>
-            <td>
-              <input type="hidden" name="track_artist_key_{{ forloop.counter }}" value="{{ track.track_artist.key }}"/>
-    {% if track.track_artist %}
-              <input type="input" name="track_artist_{{ forloop.counter }}" id="track_artist_key_{{ forloop.counter }}" value="{{ track.track_artist }}"/>
-    {% else %}
-              <input type="input" name="track_artist_{{ forloop.counter }}" id="track_artist_key_{{ forloop.counter }}"/>
-    {% endif %}
-              <i>(Note: You <b>must</b> select an artist from the autocomplete list.)</i>
-            </td>
-          </tr>
-        </table>
-        <input type="submit" name="update_track_{{ forloop.counter }}" value="Update Track"/>
-        <input type="submit" class="edit_track_{{ forloop.counter }}" value="Cancel"/>
-      </div>
-  {% endif %}
-    </td>
   {% if album.is_compilation %}
     {% if track.track_artist %}
     <td>{{ track.track_artist }}</td>
@@ -245,6 +217,41 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
   {% endifincrate %}
     </td>
   </tr>
+  {% if user.is_music_director %}
+  <tr>
+    <td></td>
+    <td></td>
+    <td colspan="10" style="margin: 0">
+      <div class="edit_track_{{ forloop.counter }}" style="display: none">
+        <input type="hidden" name="track_key_{{ forloop.counter }}" value="{{ track.key }}"/>
+        <table>
+          <tr>
+            <td>Pronunciation:</td>
+    {% if track.pronunciation %}
+            <td><input type="input" name="pronunciation_{{ forloop.counter }}" value="{{ track.pronunciation }}"/></td>
+    {% else %}
+            <td><input type="input" name="pronunciation_{{ forloop.counter }}"/></td>
+    {% endif %}
+          </tr>
+          <tr>
+            <td>Track artist:</td>
+            <td>
+              <input type="hidden" name="track_artist_key_{{ forloop.counter }}" value="{{ track.track_artist.key }}"/>
+    {% if track.track_artist %}
+              <input type="input" name="track_artist_{{ forloop.counter }}" id="track_artist_key_{{ forloop.counter }}" value="{{ track.track_artist }}"/>
+    {% else %}
+              <input type="input" name="track_artist_{{ forloop.counter }}" id="track_artist_key_{{ forloop.counter }}"/>
+    {% endif %}<br/>
+              <i>You <b>must</b> select an artist from the autocomplete list.</i>
+            </td>
+          </tr>
+        </table>
+        <input type="submit" name="update_track_{{ forloop.counter }}" value="Update Track"/>
+        <input type="submit" class="edit_track_{{ forloop.counter }}" value="Cancel"/>
+      </div>
+    </td>
+  </tr>
+  {% endif %}
 {% endfor %}
 </table>
 </form>

@@ -88,6 +88,8 @@
 </div> <!-- end form column -->
 <div id="playlist-column"> <!-- playlist column -->
 
+<input name="id_allow_receive" id="id_allow_receive" type="checkbox" checked="true"/>Allow receiving from DJ database
+
 <div class="tracks_played">
 Tracks played since {{ last_dt|date:"P" }}:<br/>
   <div class="tracks_heavy_rotation" title="Heavy Rotation">{{ quotas.heavy_rotation_played }} / {{ quotas.heavy_rotation_target }}</div>
@@ -181,7 +183,7 @@ Tracks played since {{ last_dt|date:"P" }}:<br/>
 {# <p><span class="artist">Portishead</span> &bull; <span class="song">Hunter</span> &bull; <span class="album">Silence</span> &bull; <span class="label">Mercury</span></p> #}
 {# </div> #}
 
-<p class="links"><a href="http://chirpradio.org/">CHIRPradio.org</a> &bull; <a href="http://chicagoindieradio.org/">CHIRP Wesbite</a></p>
+<p class="links"><a href="http://chirpradio.org/">CHIRPradio.org</a> &bull; <a href="http://chicagoindieradio.org/">CHIRP Website</a></p>
 
 </div> <!-- end playlist column -->
 </div> <!-- end site wrapper -->    

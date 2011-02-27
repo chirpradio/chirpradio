@@ -46,9 +46,9 @@ def fetch_recent(max_num_returned=10, days=None, start_dt=None):
     """Returns the most recent comments, in reverse chronological order."""
     if days is not None:
         if start_dt:
-            end_dt = start_dt - timedelta(days=days)
+            end_dt = start_dt + timedelta(days=days)
         else:
-            end_dt = datetime.now() - timedelta(days=days)
+            end_dt = datetime.now() + timedelta(days=days)
     else:
         end_dt = None
 
@@ -56,9 +56,9 @@ def fetch_recent(max_num_returned=10, days=None, start_dt=None):
     com_query.filter("doctype =", models.DOCTYPE_COMMENT)
     com_query.order("-created")
     if start_dt:
-        com_query.filter("created <", start_dt)
+        com_query.filter("created >=", start_dt)
     if end_dt:
-        com_query.filter("created >=", end_dt)
+        com_query.filter("created <", end_dt)
     return AutoRetry(com_query).fetch(max_num_returned)
 
 def get_or_404(doc_key):

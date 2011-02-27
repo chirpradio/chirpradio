@@ -26,6 +26,16 @@ There isn't much here yet.  Things you can do:
 <li> <a href="/playlists/report">Playlist Tracker Report</a>
 {% endif %}
 <li> <a href="/auth/change_password">Change Your Password</a>
+{% if settings.IN_DEV %}
+<li style="color: red">Developer: Load
+  <a href="/djdb/_bootstrap">http://.../djdb/_bootstrap</a> to fill the
+  datastore with songs and albums from the Clash and David Bowie</li>
+<li style="color: red">Developer: Load
+  <a href="/common/_init_config">http://.../common/_init_config</a> to
+  initialize the datastore config.</li>
+<li style="color: red">Developer: <a href="/_ah/admin">Administer the
+  datastore</a> and other App Engine services.</li>
+{% endif %}
 </ul>
 </p>
 

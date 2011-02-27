@@ -40,7 +40,9 @@
   <input type="submit" name="next" onclick="document.paging.bookmark.value='{{ next }}'" value="Next Page"/>
 {% endifequal %}
   <input type="hidden" id="bookmark" name="bookmark" value=""/>
+  {% if author_key %}
   <input type="hidden" name="author_key" value="{{ author_key }}"/>
+  {% endif %}
   <input type="hidden" name="page_size" value="{{ page_size }}"/>
   <input type="hidden" name="order" value="{{ order }}"/>
 </form>
@@ -71,7 +73,9 @@ reviewed by
   <input type="submit" name="next" onclick="document.paging2.bookmark.value='{{ next }}'" value="Next Page"/>
 {% endifequal %}
   <input type="hidden" id="bookmark" name="bookmark" value=""/>
+  {% if author_key %}
   <input type="hidden" name="author_key" value="{{ author_key }}"/>
+  {% endif %}
   <input type="hidden" name="page_size" value="{{ page_size }}"/>
   <input type="hidden" name="order" value="{{ order }}"/>
 </form>
