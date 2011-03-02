@@ -42,7 +42,7 @@ class Form(forms.Form):
                            min_length=10, max_length=20000)
 
 
-def fetch_recent(max_num_returned=10, days=None, start_dt=None):
+def fetch_recent(max_num_returned=10, start_dt=None, days=None):
     """Returns the most recent comments, in reverse chronological order."""
     if days is not None:
         if start_dt:

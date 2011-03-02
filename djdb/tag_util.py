@@ -117,7 +117,7 @@ def remove_tag_and_save(user, obj, tag_to_remove):
     return modify_tags_and_save(user, obj, [], [tag_to_remove])
 
     
-def fetch_recent(max_num_returned=10, days=None, start_dt=None):
+def fetch_recent(max_num_returned=10, start_dt=None, days=None):
     if days is not None:
         if start_dt:
             end_dt = start_dt + timedelta(days=days)
