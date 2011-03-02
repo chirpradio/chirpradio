@@ -350,6 +350,11 @@ indexes:
   - name: established
     direction: desc
 
+- kind: PlaylistEvent
+  properties:
+  - name: playlist
+  - name: established
+
 - kind: SearchMatches
   properties:
   - name: field
