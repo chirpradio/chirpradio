@@ -1085,18 +1085,26 @@ def crate_page(request, ctx_vars=None):
 def add_crate_item(request):
     item = None
     if request.method == 'POST':
-        artist = request.POST.get('artist')
-        album = request.POST.get('album')
-        track = request.POST.get('track')
-        label = request.POST.get('label')
-        notes = request.POST.get('notes')
-        if artist != "" or album != "" or track != "" or label != "":
-            item = models.CrateItem(artist=artist,
-                                    album=album,
-                                    track=track,
-                                    label=label,
-                                    notes=notes)
-            AutoRetry(db).put(item)
+        form = forms.CrateForm(request.POST)
+        if form.is_valid():
+            artist = form.cleaned_data['artist']
+            album = form.cleaned_data['album']
+            track = form.cleaned_data['track']
+            label = form.cleaned_data['label']
+            notes = form.cleaned_data['notes']
+            categories = []
+            for category in models.ALBUM_CATEGORIES:
+                field = 'is_%s' % category
+                if field in form.cleaned_data and form.cleaned_data[field]:
+                    categories.append(category)            
+            if artist != "" or album != "" or track != "" or label != "":
+                item = models.CrateItem(artist=artist,
+                                        album=album,
+                                        track=track,
+                                        label=label,
+                                        categories=categories,
+                                        notes=notes)
+                AutoRetry(db).put(item)
     else:
         item_key = request.GET.get('item_key')
         if not item_key:
@@ -1237,6 +1245,7 @@ def send_to_playlist(request, key):
         album_title = entity.album.strip().replace('/', '//')
         label = entity.label.strip().replace('/', '//')
         notes = entity.notes.strip().replace('/', '//')
+        categories = ','.join(entity.categories)
     else:
         raise Exception('Invalid entity sent to playlist')
     response = '"%s / %s / %s / %s / %s / %s / %s / %s / %s"' % (artist_name, artist_key, track_title, track_key, album_title, album_key, label, notes, categories)

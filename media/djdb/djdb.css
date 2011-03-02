@@ -206,6 +206,12 @@ li.activity_unexplicit {
 h3.categories div {
   display: inline;
 }
+div.categories {
+  display: inline;
+}
+div.categories div {
+  display: inline;
+}
 div.track_heavy_rotation {
   color: red;
 }

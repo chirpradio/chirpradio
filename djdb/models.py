@@ -751,12 +751,12 @@ class Crate(db.Model):
     # List of keys to items.
     items = db.ListProperty(db.Key)
     
-    # List of positions for ordering.  When the crate page is shown
+    # List of positions for ordering. When the crate page is shown
     # and reorders take place, you can't reorder the list directly
     # each time since the original positions are referenced in the
-    # list item id's, which do not change.  So you have to keep track
+    # list item id's, which do not change. So you have to keep track
     # of the order separately. When the crate page is reloaded, then
-    # the actual item list should be reordered.  I suppose some
+    # the actual item list should be reordered. I suppose some
     # javascript could be added to update the list item id's when
     # reordering takes place...
     order = db.ListProperty(int)
@@ -771,5 +771,5 @@ class CrateItem(db.Model):
     track = db.StringProperty()
     label = db.StringProperty()
     notes = db.StringProperty()
+    categories = db.StringListProperty(required=True)
 
-#    @classmethod

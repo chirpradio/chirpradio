@@ -1,5 +1,6 @@
 {% extends "djdb/internal_page.html" %}
 
+{% load common_extras %}
 {% load djdb_extras %}
 
 {% block breadcrumbs %}
@@ -39,7 +40,17 @@
         <input type="submit" class="cancel" name="cancel" value="Cancel"/>
       </div>
     </form>
-    <i>Drag and drop items to change order.</i>
+    <img src="/media/common/img/artist.png"/> = Artist
+    <img src="/media/common/img/album.png"/> = Album
+    <img src="/media/common/img/track.png"/> = Track<br/>
+    <div class="categories">
+      <div class="track_heavy_rotation">★ = Heavy rotation</div>
+      <div class="track_light_rotation">◆ = Light rotation</div>
+      <div class="track_local_classic">■ = Local classic</div>
+      <div class="track_local_current">● = Local current</div>
+    </div><br/>
+
+    <i><b>Drag and drop items to change order.</b></i>
     <ul id="sortable">
   {% for item in crate_items %}
       <li id="item_{{ forloop.counter }}" class="ui-state-default">
@@ -50,17 +61,50 @@
     {% else %}
       {% ifequal item.kind 'Album' %}
         <img src="/media/common/img/album.png" alt="An album" title="An album"/>
+        <div class="categories">
+        {% for category in item.category_tags %}
+          <div class="track_{{ category }}" title="{{ category|replace:'/_/ '|capfirst }}">
+          {% ifequal category "heavy_rotation" %}★
+          {% else %}{% ifequal category "light_rotation" %}◆
+          {% else %}{% ifequal category "local_classic" %}■
+          {% else %}{% ifequal category "local_current" %}●
+          {% endifequal %}{% endifequal %}{% endifequal %}{% endifequal %}
+          </div>
+        {% endfor %}
+        </div>
         {{ item.album_artist }} / {{ item }} / {{ item.label_display }} / {{ item.year_display }}
         <a href="{{ item.url }}" alt="Go to album." title="Go to album."><img src="/media/common/img/link.png"/></a>
       {% else %}
         {% ifequal item.kind 'Track' %}
         <img src="/media/common/img/track.png" alt="A track" title="A track"/>
+        <div class="categories">
+          {% for category in item.album.category_tags %}
+          <div class="track_{{ category }}" title="{{ category }}">
+          {% ifequal category "heavy_rotation" %}★
+          {% else %}{% ifequal category "light_rotation" %}◆
+          {% else %}{% ifequal category "local_classic" %}■
+          {% else %}{% ifequal category "local_current" %}●
+          {% endifequal %}{% endifequal %}{% endifequal %}{% endifequal %}
+          </div>
+          {% endfor %}
+        </div>
         {{ item.album.album_artist }} / {{ item }} / {{ item.album }} / {{ item.album.label_display }} / {{ item.album.year_display }}
         <a href="{{ item.album.url }}" alt="Go to track." title="Go to track."><img src="/media/common/img/link.png"/></a>
         {% else %}
           {% ifequal item.kind 'CrateItem' %}
         <img src="/media/common/img/track.png" alt="A track" title="A track"/>
-        {{ item.artist }} / {{ item.track }} / {{ item.album }} / {{ item.label_display }}
+        <div class="categories">
+          {% for category in item.categories %}
+          <div class="track_{{ category }}" title="{{ category }}">
+          {% ifequal category "heavy_rotation" %}★
+          {% else %}{% ifequal category "light_rotation" %}◆
+          {% else %}{% ifequal category "local_classic" %}■
+          {% else %}{% ifequal category "local_current" %}●
+          {% endifequal %}{% endifequal %}{% endifequal %}{% endifequal %}
+          </div>
+          {% endfor %}
+        </div>
+        {{ item.artist }} / {{ item.track }} / {{ item.album }} / {{ item.label }}
           {% else %}
         Unrecognized item.
           {% endifequal %}

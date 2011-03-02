@@ -84,6 +84,14 @@ class CrateForm(forms.Form):
                             label=_("Album"))
     label = forms.CharField(required=False,
                             label=_("Label"))
+    is_heavy_rotation = forms.BooleanField(required=False,
+                                           label=_("Heavy rotation"))
+    is_light_rotation = forms.BooleanField(required=False,
+                                           label=_("Light rotation"))
+    is_local_classic = forms.BooleanField(required=False,
+                                          label=_("Local classic"))
+    is_local_current = forms.BooleanField(required=False,
+                                          label=_("Local current"))
     notes = forms.CharField(required=False,
                             label=_("Song Notes"),
                             widget=forms.Textarea(attrs={'class':'text'}))
