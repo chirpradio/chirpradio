@@ -38,7 +38,7 @@
 <form action="/djdb/activity" method="post">
   <input type="submit" name="prev" onclick="document.paging2.bookmark.value='{{ prev }}'" value="Previous Page"/>
   <input type="submit" name="next" onclick="document.paging2.bookmark.value='{{ next }}'" value="Next Page"/>
-  <input type="hidden" name="start_dt" value="{{ start_dt|date:"Y-m-d H:i" }}"/>
+  <input type="hidden" name="start_dt" value="{{ start_dt|date:"Y-m-d" }}"/>
 </form>
 
 {% endblock %}

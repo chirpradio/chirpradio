@@ -53,7 +53,7 @@ class Form(forms.Form):
             self.fields['year'] = forms.IntegerField(required=False,
                                   widget=forms.TextInput(attrs={'size': 4, 'maxlength': 4}))
 
-def fetch_recent(max_num_returned=10, days=None, start_dt=None, author_key=None,
+def fetch_recent(max_num_returned=10, start_dt=None, days=None, author_key=None,
                  order="created"):
     """Returns the most recent reviews, in reverse chronological order."""
     if days is not None:

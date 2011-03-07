@@ -54,10 +54,10 @@ class PlaylistTrackForm(forms.Form):
     song_key = forms.Field(label=_("Song Key"),
                 required=False,
                 widget=forms.HiddenInput())
-    is_heavy_rotation = forms.BooleanField(label=_("Heavy Rotation"), required=False)
-    is_light_rotation = forms.BooleanField(label=_("Heavy Rotation"), required=False)
-    is_local_current = forms.BooleanField(label=_("Heavy Rotation"), required=False)
-    is_local_classic = forms.BooleanField(label=_("Heavy Rotation"), required=False)
+    is_heavy_rotation = forms.BooleanField(label=_("Heavy rotation"), required=False)
+    is_light_rotation = forms.BooleanField(label=_("Light rotation"), required=False)
+    is_local_current = forms.BooleanField(label=_("Local current"), required=False)
+    is_local_classic = forms.BooleanField(label=_("Local classic"), required=False)
     song_notes = forms.CharField(label=_("Song Notes"),
                 required=False,
                 widget=forms.Textarea(attrs={'class':'text'}))
