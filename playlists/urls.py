@@ -25,6 +25,7 @@ urlpatterns = patterns('playlists',
     url(r'^delete_event/([^/]+)$', 'views.delete_event', name="playlists_delete_event"),
     url(r'^report$', 'reports.report_playlist', name="playlists_report"),
     url(r'^/?$', 'views.landing_page', name="playlists_landing_page"),
+    url(r'^on-air/?$', 'views.on_air', name="playlists.on_air"),
     url(r'_bootstrap', 'views.bootstrap')
 )
 

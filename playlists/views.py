@@ -316,3 +316,8 @@ def bootstrap(request):
 
     return HttpResponseRedirect("/playlists/")
 
+
+@require_role(roles.DJ)
+def on_air(request):
+    return render_to_response('playlists/on_air.html', {},
+            context_instance=RequestContext(request))

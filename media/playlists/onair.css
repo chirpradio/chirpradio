@@ -1,0 +1,298 @@
+
+#content {
+    margin: 0;
+    padding: 5px;
+}
+
+h2 {
+    color: #6A6A6A;
+}
+
+/* clearfix */
+#content:last-child:after,
+#freeform-entry:last-child:after,
+#new-track .track-value:after {
+    content: ".";
+    display: block;
+    clear: both;
+    height: 0;
+    visibility: hidden;
+}
+.clear {
+    clear: both;
+}
+
+#templates {
+    display: none;
+}
+
+input, textarea, select {
+    margin: 0;
+    padding: 0;
+}
+
+h2 {
+    text-transform: uppercase;
+}
+
+button, button.on {
+    font-size: 1.4em;
+    padding: 0.2em;
+    background: url("../common/img/gradient-white-small.png") repeat-x scroll left top #EC0035;
+    border: 1px solid #fff;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    border-radius: 4px;
+    color: #FFFFFF;
+}
+button.off {
+    color: #000;
+    border: 1px solid #000000;
+    background: none repeat scroll 0 0 #6A6A6A;
+}
+
+
+/* liquid 2 columns, from:
+   http://matthewjamestaylor.com/blog/perfect-2-column-left-menu.htm */
+.colmask {
+	position:relative;	/* This fixes the IE7 overflow hidden bug */
+	clear:both;
+	float:left;
+	width:100%;			/* width of whole page */
+	overflow:hidden;		/* This chops off any overhanging divs */
+}
+.colright,
+.colmid,
+.colleft {
+	float:left;
+	width:100%;
+	position:relative;
+}
+.col1,
+.col2,
+.col3 {
+	float:left;
+	position:relative;
+	padding:0 0 1em 0;
+	overflow:hidden;
+}
+.offair .leftmenu .colleft {
+	right:35%;
+}
+.offair .leftmenu .col1 {
+	width: 33%;
+	left: 101%;
+}
+.offair .leftmenu .col2 {
+	width: 62%;
+	left: 4%;
+}
+.onair .leftmenu {
+    padding: 0 2%;
+}
+.onair .leftmenu .col2 {
+    width: 95%;
+    left: 0;
+}
+
+.offair #onair-queued {
+    display: none;
+}
+
+.track {
+    margin-bottom: 5px;
+    padding: 10px;
+    color: #AAAAAA;
+    font-size: 1.4em;
+    -moz-border-radius: 8px;
+    -webkit-border-radius: 8px;
+    border-radius: 8px;
+}
+.track .time {
+    font-weight: bold;
+    color: #EC0035;
+}
+.track .artist,
+.track .song,
+.track .album,
+.track .label {
+    color: #2A2A2A;
+}
+.track .artist {
+    font-weight: bold;
+}
+.queue .track {
+    background-color: #e1d0d0;
+    border: 5px solid #e1d0d0;
+}
+.track-loading {
+    height: 32px;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+.queue .track-loading {
+    background-image: url("queue-track-loading.gif");
+}
+#recently-played .track {
+    background-color: #FFFFD0;
+    border: 5px solid #FFFFD0;
+}
+#recently-played .track-loading {
+    background-image: url("play-track-loading.gif");
+}
+
+#onair {
+    padding-bottom: 3em;
+}
+
+.col1header, .col2header {
+    height: 50px;
+}
+
+#onair-control {
+    padding-top: 5px;
+}
+#onair-control button {
+    border: 1px solid #000000;
+}
+
+#new-track {
+    padding: 15px 5px;
+    background-color: #e1d0d0;
+    border: 5px solid #e1d0d0;
+    -moz-border-radius: 8px;
+    -webkit-border-radius: 8px;
+    border-radius: 8px;
+}
+#new-track .track-value {
+    padding: 3px;
+    margin: 2px 5px 0 0;
+}
+#new-track #song, #new-track #label {
+    margin-right: 0;
+}
+#new-track .track-value span {
+    display: block;
+}
+#new-track .track-value span.heading {
+    width: 8em;
+    float: left;
+    font-weight: bold;
+    text-transform: uppercase;
+    background-color: #6A6A6A;
+    color: #fff;
+    padding: 3px;
+    border: 3px solid #6A6A6A;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+}
+#new-track .track-value span.value {
+    float: left;
+    font-size: 1.4em;
+    padding: 3px;
+    padding-left: 0.5em;
+}
+#new-track button {
+    float: right;
+    margin: 10px 0 0 10px;
+}
+#freeform-entry {
+/*    width: 755px;*/
+    margin: 0 auto;
+}
+#new-track #faux-input {
+    background-color: #fff;
+    padding: 2px;
+    margin-bottom: 0;
+    border: 3px solid #EC0035;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    border-radius: 4px;
+}
+#new-track-freeform {
+    border: 0;
+    background-color: #fff;
+    font-size: 1.4em;
+    height: 1.9em;
+    width: 95%;
+}
+#new-track .freeform-default {
+    color: #a3a3a3;
+}
+
+#queue {
+    margin-left: 5px;
+}
+#queue h2 {
+    margin: 0;
+    padding: 20px 5px 0 0;
+}
+#queue button {
+    font-size: 0.9em;
+}
+#queue .track-info {
+    width: 84%;
+    float: right;
+}
+
+.spot {
+    color: #333333;
+    background-color: #FFFFD0;
+    border: 5px solid #FFFFD0;
+    padding: 10px;
+    -moz-border-radius: 8px;
+    -webkit-border-radius: 8px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+.spot h3 {
+    color: #333333;
+}
+.spot p {
+    font-family: Georgia;
+    font-size: 3.1em;
+    line-height: 1.5em;
+}
+.spot ul.controls {
+    min-width: 10em;
+    float: right;
+}
+.spot ul.controls li {
+    background-color: #ffcb8d;
+    border: 5px solid #ffcb8d;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    padding: 0;
+    margin-left: 5px;
+    list-style: none;
+    float: right;
+}
+.spot ul.controls li a {
+    color: #666666;
+    font-size: 1.1em;
+}
+.spot .time {
+    display: block;
+    float: left;
+    width: 5.2em;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #EC0035;
+}
+.spot h3 {
+    color: #5ea4f3;
+    margin: 0;
+    display: block;
+    float: left;
+    width: 8em;
+    font-weight: bold;
+    font-size: 1.5em;
+}
+
+#finish-break {
+    float: right;
+    font-size: 2em;
+    border: 1px solid #000000;
+}
