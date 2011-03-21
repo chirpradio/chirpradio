@@ -20,7 +20,7 @@ import logging
 from django.http import HttpResponse, HttpResponseRedirect
 from google.appengine.api import taskqueue
 
-from common.models import Config
+from common.models import Config, load_dbconfig_into_memcache
 from common.utilities import as_json
 
 log = logging.getLogger()
@@ -59,4 +59,5 @@ def appengine_warmup(request):
     """
     log.info("Warming up")
     taskqueue.add(url='/api/current_playlist', method='GET')
+    load_dbconfig_into_memcache()
     return HttpResponse("it's getting hot in here")

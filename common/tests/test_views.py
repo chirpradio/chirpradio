@@ -18,20 +18,29 @@ import time
 
 from django.test import TestCase
 from google.appengine.api import memcache
-
 from gaetestbed import TaskQueueTestCase
 
-class TestWarmup(TaskQueueTestCase, TestCase):
+from common.models import Config, DBConfig
+
+
+class TestViews(TaskQueueTestCase, TestCase):
 
     def setUp(self):
-        super(TestWarmup, self).setUp()
+        super(TestViews, self).setUp()
         assert memcache.flush_all()
 
     def tearDown(self):
-        super(TestWarmup, self).tearDown()
+        super(TestViews, self).tearDown()
         assert memcache.flush_all()
 
-    def test_success(self):
+    def test_warmup(self):
+        dbconfig = DBConfig()
+        dbconfig['foo'] = 'bar'
+        assert memcache.flush_all()
+
         r = self.client.get('/_ah/warmup')
         self.assertEquals(r.status_code, 200)
         self.assertTasksInQueue(1, url='/api/current_playlist')
+        for c in Config.all():
+            c.delete()
+        self.assertEqual(dbconfig['foo'], 'bar')

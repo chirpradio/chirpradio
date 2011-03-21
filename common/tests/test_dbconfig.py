@@ -16,14 +16,18 @@
 ###
 
 import unittest
+
+from google.appengine.api import memcache
+
 from common import dbconfig
-from common.models import Config
+from common.models import Config, load_dbconfig_into_memcache
 
 __all__ = ['TestDBConfig']
 
 class TestDBConfig(unittest.TestCase):
     
     def setUp(self):
+        assert memcache.flush_all()
         for c in Config.all():
             c.delete()
     
@@ -41,3 +45,24 @@ class TestDBConfig(unittest.TestCase):
         self.assertEqual(dbconfig.get('nonexistant', 'default'), 'default')
         dbconfig['existing'] = 'true'
         self.assertEqual(dbconfig.get('existing'), 'true')
+    
+    def test_get_from_memcache(self):
+        dbconfig['sticky'] = 'stuck'
+        self.assertEqual(dbconfig['sticky'], 'stuck')
+        for c in Config.all():
+            c.delete()
+        # should be in memcache:
+        self.assertEqual(dbconfig['sticky'], 'stuck')
+    
+    def test_load_dbconfig_into_memcache(self):
+        dbconfig['one'] = '1'
+        dbconfig['two'] = '2'
+        dbconfig['three'] = 'three'
+        assert memcache.flush_all()
+        load_dbconfig_into_memcache()
+        for c in Config.all():
+            c.delete()
+        # should be in memcache:
+        self.assertEqual(dbconfig['one'], '1')
+        self.assertEqual(dbconfig['two'], '2')
+        self.assertEqual(dbconfig['three'], 'three')
