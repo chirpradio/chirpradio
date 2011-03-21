@@ -689,8 +689,11 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
         max = alb[0].album_id
         for i in range(page_size):
             r = random.randrange(min, max)
-            alb = models.Album.all().order('album_id').filter('album_id >=', r).fetch(1);
-            items.append(alb[0])
+            # TODO(trow): Hopefully revoked albums will be rare.
+            for alb in models.Album.all().order('album_id').filter('album_id >=', r).fetch(20):
+                if not alb.revoked:
+                    items.append(alb)
+                    break
         prev = None
         next = None
     else:
@@ -781,8 +784,9 @@ def _get_album_or_404(album_id_str):
         return http.HttpResponse(status=404)
     q = models.Album.all().filter("album_id =", int(album_id_str))
     album = None
-    for album in AutoRetry(q).fetch(1):
-        pass
+    for album in AutoRetry(q):
+        if not album.revoked:
+            break
     if album is None:
         return http.HttpResponse(status=404)
     return album

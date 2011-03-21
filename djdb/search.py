@@ -283,14 +283,17 @@ class Indexer(object):
             setattr(track, field, value)
         self._txn_objects_to_save.append(track)
 
-    def save(self):
+    def save(self, rpc=None):
         """Write all pending index data into the Datastore."""
         self._txn_objects_to_save.extend(self._matches.itervalues())
         # All of the objects in self._txn_objects_to_save are part of
         # the same entity group.  This ensures that db.save is an
         # atomic operation --- either all of the objects are
         # successfully saved or none are.
-        AutoRetry(db).save(self._txn_objects_to_save)
+        kwargs = {}
+        if rpc is not None:
+            kwargs["rpc"] = rpc
+        AutoRetry(db).save(self._txn_objects_to_save, **kwargs)
         self._matches = {}
         self._txn_objects_to_save
 
