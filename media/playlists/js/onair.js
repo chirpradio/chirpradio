@@ -28,7 +28,7 @@ onair.emptyFreeformInput = function() {
         $(this).val('');
         $(this).removeClass('freeform-default');
     });
-}
+};
 
 onair._id = 0;
 onair.genId = function(prefix) {
@@ -37,7 +37,7 @@ onair.genId = function(prefix) {
     }
     onair._id += 1;
     return prefix + onair._id.toString();
-}
+};
 
 onair.goOnAir = function(e) {
     $('button.onair').removeClass('off');
@@ -150,7 +150,7 @@ onair.initTrackInput = function() {
     var keyWatch;
     onair.emptyFreeformInput();
     $('#new-track-freeform').bind('blur', function(e) {
-        if ($(this).val() == '') {
+        if ($(this).val() === '') {
             onair.emptyFreeformInput();
         }
     });
@@ -187,6 +187,7 @@ onair.initTrackInput = function() {
                         case 1: data.song = p; break;
                         case 2: data.album = p; break;
                         case 3: data.label = p; break;
+                        default: break;
                     }
                 }
             }
@@ -285,4 +286,4 @@ onair.setTrackData = function(d, data) {
 
 onair.scrollToTop = function() {
     $('html,body').animate({scrollTop: 0}, 50);
-}
+};
