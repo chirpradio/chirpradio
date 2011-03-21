@@ -19,11 +19,17 @@
 {% block content %}
 
 <div id="playlist"> <!-- site wrapper -->
-
 <div id="form-column"> <!-- form column -->
 
 <form method="post" id="playlist-form" action="{% url playlists_add_event %}">
 <fieldset>
+
+{% if not request.is_from_studio %}
+<ul class="errorlist">
+    <li>WARNING! You are not in the studio, you sure you want to modify this playlist?
+    <button name="is_from_studio_override">Yes, I know, don't bug me.</button></li>
+</ul>
+{% endif %}
 
 {% if not add_break %}
 {{ form.artist.errors }}

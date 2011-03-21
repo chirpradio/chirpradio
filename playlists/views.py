@@ -38,12 +38,14 @@ from common.utilities import as_encoded_str, http_send_csv_file
 from common.autoretry import AutoRetry
 from common.time_util import chicago_now
 from djdb.models import Track
+from common.models import DBConfig
 
 TRACKS_HEAVY_ROTATION_TARGET = 2
 TRACKS_LIGHT_ROTATION_TARGET = 3
 TRACKS_LOCAL_CURRENT_TARGET = 1
 TRACKS_LOCAL_CLASSIC_TARGET = 1
 
+dbconfig = DBConfig()
 log = logging.getLogger()
 
 common_context = {
@@ -97,6 +99,7 @@ def get_vars(request):
         form = PlaylistTrackForm()
     form.current_user = current_user
     form.playlist = ChirpBroadcast()
+
 
     vars = {
         'form': form,

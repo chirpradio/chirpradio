@@ -73,6 +73,7 @@ TEMPLATE_LOADERS = (
 MIDDLEWARE_CLASSES = [
     'django.middleware.common.CommonMiddleware',
     'auth.middleware.AuthenticationMiddleware',
+    'playlists.middleware.FromStudioMiddleware'
 ]
 
 if not DEBUG:
