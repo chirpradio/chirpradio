@@ -274,7 +274,7 @@ $(document).ready(function() {
         // send POST to playlists app so middleware catches the studio ip override
         var button = $(this);
         e.preventDefault();
-        $.post('/playlists/', {'is_from_studio_override': true}, function(data) {
+        $.post('/playlists/', {'is_from_studio_override': 'override'}, function(data) {
           button.parent().parent().fadeOut();
         });
     });

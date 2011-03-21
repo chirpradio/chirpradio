@@ -837,7 +837,7 @@ class IsFromStudioTests(TestCase):
 
     def test_override_post_sets_cookie(self):
         resp = self.client.get('/playlists/', {}, REMOTE_ADDR='127.0.0.1')
-        resp = self.client.post('/playlists/', {'is_from_studio_override':True})
+        resp = self.client.post('/playlists/', {'is_from_studio_override': 'override'})
         assert  'is_from_studio' in self.client.cookies.keys()
 
     def test_cookie_is_set_when_in_studio(self):
