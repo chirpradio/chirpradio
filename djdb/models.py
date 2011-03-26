@@ -748,6 +748,12 @@ class Crate(db.Model):
     # The user who owns the crate item.
     user = db.ReferenceProperty(User, required=True)
 
+    # The name of the crate.
+    name = db.StringProperty(required=False)
+
+    # Whether default crate.
+    is_default = db.BooleanProperty(required=False, default=False)
+
     # List of keys to items.
     items = db.ListProperty(db.Key)
     

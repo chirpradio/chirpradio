@@ -102,9 +102,12 @@ urlpatterns = patterns(
     (r'^crate/?$', 'djdb.views.crate_page'),
     (r'crate/add_item', 'djdb.views.add_crate_item'),
     (r'crate/remove_item', 'djdb.views.remove_crate_item'),
-    (r'crate/reorder', 'djdb.views.reorder'),
-    (r'crate/remove_all_crate_items', 'djdb.views.remove_all_crate_items'),
+    (r'crate/reorder', 'djdb.views.reorder_crate_items'),
     (r'crate/send_to_playlist/(.*)', 'djdb.views.send_to_playlist'),
+    (r'crate/(.+)/add_item', 'djdb.views.add_crate_item'),
+    (r'crate/(.+)/remove_item', 'djdb.views.remove_crate_item'),
+    (r'crate/(.+)/reorder', 'djdb.views.reorder_crate_items'),
+    (r'^crate/(.*)', 'djdb.views.crate_page'),
     
     (r'update/artists/bulk_add', 'djdb.views.artists_bulk_add'),
         

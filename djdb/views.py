@@ -1053,22 +1053,91 @@ def image(request):
     return http.HttpResponse(content=img.image_data,
                              mimetype=img.image_mimetype)
 
-def _get_crate(user):
-    crate = AutoRetry(models.Crate.all().filter("user =", user)).fetch(1)
-    if len(crate) == 0:
-        crate = models.Crate(user=user)
-        AutoRetry(db).put(crate)
+def _get_crate(user, crate_key=None):
+    # Get default crate.
+    if crate_key is None:
+        crates = AutoRetry(models.Crate.all().filter("user =", user) \
+                                             .filter("is_default =", True)).fetch(1)
+
+        # If no default crate, use the first one or create a new one.
+        if len(crates) == 0:
+            crates = AutoRetry(models.Crate.all().filter("user =", user)).fetch(999)
+            
+            # If no crates, create one.
+            if len(crates) == 0:
+                crate = models.Crate(user=user, is_default=True)
+                AutoRetry(db).put(crate)
+
+            # Make the first one default.            
+            else:
+                crate = crates[0]
+                crate.is_default = True
+                crate.save()
+        else:
+            crate = crates[0]
+
+    # Get crate for given key.
     else:
-        crate = crate[0]
+        crate = models.Crate.get(crate_key)
+
     return crate
 
-def crate_page(request, ctx_vars=None):
+def _remove_all_crate_items(crate):
+    for key in reversed(crate.items):
+        crate.items.remove(key)
+        if key.kind() == 'CrateItem':
+            db.delete(key)
+    crate.order = []
+    AutoRetry(crate).save()
+
+def crate_page(request, crate_key=None, ctx_vars=None):
     if ctx_vars is None:
         ctx_vars = {}
 
-    crate_items = AutoRetry(models.CrateItem.all().filter("user =", request.user)).fetch(999)
-    template = loader.get_template("djdb/crate_page.html")
-    crate = _get_crate(request.user)
+    if request.method == 'POST':
+        # Save current crate info.
+        if request.POST.get('save_crate'):
+            crate = _get_crate(request.user, crate_key)
+            crate_items_form = forms.CrateItemsForm(request.POST,
+                                                    user=request.user)
+            if crate_items_form.is_valid():
+                crate.name = crate_items_form.cleaned_data['name']
+                if request.POST.get('is_default'):
+                    is_default = crate_items_form.cleaned_data['is_default']
+                    if is_default:
+                        default_crate = _get_crate(request.user)
+                        if default_crate != crate:
+                            default_crate.is_default = False
+                            default_crate.save()            
+                    crate.is_default = is_default
+                crate.save()
+
+        # Create a new crate.
+        elif request.POST.get('new_crate'):
+            crate = models.Crate(user=request.user)
+            AutoRetry(db).put(crate)
+            return http.HttpResponseRedirect("/djdb/crate/%s" % crate.key())
+
+        # Remove current crate.
+        elif request.POST.get('remove_crate'):
+            crate = _get_crate(request.user, crate_key)
+            _remove_all_crate_items(crate)
+            db.delete(crate.key())
+            return http.HttpResponseRedirect("/djdb/crate")
+
+        # Remove current crate's items.
+        elif request.POST.get('remove_all_crate_items'):
+            crate = _get_crate(request.user, crate_key)
+            _remove_all_crate_items(crate)
+
+        # Comes here after adding a new crate item.
+        else:
+            crate = _get_crate(request.user, crate_key)
+
+    else:
+        crate = _get_crate(request.user, crate_key)
+
+    # Recreate crate items order.
     new_crate_items = []
     crate_items = []
     if crate.items :
@@ -1079,15 +1148,22 @@ def crate_page(request, ctx_vars=None):
     crate.order = range(1, len(crate.items)+1)
     crate.save()
 
-    ctx_vars["form"] = forms.CrateForm()    
     ctx_vars["title"] = "Your Crate"
-    ctx_vars["crate_items"] = crate_items
     ctx_vars["user"] = request.user
+    ctx_vars["crate_form"] = forms.CrateForm()
+    ctx_vars['crate_items_form'] = forms.CrateItemsForm(
+                                     {'crates': crate.key(),
+                                      'name': crate.name,
+                                      'is_default': crate.is_default},
+                                     user=request.user)
+    ctx_vars["crate"] = crate
+    ctx_vars["crate_items"] = crate_items
 
     ctx = RequestContext(request, ctx_vars)
+    template = loader.get_template("djdb/crate_page.html")
     return http.HttpResponse(template.render(ctx))
 
-def add_crate_item(request):
+def add_crate_item(request, crate_key=None):
     item = None
     if request.method == 'POST':
         form = forms.CrateForm(request.POST)
@@ -1119,7 +1195,7 @@ def add_crate_item(request):
             return http.HttpResponse(status=404)
 
     msg = ''
-    crate = _get_crate(request.user)
+    crate = _get_crate(request.user, crate_key)
     if item is not None and item.key() not in crate.items:
         crate.items.append(item.key())
         if crate.order:
@@ -1129,11 +1205,11 @@ def add_crate_item(request):
         AutoRetry(crate).save()
 
         if item.kind() == 'Artist':
-            msg = 'Artist added to crate,'
+            msg = 'Artist added to your default crate,'
         elif item.kind() == 'Album':
-            msg = 'Album added to crate.'
+            msg = 'Album added to your default crate.'
         elif item.kind() == 'Track':
-            msg = 'Track added to crate.'
+            msg = 'Track added to your default crate.'
 
     response_page = request.GET.get('response_page')
     ctx_vars = { 'msg': msg }
@@ -1145,9 +1221,9 @@ def add_crate_item(request):
     elif response_page == 'album':
         return album_info_page(request, str(item.album.album_id), ctx_vars)
     else:
-        return crate_page(request, ctx_vars)
+        return crate_page(request, crate_key, ctx_vars)
 
-def remove_crate_item(request):
+def remove_crate_item(request, crate_key=None):
     item_key = request.GET.get('item_key')
     if not item_key:
         return http.HttpResponse(status=404)
@@ -1156,7 +1232,7 @@ def remove_crate_item(request):
         return http.HttpResponse(status=404)
 
     msg = ''
-    crate = _get_crate(request.user)
+    crate = _get_crate(request.user, crate_key)
     if item.key() in crate.items:
         remove_pos = crate.items.index(item.key())
         crate.items.remove(item.key())
@@ -1171,11 +1247,13 @@ def remove_crate_item(request):
         AutoRetry(crate).save()
 
         if item.kind() == 'Artist':
-            msg = 'Artist removed from crate,'
+            msg = 'Artist removed from your default crate,'
         elif item.kind() == 'Album':
-            msg = 'Album removed from crate.'
+            msg = 'Album removed from your default crate.'
         elif item.kind() == 'Track':
-            msg = 'Track removed from crate.'
+            msg = 'Track removed from your default crate.'
+        elif item.kind() == 'CrateItem':
+            AutoRetry(item).delete()
 
     response_page = request.GET.get('response_page')
     ctx_vars = { 'msg': msg }
@@ -1187,24 +1265,14 @@ def remove_crate_item(request):
     elif response_page == 'album':
         return album_info_page(request, str(item.album.album_id), ctx_vars)
     else:
-        return crate_page(request, ctx_vars)
+        return crate_page(request, crate_key, ctx_vars)
 
-def reorder(request):
+def reorder_crate_items(request, crate_key=None):
     item = request.GET.getlist('item[]')
-    crate = _get_crate(request.user)
+    crate = _get_crate(request.user, crate_key)
     crate.order = [int(u) for u in item]
     AutoRetry(crate).save()
     return http.HttpResponse(mimetype="text/plain")
-
-def remove_all_crate_items(request):
-    crate = _get_crate(request.user)
-    for key in crate.items:
-        crate.items.remove(key)
-    crate.order = []
-    AutoRetry(crate).save()
-
-    ctx_vars = {}
-    return crate_page(request, ctx_vars)
     
 def send_to_playlist(request, key):
     """

@@ -42,7 +42,8 @@ class IfInCrate(Node):
         user = self.user.resolve(context)
         item = self.item.resolve(context)
 
-        crate = Crate.all().filter("user =", user).fetch(1)
+        crate = Crate.all().filter("user =", user) \
+                           .filter("is_default =", True).fetch(1)
         if len(crate) == 0:
             return self.nodelist_false.render(context)
         else:
@@ -50,3 +51,4 @@ class IfInCrate(Node):
                 return self.nodelist_true.render(context)
             else:
                 return self.nodelist_false.render(context)
+

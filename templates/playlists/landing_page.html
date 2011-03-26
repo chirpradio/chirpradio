@@ -17,137 +17,123 @@
 {% endblock %}
 
 {% block content %}
-
 <div id="playlist"> <!-- site wrapper -->
-<div id="form-column"> <!-- form column -->
+  <div id="form-column"> <!-- form column -->
+    <form method="post" id="playlist-form" action="{% url playlists_add_event %}">
+      <fieldset>
+  {% if not request.is_from_studio %}
+        <ul class="errorlist">
+          <li>WARNING! You are not in the studio, you sure you want to modify this playlist?
+          <button name="is_from_studio_override">Yes, I know, don't bug me.</button></li>
+        </ul>
+  {% endif %}
 
-<form method="post" id="playlist-form" action="{% url playlists_add_event %}">
-<fieldset>
-
-{% if not request.is_from_studio %}
-<ul class="errorlist">
-    <li>WARNING! You are not in the studio, you sure you want to modify this playlist?
-    <button name="is_from_studio_override">Yes, I know, don't bug me.</button></li>
-</ul>
-{% endif %}
-
-{% if not add_break %}
+  {% if not add_break %}
 {{ form.artist.errors }}
-{% endif %}
-<label for="artist">Artist</label>
+  {% endif %}
+        <label for="artist">Artist</label>
 {{ form.artist }}
 {{ form.artist_key }}
 
-{% if not add_break %}
+  {% if not add_break %}
 {{ form.song.errors }}
-{% endif %}
-<label for="song">Song Title</label>
+  {% endif %}
+        <label for="song">Song Title</label>
 {{ form.song }}
 {{ form.song_key }}
 
-{% if not add_break %}
+  {% if not add_break %}
 {{ form.album.errors }}
-{% endif %}
-<label for="album">Album</label>
+  {% endif %}
+        <label for="album">Album</label>
 {{ form.album }}
 {{ form.album_key }}
 
-{% if not add_break %}
+  {% if not add_break %}
 {{ form.label.errors }}
-{% endif %}
-<label for="label">Label</label>
+  {% endif %}
+        <label for="label">Label</label>
 {{ form.label }}
-
-<label for="category">Category</label>
-<div class="category">
-<div class="tracks_heavy_rotation">{{ form.is_heavy_rotation }} Heavy rotation</div>
-<div class="tracks_light_rotation">{{ form.is_light_rotation }} Light rotation</div><br/>
-<div class="tracks_local_current">{{ form.is_local_current }} Local current</div>
-<div class="tracks_local_classic">{{ form.is_local_classic }} Local classic</div>
-</div>
-
-{% if not add_break %}
+        <label for="category">Category</label>
+        <div class="category">
+          <div class="tracks_heavy_rotation">{{ form.is_heavy_rotation }} Heavy rotation</div>
+          <div class="tracks_light_rotation">{{ form.is_light_rotation }} Light rotation</div><br/>
+          <div class="tracks_local_current">{{ form.is_local_current }} Local current</div>
+          <div class="tracks_local_classic">{{ form.is_local_classic }} Local classic</div>
+        </div>
+  {% if not add_break %}
 {{ form.song_notes.errors }}
-{% endif %}
-<label for="song_notes">Song Notes</label>
+  {% endif %}
+        <label for="song_notes">Song Notes</label>
 {{ form.song_notes }}
 
-<input type="submit" class="button" name="submit" value="Submit" />
-<input type="submit" class="button" name="submit" value="Add Break" />
+        <input type="submit" class="button" name="submit" value="Submit" />
+        <input type="submit" class="button" name="submit" value="Add Break" />
 <!--<input type="submit" class="button" name="populate" value="Fill form via Traktor" />-->
 
-<ul>
-    <li><a id="lookup-on-musicbrainz" href="http://musicbrainz.org/search/textsearch.html" target="_blank">Look this song or album up on MusicBrainz</a></li>
-    <li><a id="lookup-album-on-google" href="http://google.com/search" target="_blank">Search for this album on Google</a></li>
-    <li><a id="pronounce-artist" href="http://google.com/search" target="_blank">See how to pronounce artist name</a></li>
-</ul>
+        <ul>
+          <li><a id="lookup-on-musicbrainz" href="http://musicbrainz.org/search/textsearch.html" target="_blank">Look this song or album up on MusicBrainz</a></li>
+          <li><a id="lookup-album-on-google" href="http://google.com/search" target="_blank">Search for this album on Google</a></li>
+          <li><a id="pronounce-artist" href="http://google.com/search" target="_blank">See how to pronounce artist name</a></li>
+        </ul>
+      </fieldset>
+    </form>
+  </div> <!-- end form column -->
 
-</fieldset>
-</form>
-
-</div> <!-- end form column -->
-<div id="playlist-column"> <!-- playlist column -->
-
-<input name="id_allow_receive" id="id_allow_receive" type="checkbox"/>Allow receiving from DJ database
-
-<div class="tracks_played">
+  <div id="playlist-column"> <!-- playlist column -->
+    <input name="id_allow_receive" id="id_allow_receive" type="checkbox" checked="true"/> Allow receiving from DJ database
+    <div class="tracks_played">
 Tracks played since {{ last_dt|date:"P" }}:<br/>
-  <div class="tracks_heavy_rotation" title="Heavy Rotation">{{ quotas.heavy_rotation_played }} / {{ quotas.heavy_rotation_target }}</div>
-  <div class="tracks_light_rotation" title="Light Rotation">{{ quotas.light_rotation_played }} / {{ quotas.light_rotation_target }}</div>
-  <div class="tracks_local_current" title="Local Current">{{ quotas.local_current_played }} / {{ quotas.local_current_target }}</div>
-  <div class="tracks_local_classic" title="Local Classic">{{ quotas.local_classic_played }} / {{ quotas.local_classic_target }}</div>
-</div>
+      <div class="tracks_heavy_rotation" title="Heavy Rotation">{{ quotas.heavy_rotation_played }} / {{ quotas.heavy_rotation_target }}</div>
+      <div class="tracks_light_rotation" title="Light Rotation">{{ quotas.light_rotation_played }} / {{ quotas.light_rotation_target }}</div>
+      <div class="tracks_local_current" title="Local Current">{{ quotas.local_current_played }} / {{ quotas.local_current_target }}</div>
+      <div class="tracks_local_classic" title="Local Classic">{{ quotas.local_classic_played }} / {{ quotas.local_classic_target }}</div>
+    </div>
 
-<h2>Artist &bull; Song Title &bull; Album &bull; Label</h2>
+    <h2>Artist &bull; Song Title &bull; Album &bull; Label</h2>
 
-{% if playlist_events %}
-{% for event in playlist_events %}
-
-    {% if event.is_break %}
-
-        <p class="break">Break</p>
-    
-    {% else %}
-    
-        <div class="song-info {% if event.is_new %}new{% endif %}"> <!-- song information container -->
-        <p class="time">{{ event.established_display|time:"g:i A" }}</p>
-
-      {% if 'heavy_rotation' in event.categories %}
-<div class="tracks_heavy_rotation">Heavy Rotation</div>
-      {% endif %}
-      {% if 'light_rotation' in event.categories %}
-<div class="tracks_light_rotation">Light Rotation</div>
-      {% endif %}
-      {% if 'local_current' in event.categories %}
-<div class="tracks_local_current">Local Current</div>
-      {% endif %}
-      {% if 'local_classic' in event.categories %}
-<div class="tracks_local_classic">Local Classic</div>
-      {% endif %}
-
-        <p><span class="artist">{{ event.artist_name }}</span> 
-            &bull; <span class="song">{{ event.track_title }}</span> 
-            &bull; <span class="album">{{ event.album_title_display }}</span>
-            &bull; <span class="label">{{ event.label_display }}</span>
-    
-        </p>
-        {% if event.notes %}
-        <p class="notes"><strong>Notes:</strong> {{ event.notes }}</p>
+  {% if playlist_events %}
+    {% for event in playlist_events %}
+      {% if event.is_break %}
+    <p class="break">Break</p>  
+      {% else %}
+    <div class="song-info {% if event.is_new %}new{% endif %}"> <!-- song information container -->
+      <p class="time">{{ event.established_display|time:"g:i A" }}</p>
+        {% if 'heavy_rotation' in event.categories %}
+      <div class="tracks_heavy_rotation">Heavy Rotation</div>
         {% endif %}
+        {% if 'light_rotation' in event.categories %}
+      <div class="tracks_light_rotation">Light Rotation</div>
+        {% endif %}
+        {% if 'local_current' in event.categories %}
+      <div class="tracks_local_current">Local Current</div>
+        {% endif %}
+        {% if 'local_classic' in event.categories %}
+      <div class="tracks_local_classic">Local Classic</div>
+        {% endif %}
+
+      <p>
+        <span class="artist">{{ event.artist_name }}</span> 
+        &bull; <span class="song">{{ event.track_title }}</span> 
+        &bull; <span class="album">{{ event.album_title_display }}</span>
+        &bull; <span class="label">{{ event.label_display }}</span>
+      </p>
+
+        {% if event.notes %}
+      <p class="notes"><strong>Notes:</strong> {{ event.notes }}</p>
+        {% endif %}
+
         {% ifequal event.selector.key user.key %}
-        <p class="playlist-event-management">
-            <a title="Delete this entry" href="{% url playlists_delete_event event.key %}">[delete]</a>
-        </p>
+      <p class="playlist-event-management">
+        <a title="Delete this entry" href="{% url playlists_delete_event event.key %}">[delete]</a>
+      </p>
         {% endifequal %}
-        </div>
-
-    {% endif %}
-
-{% endfor %}
-{% else %}
-<p>No tracks have been played within the last three hours.</p>
-{% endif %}
-
+    </div>
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    <p>No tracks have been played within the last three hours.</p>
+  {% endif %}
 
 {# <div class="song-info"> <!-- song information container --> #}
 {# <p class="time">1:12 PM</p> #}
@@ -183,8 +169,8 @@ Tracks played since {{ last_dt|date:"P" }}:<br/>
 {# <p><span class="artist">Portishead</span> &bull; <span class="song">Hunter</span> &bull; <span class="album">Silence</span> &bull; <span class="label">Mercury</span></p> #}
 {# </div> #}
 
-<p class="links"><a href="http://chirpradio.org/">CHIRPradio.org</a> &bull; <a href="http://chicagoindieradio.org/">CHIRP Website</a></p>
-
-</div> <!-- end playlist column -->
+    <p class="links"><a href="http://chirpradio.org/">CHIRPradio.org</a> &bull; <a href="http://chicagoindieradio.org/">CHIRP Website</a></p>
+  </div> <!-- end playlist column -->
 </div> <!-- end site wrapper -->    
 {% endblock %}
+

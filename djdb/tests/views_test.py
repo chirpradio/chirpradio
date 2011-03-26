@@ -906,10 +906,6 @@ class CrateViewsTestCase(TestCase):
 
         # Get user.
         self.user = models.User.all().filter('email =', 'test@test.com')[0]
-        
-        # Create a crate.
-        self.crate = models.Crate(user=self.user)
-        self.crate.put()
      
         # Create an artist.
         self.artist = models.Artist(name='Artist')
@@ -935,79 +931,427 @@ class CrateViewsTestCase(TestCase):
         
     def tearDown(self):
         # Remove test data.
-        self.crate.delete()
         self.track.delete()
         self.album.delete()
         self.artist.delete()
         self.user.delete()
-         
+       
+    def _add_crate_items(self, crate_key=None):
+        # Create a default crate.
+        response = self.client.get('/djdb/crate')
+
+        # Add items to default crate.
+        if crate_key is None:
+            vars = {'artist':'Artist',
+                    'album': 'Album',
+                    'track': 'Track',
+                    'label': 'Label',
+                    'notes': 'Notes',
+                    'is_heavy_rotation': True,
+                    'is_local_current': True}
+            self.client.post('/djdb/crate/add_item', vars)
+            vars = {'item_key': self.artist.key()}
+            self.client.get('/djdb/crate/add_item', vars)
+            vars = {'item_key': self.album.key()}
+            self.client.get('/djdb/crate/add_item', vars)
+            vars = {'item_key': self.track.key()}
+            self.client.get('/djdb/crate/add_item', vars)
+
+        # Add items to named crate.
+        else:
+            vars = {'artist':'Artist',
+                    'album': 'Album',
+                    'track': 'Track',
+                    'label': 'Label',
+                    'notes': 'Notes',
+                    'is_heavy_rotation': True,
+                    'is_local_current': True}
+            self.client.post('/djdb/crate/%s/add_item' % crate_key, vars)
+            vars = {'item_key': self.artist.key()}
+            self.client.get('/djdb/crate/%s/add_item' % crate_key, vars)
+            vars = {'item_key': self.album.key()}
+            self.client.get('/djdb/crate/%s/add_item' % crate_key, vars)
+            vars = {'item_key': self.track.key()}
+            self.client.get('/djdb/crate/%s/add_item' % crate_key, vars)
+  
     def test_crate_page(self):
         response = self.client.get('/djdb/crate')
         self.assertEqual(response.status_code, 200)
+
+        # Check if a default crate was created.
+        crates = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", True).fetch(1)
+        self.assertEqual(len(crates), 1)
         
-    def _add_crate_items(self):
+    def test_new_crate(self):
+        # Create a default crate.
+        self.client.get('/djdb/crate')
+
+        vars = {'new_crate': True}
+        response = self.client.post('/djdb/crate', vars)
+        self.assertEqual(response.status_code, 302)
+        
+        crates = models.Crate.all().filter("user =", self.user).fetch(2)
+        self.assertEqual(len(crates), 2)
+
+    def test_add_freeform_crate_item_default(self):
+        # Create a default crate.
+        self.client.get('/djdb/crate')
+
+        # Test adding to default crate.
         vars = {'artist':'Artist',
                 'album': 'Album',
                 'track': 'Track',
                 'label': 'Label',
-                'notes': 'Notes'}
+                'notes': 'Notes',
+                'is_heavy_rotation': True,
+                'is_local_current': True}
         response = self.client.post('/djdb/crate/add_item', vars)
         self.assertEqual(response.status_code, 200)
-        
-        # Test get (adding existing artist, album, and track).
-        vars = {'item_key': self.artist.key()}
-        response = self.client.get('/djdb/crate/add_item', vars)
-        self.assertEqual(response.status_code, 200)
 
-        vars = {'item_key': self.album.key()}
-        response = self.client.get('/djdb/crate/add_item', vars)
-        self.assertEqual(response.status_code, 200)
+        crates = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", True).fetch(1)
+        self.assertEqual(len(crates), 1)
 
-        vars = {'item_key': self.track.key()}
-        response = self.client.get('/djdb/crate/add_item', vars)
-        self.assertEqual(response.status_code, 200)
-
-    def test_crate_add_items(self):
-        self._add_crate_items()
-        crate = models.Crate.all().filter("user =", self.user).fetch(1)[0]
-        crate_item = db.get(crate.items[0])
+        crate_item = db.get(crates[0].items[0])
         self.assertEqual(crate_item.artist, 'Artist')
         self.assertEqual(crate_item.album, 'Album')
         self.assertEqual(crate_item.track, 'Track')
         self.assertEqual(crate_item.label, 'Label')
         self.assertEqual(crate_item.notes, 'Notes')
-        
-        self.assertEqual(crate.items[1], self.artist.key())
-        self.assertEqual(crate.items[2], self.album.key())
-        self.assertEqual(crate.items[3], self.track.key())
-        
-        self.assertEqual(crate.order, [1, 2, 3, 4])
+        self.assertEqual(crate_item.categories, [models.HEAVY_ROTATION_TAG,
+                                                 models.LOCAL_CURRENT_TAG])
 
-    def test_crate_reorder(self):
+    def test_add_freeform_crate_item_named(self):
+        # Create a default crate.
+        self.client.get('/djdb/crate')
+
+        # Create a new crate.
+        vars = {'new_crate': True}
+        self.client.post('/djdb/crate', vars)
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+
+        # Test adding to named crate.
+        vars = {'artist':'Artist',
+                'album': 'Album',
+                'track': 'Track',
+                'label': 'Label',
+                'notes': 'Notes',
+                'is_heavy_rotation': True,
+                'is_local_current': True}
+        response = self.client.post('/djdb/crate/%s/add_item' % crate2.key(), vars)
+        self.assertEqual(response.status_code, 200)
+
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+        crate_item = db.get(crate2.items[0])
+        self.assertEqual(crate_item.artist, 'Artist')
+        self.assertEqual(crate_item.album, 'Album')
+        self.assertEqual(crate_item.track, 'Track')
+        self.assertEqual(crate_item.label, 'Label')
+        self.assertEqual(crate_item.notes, 'Notes')
+        self.assertEqual(crate_item.categories, [models.HEAVY_ROTATION_TAG,
+                                                 models.LOCAL_CURRENT_TAG])
+
+    def test_add_existing_crate_items_default(self):
+        # Create a default crate.
+        self.client.get('/djdb/crate')
+
+        # Test adding artist to default crate.
+        vars = {'item_key': self.artist.key()}
+        response = self.client.get('/djdb/crate/add_item', vars)
+        self.assertEqual(response.status_code, 200)
+        
+        # Test adding existing album to default crate.
+        vars = {'item_key': self.album.key()}
+        response = self.client.get('/djdb/crate/add_item', vars)
+        self.assertEqual(response.status_code, 200)
+
+        # Test adding existing track to default crate.
+        vars = {'item_key': self.track.key()}
+        response = self.client.get('/djdb/crate/add_item', vars)
+        self.assertEqual(response.status_code, 200)
+
+        crate = models.Crate.all().filter("user =", self.user) \
+                                  .filter("is_default =", True).fetch(1)[0]
+        self.assertEqual(crate.items[0], self.artist.key())
+        self.assertEqual(crate.items[1], self.album.key())
+        self.assertEqual(crate.items[2], self.track.key())
+        self.assertEqual(crate.order, [1, 2, 3])
+
+    def test_add_existing_crate_items_named(self):
+        # Create a default crate.
+        self.client.get('/djdb/crate')
+
+        # Create a new crate.
+        vars = {'new_crate': True}
+        self.client.post('/djdb/crate', vars)
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+
+        # Test adding artist to named crate.
+        vars = {'item_key': self.artist.key()}
+        response = self.client.get('/djdb/crate/%s/add_item' % crate2.key(), vars)
+        self.assertEqual(response.status_code, 200)
+        
+        # Test adding existing album to named crate.
+        vars = {'item_key': self.album.key()}
+        response = self.client.get('/djdb/crate/%s/add_item' % crate2.key(), vars)
+        self.assertEqual(response.status_code, 200)
+
+        # Test adding existing track to named crate.
+        vars = {'item_key': self.track.key()}
+        response = self.client.get('/djdb/crate/%s/add_item' % crate2.key(), vars)
+        self.assertEqual(response.status_code, 200)
+
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+        self.assertEqual(crate2.items[0], self.artist.key())
+        self.assertEqual(crate2.items[1], self.album.key())
+        self.assertEqual(crate2.items[2], self.track.key())
+        self.assertEqual(crate2.order, [1, 2, 3])
+        
+    def test_reorder_crate_default(self):
         self._add_crate_items()
+
+        # Test reordering default crate.
         vars = {'item[]': [4, 1, 2, 3]}
         response = self.client.get('/djdb/crate/reorder', vars)
         self.assertEqual(response.status_code, 200)
         
-        crate = models.Crate.all().filter("user =", self.user).fetch(1)[0]
+        crate = models.Crate.all().filter("user =", self.user) \
+                                  .filter("is_default =", True).fetch(1)[0]
         self.assertEqual(crate.order, [4, 1, 2, 3])
 
         response = self.client.get('/djdb/crate')
-        crate = models.Crate.all().filter("user =", self.user).fetch(1)[0]
+        crate = models.Crate.all().filter("user =", self.user) \
+                                  .filter("is_default =", True).fetch(1)[0]
         self.assertEqual(crate.items[0], self.track.key())
         self.assertEqual(crate.items[1].kind(), 'CrateItem')
         self.assertEqual(crate.items[2], self.artist.key())
         self.assertEqual(crate.items[3], self.album.key())
         self.assertEqual(crate.order, [1, 2, 3, 4])
         
-    def test_crate_remove_item(self):
+    def test_reorder_crate_named(self):
+        # Create a default crate.
+        self.client.get('/djdb/crate')
+
+        # Create a new crate.
+        vars = {'new_crate': True}
+        self.client.post('/djdb/crate', vars)
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+
+        # Test reorder named crate.
+        self._add_crate_items(crate2.key())
+        vars = {'item[]': [4, 1, 2, 3]}
+        response = self.client.get('/djdb/crate/%s/reorder' % crate2.key(), vars)
+        self.assertEqual(response.status_code, 200)
+        
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+        self.assertEqual(crate2.order, [4, 1, 2, 3])
+
+        response = self.client.get('/djdb/crate/%s' % crate2.key())
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+        self.assertEqual(crate2.items[0], self.track.key())
+        self.assertEqual(crate2.items[1].kind(), 'CrateItem')
+        self.assertEqual(crate2.items[2], self.artist.key())
+        self.assertEqual(crate2.items[3], self.album.key())
+        self.assertEqual(crate2.order, [1, 2, 3, 4])
+
+    def test_remove_crate_items_default(self):
         self._add_crate_items()
+
+        # Test removing existing item from default crate.
         vars = {'item_key': self.album.key()}
         response = self.client.get('/djdb/crate/remove_item', vars)
         self.assertEqual(response.status_code, 200)
         
-        crate = models.Crate.all().filter("user =", self.user).fetch(1)[0]
+        crate = models.Crate.all().filter("user =", self.user) \
+                                  .filter("is_default =", True).fetch(1)[0]
         self.assertEqual(crate.items[0].kind(), 'CrateItem')
         self.assertEqual(crate.items[1], self.artist.key())
         self.assertEqual(crate.items[2], self.track.key())
         self.assertEqual(crate.order, [1, 2, 3])
+
+        # Test removing freeform crate item from default crate.
+        vars = {'item_key': crate.items[0]}
+        response = self.client.get('/djdb/crate/remove_item', vars)
+        self.assertEqual(response.status_code, 200)
+
+        crate = models.Crate.all().filter("user =", self.user) \
+                                  .filter("is_default =", True).fetch(1)[0]
+        self.assertEqual(crate.items[0], self.artist.key())
+        self.assertEqual(crate.items[1], self.track.key())
+        self.assertEqual(crate.order, [1, 2])
+
+        crate_items = models.CrateItem.all().fetch(999)
+        self.assertEqual(len(crate_items), 0)
+
+    def test_remove_crate_items_named(self):
+        # Create a default crate.
+        self.client.get('/djdb/crate')
+
+        # Create a new crate.
+        vars2 = {'new_crate': True}
+        self.client.post('/djdb/crate', vars2)
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+        self._add_crate_items(crate2.key())
+
+        # Test removing existing item from named crate.
+        vars = {'item_key': self.album.key()}
+        response = self.client.get('/djdb/crate/%s/remove_item' % crate2.key(), vars)
+        self.assertEqual(response.status_code, 200)
+        
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+        self.assertEqual(crate2.items[0].kind(), 'CrateItem')
+        self.assertEqual(crate2.items[1], self.artist.key())
+        self.assertEqual(crate2.items[2], self.track.key())
+        self.assertEqual(crate2.order, [1, 2, 3])
+
+        # Test removing freeform crate item from named crate.
+        vars = {'item_key': crate2.items[0]}
+        response = self.client.get('/djdb/crate/%s/remove_item' % crate2.key(), vars)
+        self.assertEqual(response.status_code, 200)
+
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+        self.assertEqual(crate2.items[0], self.artist.key())
+        self.assertEqual(crate2.items[1], self.track.key())
+        self.assertEqual(crate2.order, [1, 2])
+
+        crate_items = models.CrateItem.all().fetch(999)
+        self.assertEqual(len(crate_items), 0)
+
+    def test_rename_crate_default(self):        
+        # Create a default crate.
+        self.client.get('/djdb/crate')
+
+        # Test renaming default crate.
+        crate = models.Crate.all().filter("user =", self.user) \
+                                  .filter("is_default =", True).fetch(1)[0]
+        vars = {'crates': crate.key(),
+                'name': 'Main',
+                'save_crate': True}
+        response = self.client.post('/djdb/crate', vars)
+        self.assertEqual(response.status_code, 200)
+        
+        crate = models.Crate.all().filter("user =", self.user) \
+                                  .filter("is_default =", True).fetch(1)[0]
+        self.assertEqual(crate.name, 'Main')
+
+    def test_rename_crate_named(self):        
+        # Create a default crate.
+        self.client.get('/djdb/crate')
+
+        # Create a new crate.
+        vars2 = {'new_crate': True}
+        self.client.post('/djdb/crate', vars2)
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+
+        # Test renaming named crate.
+        vars = {'crates': crate2.key(),
+                'name': 'Main',
+                'save_crate': True}
+        response = self.client.post('/djdb/crate/%s' % crate2.key(), vars)
+        self.assertEqual(response.status_code, 200)
+        
+        crate = models.Crate.all().filter("user =", self.user) \
+                                  .filter("is_default =", False).fetch(1)[0]
+        self.assertEqual(crate.name, 'Main')
+
+    def test_set_default_crate(self):
+        # Create a default crate.
+        self.client.get('/djdb/crate')
+        crate1 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", True).fetch(1)[0]
+
+        # Create a new crate.
+        vars = {'new_crate': True}
+        self.client.post('/djdb/crate', vars)
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+
+        # Set second crate to default.
+        vars = {'crates': crate2.key(),
+                'is_default': True,
+                'save_crate': True}
+        response = self.client.post('/djdb/crate/%s' % crate2.key(), vars)
+        self.assertEqual(response.status_code, 200)
+
+        crate1new = models.Crate.all().filter("user =", self.user) \
+                                      .filter("is_default =", True).fetch(1)[0]
+        self.assertEqual(crate1new.key(), crate2.key())
+
+        crate2new = models.Crate.all().filter("user =", self.user) \
+                                      .filter("is_default =", False).fetch(1)[0]
+        self.assertEqual(crate2new.key(), crate1.key())
+        
+    def test_remove_crate(self):
+        # Create a default crate.
+        self.client.get('/djdb/crate')
+        crate1 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", True).fetch(1)[0]
+
+        # Create a new crate.
+        vars = {'new_crate': True}
+        self.client.post('/djdb/crate', vars)
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+
+        # Test removing a crate.
+        vars = {'crates': crate2.key(),
+                'remove_crate': True}
+        response = self.client.post('/djdb/crate/%s' % crate2.key(), vars)
+        self.assertEqual(response.status_code, 302)
+
+        crates = models.Crate.all().filter("user =", self.user).fetch(999)
+        self.assertEqual(len(crates), 1)
+        self.assertEqual(crates[0].key(), crate1.key())
+
+    def test_remove_all_crate_items_default(self):
+        self._add_crate_items()
+
+        # Test removing all crate items from default crate.
+        vars = {'remove_all_crate_items': True}
+        response = self.client.post('/djdb/crate', vars)
+        self.assertEqual(response.status_code, 200)
+
+        crate = models.Crate.all().filter("user =", self.user) \
+                                  .filter("is_default =", True).fetch(1)[0]
+        self.assertEqual(crate.items, [])
+        self.assertEqual(crate.order, [])
+
+        crate_items = models.CrateItem.all().fetch(999)
+        self.assertEqual(len(crate_items), 0)
+
+    def test_remove_all_crate_items_named(self):
+        # Create a default crate.
+        self.client.get('/djdb/crate')
+
+        # Create a new crate.
+        vars = {'new_crate': True}
+        self.client.post('/djdb/crate', vars)
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+        self._add_crate_items(crate2.key())
+
+        # Test removing all crate items from default crate.
+        vars = {'remove_all_crate_items': True}
+        response = self.client.post('/djdb/crate/%s' % crate2.key(), vars)
+        self.assertEqual(response.status_code, 200)
+
+        crate2 = models.Crate.all().filter("user =", self.user) \
+                                   .filter("is_default =", False).fetch(1)[0]
+        self.assertEqual(crate2.items, [])
+        self.assertEqual(crate2.order, [])
+
+        crate_items = models.CrateItem.all().fetch(999)
+        self.assertEqual(len(crate_items), 0)
+

@@ -22,6 +22,7 @@ from django import forms
 from django.utils.translation import ugettext_lazy as _
 from djdb import models
 from common.autoretry import AutoRetry
+from google.appengine.ext import db
 
 ALBUM_CATEGORY_CHOICES = [["", ""]]
 ALBUM_CATEGORY_CHOICES += zip(models.ALBUM_CATEGORIES,
@@ -95,4 +96,28 @@ class CrateForm(forms.Form):
     notes = forms.CharField(required=False,
                             label=_("Song Notes"),
                             widget=forms.Textarea(attrs={'class':'text'}))
+
+class CrateItemsForm(forms.Form):
+    crates = forms.ChoiceField(required=True, label=_("Select crate"))
+    name = forms.CharField(required=False, label=_("Name"))
+    is_default = forms.BooleanField(required=False, label=_("Default crate"))
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user')
+        super(CrateItemsForm, self).__init__(*args, **kwargs)
+
+        crates_field = []
+        crates = AutoRetry(models.Crate.all().filter("user =", user)).fetch(999)
+        for crate in crates:
+            if crate.name is None or crate.name == '':
+                name = "<No name>"
+            else:
+                name = crate.name
+            if crate.is_default:
+                name += " (default)"
+            crates_field.append((crate.key(), name))
+        self.fields['crates'].choices = crates_field
+
+        if 'is_default' in args[0] and args[0]['is_default']:
+            self.fields['is_default'].widget.attrs['disabled'] = True
 
