@@ -18,7 +18,7 @@
 # See main.py for that.
 
 from appengine_django import InstallAppengineHelperForDjango
-InstallAppengineHelperForDjango()
+InstallAppengineHelperForDjango('1.2')
 
 # Superimpose the contents of the django-extras tree onto the django
 # module's namespace.
