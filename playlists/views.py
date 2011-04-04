@@ -217,7 +217,7 @@ def _get_entity_attr(entity, attr, *getattr_args):
         else:
             return getattr(entity, attr)
     except datastore_errors.Error, exc:
-        if str(exc) == 'ReferenceProperty failed to be resolved':
+        if str(exc).startswith('ReferenceProperty failed to be resolved'):
             log.warning("Could not resolve reference property %r on %r at %s" % (
                                                             attr, entity, entity.key()))
             return '__bad_reference__'
@@ -241,15 +241,7 @@ def query_group_by_track_key(from_date, to_date):
     def item_key(item):
         key_parts = []
         for key in fields:
-            try:
-                stub = as_encoded_str(_get_entity_attr(item, key, ''))
-            except datastore_errors.Error, exc:
-                if str(exc) == 'ReferenceProperty failed to be resolved':
-                    log.warning("Could not resolve reference property %r on %r at %r" % (
-                                                                    key, item, item.key()))
-                    stub = '__bad_reference__'
-                else:
-                    raise
+            stub = as_encoded_str(_get_entity_attr(item, key, ''))
                     
             if stub is None:
                 # for existing None-type attributes
