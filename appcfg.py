@@ -3,18 +3,10 @@
 import os
 import sys
 
+# installs app engine django
+import main
+
 def main(argv):
-    from appengine_django import InstallAppengineHelperForDjango
-    InstallAppengineHelperForDjango('1.2')
-
-    # Superimpose the contents of the django-extras tree onto the django
-    # module's namespace.
-    import django
-    django.__path__.append('django-extras')
-
-    # Pull in CHIRP's monkey-patching of Django
-    from django import _monkey_patch
-
     if 'DJANGO_SETTINGS_MODULE' not in os.environ:
         try:
             import settings # Assumed to be in the same directory.
