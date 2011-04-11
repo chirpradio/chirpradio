@@ -11,7 +11,7 @@ def startup_appengine(gae_path='/usr/local/google_appengine', clear_datastore=Fa
     sys.path.append(chirp_root)
     
     from appengine_django import InstallAppengineHelperForDjango
-    InstallAppengineHelperForDjango()
+    InstallAppengineHelperForDjango('1.2')
 
     # Superimpose the contents of the django-extras tree onto the django
     # module's namespace.
