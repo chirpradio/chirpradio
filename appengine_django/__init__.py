@@ -153,6 +153,8 @@ def LoadDjango(version=None):
 
   # If we have set a version explicitly, force that
   if version:
+    for k in [k for k in sys.modules if k.startswith('django')]:
+      del sys.modules[k]
     use_library('django', version)
     return
 
