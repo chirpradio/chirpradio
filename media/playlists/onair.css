@@ -259,6 +259,11 @@ button.off {
     float: right;
 }
 .spot ul.controls li {
+    list-style: none;
+    float: right;
+}
+.spot ul.controls li a {
+    display: block;
     background-color: #ffcb8d;
     border: 5px solid #ffcb8d;
     -moz-border-radius: 3px;
@@ -266,10 +271,6 @@ button.off {
     border-radius: 3px;
     padding: 0;
     margin-left: 5px;
-    list-style: none;
-    float: right;
-}
-.spot ul.controls li a {
     color: #666666;
     font-size: 1.1em;
 }
