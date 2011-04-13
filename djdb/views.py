@@ -514,21 +514,25 @@ def track_search(request):
     if len(artists):
         if len(artists) == 1:
             artist = artists[0]
-            if request.GET.get('track'):
-                kw = dict(artist=artist.get('artist_object'),
-                          artist_key=artist.get('artist_key'))
-                for data in _search_artist_tracks(**kw):
+            kw = dict(artist=artist.get('artist_object'),
+                      artist_key=artist.get('artist_key'))
+            for data in _search_artist_tracks(**kw):
+                d = {'artist': artist['artist'],
+                     'artist_key': artist['artist_key'],
+                     'track': data['track'],
+                     'track_key': data['track_key'],
+                     'track_tags': data['track_tags'],
+                     'album': data['album'],
+                     'album_key': data['album_key'],
+                     'label': data['label']}
+                if request.GET.get('track'):
                     # Do a substring search within tracks:
                     t = request.GET['track']
                     if _searchable(t) in _searchable(data['track']):
-                        matches.append({'artist': artist['artist'],
-                                        'artist_key': artist['artist_key'],
-                                        'track': data['track'],
-                                        'track_key': data['track_key'],
-                                        'track_tags': data['track_tags'],
-                                        'album': data['album'],
-                                        'album_key': data['album_key'],
-                                        'label': data['label']})
+                        matches.append(d)
+                else:
+                    matches.append(d)
+
         for artist in artists:
             matches.append({'artist': artist['artist'],
                             'artist_key': artist['artist_key']})
