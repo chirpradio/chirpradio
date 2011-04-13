@@ -18,7 +18,7 @@
 """URLs for the DJ Database."""
 
 from django.conf import settings
-from django.conf.urls.defaults import patterns
+from django.conf.urls.defaults import patterns, url
 from djdb import models
 
 
@@ -53,6 +53,10 @@ urlpatterns = patterns(
 
     # Artist search for jquery.autocomplete
     (r'artist/search\.txt', 'djdb.views.artist_search_for_autocomplete'),
+
+    # More flexible autocomplete search
+    url(r'track/search\.json', 'djdb.views.track_search',
+        name='djdb.views.track_search'),
     
     # Album information page
     (r'album/(.*)/info', 'djdb.views.album_info_page'),

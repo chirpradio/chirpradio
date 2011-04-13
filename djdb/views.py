@@ -18,8 +18,9 @@
 """Views for the DJ Database."""
 
 import logging
+import re
 
-from google.appengine.api import datastore_errors
+from google.appengine.api import datastore_errors, memcache
 from google.appengine.ext import db
 from django import forms
 from django import http
@@ -30,6 +31,7 @@ from auth import roles
 from common import dbconfig, sanitize_html, pager
 from common.autoretry import AutoRetry
 from common.time_util import chicago_now
+from common.utilities import as_json
 from djdb import models
 from djdb import search
 from djdb import review
@@ -451,6 +453,87 @@ def label_search_for_autocomplete(request):
     for label in unique_labels:
         response.write("%s\n" % label)
     return response
+
+
+_unsearchable_chars = re.compile(r'[^a-zA-Z ]')
+
+def _searchable(s):
+    """A search-friendly version of s without punctuation, etc."""
+    return _unsearchable_chars.sub('', s).lower()
+
+
+def _search_artist_tracks(artist=None, artist_key=None):
+    assert artist or artist_key, 'Incorrect arguments'
+    tracks = []
+    ak = artist_key or artist.key()
+    key = '_search_artist_tracks.%s' % ak
+    try:
+        cached = memcache.get(key)
+    except:
+        cached = None
+        log.exception('getting from memcache')
+
+    if cached:
+        tracks = cached
+    else:
+        if not artist:
+            artist = models.Artist.get(artist_key)
+        albums = list(db.Query(models.Album, keys_only=True)
+                      .filter('album_artist =', artist))
+        q = models.Track.all().filter('album IN', albums).order('title')
+        for t in q:
+            tracks.append({'track': t.title,
+                           'track_key': str(t.key()),
+                           'track_tags': t.current_tags,
+                           'album': t.album.title,
+                           'album_key': str(t.album.key()),
+                           'label': t.album.label})
+        try:
+            memcache.set(key, tracks, time=60 * 4)
+        except:
+            log.exception('setting memcache')
+    return tracks
+
+
+@as_json
+def track_search(request):
+    matches = []
+    artists = []
+    if request.GET.get('artist_key'):
+        artists.append({'artist': request.GET['artist'],
+                        'artist_key': request.GET['artist_key']})
+    elif request.GET.get('artist'):
+        if len(request.GET['artist']) >= 3:
+            results = _get_matches_for_partial_entity_search(
+                                                request.GET['artist'],
+                                                'Artist')
+            for artist in results:
+                artists.append({'artist': artist.pretty_name,
+                                'artist_key': str(artist.key()),
+                                'artist_object': artist})
+    if len(artists):
+        if len(artists) == 1:
+            artist = artists[0]
+            if request.GET.get('track'):
+                kw = dict(artist=artist.get('artist_object'),
+                          artist_key=artist.get('artist_key'))
+                for data in _search_artist_tracks(**kw):
+                    # Do a substring search within tracks:
+                    t = request.GET['track']
+                    if _searchable(t) in _searchable(data['track']):
+                        matches.append({'artist': artist['artist'],
+                                        'artist_key': artist['artist_key'],
+                                        'track': data['track'],
+                                        'track_key': data['track_key'],
+                                        'track_tags': data['track_tags'],
+                                        'album': data['album'],
+                                        'album_key': data['album_key'],
+                                        'label': data['label']})
+        for artist in artists:
+            matches.append({'artist': artist['artist'],
+                            'artist_key': artist['artist_key']})
+    return {'matches': matches}
+
 
 @require_role(roles.MUSIC_DIRECTOR)
 def update_albums(request) :
