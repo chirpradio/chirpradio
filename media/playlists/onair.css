@@ -297,3 +297,22 @@ button.off {
     font-size: 2em;
     border: 1px solid #000000;
 }
+
+#freeform-autocomplete {
+    display: none;
+}
+
+#freeform-autocomplete ul {
+    background-color: rgba(255, 255, 255, 0.9);
+    position: absolute;
+    margin: 5px 0 0 0;
+    padding: 0;
+}
+
+#freeform-autocomplete ul li {
+    list-style: none;
+    color: #000;
+    padding: 0.4em;
+    font-size: 1.2em;
+    border-bottom: 1px solid #fff;
+}

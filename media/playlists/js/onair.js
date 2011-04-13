@@ -144,6 +144,8 @@ onair.init = function() {
 
     $('#new-track').bind('play', onair.playTrack);
     $('#new-track').bind('queue', onair.queueTrack);
+
+    onair.initAutocomplete();
 };
 
 onair.initTrackInput = function() {
@@ -200,6 +202,60 @@ onair.initTrackInput = function() {
     $('#new-track .track-value').bind('freeform', function(e, data) {
         var target = $(this), key = $(this).attr('id');
         target.children('.value').text(data[key] || '');
+    });
+};
+
+onair.initAutocomplete = function() {
+    var autocomplete,
+        querying = false,
+        timeout,
+        xhr,
+        queued;
+    $('#new-track').bind('freeform', function(e, data) {
+        if (querying) {
+            queued = data;
+        } else {
+            clearTimeout(timeout);
+            timeout = setTimeout(function() {
+                querying = false;
+            }, 2000);
+            querying = true;
+            autocomplete = setTimeout(function() {
+                var onComplete = function() {
+                    querying = false;
+                    if (queued) {
+                        queued = null;
+                        xhr = onair.doAutocomplete(data, onComplete);
+                    }
+                };
+                xhr = onair.doAutocomplete(data, onComplete);
+            }, 100);
+        }
+    });
+};
+
+onair.doAutocomplete = function(typedData, onComplete) {
+    return $.ajax({
+        url: $('#new-track').attr('data-autocomplete-url'),
+        type: 'GET',
+        data: {'artist': typedData.artist || '',
+               'artist_key': '',
+               'track': typedData.song || ''},
+        cache: true,
+        dataType: 'json',
+        success: function(data, textStatus, jqXHR) {
+            var $ul = $('#freeform-autocomplete ul');
+            $('#freeform-autocomplete').show();
+            $ul.empty();
+            $.each(data.matches, function(i, m) {
+                var txt = m.artist;
+                if (m.track) {
+                    txt += '/ ' + m.track + ' / ' + m.album + ' / ' + (m.label || '');
+                }
+                $ul.append('<li>' + txt + '</li>');
+            });
+            onComplete();
+        }
     });
 };
 

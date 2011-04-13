@@ -36,11 +36,16 @@
     		    <button class="offair on" type="submit">Off Air</button>
     	    </div>
   	    </div>
-        <div id="new-track">
+        <div id="new-track" data-autocomplete-url="{% url djdb.views.track_search %}">
           <form id="new-track-form">
             <div id="freeform-entry">
               <div id="faux-input">
                 <input name="freeform" autocomplete="off" id="new-track-freeform" />
+                <div id="freeform-autocomplete">
+                  <div id="freeform-autocomplete-wrapper">
+                    <ul></ul>
+                  </div>
+                </div>
               </div>
               <button id="play-new-track" type="submit">Play</button>
               <button id="queue-new-track" type="submit">Queue</button>
