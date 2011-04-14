@@ -38,6 +38,9 @@
   	    </div>
         <div id="new-track" data-autocomplete-url="{% url djdb.views.track_search %}">
           <form id="new-track-form">
+            <div id="freeform-hint">
+              Artist / Song / Album / Label
+            </div>
             <div id="freeform-entry">
               <div id="faux-input">
                 <input name="freeform" autocomplete="off" id="new-track-freeform" />

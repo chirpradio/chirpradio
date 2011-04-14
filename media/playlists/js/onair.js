@@ -21,13 +21,31 @@ onair.adjustSpotText = function(spot, dir) {
     }
 };
 
-onair.emptyFreeformInput = function() {
-    $('#new-track-freeform').addClass('freeform-default');
-    $('#new-track-freeform').val('Format: Artist / Song / Album / Label');
-    $('#new-track-freeform').one('focus', function(e) {
-        $(this).val('');
-        $(this).removeClass('freeform-default');
+onair.changeTrackData = function(data) {
+    var newVal = '',
+        props = ['artist', 'song', 'album', 'label'],
+        count = 0;
+    $.each(props, function(i, prop) {
+        if (data[prop]) {
+            newVal += data[prop] + ' / ';
+            count += 1;
+        }
     });
+    var finished = count == props.length;
+    $('#new-track-freeform').val(newVal);
+    onair.enteredTrackData = data;
+    if (!finished) {
+        $('#new-track-freeform').focus();
+    }
+};
+
+onair.emptyFreeformInput = function() {
+    // $('#new-track-freeform').addClass('freeform-default');
+    // $('#new-track-freeform').val('Format: Artist / Song / Album / Label');
+    // $('#new-track-freeform').one('focus', function(e) {
+    //     $(this).val('');
+    //     $(this).removeClass('freeform-default');
+    // });
 };
 
 onair._id = 0;
@@ -156,7 +174,7 @@ onair.initTrackInput = function() {
             onair.emptyFreeformInput();
         }
     });
-    $('#new-track-freeform').bind('keyup', function(e) {
+    $('#new-track-freeform').bind('keydown', function(e) {
         var target = $(e.target);
         if (keyWatch) {
             clearTimeout(keyWatch);
@@ -193,27 +211,72 @@ onair.initTrackInput = function() {
                     }
                 }
             }
+            if (data.artist == onair.enteredTrackData.artist) {
+                data.artist_key = onair.enteredTrackData.artist_key;
+            }
             onair.enteredTrackData = data;
-            $('#new-track').trigger('freeform', [onair.enteredTrackData]);
+            $('#new-track').trigger('freeform', [e.which,
+                                                 onair.enteredTrackData]);
         }, 100);
     });
 
-    $('#new-track').bind('freeform', function(e, data) {
-        $('#new-track .track-value').each(function(i, e) {
-            var target = $(e),
-                key = $(e).attr('id');
-            target.children('.value').text(data[key] || '');
-        })
-    });
+    // $('#new-track').bind('freeform', function(e, keyCode, data) {
+    //     // Set up mirroring in form fields (if rendered on the page)
+    //     $('#new-track .track-value').each(function(i, e) {
+    //         var target = $(e),
+    //             key = $(e).attr('id');
+    //         target.children('.value').text(data[key] || '');
+    //     })
+    // });
+
+    $('#new-track-freeform').focus();
+};
+
+onair.keys = {
+    LEFT: 37,
+    RIGHT: 39,
+    UP: 38,
+    DOWN: 40,
+    DELETE: 8,
+    TAB: 9,
+    COMMAND: 224,
+    CONTROL: 17,
+    OPTION: 18
 };
 
 onair.initAutocomplete = function() {
     var autocomplete,
         querying = false,
         timeout,
-        xhr,
-        queued;
-    $('#new-track').bind('freeform', function(e, data) {
+        queued,
+        completer = $('#new-track').onairAutocomp();
+
+    $('#new-track').bind('freeform', function(e, keyCode, data) {
+        switch (keyCode) {
+            case onair.keys.LEFT:
+            case onair.keys.RIGHT:
+            case onair.keys.OPTION:
+            case onair.keys.CONTROL:
+            case onair.keys.COMMAND:
+                return;
+                break;
+            case onair.keys.UP:
+                completer.moveUp();
+                return;
+                break;
+            case onair.keys.DOWN:
+                completer.moveDown();
+                return;
+                break;
+            case onair.keys.TAB:
+                completer.selectCurrent();
+                // e.stopPropagation();
+                // e.preventDefault();
+                return;
+                break;
+            default:
+                break;
+        }
         if (querying) {
             queued = data;
         } else {
@@ -226,37 +289,12 @@ onair.initAutocomplete = function() {
                 var onComplete = function() {
                     querying = false;
                     if (queued) {
+                        completer.query(queued, onComplete);
                         queued = null;
-                        xhr = onair.doAutocomplete(data, onComplete);
                     }
                 };
-                xhr = onair.doAutocomplete(data, onComplete);
-            }, 100);
-        }
-    });
-};
-
-onair.doAutocomplete = function(typedData, onComplete) {
-    return $.ajax({
-        url: $('#new-track').attr('data-autocomplete-url'),
-        type: 'GET',
-        data: {'artist': typedData.artist || '',
-               'artist_key': '',
-               'track': typedData.song || ''},
-        cache: true,
-        dataType: 'json',
-        success: function(data, textStatus, jqXHR) {
-            var $ul = $('#freeform-autocomplete ul');
-            $('#freeform-autocomplete').show();
-            $ul.empty();
-            $.each(data.matches, function(i, m) {
-                var txt = m.artist;
-                if (m.track) {
-                    txt += '/ ' + m.track + ' / ' + m.album + ' / ' + (m.label || '');
-                }
-                $ul.append('<li>' + txt + '</li>');
-            });
-            onComplete();
+                completer.query(data, onComplete);
+            }, 600);
         }
     });
 };
@@ -344,4 +382,103 @@ onair.setTrackData = function(d, data) {
 
 onair.scrollToTop = function() {
     $('html,body').animate({scrollTop: 0}, 50);
+};
+
+$.fn.onairAutocomp = function() {
+    if (typeof this._onairAC === 'undefined') {
+        this._onairAC = new onair.Autocomp(this);
+    }
+    return this._onairAC;
+};
+
+onair.Autocomp = function(el) {
+    this.$el = $(el);
+    this.$ul = $('#freeform-autocomplete ul', this.$el);
+    this.url = this.$el.attr('data-autocomplete-url');
+    this.reset();
+};
+
+onair.Autocomp.prototype.hide = function() {
+    $('#freeform-autocomplete', this.$el).hide();
+};
+
+onair.Autocomp.prototype.loadMatches = function(matches) {
+    var that = this;
+    that.reset();
+    that.show();
+    that.numMatches = matches.length;
+    $.each(matches, function(id, m) {
+        var txt = m.artist;
+        that.data[id] = m;
+        if (m.song) {
+            txt += ' / ' + m.song + ' / ' + m.album;
+        }
+        if (m.label) {
+            txt += ' / ' + m.label;
+        }
+        that.$ul.append('<li id="' + id + '">' + txt + '</li>');
+    });
+};
+
+onair.Autocomp.prototype.move = function(dir) {
+    var that = this,
+        next = that.selected + dir;
+    if (that.selected > -1) {
+        $('li:eq(' + that.selected + ')', that.$el).removeClass('selected');
+    }
+    if (next >= that.numMatches) {
+        next = that.numMatches-1;
+    }
+    else if (next < 0) {
+        next = 0;
+    }
+    $('li:eq(' + next + ')', that.$el).addClass('selected');
+    that.selected = next;
+}
+
+onair.Autocomp.prototype.moveDown = function() {
+    return this.move(1);
+};
+
+onair.Autocomp.prototype.moveUp = function() {
+    return this.move(-1);
+};
+
+onair.Autocomp.prototype.query = function(typedData, onComplete) {
+    var that = this;
+    return $.ajax({
+        url: that.url,
+        type: 'GET',
+        data: {'artist': typedData.artist || '',
+               'artist_key': typedData.artist_key || '',
+               'song': typedData.song || ''},
+        cache: true,
+        dataType: 'json',
+        success: function(data, textStatus, jqXHR) {
+            that.loadMatches(data.matches);
+            onComplete();
+        }
+    });
+};
+
+onair.Autocomp.prototype.reset = function() {
+    var that = this;
+    that.$ul.empty();
+    that.selected = -1;
+    that.numMatches = 0;
+    that.data = [];
+};
+
+onair.Autocomp.prototype.selectCurrent = function() {
+    var that = this,
+        current = that.selected;
+    if (that.selected < 0) {
+        current = 0;
+    }
+    onair.changeTrackData(that.data[current]);
+    that.hide();
+};
+
+onair.Autocomp.prototype.show = function() {
+    $('#freeform-autocomplete', this.$el).show();
 };
