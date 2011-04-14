@@ -51,14 +51,26 @@ urlpatterns = patterns(
     (r'^update_albums$', 'djdb.views.update_albums'),
     (r'artist/.*/update', 'djdb.views.update_albums'),
 
+    # Un/Revoke an artist.
+    (r'artist/(.*)/revoke', 'djdb.views.artist_revoke'),
+    (r'artist/(.*)/unrevoke', 'djdb.views.artist_unrevoke'),
+
     # Artist search for jquery.autocomplete
     (r'artist/search\.txt', 'djdb.views.artist_search_for_autocomplete'),
     
     # Album information page
     (r'album/(.*)/info', 'djdb.views.album_info_page'),
 
+    # Un/Revoke an album.
+    (r'album/(.*)/revoke', 'djdb.views.album_revoke'),
+    (r'album/(.*)/unrevoke', 'djdb.views.album_unrevoke'),
+
     # Update tracks.
     (r'album/(.*)/update', 'djdb.views.update_tracks'),
+
+    # Un/Revoke track.
+    (r'track/(.*)/revoke', 'djdb.views.track_revoke'),
+    (r'track/(.*)/unrevoke', 'djdb.views.track_unrevoke'),
 
     # Album reviews.
     (r'album/(.*)/new_review', 'djdb.views.album_edit_review'),

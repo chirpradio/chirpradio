@@ -40,6 +40,11 @@ DAY_CHOICES = zip(days, days)
 years = range(2009, datetime.now().year + 1)
 YEAR_CHOICES = zip(years, years)
 
+SORT_BY_CHOICES = [['', '-'],
+                   ['artist', 'artist'],
+                   ['album', 'album'],
+                   ['track', 'track'],
+                   ['duration', 'duration']]
 
 class PartialAlbumForm(forms.Form):
     pronunciation = forms.CharField(required=False,
@@ -101,6 +106,7 @@ class CrateItemsForm(forms.Form):
     crates = forms.ChoiceField(required=True, label=_("Select crate"))
     name = forms.CharField(required=False, label=_("Name"))
     is_default = forms.BooleanField(required=False, label=_("Default crate"))
+    sort_by = forms.ChoiceField(required=False, choices=SORT_BY_CHOICES)
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user')

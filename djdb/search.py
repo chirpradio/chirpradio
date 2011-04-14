@@ -619,7 +619,7 @@ def fetch_keys_for_query_string(query_str, entity_kind=None):
     return all_matches
 
 
-def load_and_segment_keys(fetched_keys):
+def load_and_segment_keys(fetched_keys, include_revoked=False):
     """Convert a series of datastore keys into a dict of lists of entities.
 
     Args:
@@ -632,7 +632,7 @@ def load_and_segment_keys(fetched_keys):
     """
     segmented = {}
     for entity in AutoRetry(db).get(fetched_keys):
-        if entity and not getattr(entity, "revoked", False):
+        if entity and (include_revoked or not getattr(entity, "revoked", False)):
             by_kind = segmented.get(entity.kind())
             if by_kind is None:
                 by_kind = segmented[entity.kind()] = []
@@ -728,7 +728,7 @@ def _enforce_results_limit_on_matches(segmented_matches, max_num_results):
     
 
 def simple_music_search(query_str, max_num_results=None, entity_kind=None,
-                        reviewed=False, user_key=None):
+                        reviewed=False, user_key=None, include_revoked=False):
     """A simple free-form search well-suited for the music library.
 
     Args:
@@ -742,6 +742,7 @@ def simple_music_search(query_str, max_num_results=None, entity_kind=None,
         albums that have been reviewed.
       user_key: If set, only return items containing reviews by the
         specified user.
+      include_revoked: Whether to include revoked items in the search results.
 
     Returns:
       A dict mapping object types to lists of entities.
@@ -767,7 +768,7 @@ def simple_music_search(query_str, max_num_results=None, entity_kind=None,
 
     # Fetch all of the specified keys from the datastore and construct a
     # segmented dict of matches.
-    segmented_matches = load_and_segment_keys(keys_to_fetch)
+    segmented_matches = load_and_segment_keys(keys_to_fetch, include_revoked)
 
     # If necessary, filter out unreviewed matches.
     if reviewed:

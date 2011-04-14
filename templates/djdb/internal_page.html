@@ -30,7 +30,15 @@
       </form>
     </div>
   </div>
+  {% if artist.revoked %}
+  <div id="content" class="revoked">
+  {% else %}
+    {% if album.revoked %}
+  <div id="content" class="revoked">
+    {% else %}
   <div id="content">
+    {% endif %}
+  {% endif %}
     {% if title %}
     <h1>
       {% autoescape off %}

@@ -67,7 +67,8 @@ Starts with: [
   <input id="id_user" name="user"/>
   <input id="id_user_key" type="hidden" name="user_key"/>
 </form>
-<a class="open_search_help" href="">Help with searching...</a>
+<a href="">Advanced</a>
+| <a class="open_search_help" href="">Help with searching...</a>
 <div class="search_help" style="display: none">
 <p>
 [ <a class="close_search_help" href="">Close</a> ]
@@ -83,13 +84,13 @@ Our query language is very simple. Here are some illustrative examples:
 
 <p>
 <ol>
-  <li>"foo bar" means "find all entities whose text contains both the terms "foo" and "bar".</li><br/>
+  <li>"foo bar" means find all entities whose text contains both the terms "foo" and "bar".</li><br/>
   
-<li>"-foo" means "exclude all entities whose text contains the term "foo".</li><br/>
-  <li>"foo*" means "find all entities whose text contains a term starting with the prefix "foo".</li><br/>
-  <li>"field:blah" means "find all entities whose given field contains the term "blah". The field may be one of the following: name, title, year, or tag.</li><br/>
-  <li>"field:blah*" means "find all entities whose given field conains a term starting with the prefix "blah".</li><br/>
-  <li>"year:1970-1979" means "find all entities whose given field (e.g., year) falls within the range "1970" to "1979".</li>
+<li>"-foo" means exclude all entities whose text contains the term "foo".</li><br/>
+  <li>"foo*" means find all entities whose text contains a term starting with the prefix "foo".</li><br/>
+  <li>"field:blah" means find all entities whose given field contains the term "blah". The field may be one of the following: name, title, year, or tag.</li><br/>
+  <li>"field:blah*" means find all entities whose given field conains a term starting with the prefix "blah".</li><br/>
+  <li>"field:start-end" means find all entities whose given field (e.g., year) falls within the range "start" to "end".</li>
 </ol>
 </p>
 
@@ -111,7 +112,11 @@ matching artist{{ query_results.Artist|pluralize }}</i><br/>
   {% if query_results.Artist %}
 <table>
     {% for artist in query_results.Artist %}
+      {% if artist.revoked %}
+  <tr class="revoked">
+      {% else %}
   <tr>
+      {% endif %}
     <td><a href="{{ artist.url }}">{{ artist.pretty_name }}</a></td>
     <td>{{ artist.num_albums }} album{{ artist.num_albums|pluralize }}</td>
     <td>
@@ -121,6 +126,15 @@ matching artist{{ query_results.Artist|pluralize }}</i><br/>
       <a href="/djdb/crate/add_item?response_page=landing&item_key={{ artist.key }}&query={{ query_str }}"><img src="/media/common/img/add.png" alt="Add Artist to Crate" title="Add Artist to Crate"/></a>
       {% endifincrate %}
     </td>
+      {% if user.is_music_director %}
+      <td>
+        {% if artist.revoked %}
+        <a href="/djdb/artist/{{ artist.name }}/unrevoke?response_page=landing&query={{ query_str }}"> <img src="/media/common/img/unrevoke_icon.png" alt="Unrevoke artist"/></a>
+        {% else %}
+        <a href="/djdb/artist/{{ artist.name }}/revoke?response_page=landing&query={{ query_str }}"> <img src="/media/common/img/revoke_icon.png" alt="Revoke artist"/></a>
+        {% endif %}
+      </td>
+      {% endif %}
   </tr>
     {% endfor %}
 </table>
@@ -154,7 +168,11 @@ Mark/Unmark selected as:
     {% endif %}
   <table>
     {% for album in query_results.Album %}
+      {% if album.revoked %}
+    <tr class="revoked">
+      {% else %}
     <tr>
+      {% endif %}
       {% if user.is_music_director %}
       <td>
         <input type="checkbox" class="checkbox
@@ -198,6 +216,17 @@ Mark/Unmark selected as:
         <a href="/djdb/crate/add_item?response_page=landing&item_key={{ album.key }}&query={{ query_str }}"><img src="/media/common/img/add.png" alt="Add Album to Crate" title="Add Album to Crate"/></a>
       {% endifincrate %}
       </td>
+      {% if user.is_music_director %}
+      <td>
+        {% if not album.is_compilation and not album.album_artist.revoked %}
+          {% if album.revoked %}
+        <a href="/djdb/album/{{ album.album_id }}/unrevoke?response_page=landing&query={{ query_str }}"> <img src="/media/common/img/unrevoke_icon.png" alt="Unrevoke album"/></a>
+          {% else %}
+        <a href="/djdb/album/{{ album.album_id }}/revoke?response_page=landing&query={{ query_str }}"> <img src="/media/common/img/revoke_icon.png" alt="Revoke album"/></a>
+          {% endif %}
+        {% endif %}
+      </td>
+      {% endif %}
     </tr>
     {% endfor %}
   </table>
@@ -212,15 +241,19 @@ matching track{{ query_results.Track|pluralize }}</i>
   {% if query_results.Track %}
 <table>
     {% for track in query_results.Track %}
+      {% if track.revoked %}
+  <tr class="revoked">
+      {% else %}
   <tr>
+      {% endif %}
     <td>{{ track.title }}</td>
     <td><a href="{{ track.artist_url }}">{{ track.artist_name }}</a></td>
     <td><a href="{{ track.album.url }}">{{ track.album }}</a></td>
-  {% if request.is_from_studio %}
+      {% if request.is_from_studio %}
     <td>
       <a class="send_to_playlist" href="/djdb/crate/send_to_playlist/{{ track.key }}"><img src="/media/common/img/play.png" alt="Send to Playlist" title="Send to Playlist"/></a>    
     </td>
-  {% endif %}
+      {% endif %}
     <td>
       {% ifincrate user track %}
       <a href="/djdb/crate/remove_item?response_page=landing&item_key={{ track.key }}&query={{ query_str }}"><img src="/media/common/img/remove.png" alt="Remove Track from Crate" title="Remove Track from Crate"/></a>
@@ -228,8 +261,19 @@ matching track{{ query_results.Track|pluralize }}</i>
       <a href="/djdb/crate/add_item?response_page=landing&item_key={{ track.key }}&query={{ query_str }}"><img src="/media/common/img/add.png" alt="Add Track to Crate" title="Add Track to Crate"/></a>
       {% endifincrate %}
     </td>
-    {% endfor %}
+    {% if user.is_music_director %}
+    <td>
+      {% if not track.album.revoked %}
+        {% if track.revoked %}
+      <a href="/djdb/track/{{ track.key }}/unrevoke?response_page=landing&query={{ query_str }}"> <img src="/media/common/img/unrevoke_icon.png" alt="Unrevoke track"/></a>
+        {% else %}
+      <a href="/djdb/track/{{ track.key }}/revoke?response_page=landing&query={{ query_str }}"> <img src="/media/common/img/revoke_icon.png" alt="Revoke track"/></a>
+        {% endif %}
+      {% endif %}
+    </td>
+    {% endif %}
   </tr>
+    {% endfor %}
 </table>
   {% endif %}
 {% endif %}

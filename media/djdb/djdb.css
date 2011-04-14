@@ -235,3 +235,8 @@ tr.track_list td {
   margin-bottom: 0
 }
 
+.revoked {
+  background-color: #ffdddd;
+}
+
+

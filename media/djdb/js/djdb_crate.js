@@ -44,5 +44,18 @@ $(document).ready(function() {
     $('#id_crates').change(function(e) {
         window.location = "/djdb/crate/" + $(this).attr('value');
     });
+
+    $('a.select_all').click(function() {
+        $("input.[name^='crate_item']").each(function() {
+            this.checked = true;
+        });
+        return false;
+    });		
+    $('a.select_none').click(function() {
+        $("input.[name^='crate_item']").each(function() {
+            this.checked = false;
+        });
+        return false;
+    });		
 });
 

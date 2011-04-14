@@ -33,13 +33,16 @@
     </form>
   </div>
   
+  <form id="crate_items_form" method="post" action="">
   <div id="crate-items-column">
-    <form method="post" action="">
-      {{ crate_items_form }}
+      Select crate: {{ crate_items_form.crates }}
+      Name: {{ crate_items_form.name }}
+      Default? {{ crate_items_form.is_default }}
       <input type="submit" name="save_crate" value="Save"/><br/>
       <input type="submit" name="new_crate" value="New Crate"/>
       <input type="submit" class="remove_crate" name="remove_crate" value="Remove Crate"/>
       <input type="submit" class="remove_all_crate_items" name="remove_all_crate_items" value="Remove All Items"/>      
+      <input type="submit" class="remove_selected_crate_items" name="remove_selected_crate_items" value="Remove Selected Items"/>
       <div class="warning remove_all_crate_items" style="display: none">
         Are you sure:
         <input type="submit" name="remove_all_crate_items" value="Confirm"/>
@@ -50,23 +53,18 @@
         <input type="submit" name="remove_crate" value="Confirm"/>
         <input type="submit" class="cancel" name="cancel" value="Cancel"/>
       </div>
-    </form>
 {% if crate_items %}
-    <img src="/media/common/img/artist.png"/> = Artist
-    <img src="/media/common/img/album.png"/> = Album
-    <img src="/media/common/img/track.png"/> = Track<br/>
-    <div class="categories">
-      <div class="track_heavy_rotation">★ = Heavy rotation</div>
-      <div class="track_light_rotation">◆ = Light rotation</div>
-      <div class="track_local_classic">■ = Local classic</div>
-      <div class="track_local_current">● = Local current</div>
-    </div><br/>
-
+    <br/>
+    Sort by: {{ crate_items_form.sort_by }}
+    <input type="submit" name="sort" value="Sort"/><br/>
+    Select: <a class="select_all" href="">All</a>,
+            <a class="select_none" href="select_none">None</a><br/>
     <i><b>Drag and drop items to change order.</b></i>
     <ul id="sortable">
   {% for item in crate_items %}
       <li id="item_{{ forloop.counter }}">
         <table width="100%"><tr><td>
+          <input type="checkbox" name="crate_item_{{ forloop.counter }}"/>
     {% ifequal item.kind 'Artist' %}
           <img src="/media/common/img/artist.png" alt="An artist" title="An artist"/>
           {{ item }}
@@ -101,7 +99,7 @@
             </div>
           {% endfor %}
           </div>
-        {{ item.album.album_artist }} / {{ item }} / {{ item.album }} / {{ item.album.label_display }} / {{ item.album.year_display }}
+         {{ item.duration }} {{ item.album.album_artist }} / {{ item }} / {{ item.album }} / {{ item.album.label_display }} / {{ item.album.year_display }}
           <a href="{{ item.album.url }}" alt="Go to track." title="Go to track."><img src="/media/common/img/link.png"/></a>
         {% else %}
           {% ifequal item.kind 'CrateItem' %}
@@ -137,12 +135,23 @@
       </li>
   {% endfor %}
     </ul>
+
+    <img src="/media/common/img/artist.png"/> = Artist
+    <img src="/media/common/img/album.png"/> = Album
+    <img src="/media/common/img/track.png"/> = Track<br/>
+    <div class="categories">
+      <div class="track_heavy_rotation">★ = Heavy rotation</div>
+      <div class="track_light_rotation">◆ = Light rotation</div>
+      <div class="track_local_classic">■ = Local classic</div>
+      <div class="track_local_current">● = Local current</div>
+    </div><br/>
 {% else %}
     <div id="empty_crate">
     There are no items in this crate.
     </div>
 {% endif %}
   </div>
+  </form>
 </div>
 
 {% endblock %}
