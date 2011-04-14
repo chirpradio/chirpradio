@@ -194,7 +194,7 @@ class TrackSearchTest(AutocompleteTest):
         data = self.request(reverse('djdb.views.track_search'),
                             data={'artist': 'en',
                                   'album': '',
-                                  'track': '',
+                                  'song': '',
                                   'label': ''})
         eq_(data, {'matches': []})
 
@@ -217,15 +217,15 @@ class TrackSearchTest(AutocompleteTest):
         data = self.request(reverse('djdb.views.track_search'),
                             data={'artist_key': str(self.eno.key()),
                                   'artist': 'Eno, Brian',
-                                  'track': 'spider'})
+                                  'song': 'spider'})
         match = data['matches'][0]
-        eq_(match['track'], 'Spider And I')
-        eq_(models.Track.get(match['track_key']).title, 'Spider And I')
-        eq_(match['track_tags'], [])
+        eq_(match['song'], 'Spider And I')
+        eq_(models.Track.get(match['song_key']).title, 'Spider And I')
+        eq_(match['song_tags'], [])
         eq_(match['artist'], 'Eno, Brian')
         eq_(models.Artist.get(match['artist_key']).pretty_name, 'Eno, Brian')
         eq_(match['album'], 'Another Green World')
-        eq_(models.Track.get(match['track_key']).title, 'Spider And I')
+        eq_(models.Track.get(match['song_key']).title, 'Spider And I')
         eq_(match['label'], 'Some Label')
         match = data['matches'][1]
         eq_(match['artist'], 'Eno, Brian')
@@ -235,9 +235,9 @@ class TrackSearchTest(AutocompleteTest):
             data = self.request(reverse('djdb.views.track_search'),
                                 data={'artist_key': str(self.eno.key()),
                                       'artist': 'Eno, Brian',
-                                      'track': 'spider'})
+                                      'song': 'spider'})
             match = data['matches'][0]
-            eq_(match['track'], 'Spider And I')
+            eq_(match['song'], 'Spider And I')
         request()
         eq_(memcache.get_stats()['items'], 1)
         request()

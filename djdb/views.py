@@ -482,9 +482,9 @@ def _search_artist_tracks(artist=None, artist_key=None):
                       .filter('album_artist =', artist))
         q = models.Track.all().filter('album IN', albums).order('title')
         for t in q:
-            tracks.append({'track': t.title,
-                           'track_key': str(t.key()),
-                           'track_tags': t.current_tags,
+            tracks.append({'song': t.title,
+                           'song_key': str(t.key()),
+                           'song_tags': t.current_tags,
                            'album': t.album.title,
                            'album_key': str(t.album.key()),
                            'label': t.album.label})
@@ -519,16 +519,16 @@ def track_search(request):
             for data in _search_artist_tracks(**kw):
                 d = {'artist': artist['artist'],
                      'artist_key': artist['artist_key'],
-                     'track': data['track'],
-                     'track_key': data['track_key'],
-                     'track_tags': data['track_tags'],
+                     'song': data['song'],
+                     'song_key': data['song_key'],
+                     'song_tags': data['song_tags'],
                      'album': data['album'],
                      'album_key': data['album_key'],
                      'label': data['label']}
-                if request.GET.get('track'):
+                if request.GET.get('song'):
                     # Do a substring search within tracks:
-                    t = request.GET['track']
-                    if _searchable(t) in _searchable(data['track']):
+                    t = request.GET['song']
+                    if _searchable(t) in _searchable(data['song']):
                         matches.append(d)
                 else:
                     matches.append(d)
