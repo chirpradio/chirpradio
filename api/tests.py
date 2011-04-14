@@ -17,6 +17,7 @@
 ###
 
 from __future__ import with_statement
+import urllib
 import unittest
 
 from django.utils import simplejson
@@ -162,6 +163,38 @@ class TestTrackPlayingNow(APITest):
         self.play_stevie_song('You And I (We Can Conquer The World)')
         data = self.request('/api/current_playlist')['now_playing']
         eq_(data['track'], 'You And I (We Can Conquer The World)')
+
+    def test_jsonp_function(self):
+        r = self.client.get('/api/current_playlist?%s'
+                            % urllib.urlencode({'jsonp': 'parseRequest'}))
+        eq_(r.status, '200 OK')
+        assert r.body.startswith('parseRequest({'), (
+                                            'Unexpected: %r' % r.body)
+        assert r.body.endswith('});'), ('Unexpected: %r' % r.body)
+        eq_(r.headers['content-type'], 'application/x-javascript')
+
+    def test_jsonp_obj(self):
+        r = self.client.get('/api/current_playlist?%s'
+                            % urllib.urlencode({'jsonp': 'obj.parseRequest'}))
+        eq_(r.status, '200 OK')
+        assert r.body.startswith('obj.parseRequest({'), (
+                                            'Unexpected: %r' % r.body)
+
+    def test_jsonp_dict(self):
+        r = self.client.get('/api/current_playlist?%s'
+                            % urllib.urlencode(
+                                {'jsonp': 'obj["parseRequest"]'}))
+        eq_(r.status, '200 OK')
+        assert r.body.startswith('obj["parseRequest"]({'), (
+                                            'Unexpected: %r' % r.body)
+
+    def test_jsonp_unicode(self):
+        r = self.client.get('/api/current_playlist?%s' % urllib.urlencode(
+                            {'jsonp': u'ivan_kristi\u0107'.encode('utf8')}))
+        eq_(r.status, '200 OK')
+        body = r.body.decode('utf8')
+        assert body.startswith(u'ivan_kristi\u0107({'), (
+                                            'Unexpected: %r' % body)
 
 
 class TestRecentlyPlayedTracks(APITest):

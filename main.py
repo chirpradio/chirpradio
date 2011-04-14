@@ -26,7 +26,7 @@ import sys
 import logging
 
 from appengine_django import InstallAppengineHelperForDjango
-InstallAppengineHelperForDjango()
+InstallAppengineHelperForDjango('1.2')
 
 # Import the part of Django that we use here.
 import django.core.handlers.wsgi

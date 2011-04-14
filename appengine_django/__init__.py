@@ -153,6 +153,8 @@ def LoadDjango(version=None):
 
   # If we have set a version explicitly, force that
   if version:
+    for k in [k for k in sys.modules if k.startswith('django')]:
+      del sys.modules[k]
     use_library('django', version)
     return
 
@@ -168,7 +170,7 @@ def LoadDjango(version=None):
 
   # If we aren't loading from a zip or local copy then try for whichever
   # supported version is highest and installed
-  for check_version in ('1.1', '1.0'):
+  for check_version in ('1.2', '1.1', '1.0'):
     try:
       use_library('django', check_version)
       return

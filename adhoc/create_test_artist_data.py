@@ -6,20 +6,12 @@ import os
 import optparse
 
 chirp_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(chirp_root)
 
-def startup_appengine(gae_path='/usr/local/google_appengine', clear_datastore=False):        
-    sys.path.append(chirp_root)
-    
-    from appengine_django import InstallAppengineHelperForDjango
-    InstallAppengineHelperForDjango()
+# installs app engine django
+import main
 
-    # Superimpose the contents of the django-extras tree onto the django
-    # module's namespace.
-    import django
-    django.__path__.append('django-extras')
-
-    # Pull in CHIRP's monkey-patching of Django
-    from django import _monkey_patch
+def startup_appengine(gae_path='/usr/local/google_appengine', clear_datastore=False):
     
     # set up app engine paths
     sys.path.append(gae_path)

@@ -44,9 +44,13 @@ class ApiHandler(webapp.RequestHandler):
             if not data:
                 data = self.get_json()
                 memcache.set(self.cache_key, data)
-        # Default encoding is UTF-8
         self.check_data(data)
-        self.response.out.write(simplejson.dumps(data))
+        # Default encoding is UTF-8
+        js = simplejson.dumps(data)
+        if self.request.str_GET.get('jsonp'):
+            self.response.headers['Content-Type'] = 'application/x-javascript'
+            js = '%s(%s);' % (self.request.str_GET['jsonp'], js)
+        self.response.out.write(js)
 
     def check_data(self, data):
         """Optional hook to do something with the view's data.

@@ -17,16 +17,8 @@
 # WARNING: This script is not run in production.
 # See main.py for that.
 
-from appengine_django import InstallAppengineHelperForDjango
-InstallAppengineHelperForDjango()
-
-# Superimpose the contents of the django-extras tree onto the django
-# module's namespace.
-import django
-django.__path__.append('django-extras')
-
-# Pull in CHIRP's monkey-patching of Django
-from django import _monkey_patch
+# installs app engine django
+import main
 
 from django.core.management import execute_manager
 try:
