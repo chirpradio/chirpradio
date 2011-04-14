@@ -194,14 +194,16 @@ onair.initTrackInput = function() {
                 }
             }
             onair.enteredTrackData = data;
-            $('#new-track .track-value').trigger('freeform',
-                                                 [onair.enteredTrackData]);
+            $('#new-track').trigger('freeform', [onair.enteredTrackData]);
         }, 100);
     });
 
-    $('#new-track .track-value').bind('freeform', function(e, data) {
-        var target = $(this), key = $(this).attr('id');
-        target.children('.value').text(data[key] || '');
+    $('#new-track').bind('freeform', function(e, data) {
+        $('#new-track .track-value').each(function(i, e) {
+            var target = $(e),
+                key = $(e).attr('id');
+            target.children('.value').text(data[key] || '');
+        })
     });
 };
 
