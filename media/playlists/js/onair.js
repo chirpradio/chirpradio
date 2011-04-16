@@ -434,7 +434,7 @@ onair.Autocomp.prototype.move = function(dir) {
     }
     $('li:eq(' + next + ')', that.$el).addClass('selected');
     that.selected = next;
-}
+};
 
 onair.Autocomp.prototype.moveDown = function() {
     return this.move(1);
