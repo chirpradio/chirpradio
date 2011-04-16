@@ -17,13 +17,13 @@
 
 """Middleware for CHIRP's authentication system."""
 
-from django import http
 import auth
 
 
 class AuthenticationMiddleware(object):
 
     def process_request(self, request):
+        from django import http  # make sure we have the right Django!
         # TODO(Kumar) think of a way to use a decorator or something to
         # grant access to non-login protected pages.
         if (request.path.startswith('/playlists/task') or
