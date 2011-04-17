@@ -53,7 +53,7 @@ $(document).ready(function() {
                 $("#id_artist").focus();
                 $("#id_artist").removeClass('freeform');
                 var error = li.extra[1];
-                if (error != "") {
+                if (error !== "") {
                     $('#played_warning').text('WARNING! ' + error);
                     $('#played_warning').slideDown("fast");
                 }
@@ -88,7 +88,7 @@ $(document).ready(function() {
                     $("#id_is_local_current").attr("checked", false);
                 }
                 var error = li.extra[2];
-                if (error != "") {
+                if (error !== "") {
                     $('#played_warning').text('WARNING! ' + error);
                     $('#played_warning').slideDown("fast");
                 }
@@ -123,7 +123,7 @@ $(document).ready(function() {
                     $("#id_is_local_current").attr("checked", false);
                 }
                 var error = li.extra[2];
-                if (error != "") {
+                if (error !== "") {
                     $('#played_warning').text('WARNING! ' + error);
                     $('#played_warning').slideDown("fast");
                 }
@@ -287,7 +287,7 @@ $(document).ready(function() {
                     }
                 }
 
-                if (error != '') {
+                if (error !== '') {
                     $('#played_warning').text('WARNING! ' + error);
                     $('#played_warning').slideDown("fast");
                 }

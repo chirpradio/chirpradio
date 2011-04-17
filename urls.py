@@ -39,7 +39,7 @@ urlpatterns = patterns(
     ('^auth/?', include('auth.urls')),
 
     # The DJ database.
-    ('^djdb/?', include('djdb.urls')),
+    ('^djdb/', include('djdb.urls')),
     
     # DJ Playlists.
     ('^playlists/', include('playlists.urls')),

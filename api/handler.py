@@ -20,7 +20,7 @@ import logging
 from google.appengine.ext import webapp
 from google.appengine.api import memcache, taskqueue
 from google.appengine.ext.webapp.util import run_wsgi_app
-from django.utils import simplejson
+import simplejson
 
 from playlists.models import ChirpBroadcast, PlaylistTrack
 from djdb import pylast

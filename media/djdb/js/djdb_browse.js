@@ -19,8 +19,8 @@ $(document).ready(function() {
         }
         else {
             params = parts[1].split('&');
-            for (var i = 0; i < params.length; i++) {
-                var nameVal = params[i].split('=');
+            for (i = 0; i < params.length; i++) {
+                nameVal = params[i].split('=');
                 if (nameVal[0] != "reviewed") {
                     if (i > 0)
                         url += '&';

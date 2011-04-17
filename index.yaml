@@ -16,6 +16,11 @@ indexes:
   - name: revoked
   - name: title
 
+- kind: Track
+  properties:
+  - name: album
+  - name: title
+
 - kind: Document
   properties:
   - name: doctype

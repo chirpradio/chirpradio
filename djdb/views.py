@@ -19,8 +19,9 @@
 
 from functools import partial
 import logging
+import re
 
-from google.appengine.api import datastore_errors
+from google.appengine.api import datastore_errors, memcache
 from google.appengine.ext import db
 from django import forms
 from django import http
@@ -31,6 +32,7 @@ from auth import roles
 from common import dbconfig, sanitize_html, pager
 from common.autoretry import AutoRetry
 from common.time_util import chicago_now
+from common.utilities import as_json
 from djdb import models
 from djdb import search
 from djdb import review
@@ -51,11 +53,12 @@ LAST_PLAYED_SECONDS = LAST_PLAYED_HOURS * 3600
 log = logging.getLogger(__name__)
 
 def fetch_activity(num=None, start_dt=None, days=None):
+    default_num = 10
     activity = []
     
     # Get recent reviews.
     if num is None:
-        num_reviews = 999
+        num_reviews = default_num
     else:
         num_reviews = num
     revs = review.fetch_recent(num_reviews, start_dt=start_dt, days=days)
@@ -80,7 +83,7 @@ def fetch_activity(num=None, start_dt=None, days=None):
     # Get recent comments.
     if num is None or len(activity) < num:
         if num is None:
-            num_comments = 999
+            num_comments = default_num
         else:
             num_comments = num - len(activity)        
         comments = comment.fetch_recent(num_comments, start_dt=start_dt, days=days)
@@ -105,14 +108,14 @@ def fetch_activity(num=None, start_dt=None, days=None):
     # Get recent tag edits.
     if num is None or len(activity) < num:
         if num is None:
-            num_tags = 999
+            num_tags = default_num
         else:
             num_tags = num - len(activity)
         tag_edits = tag_util.fetch_recent(num_tags, start_dt=start_dt, days=days)
         for tag_edit in tag_edits:
-            if tag_edit.subject.kind() == 'Album':
-                dt = tag_edit.timestamp_display.strftime('%Y-%m-%d %H:%M')
-                for tag in tag_edit.added:
+            dt = tag_edit.timestamp_display.strftime('%Y-%m-%d %H:%M')
+            for tag in tag_edit.added:
+                if tag_edit.subject.kind() == 'Track':
                     if tag == 'recommended':                    
                         item = '<a href="%s">%s / %s / %s</a> <b>recommended</b> by <a href="/djdb/user/%s">%s</a>.' % (
                             tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
@@ -241,10 +244,10 @@ def activity_page(request, ctx_vars=None):
             old_start_dt = request.POST.get('start_dt')
             if request.POST.get('next'):
                 start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d') \
-                    - timedelta(days=days)
+                    - timedelta(days=1)
             else:
                 start_dt = datetime.strptime(old_start_dt, '%Y-%m-%d') \
-                    + timedelta(days=days)
+                    + timedelta(days=1)
                 if start_dt > now:
                     start_dt = now
             form = forms.ListActivityForm({'from_month': start_dt.month,
@@ -496,6 +499,91 @@ def label_search_for_autocomplete(request):
     for label in unique_labels:
         response.write("%s\n" % label)
     return response
+
+
+_unsearchable_chars = re.compile(r'[^a-zA-Z ]')
+
+def _searchable(s):
+    """A search-friendly version of s without punctuation, etc."""
+    return _unsearchable_chars.sub('', s).lower()
+
+
+def _search_artist_tracks(artist=None, artist_key=None):
+    assert artist or artist_key, 'Incorrect arguments'
+    tracks = []
+    ak = artist_key or artist.key()
+    key = '_search_artist_tracks.%s' % ak
+    try:
+        cached = memcache.get(key)
+    except:
+        cached = None
+        log.exception('getting from memcache')
+
+    if cached:
+        tracks = cached
+    else:
+        if not artist:
+            artist = models.Artist.get(artist_key)
+        albums = list(db.Query(models.Album, keys_only=True)
+                      .filter('album_artist =', artist))
+        q = models.Track.all().filter('album IN', albums).order('title')
+        for t in q:
+            tracks.append({'song': t.title,
+                           'song_key': str(t.key()),
+                           'song_tags': t.current_tags,
+                           'album': t.album.title,
+                           'album_key': str(t.album.key()),
+                           'label': t.album.label})
+        try:
+            memcache.set(key, tracks, time=60 * 4)
+        except:
+            log.exception('setting memcache')
+    return tracks
+
+
+@as_json
+def track_search(request):
+    matches = []
+    artists = []
+    if request.GET.get('artist_key'):
+        artists.append({'artist': request.GET['artist'],
+                        'artist_key': request.GET['artist_key']})
+    elif request.GET.get('artist'):
+        if len(request.GET['artist']) >= 3:
+            results = _get_matches_for_partial_entity_search(
+                                                request.GET['artist'],
+                                                'Artist')
+            for artist in results:
+                artists.append({'artist': artist.pretty_name,
+                                'artist_key': str(artist.key()),
+                                'artist_object': artist})
+    if len(artists):
+        if len(artists) == 1:
+            artist = artists[0]
+            kw = dict(artist=artist.get('artist_object'),
+                      artist_key=artist.get('artist_key'))
+            for data in _search_artist_tracks(**kw):
+                d = {'artist': artist['artist'],
+                     'artist_key': artist['artist_key'],
+                     'song': data['song'],
+                     'song_key': data['song_key'],
+                     'song_tags': data['song_tags'],
+                     'album': data['album'],
+                     'album_key': data['album_key'],
+                     'label': data['label']}
+                if request.GET.get('song'):
+                    # Do a substring search within tracks:
+                    t = request.GET['song']
+                    if _searchable(t) in _searchable(data['song']):
+                        matches.append(d)
+                else:
+                    matches.append(d)
+
+        for artist in artists:
+            matches.append({'artist': artist['artist'],
+                            'artist_key': artist['artist_key']})
+    return {'matches': matches}
+
 
 def _update_category(item, category, user):
     if category == models.CORE_TAG:

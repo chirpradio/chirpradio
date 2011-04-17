@@ -217,6 +217,12 @@ button.off {
     height: 1.9em;
     width: 95%;
 }
+#freeform-hint {
+    font-size: 1.1em;
+    margin-bottom: 0.4em;
+    margin-left: 5px;
+    color: #898989;
+}
 #new-track .freeform-default {
     color: #a3a3a3;
 }
@@ -259,6 +265,11 @@ button.off {
     float: right;
 }
 .spot ul.controls li {
+    list-style: none;
+    float: right;
+}
+.spot ul.controls li a {
+    display: block;
     background-color: #ffcb8d;
     border: 5px solid #ffcb8d;
     -moz-border-radius: 3px;
@@ -266,10 +277,6 @@ button.off {
     border-radius: 3px;
     padding: 0;
     margin-left: 5px;
-    list-style: none;
-    float: right;
-}
-.spot ul.controls li a {
     color: #666666;
     font-size: 1.1em;
 }
@@ -295,4 +302,27 @@ button.off {
     float: right;
     font-size: 2em;
     border: 1px solid #000000;
+}
+
+#freeform-autocomplete {
+    display: none;
+}
+
+#freeform-autocomplete ul {
+    background-color: rgba(255, 255, 255, 0.8);
+    position: absolute;
+    margin: 5px 0 0 0;
+    padding: 0;
+}
+
+#freeform-autocomplete ul li {
+    list-style: none;
+    color: #000;
+    padding: 0.4em;
+    font-size: 1.2em;
+    border-bottom: 1px solid #fff;
+}
+
+#freeform-autocomplete ul li.selected {
+    background-color: #DAB1D5;
 }

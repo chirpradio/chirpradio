@@ -16,10 +16,16 @@
 ###
 
 import datetime
-from django.test import TestCase
+
 from django import http
+from django.core.urlresolvers import reverse
+from django.test import TestCase
 from django.test.client import Client
+from django.utils import simplejson
+from google.appengine.api import memcache
 from google.appengine.ext import db
+from nose.tools import eq_
+
 from djdb import models
 from djdb import search
 from auth import roles
@@ -55,7 +61,7 @@ class ViewsTestCase(TestCase):
         self.assertEqual(404, response.status_code)
 
 
-class AutocompleteViewsTestCase(TestCase):
+class AutocompleteTest(TestCase):
 
     def setUp(self):
         assert self.client.login(email="test@test.com", roles=[roles.DJ])
@@ -107,6 +113,9 @@ class AutocompleteViewsTestCase(TestCase):
         
         idx.save() # this also saves all objects
 
+
+class AutocompleteViewsTestCase(AutocompleteTest):
+
     def test_short_query_is_ignored(self):
         response = self.client.get(
             "/djdb/artist/search.txt", {'q':'en'}) # too short
@@ -117,31 +126,31 @@ class AutocompleteViewsTestCase(TestCase):
             "/djdb/artist/search.txt", {'q':'brian eno'})
         ent = models.Artist.all().filter("name =", "Eno, Brian")[0]
         self.assertEqual(response.content,
-                         "%s|%s\n" % (ent.pretty_name, ent.key()))
+                         "%s|%s|\n" % (ent.pretty_name, ent.key()))
     
     def test_artist_partial_name(self):
         response = self.client.get(
             "/djdb/artist/search.txt", {'q':'fal'}) # The Fall
         ent = models.Artist.all().filter("name =", "Fall, The")[0]
         self.assertEqual(response.content,
-                         "%s|%s\n" % (ent.pretty_name, ent.key()))
+                         "%s|%s|\n" % (ent.pretty_name, ent.key()))
     
     def test_album_full_name(self):
         response = self.client.get(
             "/djdb/album/search.txt", {'q':'another green world'})
         ent = models.Album.all().filter("title =", "Another Green World")[0]
-        self.assertEqual(response.content, "%s|%s|None\n" % (ent.title, ent.key()))
+        self.assertEqual(response.content, "%s|%s|None|\n" % (ent.title, ent.key()))
     
     def test_album_partial_name(self):
         response = self.client.get("/djdb/album/search.txt", {'q':'another'})
         ent = models.Album.all().filter("title =", "Another Green World")[0]
-        self.assertEqual(response.content, "%s|%s|None\n" % (ent.title, ent.key()))
+        self.assertEqual(response.content, "%s|%s|None|\n" % (ent.title, ent.key()))
     
     def test_track_full_name(self):
         response = self.client.get(
             "/djdb/track/search.txt", {'q':'spider and I'})
         ent = models.Track.all().filter("title =", "Spider And I")[0]
-        self.assertEqual(response.content, "%s|%s|None\n" % (ent.title, ent.key()))
+        self.assertEqual(response.content, "%s|%s|None|\n" % (ent.title, ent.key()))
     
     def test_track_full_name_by_artist(self):
         response = self.client.get(
@@ -149,7 +158,7 @@ class AutocompleteViewsTestCase(TestCase):
                                         'artist_key': self.eno.key()})
                                         
         ent = models.Track.all().filter("title =", "Spider And I")[0]
-        self.assertEqual(response.content, "%s|%s|None\n" % (ent.title, ent.key()))
+        self.assertEqual(response.content, "%s|%s|None|\n" % (ent.title, ent.key()))
     
     def test_track_full_name_by_wrong_artist(self):
         response = self.client.get(
@@ -162,13 +171,76 @@ class AutocompleteViewsTestCase(TestCase):
     def test_track_partial_name(self):
         response = self.client.get("/djdb/track/search.txt", {'q':'spid'})
         ent = models.Track.all().filter("title =", "Spider And I")[0]
-        self.assertEqual(response.content, "%s|%s|None\n" % (ent.title, ent.key()))
+        self.assertEqual(response.content, "%s|%s|None|\n" % (ent.title, ent.key()))
     
     def test_track_no_matches(self):
         # when there are no Track matches but there are Artist matches, 
         # the entity key does not get added to the matches dict
         response = self.client.get("/djdb/track/search.txt", {'q':'eno'})
         self.assertEqual(response.content, "")
+
+
+class TrackSearchTest(AutocompleteTest):
+
+    def tearDown(self):
+        assert memcache.flush_all()
+
+    def request(self, url, **kw):
+        r = self.client.get(url, **kw)
+        eq_(r.status_code, 200)
+        return simplejson.loads(r.content)
+
+    def test_short_artist_query_is_ignored(self):
+        data = self.request(reverse('djdb.views.track_search'),
+                            data={'artist': 'en',
+                                  'album': '',
+                                  'song': '',
+                                  'label': ''})
+        eq_(data, {'matches': []})
+
+    def test_artist_full_name(self):
+        data = self.request(reverse('djdb.views.track_search'),
+                            data={'artist': 'brian eno',
+                                  'artist_key': ''})
+        match = data['matches'][0]
+        eq_(match['artist'], 'Eno, Brian')
+        eq_(models.Artist.get(match['artist_key']).pretty_name, 'Eno, Brian')
+
+    def test_artist_partial_name(self):
+        data = self.request(reverse('djdb.views.track_search'),
+                            data={'artist': 'fal',
+                                  'artist_key': ''})
+        match = data['matches'][0]
+        eq_(match['artist'], 'The Fall')
+
+    def test_track_name(self):
+        data = self.request(reverse('djdb.views.track_search'),
+                            data={'artist_key': str(self.eno.key()),
+                                  'artist': 'Eno, Brian',
+                                  'song': 'spider'})
+        match = data['matches'][0]
+        eq_(match['song'], 'Spider And I')
+        eq_(models.Track.get(match['song_key']).title, 'Spider And I')
+        eq_(match['song_tags'], [])
+        eq_(match['artist'], 'Eno, Brian')
+        eq_(models.Artist.get(match['artist_key']).pretty_name, 'Eno, Brian')
+        eq_(match['album'], 'Another Green World')
+        eq_(models.Track.get(match['song_key']).title, 'Spider And I')
+        eq_(match['label'], 'Some Label')
+        match = data['matches'][1]
+        eq_(match['artist'], 'Eno, Brian')
+
+    def test_track_name_from_cache(self):
+        def request():
+            data = self.request(reverse('djdb.views.track_search'),
+                                data={'artist_key': str(self.eno.key()),
+                                      'artist': 'Eno, Brian',
+                                      'song': 'spider'})
+            match = data['matches'][0]
+            eq_(match['song'], 'Spider And I')
+        request()
+        eq_(memcache.get_stats()['items'], 1)
+        request()
 
 
 class UpdateArtistViewsTestCase(TestCase):
