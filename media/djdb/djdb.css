@@ -68,7 +68,7 @@ blockquote {
 
 #sortable { list-style-type: none; margin: 0; padding: 0; width: 100%; }
 #sortable li { list-style-type:none; margin: 0 0 -1px 0; padding: 0.2em; font-size: 1.3em; border: solid 1px}
-#sortable li span { position: relative; float: right; }
+#sortable table td { border: solid 0px; margin: 0 0 0 0; padding: 0.2em; font-size: 1.0em; }
 input.text { margin-bottom:12px; width:95%; padding: .4em; }
 fieldset { padding:0; border:0; margin-top:25px; }
 .ui-button { outline: 0; margin:0; text-decoration:none; !important; cursor:pointer; position: relative; text-align: center; }
@@ -85,6 +85,10 @@ fieldset { padding:0; border:0; margin-top:25px; }
 #crate-items-column {
   float: right;
   width: 60%;
+}
+#empty_crate {
+  border: 1px solid #000;
+  padding: 5px;
 }
 
 div.search_help {
@@ -230,4 +234,9 @@ tr.track_list td {
   padding-bottom: 0;
   margin-bottom: 0
 }
+
+.revoked {
+  background-color: #ffdddd;
+}
+
 

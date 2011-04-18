@@ -107,12 +107,16 @@ $(document).ready(function() {
                 win.document.close();
 
                 img.attr("src", "/media/common/img/play-error.png");
-                setTimeout(function() { img.attr("src", "/media/common/img/play.png"); }, 1000);
+                setTimeout(function() {
+                    img.attr("src", "/media/common/img/play.png");
+                }, 1000);
             },
             success: function(data) {
                 document.cookie = "chirp_track_to_play=" + data + "; path=/";
                 img.attr("src", "/media/common/img/play-success.png");
-                setTimeout(function() { img.attr("src", "/media/common/img/play.png"); }, 1000);
+                setTimeout(function() {
+                    img.attr("src", "/media/common/img/play.png");
+                }, 1000);
             }
         });
 

@@ -14,18 +14,22 @@ $(document).ready(function() {
     };
     
     $("#id_artist").keyup(function() {
+        $('#played_warning').slideUp("fast");
         if ($(this).val() === "")
             $(this).removeClass('freeform');
         else
             $(this).addClass('freeform');
     });
     $("#id_album").keyup(function() {
-        if ($(this).val() === "")
+        $('#played_warning').slideUp("fast");
+        if ($(this).val() === "") {
             $(this).removeClass('freeform');
+        }
         else        
             $(this).addClass('freeform');
     });
     $("#id_song").keyup(function() {
+        $('#played_warning').slideUp("fast");
         if ($(this).val() === "")
             $(this).removeClass('freeform');
         else
@@ -48,6 +52,14 @@ $(document).ready(function() {
                 $("#id_artist_key").attr("value", entity_key);
                 $("#id_artist").focus();
                 $("#id_artist").removeClass('freeform');
+                var error = li.extra[1];
+                if (error !== "") {
+                    $('#played_warning').text('WARNING! ' + error);
+                    $('#played_warning').slideDown("fast");
+                }
+                else {
+                    $('#played_warning').slideUp("fast");
+                }
             }
         }, default_opt));
     
@@ -75,6 +87,14 @@ $(document).ready(function() {
                     $("#id_is_local_classic").attr("checked", true);
                     $("#id_is_local_current").attr("checked", false);
                 }
+                var error = li.extra[2];
+                if (error !== "") {
+                    $('#played_warning').text('WARNING! ' + error);
+                    $('#played_warning').slideDown("fast");
+                }
+                else {
+                    $('#played_warning').slideUp("fast");
+                }
             }
         }, default_opt));
     
@@ -101,6 +121,14 @@ $(document).ready(function() {
                 else if (category == 'local_classic') {
                     $("#id_is_local_classic").attr("checked", true);
                     $("#id_is_local_current").attr("checked", false);
+                }
+                var error = li.extra[2];
+                if (error !== "") {
+                    $('#played_warning').text('WARNING! ' + error);
+                    $('#played_warning').slideDown("fast");
+                }
+                else {
+                    $('#played_warning').slideUp("fast");
                 }
             }
         }, default_opt));
@@ -226,6 +254,7 @@ $(document).ready(function() {
                 var label = fields[6].trim().replace(/\/\//g, '/');
                 var notes = fields[7].trim().replace(/\/\//g, '/');
                 var categories = fields[8].trim().split(',');
+                var error = fields[9].trim();
                 
                 $("#id_artist").val(artist_name);
                 $("#id_artist_key").val(artist_key);
@@ -257,6 +286,15 @@ $(document).ready(function() {
                         $("#id_is_local_current").attr("checked", false);
                     }
                 }
+
+                if (error !== '') {
+                    $('#played_warning').text('WARNING! ' + error);
+                    $('#played_warning').slideDown("fast");
+                }
+                else {
+                    $('#played_warning').slideUp("fast");
+                }
+
                 document.cookie = 'chirp_track_to_play=; path=/; expires=Thu, 01-Jan-70 00:00:01 GMT;';
             }
             setTimeout(updateSentItem, 100);

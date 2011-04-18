@@ -11,9 +11,11 @@
 
 {% block extrahead %}
 <script type="text/javascript" 
-    src="/media/common/js/jquery/jquery-1.3.1.js"></script>
+        src="/media/common/js/jquery/jquery-1.3.1.js"></script>
 <script type="text/javascript" 
-    src="/media/djdb/js/djdb.js"></script>
+        src="/media/djdb/js/djdb.js"></script>
+<script type="text/javascript" 
+        src="/media/djdb/js/djdb_browse.js"></script>
 {% endblock %}
 
 <h3>
@@ -21,91 +23,79 @@ By: [
 {% ifequal entity_kind "artist" %}
 Artist
 {% else %}
-<a href="/djdb/browse/artist/{{ start_char }}?page_size={{ page_size }}">Artist</a>
+<a href="/djdb/browse/artist/{{ start_char }}?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">Artist</a>
 {% endifequal %}
 |
 {% ifequal entity_kind "album" %}
 Album
 {% else %}
-<a href="/djdb/browse/album/{{ start_char }}?page_size={{ page_size }}">Album</a>
+<a href="/djdb/browse/album/{{ start_char }}?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">Album</a>
 {% endifequal %}
 |
 {% ifequal entity_kind "track" %}
 Track
 {% else %}
-<a href="/djdb/browse/track/{{ start_char }}?page_size={{ page_size }}">Track</a>
+<a href="/djdb/browse/track/{{ start_char }}?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">Track</a>
 {% endifequal %}
 ]
+{% ifequal reviewed None %}
+<input class="reviewed_checkbox" type="checkbox"/>
+{% else %}
+<input class="reviewed_checkbox" type="checkbox" checked="true"/>
+{% endifequal %}
+Reviewed
 <br/>
 
-{% ifequal entity_kind "album" %}
 Category: [
-  {% ifequal category None %}
+{% ifequal category None %}
 All
-  {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/{{ start_char }}?page_size={{ page_size }}">All</a>
-  {% endifequal %}
+{% else %}
+<a href="/djdb/browse/{{ entity_kind }}/{{ start_char }}?page_size={{ page_size }}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">All</a>
+{% endifequal %}
 |
-  {% for cat in categories %}
-    {% if not forloop.first %} | {% endif %}
-    {% ifequal category cat %}
+{% for cat in categories %}
+  {% if not forloop.first %} | {% endif %}
+  {% ifequal category cat %}
 {{ cat|replace:"/_/ "|capfirst }}
-    {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/{{ start_char }}?page_size={{ page_size }}&category={{ cat }}">{{ cat|replace:"/_/ "|capfirst }}</a>
-    {% endifequal %}
-  {% endfor %}
+  {% else %}
+<a href="/djdb/browse/{{ entity_kind }}/{{ start_char }}?page_size={{ page_size }}&category={{ cat }}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">{{ cat|replace:"/_/ "|capfirst }}</a>
+  {% endifequal %}
+{% endfor %}
 ]
 <br/>
-{% endifequal %}
 
 Starts with: [
   {% ifequal start_char "all" %}
 All
   {% else %}
-    {% ifnotequal category None %}
-<a href="/djdb/browse/{{ entity_kind }}/all?category={{ category }}&page_size={{ page_size }}">All</a>
-    {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/all?page_size={{ page_size }}">All</a>
-    {% endifnotequal %}
+<a href="/djdb/browse/{{ entity_kind }}/all?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">All</a>
   {% endifequal %}
 |
   {% ifequal start_char "0" %}
 0-9
   {% else %}
-    {% ifnotequal category None %}
-<a href="/djdb/browse/{{ entity_kind }}/0?category={{ category }}&page_size={{ page_size }}">0-9</a>
-    {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/0?page_size={{ page_size }}">0-9</a>
-    {% endifnotequal %}
+<a href="/djdb/browse/{{ entity_kind }}/0?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">0-9</a>
   {% endifequal %}
 |
   {% for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
     {% ifequal letter start_char %}
 {{ letter }}
     {% else %}
-      {% ifnotequal category None %}
-<a href="/djdb/browse/{{ entity_kind }}/{{ letter }}?category={{ category }}&page_size={{ page_size }}">{{ letter }}</a>
-      {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/{{ letter }}?page_size={{ page_size }}">{{ letter }}</a>
-      {% endifnotequal %}
+<a href="/djdb/browse/{{ entity_kind }}/{{ letter }}?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">{{ letter }}</a>
     {% endifequal %}
 |
   {% endfor %}
   {% ifequal start_char "other" %}
 Other
   {% else %}
-    {% ifnotequal category None %}
-<a href="/djdb/browse/{{ entity_kind }}/other?category={{ category }}&page_size={{ page_size }}">Other</a>
-    {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/other?page_size={{ page_size }}">Other</a>
-    {% endifnotequal %}
+<a href="/djdb/browse/{{ entity_kind }}/other?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">Other</a>
   {% endifequal %}
   {% ifequal entity_kind "album" %}
 |
     {% ifequal start_char "random" %}
 Random
     {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/random?page_size={{ page_size }}">Random</a>
+<a href="/djdb/browse/{{ entity_kind }}/random?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">Random</a>
     {% endifequal %}
   {% endifequal %}
 ]
@@ -154,28 +144,65 @@ Random
 
 <table>
   {% for item in items %}
+    {% if item.revoked %}
+  <tr class="revoked">
+    {% else %}
   <tr>
+    {% endif %}
+
+    <td>
+    {% for tag in item.current_tags %}
+      {% if tag in categories %}
+      <div class="track_{{ tag }}">{{ tag|replace:"/_/ "|capfirst }}</div>
+      {% endif %}
+    {% endfor %}
+    </td>
+
     {% ifequal entity_kind "artist" %}
     <td><a href="{{ item.url }}">{{ item.name }}</a></td>
     {% endifequal %}
+
     {% ifequal entity_kind "album" %}
-    <td>
-  {% for tag in item.current_tags %}
-    {% if tag in categories %}
-      <div class="track_{{ tag }}">{{ tag|replace:"/_/ "|capfirst }}</div>
-    {% endif %}
-  {% endfor %}
-    </td>
     <td><a href="{{ item.url }}">{{ item.title }}</a> / <a href="{{ item.album_artist.url }}">{{ item.album_artist }}</a></td>
     <td>
-    {% if item.num_reviews %}
+      {% if item.num_reviews %}
       {{ item.num_reviews }} review{{ item.num_reviews|pluralize }}
-    {% endif %}
+      {% endif %}
     </td>
     {% endifequal %}
+    
     {% ifequal entity_kind "track" %}
     <td>{{ item.title }} / <a href="{{ item.album.url }}">{{ item.album }}</a> / <a href="{{ item.album.album_artist.url }}">{{ item.album.album_artist }}</a></td>
     {% endifequal %}
+    {% if user.is_music_director %}
+    <td>
+      {% ifequal entity_kind "artist" %}
+        {% if item.revoked %}
+      <a href="/djdb/artist/{{ item.name }}/unrevoke?response_page=browse&start_char={{ start_char }}&page_size={{ page_size }}{% if bookmark %}&bookmark={{ bookmark }}{% endif %}" title="Unrevoke artist"> <img src="/media/common/img/unrevoke_icon.png" alt="Unrevoke artist"/></a>
+        {% else %}
+      <a href="/djdb/artist/{{ item.name }}/revoke?response_page=browse&start_char={{ start_char }}&page_size={{ page_size}}{% if bookmark %}&bookmark={{ bookmark }}{% endif %}" title="Revoke artist"> <img src="/media/common/img/revoke_icon.png" alt="Revoke artist"/></a>
+        {% endif %}
+      {% else %}
+      {% ifequal entity_kind "album" %}
+        {% if not item.is_compilation and not item.album_artist.revoked %}
+          {% if item.revoked %}
+      <a href="/djdb/album/{{ item.album_id }}/unrevoke?response_page=browse&start_char={{ start_char }}&page_size={{ page_size }}{% if category %}&category={{ category }}{% endif %}{% if bookmark %}&bookmark={{ bookmark }}{% endif %}" title="Unrevoke album"> <img src="/media/common/img/unrevoke_icon.png" alt="Unrevoke album"/></a>
+          {% else %}
+      <a href="/djdb/album/{{ item.album_id }}/revoke?response_page=browse&start_char={{ start_char }}&page_size={{ page_size }}{% if category %}&category={{ category }}{% endif %}{% if bookmark %}&bookmark={{ bookmark }}{% endif %}" title="Revoke album"> <img src="/media/common/img/revoke_icon.png" alt="Revoke album"/></a>
+          {% endif %}
+        {% endif %}
+      {% else %}
+      {% ifequal entity_kind "track" %}
+        {% if not item.album.revoked %}
+          {% if item.revoked %}
+      <a href="/djdb/track/{{ item.key }}/unrevoke?response_page=browse&start_char={{ start_char }}&page_size={{ page_size }}{% if bookmark %}&bookmark={{ bookmark }}{% endif %}" title="Unrevoke track"> <img src="/media/common/img/unrevoke_icon.png" alt="Unrevoke track"/></a>
+          {% else %}
+      <a href="/djdb/track/{{ item.key }}/revoke?response_page=browse&start_char={{ start_char }}&page_size={{ page_size }}{% if bookmark %}&bookmark={{ bookmark }}{% endif %}" title="Revoke track"> <img src="/media/common/img/revoke_icon.png" alt="Revoke track"/></a>
+          {% endif %}
+        {% endif %}
+      {% endifequal %}{% endifequal %}{% endifequal %}
+    </td>
+    {% endif %}
   </tr>
   {% endfor %}
 </table>

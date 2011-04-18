@@ -167,40 +167,52 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
 </p>
 <input type="hidden" name="mark_as"/>
 <table>
-{% if album_cover_m %}
   <tr>
-    <td rowspan="{{ tracks|length }}">
-      <a class="album_cover" href="{{ album_cover_xl }}"><img src="{{ album_cover_m }}" width="50" height="50"/></a>
-    </td>
-  </tr>
-{% endif %}
-{% for track in album.sorted_tracks %}
-  <tr class="track_list">
-    <td><input type="checkbox"
-               class="checkbox{% if track.is_explicit %} explicit{% endif %}{% if track.is_recommended %} recommended{% endif %}"
-               name="checkbox_{{ forloop.counter }}"/></td>
     <td>
-  {% if track.is_explicit %}<img height="16" width="16" src="/media/common/img/explicit_icon.png" title="Explicit lyrics"/>{% endif %}
-  {% if track.is_recommended %}<img height="16" width="16" src="/media/common/img/recommended_icon.png" title="Recommended track"/>{% endif %}
+      <table><tr><td>
+        <a class="album_cover" href="{{ album_cover_xl }}"><img src="{{ album_cover_m }}" width="50" height="50"/></a>
+      </td></tr></table>
     </td>
-    <td>{{ track.track_num }}.</td>
-    <td>{{ track.title }}
+    <td>
+      <table>
+{% for track in tracks %}
+  {% if track.revoked %}
+        <tr class="track_list revoked">
+  {% else %}
+        <tr class="track_list">
+  {% endif %}
+          <td>
+            <input type="checkbox"
+                   class="checkbox{% if track.is_explicit %} explicit{% endif %}{% if track.is_recommended %} recommended{% endif %}"
+                   name="checkbox_{{ forloop.counter }}"/>
+          </td>
+          <td>
+  {% if track.is_explicit %}
+            <img height="16" width="16" src="/media/common/img/explicit_icon.png" title="Explicit lyrics"/>
+  {% endif %}
+  {% if track.is_recommended %}
+            <img height="16" width="16" src="/media/common/img/recommended_icon.png" title="Recommended track"/>
+  {% endif %}
+          </td>
+          <td>{{ track.track_num }}.</td>
+          <td>{{ track.title }}
   {% if user.is_music_director %}
-<a href="" class="edit_track_{{ forloop.counter }}"><img src="/media/common/img/page_white_edit.png"/></a>
+            <a href="" class="edit_track_{{ forloop.counter }}"><img src="/media/common/img/page_white_edit.png"/></a>
   {% endif %}
   {% if track.pronunciation %}
-<br/><i>Pronunciation: {{ track.pronunciation }}</i>
+            <br/><i>Pronunciation: {{ track.pronunciation }}</i>
   {% endif %}
+          </td>
   {% if album.is_compilation %}
     {% if track.track_artist %}
-    <td>{{ track.track_artist }}</td>
+          <td>{{ track.track_artist }}</td>
     {% else %}
-    <td><font color="red">No track artist</font></td>
+          <td><font color="red">No track artist</font></td>
     {% endif %}
   {% endif %}
-    <td>{{ track.duration }}</td>
-    <td><small>{{ track.bit_rate_kbps }} kbps</small></td>
-    <td>
+          <td>{{ track.duration }}</td>
+          <td><small>{{ track.bit_rate_kbps }} kbps</small></td>
+          <td>
   {% for tag in track.sorted_current_tags %}
     {% ifnotequal tag 'explicit' %}
       {% ifnotequal tag 'recommended' %}
@@ -208,54 +220,70 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
       {% endifnotequal %}
     {% endifnotequal %}
   {% endfor %}
-    </td>
-    <td>
-      <a class="send_to_playlist" href="/djdb/crate/send_to_playlist/{{ track.key }}"><img src="/media/common/img/play.png" alt="Send to Playlist" title="Send to Playlist"/></a>    
-    </td>
-    <td>
+          </td>
+  {% if request.is_from_studio %}
+          <td>
+            <a class="send_to_playlist" href="/djdb/crate/send_to_playlist/{{ track.key }}"><img src="/media/common/img/play.png" alt="Send to Playlist" title="Send to Playlist"/></a>    
+          </td>
+  {% endif %}
+          <td>
   {% ifincrate user track %}
-<a href="/djdb/crate/remove_item?response_page=album&item_key={{ track.key }}"><img src="/media/common/img/remove.png" alt="Remove Track from Crate" title="Remove Track from Crate"/></a>
+            <a href="/djdb/crate/remove_item?response_page=album&item_key={{ track.key }}"><img src="/media/common/img/remove.png" alt="Remove Track from Crate" title="Remove Track from Crate"/></a>
   {% else %}
-<a href="/djdb/crate/add_item?response_page=album&item_key={{ track.key }}"><img src="/media/common/img/add.png" alt="Add Track to Crate" title="Add Track to Crate"/></a>
+            <a href="/djdb/crate/add_item?response_page=album&item_key={{ track.key }}"><img src="/media/common/img/add.png" alt="Add Track to Crate" title="Add Track to Crate"/></a>
   {% endifincrate %}
-    </td>
-  </tr>
+          </td>
   {% if user.is_music_director %}
-  <tr>
-    <td></td>
-    <td></td>
-    <td colspan="10" style="margin: 0">
-      <div class="edit_track_{{ forloop.counter }}" style="display: none">
-        <input type="hidden" name="track_key_{{ forloop.counter }}" value="{{ track.key }}"/>
-        <table>
-          <tr>
-            <td>Pronunciation:</td>
-    {% if track.pronunciation %}
-            <td><input type="input" name="pronunciation_{{ forloop.counter }}" value="{{ track.pronunciation }}"/></td>
-    {% else %}
-            <td><input type="input" name="pronunciation_{{ forloop.counter }}"/></td>
+          <td>
+    {% if not album.revoked %}
+      {% if track.revoked %}
+            <a href="/djdb/track/{{ track.key }}/unrevoke?response_page=album" title="Unrevoke track"> <img src="/media/common/img/unrevoke_icon.png" alt="Unevoke track"/></a>
+      {% else %}
+            <a href="/djdb/track/{{ track.key }}/revoke?response_page=album" title="Revoke track"> <img src="/media/common/img/revoke_icon.png" alt="Revoke track"/></a>
+      {% endif %}
     {% endif %}
-          </tr>
-          <tr>
-            <td>Track artist:</td>
-            <td>
-              <input type="hidden" name="track_artist_key_{{ forloop.counter }}" value="{{ track.track_artist.key }}"/>
-    {% if track.track_artist %}
-              <input type="input" name="track_artist_{{ forloop.counter }}" id="track_artist_key_{{ forloop.counter }}" value="{{ track.track_artist }}"/>
+  {% endif %}
+          </td>
+        </tr>
+  {% if user.is_music_director %}
+        <tr>
+          <td></td>
+          <td></td>
+          <td colspan="10" style="margin: 0">
+            <div class="edit_track_{{ forloop.counter }}" style="display: none">
+              <input type="hidden" name="track_key_{{ forloop.counter }}" value="{{ track.key }}"/>
+              <table>
+                <tr>
+                  <td>Pronunciation:</td>
+    {% if track.pronunciation %}
+                  <td><input type="input" name="pronunciation_{{ forloop.counter }}" value="{{ track.pronunciation }}"/></td>
     {% else %}
-              <input type="input" name="track_artist_{{ forloop.counter }}" id="track_artist_key_{{ forloop.counter }}"/>
+                  <td><input type="input" name="pronunciation_{{ forloop.counter }}"/></td>
+    {% endif %}
+                </tr>
+                <tr>
+                  <td>Track artist:</td>
+                  <td>
+                    <input type="hidden" name="track_artist_key_{{ forloop.counter }}" value="{{ track.track_artist.key }}"/>
+    {% if track.track_artist %}
+                    <input type="input" name="track_artist_{{ forloop.counter }}" id="track_artist_key_{{ forloop.counter }}" value="{{ track.track_artist }}"/>
+    {% else %}
+                    <input type="input" name="track_artist_{{ forloop.counter }}" id="track_artist_key_{{ forloop.counter }}"/>
     {% endif %}<br/>
-              <i>You <b>must</b> select an artist from<br/>the autocomplete list.</i>
-            </td>
-          </tr>
-        </table>
-        <input type="submit" name="update_track_{{ forloop.counter }}" value="Update Track"/>
-        <input type="submit" class="edit_track_{{ forloop.counter }}" value="Cancel"/>
-      </div>
-    </td>
-  </tr>
+                    <i>You <b>must</b> select an artist from<br/>the autocomplete list.</i>
+                  </td>
+                </tr>
+              </table>
+              <input type="submit" name="update_track_{{ forloop.counter }}" value="Update Track"/>
+              <input type="submit" class="edit_track_{{ forloop.counter }}" value="Cancel"/>
+            </div>
+          </td>
+        </tr>
   {% endif %}
 {% endfor %}
+      </table>
+    </td>
+  </tr>
 </table>
 </form>
 

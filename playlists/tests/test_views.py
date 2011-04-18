@@ -442,8 +442,8 @@ class TestPlaylistViews(PlaylistViewsTest):
 
         # print resp.content
         assert '<p class="break">Break</p>' in resp.content
-        assert '<p><span class="artist">Def Leoppard</span>' in resp.content
-        assert '<p><span class="artist">Steely Dan</span>' in resp.content
+        assert '<span class="artist">Def Leoppard</span>' in resp.content
+        assert '<span class="artist">Steely Dan</span>' in resp.content
 
 class TestPlaylistViewsWithLibrary(PlaylistViewsTest):
 
