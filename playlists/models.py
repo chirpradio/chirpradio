@@ -16,6 +16,7 @@
 ###
 
 """Datastore model for DJ Playlists."""
+import logging
 
 from google.appengine.ext.db import polymodel
 from google.appengine.api import memcache
@@ -27,6 +28,10 @@ import auth
 from djdb.models import Artist, Album, Track
 from common import time_util
 from common.autoretry import AutoRetry
+
+
+log = logging.getLogger()
+
 
 class Playlist(polymodel.PolyModel):
     """A playlist of songs.
@@ -223,7 +228,10 @@ class PlaylistTrack(PlaylistEvent):
     def put(self, *args, **kwargs):
         self.validate()
         super(PlaylistTrack, self).put(*args, **kwargs)
-        memcache.delete('api.current_track')
+        try:
+            memcache.delete('api.current_track')
+        except:
+            log.exception('IGNORED while saving playlist:')
     
     def save(self, *args, **kwargs):
         return self.put(*args, **kwargs)

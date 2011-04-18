@@ -43,7 +43,9 @@ class ApiHandler(webapp.RequestHandler):
             data = memcache.get(self.cache_key)
             if not data:
                 data = self.get_json()
-                memcache.set(self.cache_key, data)
+                # Rely on the cache but only for a minute because
+                # of the way server instances are distributed.
+                memcache.set(self.cache_key, data, time=60)
         self.check_data(data)
         # Default encoding is UTF-8
         js = simplejson.dumps(data)
@@ -86,7 +88,7 @@ class CurrentPlaylist(CachedApiHandler):
             try:
                 taskqueue.add(url='/api/_check_lastfm_links')
             except:
-                log.exception('While adding task')
+                log.exception('IGNORED while adding task')
 
     def track_as_data(self, track):
         return {
@@ -145,7 +147,7 @@ class CheckLastFMLinks(webapp.RequestHandler):
                             fm_album.get_cover_image(pylast.COVER_MEDIUM)
             except pylast.WSError:
                 # Probably album not found
-                log.exception('fetching LastFM data')
+                log.exception('IGNORED while fetching LastFM data')
             memcache.set(CurrentPlaylist.cache_key, data)
         self.response.out.write(simplejson.dumps({
             'success': True,
