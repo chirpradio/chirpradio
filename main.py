@@ -25,6 +25,8 @@ import os
 import sys
 import logging
 
+ROOT = os.path.dirname(__file__)
+
 from appengine_django import InstallAppengineHelperForDjango
 InstallAppengineHelperForDjango('1.2')
 
@@ -34,7 +36,7 @@ import django.core.handlers.wsgi
 # Map the contents of the django-extras tree into the django
 # module's namespace.
 import django
-django.__path__.append('django-extras')
+django.__path__.append(os.path.join(ROOT, 'django-extras'))
 
 # Pull in CHIRP's monkey-patching of Django
 from django import _monkey_patch
