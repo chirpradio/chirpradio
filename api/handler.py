@@ -15,6 +15,14 @@
 ### See the License for the specific language governing permissions and
 ### limitations under the License.
 ###
+
+# Installs app engine django even though the API doesn't need it.
+# This is currently a workaround to prevent Django 0.96 polluting the
+# process space that each server instance is running in.
+# See http://code.google.com/p/google-app-engine-django/issues/detail?id=191
+import main
+
+
 import logging
 
 from google.appengine.ext import webapp
