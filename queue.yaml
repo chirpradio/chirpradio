@@ -1,0 +1,21 @@
+queue:
+
+# A better default queue:
+- name: default
+  rate: 5/s
+  bucket_size: 10
+  max_concurrent_requests: 10
+  retry_parameters:
+    min_backoff_seconds: 10
+    max_backoff_seconds: 300
+    max_doublings: 0
+
+# Optimize playlist delivery for speed and fast retries:
+- name: live-site-playlists
+  rate: 20/s
+  bucket_size: 50
+  max_concurrent_requests: 20
+  retry_parameters:
+    min_backoff_seconds: 5
+    max_backoff_seconds: 100
+    max_doublings: 0

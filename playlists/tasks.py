@@ -152,13 +152,17 @@ def url_track_create(track):
     if in_dev():
         _url_track_create(track)
     else:
-        taskqueue.add(url=reverse('playlists.send_track_to_live_site'), params={'id':str(track.key())})
+        taskqueue.add(url=reverse('playlists.send_track_to_live_site'),
+                      queue_name='live-site-playlists',
+                      params={'id':str(track.key())})
 
 def url_track_delete(key):
     if in_dev():
         _url_track_delete(key)
     else:
-        taskqueue.add(url=reverse('playlists.delete_track_from_live_site'), params={'id':key})
+        taskqueue.add(url=reverse('playlists.delete_track_from_live_site'),
+                      queue_name='live-site-playlists',
+                      params={'id':key})
 
 
 
