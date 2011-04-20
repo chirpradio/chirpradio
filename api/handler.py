@@ -137,6 +137,12 @@ class CheckLastFMLinks(webapp.RequestHandler):
 
     def post(self):
         links_fetched = 0
+        if not self.request.POST.get('id'):
+            # This is a temporary workaround to free up the task queue. It
+            # seems that old tasks are stuck in an error-retry loop
+            log.error('id not found in POST')
+            self.response.out.write(simplejson.dumps({'success': False}))
+            return 
         track = PlaylistTrack.get(self.request.POST['id'])
         try:
             fm = pylast.get_lastfm_network(
