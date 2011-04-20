@@ -51,8 +51,6 @@ class ApiHandler(webapp.RequestHandler):
             data = memcache.get(self.cache_key)
             if not data:
                 data = self.get_json()
-                # Rely on the cache but only for a minute because
-                # of the way server instances are distributed.
                 memcache.set(self.cache_key, data, time=60)
         self.check_data(data)
         # Default encoding is UTF-8
@@ -81,22 +79,18 @@ def iter_tracks(data):
         yield track
 
 
-def iter_lastfm_links(data):
-    for track in iter_tracks(data):
-        for k,v in data['now_playing']['lastfm_urls'].items():
-            yield (k,v)
-
-
 class CurrentPlaylist(CachedApiHandler):
     """Current track playing on CHIRP and recently played tracks."""
     cache_key = 'api.current_track'
 
     def check_data(self, data):
-        if any((v is None) for k,v in iter_lastfm_links(data)):
-            try:
-                taskqueue.add(url='/api/_check_lastfm_links')
-            except:
-                log.exception('IGNORED while adding task')
+        for track in iter_tracks(data):
+            if not track['lastfm_urls']['_processed']:
+                try:
+                    taskqueue.add(url='/api/_check_lastfm_links',
+                                  params={'id': track['id']})
+                except:
+                    log.exception('IGNORED while adding task')
 
     def track_as_data(self, track):
         return {
@@ -109,8 +103,10 @@ class CurrentPlaylist(CachedApiHandler):
             'played_at_gmt': track.established.isoformat(),
             'played_at_local': track.established_display.isoformat(),
             'lastfm_urls': {
-                'sm_image': None,
-                'med_image': None
+                'sm_image': track.lastfm_url_sm_image,
+                'med_image': track.lastfm_url_med_image,
+                'large_image': track.lastfm_url_large_image,
+                '_processed': track.lastfm_urls_processed,
             }
         }
 
@@ -141,22 +137,23 @@ class CheckLastFMLinks(webapp.RequestHandler):
 
     def post(self):
         links_fetched = 0
-        data = memcache.get(CurrentPlaylist.cache_key)
-        if data:
-            try:
-                fm = pylast.get_lastfm_network(
-                                    api_key=dbconfig['lastfm.api_key'])
-                for track in iter_tracks(data):
-                    links_fetched += 1
-                    fm_album = fm.get_album(track['artist'], track['release'])
-                    track['lastfm_urls']['sm_image'] = \
+        track = PlaylistTrack.get(self.request.POST['id'])
+        try:
+            fm = pylast.get_lastfm_network(
+                                api_key=dbconfig['lastfm.api_key'])
+            fm_album = fm.get_album(track.artist_name, track.album_title)
+            track.lastfm_url_sm_image = \
                             fm_album.get_cover_image(pylast.COVER_SMALL)
-                    track['lastfm_urls']['med_image'] = \
+            track.lastfm_url_med_image = \
                             fm_album.get_cover_image(pylast.COVER_MEDIUM)
-            except pylast.WSError:
-                # Probably album not found
-                log.exception('IGNORED while fetching LastFM data')
-            memcache.set(CurrentPlaylist.cache_key, data)
+            track.lastfm_url_large_image = \
+                            fm_album.get_cover_image(pylast.COVER_LARGE)
+        except pylast.WSError:
+            # Probably album not found
+            log.exception('IGNORED while fetching LastFM data')
+        track.lastfm_urls_processed = True  # Even on error
+        track.save()
+        memcache.delete(CurrentPlaylist.cache_key)
         self.response.out.write(simplejson.dumps({
             'success': True,
             'links_fetched': links_fetched

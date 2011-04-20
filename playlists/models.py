@@ -161,6 +161,14 @@ class PlaylistTrack(PlaylistEvent):
     notes = db.TextProperty(required=False)
     # Categories
     categories = db.StringListProperty(required=True)
+    # True if LastFM URLs were already processed by the background task
+    lastfm_urls_processed = db.BooleanProperty(required=False, default=False)
+    # LastFM URL to small album image
+    lastfm_url_sm_image = db.StringProperty(required=False)
+    # LastFM URL to medium album image
+    lastfm_url_med_image = db.StringProperty(required=False)
+    # LastFM URL to large album image
+    lastfm_url_large_image = db.StringProperty(required=False)
     
     @property
     def artist_name(self):

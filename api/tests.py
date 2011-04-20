@@ -28,6 +28,7 @@ from nose.tools import eq_
 from webtest import TestApp
 
 import api.handler
+from api.handler import iter_tracks
 from api.handler import application
 import auth.roles
 from auth.models import User
@@ -119,7 +120,9 @@ class TestTrackPlayingNow(APITest):
         current = data['now_playing']
         eq_(current['lastfm_urls'], {
             'sm_image': None,
-            'med_image': None
+            'med_image': None,
+            'large_image': None,
+            '_processed': False
         })
 
     @fudge.patch('api.handler.taskqueue.add',
@@ -264,40 +267,58 @@ class TestCheckLastFMLinks(APITest):
                   .with_args(pylast.COVER_MEDIUM)
                   .returns('http://last.fm/med1.jpg')
                   .next_call()
+                  .with_args(pylast.COVER_LARGE)
+                  .returns('http://last.fm/large1.jpg')
+                  .next_call()
                   # Second album images:
                   .with_args(pylast.COVER_SMALL)
                   .returns('http://last.fm/sm2.jpg')
                   .next_call()
                   .with_args(pylast.COVER_MEDIUM)
-                  .returns('http://last.fm/med2.jpg'))
+                  .returns('http://last.fm/med2.jpg')
+                  .next_call()
+                  .with_args(pylast.COVER_LARGE)
+                  .returns('http://last.fm/large2.jpg'))
 
-        self.client.post('/api/_check_lastfm_links')
+        # Simulate check_data() because taskqueue is disabled or something?
+        for track in iter_tracks(data):
+            self.client.post('/api/_check_lastfm_links',
+                             {'id': track['id']})
 
         data = self.request('/api/current_playlist')
         current = data['now_playing']
         eq_(current['lastfm_urls'], {
             'sm_image': 'http://last.fm/sm1.jpg',
-            'med_image': 'http://last.fm/med1.jpg'
+            'med_image': 'http://last.fm/med1.jpg',
+            'large_image': 'http://last.fm/large1.jpg',
+            '_processed': True
         })
         eq_(data['recently_played'][0]['lastfm_urls'], {
             'sm_image': 'http://last.fm/sm2.jpg',
-            'med_image': 'http://last.fm/med2.jpg'
+            'med_image': 'http://last.fm/med2.jpg',
+            'large_image': 'http://last.fm/large2.jpg',
+            '_processed': True
         })
 
-    @fudge.patch('api.handler.pylast.get_lastfm_network')
-    def test_recover_from_errors(self, fm_getter):
-        data = self.request('/api/current_playlist')
+    @fudge.patch('api.handler.pylast.get_lastfm_network',
+                 'api.handler.taskqueue')
+    def test_recover_from_errors(self, fm_getter, fake_tq):
         (fm_getter.expects_call()
                   .with_args(api_key=dbconfig['lastfm.api_key'])
                   .returns_fake()
                   .expects('get_album')
                   .raises(pylast.WSError('', '', 'Album not found')))
+        fake_tq.expects('add').times_called(3)  # only once for all songs
 
-        self.client.post('/api/_check_lastfm_links')
+        data = self.request('/api/current_playlist')
+        self.client.post('/api/_check_lastfm_links',
+                         {'id': data['now_playing']['id']})
 
         data = self.request('/api/current_playlist')
         current = data['now_playing']
         eq_(current['lastfm_urls'], {
             'sm_image': None,
-            'med_image': None
+            'med_image': None,
+            'large_image': None,
+            '_processed': True
         })
