@@ -127,9 +127,9 @@
     {% endifequal %}
         </td>
         <td align="right">
-    {% if request.is_from_studio %}
+<!--    {% if request.is_from_studio %}-->
           <a class="send_to_playlist" href="/djdb/crate/send_to_playlist/{{ item.key }}"><img src="/media/common/img/play.png" alt="Send to Playlist" title="Send to Playlist"/></a>
-    {% endif %}
+<!--    {% endif %}-->
           <a href="/djdb/crate/{{ crate.key }}/remove_item?response_page=crate&item_key={{ item.key }}"><img src="/media/common/img/remove.png" alt="Remove Item from Crate" title="Remove Item from Crate"/></a>
         </td></tr></table>
       </li>
