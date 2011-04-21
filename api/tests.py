@@ -113,6 +113,14 @@ class TestTrackPlayingNow(APITest):
             self.playlist_track.established_display.strftime('%Y-%m-%d'))
         assert 'id' in current
 
+    def test_allow_post(self):
+        # support for _ah/warmup ?
+        r = self.client.post('/api/current_playlist', {})
+        eq_(r.status, '200 OK')
+        data = simplejson.loads(r.body)
+        current = data['now_playing']
+        eq_(current['artist'], 'Stevie Wonder')
+
     @fudge.patch('api.handler.taskqueue')
     def test_build_lastfm_links(self, fake_tq):
         fake_tq.expects('add').with_args(url='/api/_check_lastfm_links')

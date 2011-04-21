@@ -122,6 +122,13 @@ class CurrentPlaylist(CachedApiHandler):
             'recently_played': [self.track_as_data(t) for t in recent_tracks]
         }
 
+    def post(self):
+        # For some reason _ah/warmup is posting to current_playlist
+        # instead of GET.  This might be a bug or it might be some 'ghost
+        # tasks' stuck in the queue.
+        log.warning("Unexpected POST request")
+        return self.get()
+
 
 class Index(ApiHandler):
     """Lists available resources."""
@@ -142,7 +149,7 @@ class CheckLastFMLinks(webapp.RequestHandler):
             # seems that old tasks are stuck in an error-retry loop
             log.error('id not found in POST')
             self.response.out.write(simplejson.dumps({'success': False}))
-            return 
+            return
         track = PlaylistTrack.get(self.request.POST['id'])
         try:
             fm = pylast.get_lastfm_network(
