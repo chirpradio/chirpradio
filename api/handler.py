@@ -151,6 +151,11 @@ class CheckLastFMLinks(webapp.RequestHandler):
             self.response.out.write(simplejson.dumps({'success': False}))
             return
         track = PlaylistTrack.get(self.request.POST['id'])
+        if track is None:
+            # Track was deleted by DJ, other scenarios?
+            log.warning('track does not exist: %s' % self.request.POST['id'])
+            self.response.out.write(simplejson.dumps({'success': False}))
+            return
         try:
             fm = pylast.get_lastfm_network(
                                 api_key=dbconfig['lastfm.api_key'])

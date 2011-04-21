@@ -330,3 +330,10 @@ class TestCheckLastFMLinks(APITest):
             'large_image': None,
             '_processed': True
         })
+
+    def test_non_existant_playlist_track(self):
+        key = str(self.playlist_track.key())
+        self.playlist_track.delete()
+        r = self.client.post('/api/_check_lastfm_links', {'id': key})
+        data = simplejson.loads(r.body)
+        eq_(data['success'], False)
