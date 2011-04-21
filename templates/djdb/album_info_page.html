@@ -221,11 +221,9 @@ Mark/Unmark selected as: <a id="mark_explicit" href="update">Explicit</a>,
     {% endifnotequal %}
   {% endfor %}
           </td>
-<!--  {% if request.is_from_studio %}-->
           <td>
             <a class="send_to_playlist" href="/djdb/crate/send_to_playlist/{{ track.key }}"><img src="/media/common/img/play.png" alt="Send to Playlist" title="Send to Playlist"/></a>    
           </td>
-<!--  {% endif %}-->
           <td>
   {% ifincrate user track %}
             <a href="/djdb/crate/remove_item?response_page=album&item_key={{ track.key }}"><img src="/media/common/img/remove.png" alt="Remove Track from Crate" title="Remove Track from Crate"/></a>

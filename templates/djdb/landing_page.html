@@ -249,11 +249,9 @@ matching track{{ query_results.Track|pluralize }}</i>
     <td>{{ track.title }}</td>
     <td><a href="{{ track.artist_url }}">{{ track.artist_name }}</a></td>
     <td><a href="{{ track.album.url }}">{{ track.album }}</a></td>
-<!--      {% if request.is_from_studio %}-->
     <td>
       <a class="send_to_playlist" href="/djdb/crate/send_to_playlist/{{ track.key }}"><img src="/media/common/img/play.png" alt="Send to Playlist" title="Send to Playlist"/></a>    
     </td>
-<!--      {% endif %}-->
     <td>
       {% ifincrate user track %}
       <a href="/djdb/crate/remove_item?response_page=landing&item_key={{ track.key }}&query={{ query_str }}"><img src="/media/common/img/remove.png" alt="Remove Track from Crate" title="Remove Track from Crate"/></a>
