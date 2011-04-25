@@ -115,7 +115,7 @@ def fetch_activity(num=None, start_dt=None, days=None):
         for tag_edit in tag_edits:
             dt = tag_edit.timestamp_display.strftime('%Y-%m-%d %H:%M')
             for tag in tag_edit.added:
-                if tag_edit.subject.kind() == 'Track':
+                if tag_edit.subject.kind() == 'Album':
                     if tag == 'recommended':                    
                         item = '<a href="%s">%s / %s / %s</a> <b>recommended</b> by <a href="/djdb/user/%s">%s</a>.' % (
                             tag_edit.subject.album.url, tag_edit.subject.album.artist_name,
@@ -913,8 +913,6 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
     allowed.extend(['all', '0', 'other', 'random'])
     if start_char not in allowed:
         return http.HttpResponse(status=404)
-
-    default_page_size = 10
     
     template = loader.get_template('djdb/browse_page.html')
     if ctx_vars is None : ctx_vars = {}
@@ -923,17 +921,22 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
     ctx_vars["start_char"] = start_char
     ctx_vars["categories"] = models.ALBUM_CATEGORIES
 
+    page_size = 10
     if request.method == "GET":
-        form = forms.ListReviewsForm()
-        page_size = int(request.GET.get('page_size', default_page_size))
         reviewed = request.GET.get('reviewed')
         bookmark = request.GET.get('bookmark')
         category = request.GET.get('category')
+        form = forms.BrowseForm(request.GET, entity_kind=entity_kind)
     else:
-        page_size = int(request.POST.get('page_size', default_page_size))
         reviewed = request.POST.get('reviewed')
         bookmark = request.POST.get('bookmark')
         category = request.POST.get('category')
+        form = forms.BrowseForm(request.POST, entity_kind=entity_kind)
+
+    if form.is_valid():
+        if form.cleaned_data["page_size"]:
+            page_size = int(form.cleaned_data["page_size"])
+#        order = form.cleaned_data["order"]
 
     if start_char == "random" and entity_kind != "album":
         url = "/djdb/browse/%s/all?page_size=%d" % (entity_kind, page_size)
@@ -1016,6 +1019,7 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
         query.order(field)
         prev, items, next = query.fetch(page_size, bookmark)
     
+    ctx_vars["form"] = form
     ctx_vars["bookmark"] = bookmark
     ctx_vars["items"] = items
     ctx_vars["prev"] = prev
@@ -1139,7 +1143,11 @@ def album_info_page(request, album_id_str, ctx_vars=None):
             album_form = forms.PartialAlbumForm({'pronunciation': album.pronunciation,
                                                  'label': album.label,
                                                  'year': album.year,
-                                                 'is_compilation': album.is_compilation})
+                                                 'is_compilation': album.is_compilation,
+                                                 'is_heavy_rotation': album.has_tag(models.HEAVY_ROTATION_TAG),
+                                                 'is_light_rotation': album.has_tag(models.LIGHT_ROTATION_TAG),
+                                                 'is_local_classic': album.has_tag(models.LOCAL_CLASSIC_TAG),
+                                                 'is_local_current': album.has_tag(models.LOCAL_CURRENT_TAG)})
         else:
             album_form = forms.PartialAlbumForm(request.POST)
             if album_form.is_valid() and "update_album" in request.POST:
@@ -1150,6 +1158,16 @@ def album_info_page(request, album_id_str, ctx_vars=None):
                                          "year" : album_form.cleaned_data["year"],
                                          "is_compilation" : album_form.cleaned_data["is_compilation"]})
                 idx.save()
+
+                if album_form.cleaned_data["is_heavy_rotation"] != album.has_tag(models.HEAVY_ROTATION_TAG):
+                    _update_category(album, models.HEAVY_ROTATION_TAG, request.user)
+                if album_form.cleaned_data["is_light_rotation"] != album.has_tag(models.LIGHT_ROTATION_TAG):
+                    _update_category(album, models.LIGHT_ROTATION_TAG, request.user)
+                if album_form.cleaned_data["is_local_classic"] != album.has_tag(models.LOCAL_CLASSIC_TAG):
+                    _update_category(album, models.LOCAL_CLASSIC_TAG, request.user)
+                if album_form.cleaned_data["is_local_current"] != album.has_tag(models.LOCAL_CURRENT_TAG):
+                    _update_category(album, models.LOCAL_CURRENT_TAG, request.user)
+                AutoRetry(db).put(album)
         ctx_vars["album_form"] = album_form
     
     label = album.label

@@ -102,16 +102,7 @@ Random
 </h3>
 
 <form action="/djdb/browse/{{ entity_kind }}/{{ start_char }}" method="post">
-  Page size:
-  <select name="page_size" id="id_page_size">
-  {% for num in page_sizes %}
-    {% ifequal page_size num %}
-    <option value="{{ num }}" selected="selected">{{ num }}</option>
-    {% else %}
-    <option value="{{ num }}">{{ num }}</option>
-    {% endifequal %}
-  {% endfor %}
-  </select>
+  {{ form.as_table }}
   <input type="submit" name="update" value="Update"/>
   {% ifnotequal bookmark None %}
   <input type="hidden" id="bookmark" name="bookmark" value="{{ bookmark }}"/>

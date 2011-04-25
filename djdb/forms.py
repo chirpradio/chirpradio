@@ -28,9 +28,12 @@ ALBUM_CATEGORY_CHOICES = [["", ""]]
 ALBUM_CATEGORY_CHOICES += zip(models.ALBUM_CATEGORIES,
                               [category.replace('_', ' ').capitalize() for category in models.ALBUM_CATEGORIES])
 PAGE_SIZE_CHOICES = [[10, 10],
+                     [25, 25],
                      [50, 50],
                      [100, 100]]
 ORDER_CHOICES = [['created', 'created'],
+                 ['author', 'author']]
+BROWSE_ORDER_CHOICES = [['created', 'created'],
                  ['author', 'author']]
 months =['January', 'February', 'March', 'April', 'May', 'June', 'July',
          'August', 'September', 'October', 'November', 'December']
@@ -54,6 +57,14 @@ class PartialAlbumForm(forms.Form):
     year = forms.IntegerField(required=False,
                               widget=forms.TextInput(attrs={'size': 4, 'maxlength': 4}))
     is_compilation = forms.BooleanField(required=False, label='Is a compilation:')
+    is_heavy_rotation = forms.BooleanField(required=False,
+                                           label=_("Heavy rotation"))
+    is_light_rotation = forms.BooleanField(required=False,
+                                           label=_("Light rotation"))
+    is_local_classic = forms.BooleanField(required=False,
+                                          label=_("Local classic"))
+    is_local_current = forms.BooleanField(required=False,
+                                          label=_("Local current"))
 
 class PartialArtistForm(forms.Form):
     pronunciation = forms.CharField(required=False,
@@ -126,4 +137,19 @@ class CrateItemsForm(forms.Form):
 
         if 'is_default' in args[0] and args[0]['is_default']:
             self.fields['is_default'].widget.attrs['disabled'] = True
+
+class BrowseForm(forms.Form):
+    page_size = forms.ChoiceField(required=False, choices=PAGE_SIZE_CHOICES)
+#    order = forms.ChoiceField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        entity_kind = kwargs.pop('entity_kind')
+        super(BrowseForm, self).__init__(*args, **kwargs)
+
+        choices = [('artist', 'artist')]
+        if entity_kind == 'album' or entity_kind == 'track':
+            choices.append(('album', 'album'))
+        if entity_kind == 'track':
+            choices.append(('track', 'track'))
+#        self.fields['order'].choices = choices
 

@@ -114,6 +114,22 @@ indexes:
 
 - kind: Album
   properties:
+  - name: current_tags
+  - name: is_reviewed
+  - name: title
+
+- kind: Album
+  properties:
+  - name: current_tags
+  - name: title
+
+- kind: Album
+  properties:
+  - name: is_reviewed
+  - name: title
+
+- kind: Album
+  properties:
   - name: num_reviews
   - name: title
 
@@ -152,9 +168,25 @@ indexes:
 
 - kind: Artist
   properties:
+  - name: current_tags
+  - name: is_reviewed
+  - name: name
+
+- kind: Artist
+  properties:
+  - name: current_tags
+  - name: name
+
+- kind: Artist
+  properties:
   - name: doctype
   - name: name
     direction: desc
+
+- kind: Artist
+  properties:
+  - name: is_reviewed
+  - name: name
 
 - kind: Artist
   properties:
@@ -350,10 +382,31 @@ indexes:
 
 - kind: PlaylistEvent
   properties:
+  - name: album
+  - name: class
+  - name: playlist
+  - name: established
+
+- kind: PlaylistEvent
+  properties:
+  - name: artist
+  - name: class
+  - name: playlist
+  - name: established
+
+- kind: PlaylistEvent
+  properties:
   - name: class
   - name: playlist
   - name: established
     direction: desc
+
+- kind: PlaylistEvent
+  properties:
+  - name: class
+  - name: playlist
+  - name: track
+  - name: established
 
 - kind: PlaylistEvent
   properties:
@@ -392,6 +445,22 @@ indexes:
 
 - kind: Track
   properties:
+  - name: current_tags
+  - name: is_reviewed
+  - name: title
+
+- kind: Track
+  properties:
+  - name: current_tags
+  - name: title
+
+- kind: Track
+  properties:
+  - name: is_reviewed
+  - name: title
+
+- kind: Track
+  properties:
   - name: revoked
   - name: title
 
@@ -409,6 +478,11 @@ indexes:
     direction: desc
   - name: __key__
     direction: desc
+
+- kind: Track
+  properties:
+  - name: title
+  - name: album
 
 - kind: TrafficLogEntry
   properties:
