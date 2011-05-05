@@ -45,9 +45,8 @@ class Form(forms.Form):
 
     def __init__(self, user, *args, **kwargs):
         super(Form, self).__init__(*args, **kwargs)
-        if user.is_music_director:
-            self.fields['author'] = forms.CharField(required=False)
         if user.is_music_director or user.is_reviewer:
+            self.fields['author'] = forms.CharField(required=False)
             self.fields['label'] = forms.CharField(required=False,
                                    widget=forms.TextInput(attrs={'size': 40}))
             self.fields['year'] = forms.IntegerField(required=False,

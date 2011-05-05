@@ -115,6 +115,30 @@ indexes:
 - kind: Album
   properties:
   - name: current_tags
+  - name: album_id
+
+- kind: Album
+  properties:
+  - name: current_tags
+  - name: album_id
+    direction: desc
+
+- kind: Album
+  properties:
+  - name: current_tags
+  - name: is_reviewed
+  - name: album_id
+
+- kind: Album
+  properties:
+  - name: current_tags
+  - name: is_reviewed
+  - name: album_id
+    direction: desc
+
+- kind: Album
+  properties:
+  - name: current_tags
   - name: is_reviewed
   - name: title
 
@@ -122,6 +146,17 @@ indexes:
   properties:
   - name: current_tags
   - name: title
+
+- kind: Album
+  properties:
+  - name: is_reviewed
+  - name: album_id
+
+- kind: Album
+  properties:
+  - name: is_reviewed
+  - name: album_id
+    direction: desc
 
 - kind: Album
   properties:

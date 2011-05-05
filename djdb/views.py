@@ -1287,9 +1287,8 @@ def album_edit_review(request, album_id_str, review_key=None):
         initial = None
         if review_key:
             attrs = {'text': doc.text}
-            if request.user.is_music_director:
-                attrs['author'] = doc.author_display
             if request.user.is_music_director or request.user.is_reviewer:
+                attrs['author'] = doc.author_display
                 attrs['label'] = doc.subject.label
                 attrs['year'] = doc.subject.year
         else:
@@ -1302,13 +1301,13 @@ def album_edit_review(request, album_id_str, review_key=None):
             if "preview" in request.POST:
                 ctx_vars["preview"] = sanitize_html.sanitize_html(
                     form.cleaned_data["text"])
-                if request.user.is_music_director and request.POST.get('author'):
-                    ctx_vars["author_key"] = request.POST.get("author_key")
-                    ctx_vars["author_name"] = request.POST.get("author")
-                else:
-                    ctx_vars["author_key"] = request.user.key()
-                    ctx_vars["author_name"] = request.user
                 if request.user.is_music_director or request.user.is_reviewer:
+                    if request.POST.get('author'):
+                        ctx_vars["author_key"] = request.POST.get("author_key")
+                        ctx_vars["author_name"] = request.POST.get("author")
+                    else:
+                        ctx_vars["author_key"] = request.user.key()
+                        ctx_vars["author_name"] = request.user
                     ctx_vars["label"] = request.POST.get("label")
                     ctx_vars["year"] = request.POST.get("year")
                 ctx_vars["tags"] = request.POST.getlist("tags[]")
