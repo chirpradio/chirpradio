@@ -35,6 +35,10 @@ inbound_services:
 - warmup
 
 
+builtins:
+- datastore_admin: on
+
+
 skip_files:
 - ^(.*/)?app\.yaml
 - ^(.*/)?app\.yml
