@@ -23,15 +23,14 @@ import auth
 class AuthenticationMiddleware(object):
 
     def process_request(self, request):
-        from django import http  # make sure we have the right Django!
-        # TODO(Kumar) think of a way to use a decorator or something to
-        # grant access to non-login protected pages.
-        if (request.path.startswith('/playlists/task') or
-            request.path.startswith('/_ah/warmup')):
-            # auth is handled in app.yaml or not applicable.
-            # for tasks, this is necessary so they are 
-            # executed by Admin user (internal Task Queue user)
-            return None
+        # lazy import to make sure we have the right Django!
+        from django import http
+        from django.conf import settings
+
+        for prefix in settings.PUBLIC_TOP_LEVEL_URLS:
+            if request.path.startswith(prefix):
+                # These are special URLs that do not need login protection.
+                return None
         try:
             user = auth.get_current_user(request)
         except auth.UserNotAllowedError:

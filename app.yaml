@@ -8,6 +8,10 @@ handlers:
 - url: /api/.*
   script: api/handler.py
 
+# -----------------------------------------------------------------------
+# NOTE: see settings.PUBLIC_TOP_LEVEL_URLS for non-login protected pages.
+# -----------------------------------------------------------------------
+
 # Support for remote datastore access.  For more information, please see
 # http://code.google.com/appengine/articles/remote_api.html
 - url: /remote_api

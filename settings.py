@@ -64,6 +64,15 @@ MEDIA_ROOT =  os.path.join(ROOT_ABSPATH, 'media')
 # URL to access the media directory:
 MEDIA_URL = '/media/'
 
+# The following URLs will not require user login.  See auth/middleware.py.
+# These are *path prefixes*.  That is, anything underneath these URLs are
+# also public.
+#
+# Auth is handled in app.yaml or not applicable for these URLs.  For tasks,
+# this is necessary so they are executed by Admin user
+# (internal Task Queue user)
+PUBLIC_TOP_LEVEL_URLS = ['/playlists/task', '/_ah/warmup']
+
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.load_template_source',
