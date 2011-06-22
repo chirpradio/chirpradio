@@ -71,7 +71,10 @@ MEDIA_URL = '/media/'
 # Auth is handled in app.yaml or not applicable for these URLs.  For tasks,
 # this is necessary so they are executed by Admin user
 # (internal Task Queue user)
-PUBLIC_TOP_LEVEL_URLS = ['/playlists/task', '/_ah/warmup']
+PUBLIC_TOP_LEVEL_URLS = ['/playlists/task',
+                         '/_ah/warmup',
+                         '/m'  # go_mobile()
+                         ]
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (

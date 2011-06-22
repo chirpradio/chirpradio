@@ -51,6 +51,8 @@ urlpatterns = patterns(
     ('^jobs/', include('jobs.urls')),
     
     ('^errors/', include('errors.urls')),
+
+    (r'^m', 'landing_page.views.go_mobile'),
     
     ('^_ah/warmup/?', 'common.views.appengine_warmup'),
 
