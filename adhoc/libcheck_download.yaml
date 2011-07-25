@@ -1,0 +1,13 @@
+python_preamble:
+- import: google.appengine.ext.bulkload.transform
+
+transformers:
+- kind: Track
+  connector: csv
+  property_map:
+  - property: __key__
+    external_name: key
+    export_transform: transform.key_id_or_name_as_string
+  - property: album
+    external_name: album
+    export_transform: transform.key_id_or_name_as_string
