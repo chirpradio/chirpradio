@@ -62,17 +62,27 @@ class User(BaseModel):
   def get_djangouser_for_user(cls, user):
     django_user = cls.get_by_key_name(user.user_id())
     if django_user:
-      return django_user
+      return cls._refresh_djangouser_state(django_user, user)
 
     # Check to make sure there's no legacy User object before creating a new
     # one (new style User objects use a key_name based on the user_id).
     django_user = cls.all().filter('user =', user).get()
     if django_user:
-      return django_user
+      return cls._refresh_djangouser_state(django_user, user)
 
     return cls.get_or_insert(
         key_name=user.user_id(), user=user, email=user.email(),
         username=user.nickname())
+
+  @classmethod
+  def _refresh_djangouser_state(cls, django_user, user):
+    """Updates Django User attributes to match current App Engine User data."""
+    if django_user.email != user.email():
+      django_user.email = user.email()
+      django_user.username = user.nickname()
+      django_user.user = user
+      django_user.save()
+    return django_user
 
   def set_password(self, raw_password):
     raise NotImplementedError
