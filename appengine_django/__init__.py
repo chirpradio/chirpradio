@@ -134,6 +134,9 @@ def LoadSdk():
         os.path.join(SDK_PATH, 'lib', 'webob'),
         os.path.join(SDK_PATH, 'lib', 'yaml', 'lib'),
         os.path.join(SDK_PATH, 'lib', 'fancy_urllib'),
+        os.path.join(SDK_PATH, 'lib', 'whoosh'),
+        os.path.join(SDK_PATH, 'lib', 'protopc'),
+        os.path.join(SDK_PATH, 'lib', 'graphy'),
     ]
     # Add SDK paths at the start of sys.path, but after the local directory which
     # was added to the start of sys.path on line 50 above. The local directory
