@@ -134,8 +134,9 @@ def LoadSdk():
         os.path.join(SDK_PATH, 'lib', 'webob'),
         os.path.join(SDK_PATH, 'lib', 'yaml', 'lib'),
         os.path.join(SDK_PATH, 'lib', 'fancy_urllib'),
+        os.path.join(SDK_PATH, 'lib', 'simplejson'),
         os.path.join(SDK_PATH, 'lib', 'whoosh'),
-        os.path.join(SDK_PATH, 'lib', 'protopc'),
+        os.path.join(SDK_PATH, 'lib', 'protorpc'),
         os.path.join(SDK_PATH, 'lib', 'graphy'),
     ]
     # Add SDK paths at the start of sys.path, but after the local directory which
@@ -156,8 +157,6 @@ def LoadDjango(version=None):
 
   # If we have set a version explicitly, force that
   if version:
-    for k in [k for k in sys.modules if k.startswith('django')]:
-      del sys.modules[k]
     use_library('django', version)
     return
 
