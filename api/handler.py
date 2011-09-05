@@ -43,6 +43,7 @@ class ApiHandler(webapp.RequestHandler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'application/json'
+        self.response.headers['Cache-Control'] = 'public,max-age=30'
         if not self.use_cache:
             data = self.get_json()
         else:
