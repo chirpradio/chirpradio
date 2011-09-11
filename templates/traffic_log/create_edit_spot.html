@@ -2,9 +2,9 @@
 {% load traffic_log_filters %}
 
 {% block contents %}
-<p/>
-<table border="1" cellpadding="5" cellspacing="0">
+<p></p>
 <form action="{{ formaction }}" method="post">
+<table border="1" cellpadding="5" cellspacing="0">
 {{ spot.as_table }}
 <tr><td>*</td><td>
 {% include 'traffic_log/spot_constraint_form.html' %}
@@ -14,7 +14,6 @@
 {% include 'traffic_log/constraint_list_table.html'%}
 {% endif %}
 </td></tr>
-
 </table>
 </form>
 {% endblock %}
