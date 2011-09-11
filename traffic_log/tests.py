@@ -64,7 +64,7 @@ class TestTrafficLogViews(DjangoTestCase):
                         type='Station ID')
         spot_key = spot.put()
         # assign it to every day of the week at the top of the hour:
-        constraint_keys = views.saveConstraint(dict(hourbucket="0,24", dow_list=range(1,8), slot=0))
+        constraint_keys = views.saveConstraint(dict(hour_list=range(8,15), dow_list=range(1,8), slot=0))
         views.connectConstraintsAndSpot(constraint_keys, spot_key)
         
         spot_copy = models.SpotCopy(body='body',
@@ -103,7 +103,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         resp = self.client.post(reverse('traffic_log.createSpot'), {
             'title': 'Legal ID',
             'type': 'Station ID',
-            'hourbucket': '0,24',
+            'hour_list': [str(d) for d in range(8,15)],
             'dow_list': [str(d) for d in range(1,8)],
             'slot': '0'
         })
@@ -117,7 +117,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             hours.add(constraint.hour)
             constraint_map[(constraint.dow, constraint.hour, constraint.slot)] = constraint
         self.assertEqual(sorted(dow), range(1,8))
-        self.assertEqual(sorted(hours), range(0,24))
+        self.assertEqual(sorted(hours), range(8,15))
         
         # check with Sunday 12:00pm
         author = User(email='test')
@@ -153,7 +153,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         resp = self.client.post(reverse('traffic_log.createSpot'), {
             'title': 'Legal ID',
             'type': 'Station ID',
-            'hourbucket': '0,24',
+            'hour_list': [str(d) for d in range(8,15)],
             'dow_list': [str(d) for d in range(1,8)],
             'slot': '0'
         })
@@ -205,7 +205,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot_copy.put()
         
         # assign it to every day of the week at the top of the hour:
-        constraint_keys = views.saveConstraint(dict(hourbucket="0,24", dow_list=range(1,8), slot=0))
+        constraint_keys = views.saveConstraint(dict(hour_list=range(8,15), dow_list=range(1,8), slot=0))
         views.connectConstraintsAndSpot(constraint_keys, spot.key())
         
         resp = self.client.get(reverse('traffic_log.index'))
