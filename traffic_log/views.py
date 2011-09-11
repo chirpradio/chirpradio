@@ -354,19 +354,13 @@ def connectConstraintsAndSpot(constraint_keys,spot_key):
 
 def saveConstraint(constraint):
     dows = [ int(x) for x in constraint['dow_list'] ]
-    
+    hours = constraint['hour_list']
     keys = []
-    if constraint['hourbucket'] != "":
-        ## TODO(Kumar) I don't think this is such a good idea.  
-        ## use split(",") and int() instead.
-        hours = range(*eval(constraint['hourbucket']))
-    else:
-        hours = [int(constraint['hour'])]
     slot = int(constraint['slot'])
     for d in dows:
         for h in hours:
             name = ":".join([constants.DOW_DICT[d],str(h), str(slot)])
-            obj  = AutoRetry(models.SpotConstraint).get_or_insert(name,dow=d,hour=h,slot=slot)
+            obj  = AutoRetry(models.SpotConstraint).get_or_insert(name,dow=d,hour=int(h),slot=slot)
             if not obj.is_saved():
                 AutoRetry(obj).put()
             keys.append(obj.key())
