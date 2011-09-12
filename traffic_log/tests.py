@@ -147,7 +147,56 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         context = resp.context[0]
         spots = [c.title for c in context['spots']]
         self.assertEqual(spots, ['Legal ID'])
-    
+
+    def test_create_irregular_spot(self):
+        resp = self.client.post(reverse('traffic_log.createSpot'),{
+            'title' : 'Legal ID',
+            'type' : 'Station ID',
+            'hour_list' : ['2','5','7','15','23'],
+            'dow_list' : ['1','3','7'],
+            'slot' : '24',
+        })
+        self.assertNoFormErrors(resp)
+        spot = models.Spot.all().filter("title =", "Legal ID").fetch(1)[0]
+        dow = set()
+        hours = set()
+        constraint_map = {}
+        for constraint in spot.constraints:
+            dow.add(constraint.dow)
+            hours.add(constraint.hour)
+            constraint_map[(constraint.dow, constraint.hour, constraint.slot)] = constraint
+        self.assertEqual(dow,set([1L,3L,7L]))
+        self.assertEqual(hours,set([2L,5L,7L,15L,23L]))
+
+        # Check with Tuesday at 5:24am
+        author = User(email='test')
+        author.put()
+        spot_copy = models.SpotCopy(body='body',
+                                    spot=spot,
+                                    author=author)
+        spot_copy.put()
+        spot.random_spot_copies = [spot_copy.key()]
+        spot.save()
+
+        self.assertEqual(constraint_map[(3L, 5L, 24L)].url_to_finish_spot(spot),
+            "/traffic_log/spot-copy/%s/finish?hour=5&dow=3&slot=24" % spot_copy.key())
+
+        self.assertEqual(constraint_map[(3L, 5L, 24L)].as_query_string(),
+            "hour=5&dow=3&slot=24")
+
+        # spot shows up in DJ view:
+        resp = self.client.get(reverse('traffic_log.index'))
+        context = resp.context[0]
+        slotted_spots = [c for c in context['slotted_spots']]
+        spots = [s.title for s in slotted_spots[0].iter_spots()]
+        self.assertEqual(spots[0], spot.title)
+
+        # spot shows up in admin view:
+        resp = self.client.get(reverse('traffic_log.listSpots'))
+        context = resp.context[0]
+        spots = [c.title for c in context['spots']]
+        self.assertEqual(spots, ['Legal ID'])
+
     def test_spot_copy_expires_when_randomly_shuffled(self):
         # make a regular spot:
         resp = self.client.post(reverse('traffic_log.createSpot'), {
@@ -205,7 +254,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot_copy.put()
         
         # assign it to every day of the week at the top of the hour:
-        constraint_keys = views.saveConstraint(dict(hour_list=range(8,15), dow_list=range(1,8), slot=0))
+        constraint_keys = views.saveConstraint(dict(hour_list=range(0,24), dow_list=range(1,8), slot=0))
         views.connectConstraintsAndSpot(constraint_keys, spot.key())
         
         resp = self.client.get(reverse('traffic_log.index'))
