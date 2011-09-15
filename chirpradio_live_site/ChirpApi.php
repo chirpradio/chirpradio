@@ -202,10 +202,10 @@ class ChirpApi {
     // track is returning a successful response so that the task queue does not re-queue.
     // NOTE: App Engine datastore keys are not unique.
     $query = sprintf("SELECT * FROM textpattern WHERE Section='playlists' AND custom_3='%s' AND Keywords='%s' AND Title='%s' AND custom_2='%s' LIMIT 1",
-                        $track_id,
-                        $track_artist,
-                        $track_name,
-                        $dj_name);
+                        mysql_real_escape_string($track_id),
+                        mysql_real_escape_string($track_artist),
+                        mysql_real_escape_string($track_name),
+                        mysql_real_escape_string($dj_name));
     $result = mysql_query($query);
     if (mysql_fetch_row($result)) {      
       $response = json_encode(
@@ -222,26 +222,26 @@ class ChirpApi {
     // field mappings
     $query = sprintf("INSERT INTO textpattern (Posted, Expires, AuthorID, LastMod, Title, url_title, Body, Body_html, Excerpt, Excerpt_html, Annotate, AnnotateInvite, Status, textile_body, textile_excerpt, Section, Keywords, custom_1, custom_2, custom_3) " .
              "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, '%s', %d, %d, %d, '%s', '%s', '%s', '%s', '%s')",
-             $time_played,
-             $expiration_time,
-             $author_id,
-             $time_played,
-             $track_name,
-             $url_title,
-             $track_album,
-             "<p>$track_album</p>",
-             $track_notes,
-             "<p>$track_notes</p>",
+             mysql_real_escape_string($time_played),
+             mysql_real_escape_string($expiration_time),
+             mysql_real_escape_string($author_id),
+             mysql_real_escape_string($time_played),
+             mysql_real_escape_string($track_name),
+             mysql_real_escape_string($url_title),
+             mysql_real_escape_string($track_album),
+             mysql_real_escape_string("<p>$track_album</p>"),
+             mysql_real_escape_string($track_notes),
+             mysql_real_escape_string("<p>$track_notes</p>"),
              1,
              "Comment",
              4,
              1,
              1,
              "playlists",
-             $track_artist,
-             $track_label,
-             $dj_name,
-             $track_id
+             mysql_real_escape_string($track_artist),
+             mysql_real_escape_string($track_label),
+             mysql_real_escape_string($dj_name),
+             mysql_real_escape_string($track_id)
              );
 
       if ($result = mysql_query($query)) {
@@ -278,13 +278,13 @@ class ChirpApi {
     // Unfortunately track keys are not guaranteed to be unique.  
     // Here we do the safest thing which is delete the most recently posted track by the given key.
     // This is not 100% safe.
-    $select_query = sprintf("SELECT ID AS article_id, custom_3 AS track_id FROM textpattern WHERE custom_3 = '%s' ORDER BY Posted DESC LIMIT 1", $track_id);
+    $select_query = sprintf("SELECT ID AS article_id, custom_3 AS track_id FROM textpattern WHERE custom_3 = '%s' ORDER BY Posted DESC LIMIT 1", mysql_real_escape_string($track_id));
 
     $this->db_connect();
 
     if ($result = mysql_query($select_query)) {
       $track_to_delete = mysql_fetch_object($result);
-      $delete_query = sprintf("DELETE FROM textpattern WHERE ID = %d", $track_to_delete->article_id);
+      $delete_query = sprintf("DELETE FROM textpattern WHERE ID = %d", mysql_real_escape_string($track_to_delete->article_id));
 
       if ($result = mysql_query($delete_query)) {
         $response = json_encode($track_to_delete) . "\n";
