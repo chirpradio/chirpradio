@@ -21,6 +21,7 @@ import datetime
 from datetime import timedelta
 import csv
 from StringIO import StringIO
+import fudge
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase as DjangoTestCase
@@ -147,12 +148,15 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         context = resp.context[0]
         spots = [c.title for c in context['spots']]
         self.assertEqual(spots, ['Legal ID'])
-
-    def test_create_irregular_spot(self):
+    
+    @fudge.patch('common.time_util')
+    def test_create_irregular_spot(self, time_util):
+        from common.time_util import convert_utc_to_chicago
+        chicago_now = time_util.provides('chicago_now').returns(convert_utc_to_chicago(datetime.datetime.strptime('2011-09-13 09:55', '%Y-%m-%d %H:%M')))
         resp = self.client.post(reverse('traffic_log.createSpot'),{
             'title' : 'Legal ID',
             'type' : 'Station ID',
-            'hour_list' : ['2','5','7','15','23'],
+            'hour_list' : ['2','5','7','13','23'],
             'dow_list' : ['1','3','7'],
             'slot' : '24',
         })
@@ -166,7 +170,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             hours.add(constraint.hour)
             constraint_map[(constraint.dow, constraint.hour, constraint.slot)] = constraint
         self.assertEqual(dow,set([1L,3L,7L]))
-        self.assertEqual(hours,set([2L,5L,7L,15L,23L]))
+        self.assertEqual(hours,set([2L,5L,7L,13L,23L]))
 
         # Check with Tuesday at 5:24am
         author = User(email='test')
@@ -187,6 +191,8 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         # spot shows up in DJ view:
         resp = self.client.get(reverse('traffic_log.index'))
         context = resp.context[0]
+        print context['chicago_now']
+        print 'DJ view Slotted Spots: %s' % str(context['slotted_spots'])
         slotted_spots = [c for c in context['slotted_spots']]
         spots = [s.title for s in slotted_spots[0].iter_spots()]
         self.assertEqual(spots[0], spot.title)
