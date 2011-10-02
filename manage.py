@@ -31,15 +31,15 @@ except ImportError:
 
 if __name__ == "__main__":
 
-    # chirp: hack to enable testlib.
+    # chirp: hack to enable devlib.
     import glob
     import sys
     import os
     if 'test' in sys.argv:
-        testlib = os.path.join(os.path.dirname(__file__), 'testlib')
-        if not os.path.exists(testlib):
-            raise EnvironmentError("Expected lib dir to exist: %r" % testlib)
-        for path in glob.glob(testlib+'/*.zip'):
+        devlib = os.path.join(os.path.dirname(__file__), 'devlib')
+        if not os.path.exists(devlib):
+            raise EnvironmentError("Expected lib dir to exist: %r" % devlib)
+        for path in glob.glob(devlib+'/*.zip'):
             mod = os.path.splitext(os.path.basename(path))[0]
             # e.g. /path/to/fudge-0.9.4.zip/fudge-0.9.4
             sys.path.append(os.path.join(path, mod))
