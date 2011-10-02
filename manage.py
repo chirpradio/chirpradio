@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import sys
 
 # WARNING: This script is not run in production.
 # See main.py for that.
@@ -24,7 +24,6 @@ from django.core.management import execute_manager
 try:
     import settings # Assumed to be in the same directory.
 except ImportError:
-    import sys
     sys.stderr.write("Error: Can't find the file 'settings.py' in the directory containing %r. It appears you've customized things.\nYou'll have to run django-admin.py, passing it your settings module.\n(If the file settings.py does indeed exist, it's causing an ImportError somehow.)\n" % __file__)
     sys.exit(1)
 
@@ -32,16 +31,8 @@ except ImportError:
 if __name__ == "__main__":
 
     # chirp: hack to enable devlib.
-    import glob
-    import sys
-    import os
     if 'test' in sys.argv:
-        devlib = os.path.join(os.path.dirname(__file__), 'devlib')
-        if not os.path.exists(devlib):
-            raise EnvironmentError("Expected lib dir to exist: %r" % devlib)
-        for path in glob.glob(devlib+'/*.zip'):
-            mod = os.path.splitext(os.path.basename(path))[0]
-            # e.g. /path/to/fudge-0.9.4.zip/fudge-0.9.4
-            sys.path.append(os.path.join(path, mod))
+        import devlib
+        devlib.activate()
 
     execute_manager(settings)
