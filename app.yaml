@@ -55,3 +55,4 @@ skip_files:
 - ^(.*/)?\..*
 - ^(.*/)?.*\.bak$
 - devlib/.*
+- docs/.*

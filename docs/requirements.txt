@@ -1,0 +1,2 @@
+# Use pip install -r docs/requirements.txt in a virtualenv to build docs
+Sphinx
