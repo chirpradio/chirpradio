@@ -8,4 +8,5 @@ index.yaml
 .svn
 .project
 .pydevproject
+docs/build/*
 
