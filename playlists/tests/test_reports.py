@@ -25,6 +25,7 @@ import time
 from django.core.urlresolvers import reverse
 
 from auth import roles
+from djdb.models import HEAVY_ROTATION_TAG, LIGHT_ROTATION_TAG
 from playlists import views as playlists_views
 from playlists.models import Playlist, PlaylistTrack, PlaylistBreak, ChirpBroadcast
 from playlists.tests.test_views import PlaylistViewsTest
@@ -103,6 +104,7 @@ class TestPlaylistReport(PlaylistViewsTest):
         playlist = ChirpBroadcast()
         stevie, talking_book, tracks = create_stevie_wonder_album_data()
         track = PlaylistTrack(
+                    categories=[HEAVY_ROTATION_TAG],
                     playlist=playlist,
                     selector=selector,
                     artist=stevie,
@@ -130,7 +132,9 @@ class TestPlaylistReport(PlaylistViewsTest):
                     freeform_label="Geffen")
         track.put()
         time.sleep(0.4)
+        # Heavy rotation:
         track = PlaylistTrack(
+                    categories=[LIGHT_ROTATION_TAG],
                     playlist=playlist,
                     selector=selector,
                     freeform_artist_name=u'Ivan Krsti\u0107',
@@ -152,19 +156,23 @@ class TestPlaylistReport(PlaylistViewsTest):
         
         report = csv.reader(StringIO(response.content))
         self.assertEquals(
-            ['from_date', 'to_date', 'album_title', 'artist_name', 'label', 'play_count'],
+            ['from_date', 'to_date', 'album_title', 'artist_name', 'label',
+             'play_count', 'heavy_rotation', 'light_rotation'],
             report.next())
         self.assertEquals(
             [str(from_date), str(to_date),
-            'Ivan Krsti\xc4\x87', 'Ivan Krsti\xc4\x87', 'Ivan Krsti\xc4\x87', '1'],
+            # in light rotation:
+            'Ivan Krsti\xc4\x87', 'Ivan Krsti\xc4\x87', 'Ivan Krsti\xc4\x87',
+            '1', '0', '1'],
             report.next())
         self.assertEquals(
             [str(from_date), str(to_date),
-            'Pyromania', 'Def Leoppard', 'Geffen', '2'],
+            'Pyromania', 'Def Leoppard', 'Geffen', '2', '0', '0'],
             report.next())
         self.assertEquals(
             [str(from_date), str(to_date),
-            'Talking Book', 'Stevie Wonder', 'Motown', '1'],
+            # is in heavy rotation
+            'Talking Book', 'Stevie Wonder', 'Motown', '1', '1', '0'],
             report.next())
     
     def test_report_ignores_reference_errors(self):
@@ -198,9 +206,11 @@ class TestPlaylistReport(PlaylistViewsTest):
         
         report = csv.reader(StringIO(response.content))
         self.assertEquals(
-            ['from_date', 'to_date', 'album_title', 'artist_name', 'label', 'play_count'],
+            ['from_date', 'to_date', 'album_title', 'artist_name', 'label',
+             'play_count', 'heavy_rotation', 'light_rotation'],
             report.next())
         self.assertEquals(
             [str(from_date), str(to_date), 
-            '__bad_reference__', '__bad_reference__', 'Motown', '1'],
+            '__bad_reference__', '__bad_reference__', 'Motown', '1',
+            '0', '0'],
             report.next())

@@ -30,7 +30,7 @@ from google.appengine.api.datastore_errors import BadKeyError
 from auth.decorators import require_role
 import auth
 from auth import roles
-from djdb.models import Album
+from djdb.models import Album, HEAVY_ROTATION_TAG, LIGHT_ROTATION_TAG
 from playlists.forms import PlaylistTrackForm
 from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast
 from playlists.tasks import playlist_event_listeners
@@ -260,6 +260,8 @@ def query_group_by_track_key(from_date, to_date):
         d[key_counter] = 0
         d['from_date'] = from_date
         d['to_date'] = to_date
+        d['heavy_rotation'] = int(bool(HEAVY_ROTATION_TAG in item.categories))
+        d['light_rotation'] = int(bool(LIGHT_ROTATION_TAG in item.categories))
 
         return d
 

@@ -34,7 +34,8 @@ def report_playlist(request):
 
     # report vars
     items = None
-    fields = ['from_date', 'to_date', 'album_title', 'artist_name', 'label', 'play_count']
+    fields = ['from_date', 'to_date', 'album_title', 'artist_name', 'label',
+              'play_count', 'heavy_rotation', 'light_rotation']
 
     # default report
     if request.method == 'GET':
@@ -66,10 +67,6 @@ def report_playlist(request):
 
     # template vars
     vars['form'] = form
-
-    if items:
-        vars['fields'] = fields
-        vars['tracks'] = query_group_by_track_key(from_date, to_date)
 
     return render_to_response('playlists/reports.html', vars,
             context_instance=RequestContext(request))
