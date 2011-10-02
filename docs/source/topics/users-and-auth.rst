@@ -54,6 +54,9 @@ with the logged-in user's User object.
         return HttpResponse('Hello %s!' % request.user)
 
 Users are keyed on their email addresses:
+
+.. code-block:: python
+
     some_user = User.get_by_email(email_addr)
 
 However, users are allowed to change their email address.
