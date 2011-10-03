@@ -19,6 +19,7 @@
 import logging
 import datetime
 from datetime import timedelta
+import traceback
 
 from django.utils import simplejson
 from django.http import Http404
@@ -58,21 +59,25 @@ def start_job(request):
 
 
 def do_job_work(request):
-    job = Job.get(request.POST['job_key'])
-    params = request.POST.get('params', '{}')
-    worker = get_worker(job.job_name)
-    if worker['pre_request']:
-        early_response = worker['pre_request'](request)
-        if early_response is not None:
-            return early_response
-    if job.result:
-        result_for_worker = simplejson.loads(job.result)
-    else:
-        result_for_worker = None
-    finished, result = worker['callback'](result_for_worker,
-                                          simplejson.loads(params))
-    job.result = simplejson.dumps(result)
-    job.save()
+    try:
+        job = Job.get(request.POST['job_key'])
+        params = request.POST.get('params', '{}')
+        worker = get_worker(job.job_name)
+        if worker['pre_request']:
+            early_response = worker['pre_request'](request)
+            if early_response is not None:
+                return early_response
+        if job.result:
+            result_for_worker = simplejson.loads(job.result)
+        else:
+            result_for_worker = None
+        finished, result = worker['callback'](result_for_worker,
+                                              simplejson.loads(params))
+        job.result = simplejson.dumps(result)
+        job.save()
+    except:
+        traceback.print_exc()
+        raise
     @as_json
     def data(request):
         return {

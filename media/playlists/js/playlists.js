@@ -2,17 +2,17 @@
 //           jquery.autocomplete/jquery.autocomplete.js
 
 $(document).ready(function() {
-    
+
     var default_opt = {
         selectFirst: false,
         minChars: 3,
         delay: 400,
         maxItemsToShow: 15,
-        matchContains: true // tells the cache to do substring matches 
-                            // (necessary when searching "eno" and the 
+        matchContains: true // tells the cache to do substring matches
+                            // (necessary when searching "eno" and the
                             // result is "Eno, Brian")
     };
-    
+
     $("#id_artist").keyup(function() {
         $('#played_warning').slideUp("fast");
         if ($(this).val() === "")
@@ -25,7 +25,7 @@ $(document).ready(function() {
         if ($(this).val() === "") {
             $(this).removeClass('freeform');
         }
-        else        
+        else
             $(this).addClass('freeform');
     });
     $("#id_song").keyup(function() {
@@ -42,7 +42,7 @@ $(document).ready(function() {
             $(this).addClass('freeform');
     });
 
-    $("#id_artist").autocomplete("/djdb/artist/search.txt", 
+    $("#id_artist").autocomplete("/djdb/artist/search.txt",
         $.extend({
             onItemSelect: function(li) {
                 var entity_key = li.extra[0];
@@ -62,8 +62,8 @@ $(document).ready(function() {
                 }
             }
         }, default_opt));
-    
-    $("#id_album").autocomplete("/djdb/album/search.txt", 
+
+    $("#id_album").autocomplete("/djdb/album/search.txt",
         $.extend({
             onItemSelect: function(li) {
                 var entity_key = li.extra[0];
@@ -97,8 +97,8 @@ $(document).ready(function() {
                 }
             }
         }, default_opt));
-    
-    $("#id_song").autocomplete("/djdb/track/search.txt", 
+
+    $("#id_song").autocomplete("/djdb/track/search.txt",
         $.extend({
             onItemSelect: function(li) {
                 var entity_key = li.extra[0];
@@ -132,8 +132,8 @@ $(document).ready(function() {
                 }
             }
         }, default_opt));
-    
-    $("#id_label").autocomplete("/djdb/label/search.txt", 
+
+    $("#id_label").autocomplete("/djdb/label/search.txt",
         $.extend({
             onItemSelect: function(li) {
                 $("#id_label").focus();
@@ -141,9 +141,9 @@ $(document).ready(function() {
             }
         }, default_opt));
 
-    // be sure that freeform entry always clears out any 
+    // be sure that freeform entry always clears out any
     // previously auto-completed keys :
-    
+
     $("#id_artist").change(function() {
         var song = $("#id_song").get(0);
         song.autocompleter.setExtraParams({artist_key: ""});
@@ -156,7 +156,7 @@ $(document).ready(function() {
     $("#id_song").change(function() {
         $("#id_song_key").attr("value", "");
     });
-    
+
     $('#lookup-on-musicbrainz').click(function(e) {
         var url = 'http://musicbrainz.org/search/textsearch.html';
         var qs = 'limit=25&adv=on&handlearguments=1';
@@ -178,10 +178,10 @@ $(document).ready(function() {
             qs += '&query=' + escape(artist);
         }
         // console.log(qs);
-        
+
         this.href = url + '?' + qs;
     });
-    
+
     $('#lookup-album-on-google').click(function(e) {
         var url = 'http://google.com/search';
         var artist = $('#id_artist').val();
@@ -192,7 +192,7 @@ $(document).ready(function() {
         }
         this.href = url + '?q=' + escape(artist + " " + album);
     });
-    
+
     $('#pronounce-artist').click(function(e) {
         var url = 'http://google.com/search';
         var artist = $('#id_artist').val();
@@ -238,7 +238,7 @@ $(document).ready(function() {
         }
         return null;
     }
-    
+
     function updateSentItem() {
         if ($("#id_allow_receive").attr("checked") === true) {
             item = getCookie("chirp_track_to_play");
@@ -255,7 +255,7 @@ $(document).ready(function() {
                 var notes = fields[7].trim().replace(/\/\//g, '/');
                 var categories = fields[8].trim().split(',');
                 var error = fields[9].trim();
-                
+
                 $("#id_artist").val(artist_name);
                 $("#id_artist_key").val(artist_key);
                 $("#id_song").val(track_title);
@@ -267,7 +267,7 @@ $(document).ready(function() {
                 $("#id_is_heavy_rotation").attr("checked", false);
                 $("#id_is_light_rotation").attr("checked", false);
                 $("#id_is_local_current").attr("checked", false);
-                $("#id_is_local_classic").attr("checked", false);            
+                $("#id_is_local_classic").attr("checked", false);
                 for (var i = 0; i < categories.length; i++) {
                     if (categories[i] == 'heavy_rotation') {
                         $("#id_is_heavy_rotation").attr("checked", true);
@@ -300,10 +300,10 @@ $(document).ready(function() {
             setTimeout(updateSentItem, 100);
         }
     }
-    
+
     $("#id_allow_receive").click(function(e) {
         if ($(this).is(':checked')) {
-            document.cookie = 'chirp_track_to_play=; path=/; expires=Thu, 01-Jan-70 00:00:01 GMT;';        
+            document.cookie = 'chirp_track_to_play=; path=/; expires=Thu, 01-Jan-70 00:00:01 GMT;';
             updateSentItem();
         }
     });
@@ -316,6 +316,57 @@ $(document).ready(function() {
           button.parent().parent().fadeOut();
         });
     });
-    
+
     updateSentItem();
+});
+
+
+$(document).ready(function() {
+
+    $("#incremental-report-form #generate").click(function(event) {
+        event.preventDefault();
+        $("#ready-link").html('Please wait while the report generates...');
+        $("#ready-link").addClass('report-loading');
+        var values = {};
+        $.each($('#incremental-report-form form').serializeArray(), function(i, field) {
+            values[field.name] = field.value;
+        });
+
+        chirp.request({
+            type: 'POST',
+            url: '/jobs/start',
+            data: {
+                'job_name': 'build-playlist-report'
+            },
+            dataType: 'json',
+            success: function(result, textStatus) {
+                job_key = result.job_key;
+                work(job_key, values);
+            }
+        });
+    });
+
+    var work = function(job_key, form_values) {
+        chirp.request({
+            type: 'POST',
+            url: '/jobs/work',
+            data: {
+                'job_key': job_key,
+                'params': JSON.stringify(form_values)
+            },
+            dataType: 'json',
+            success: function(job_result, textStatus) {
+                if (job_result.finished) {
+                    show_product(job_key);
+                } else {
+                    work(job_key, form_values);
+                }
+            }
+        });
+    };
+
+    var show_product = function(job_key) {
+        $("#ready-link").removeClass('report-loading');
+        $("#ready-link").html('<a href="/jobs/product/' + job_key + '">Download CSV</a>');
+    };
 });
