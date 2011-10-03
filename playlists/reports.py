@@ -191,5 +191,5 @@ def playlist_report_product(results):
         item['from_date'] = results['from_date']
         item['to_date'] = results['to_date']
         item['play_count'] = results['play_counts'][play_key]
-        writer.writerow([item[k] for k in REPORT_FIELDS])
+        writer.writerow([as_encoded_str(item[k]) for k in REPORT_FIELDS])
     return response
