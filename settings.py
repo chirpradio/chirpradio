@@ -136,3 +136,11 @@ NOSE_ARGS = ['--logging-clear-handlers', '--with-nicedots']
 NOSE_PLUGINS = [
     'nosenicedots.plugin.NiceDots',
 ]
+
+
+# Each module here defines job workers so they must be imported
+# by the job runner.
+JOB_WORKER_MODULES = [
+    'playlists.reports',
+    'traffic_log.views',
+]

@@ -60,8 +60,4 @@ def appengine_warmup(request):
     log.info("Warming up")
     taskqueue.add(url='/api/current_playlist', method='GET')
     load_dbconfig_into_memcache()
-    # Import jobs to register them.
-    # TODO(Kumar) figure out a better way to register job workers
-    from playlists import reports
-    from traffic_log import views
     return HttpResponse("it's getting hot in here")

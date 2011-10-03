@@ -21,6 +21,7 @@ import datetime
 from datetime import timedelta
 import traceback
 
+from django.conf import settings
 from django.utils import simplejson
 from django.http import Http404
 
@@ -31,6 +32,14 @@ from jobs import get_worker, get_producer
 log = logging.getLogger()
 
 
+def init_jobs():
+    # TODO(Kumar) figure out a better way to register job workers.
+    # This is currently necessary because app warmup isn't fast enough
+    # to catch process restarts.
+    for path in settings.JOB_WORKER_MODULES:
+         __import__(path)  # registers the job workers
+
+
 def reap_dead_jobs():
     q = Job.all().filter("started <",
                          datetime.datetime.now() - timedelta(days=2))
@@ -39,6 +48,7 @@ def reap_dead_jobs():
 
 
 def start_job(request):
+    init_jobs()
     # TODO(kumar) check for already running jobs
     reap_dead_jobs()
     job_name = request.POST['job_name']
@@ -59,6 +69,7 @@ def start_job(request):
 
 
 def do_job_work(request):
+    init_jobs()
     try:
         job = Job.get(request.POST['job_key'])
         params = request.POST.get('params', '{}')
@@ -88,6 +99,7 @@ def do_job_work(request):
 
 
 def get_job_product(request, job_key):
+    init_jobs()
     job = Job.get(job_key)
     if job is None:
         raise Http404(
