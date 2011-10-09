@@ -21,6 +21,7 @@ import datetime
 from datetime import timedelta
 import csv
 from StringIO import StringIO
+import fudge
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase as DjangoTestCase
@@ -64,7 +65,7 @@ class TestTrafficLogViews(DjangoTestCase):
                         type='Station ID')
         spot_key = spot.put()
         # assign it to every day of the week at the top of the hour:
-        constraint_keys = views.saveConstraint(dict(hourbucket="0,24", dow_list=range(1,8), slot=0))
+        constraint_keys = views.saveConstraint(dict(hour_list=range(0,24), dow_list=range(1,8), slot=0))
         views.connectConstraintsAndSpot(constraint_keys, spot_key)
         
         spot_copy = models.SpotCopy(body='body',
@@ -103,7 +104,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         resp = self.client.post(reverse('traffic_log.createSpot'), {
             'title': 'Legal ID',
             'type': 'Station ID',
-            'hourbucket': '0,24',
+            'hour_list': [str(d) for d in range(0,24)],
             'dow_list': [str(d) for d in range(1,8)],
             'slot': '0'
         })
@@ -147,13 +148,66 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         context = resp.context[0]
         spots = [c.title for c in context['spots']]
         self.assertEqual(spots, ['Legal ID'])
-    
+        
+    @fudge.patch('traffic_log.views.time_util', 'common.time_util')
+    def test_create_irregular_spot(self, time_util, global_time_util):
+        for obj in [time_util, global_time_util]:
+            obj.provides('chicago_now').returns(datetime.datetime.strptime('2011-09-14 05:10', '%Y-%m-%d %H:%M'))
+        resp = self.client.post(reverse('traffic_log.createSpot'),{
+            'title' : 'Legal ID',
+            'type' : 'Station ID',
+            'hour_list' : ['2','5','7','13','23'],
+            'dow_list' : ['1','3','7'],
+            'slot' : '24',
+        })
+        self.assertNoFormErrors(resp)
+        spot = models.Spot.all().filter("title =", "Legal ID").fetch(1)[0]
+        dow = set()
+        hours = set()
+        constraint_map = {}
+        for constraint in spot.constraints:
+            dow.add(constraint.dow)
+            hours.add(constraint.hour)
+            constraint_map[(constraint.dow, constraint.hour, constraint.slot)] = constraint
+        self.assertEqual(dow,set([1L,3L,7L]))
+        self.assertEqual(hours,set([2L,5L,7L,13L,23L]))
+
+        # Check with Wednesday at 5:24am
+        author = User(email='test')
+        author.put()
+        spot_copy = models.SpotCopy(body='body',
+                                    spot=spot,
+                                    author=author)
+        spot_copy.put()
+        spot.random_spot_copies = [spot_copy.key()]
+        spot.save()
+        
+        self.assertEqual(constraint_map[(3L, 5L, 24L)].url_to_finish_spot(spot),
+            "/traffic_log/spot-copy/%s/finish?hour=5&dow=3&slot=24" % spot_copy.key())
+
+        self.assertEqual(constraint_map[(3L, 5L, 24L)].as_query_string(),
+            "hour=5&dow=3&slot=24")
+
+        # spot shows up in DJ view:
+        resp = self.client.get(reverse('traffic_log.index'))
+        context = resp.context[0]
+        slotted_spots = [c for c in context['slotted_spots']]
+        spots = [s.title for s in slotted_spots[0].iter_spots()]
+        for s in spots:
+            self.assertEqual(s, 'Legal ID')
+
+        # spot shows up in admin view:
+        resp = self.client.get(reverse('traffic_log.listSpots'))
+        context = resp.context[0]
+        spots = [c.title for c in context['spots']]
+        self.assertEqual(spots, ['Legal ID'])
+
     def test_spot_copy_expires_when_randomly_shuffled(self):
         # make a regular spot:
         resp = self.client.post(reverse('traffic_log.createSpot'), {
             'title': 'Legal ID',
             'type': 'Station ID',
-            'hourbucket': '0,24',
+            'hour_list': [str(d) for d in range(0,24)],
             'dow_list': [str(d) for d in range(1,8)],
             'slot': '0'
         })
@@ -205,7 +259,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot_copy.put()
         
         # assign it to every day of the week at the top of the hour:
-        constraint_keys = views.saveConstraint(dict(hourbucket="0,24", dow_list=range(1,8), slot=0))
+        constraint_keys = views.saveConstraint(dict(hour_list=range(0,24), dow_list=range(1,8), slot=0))
         views.connectConstraintsAndSpot(constraint_keys, spot.key())
         
         resp = self.client.get(reverse('traffic_log.index'))

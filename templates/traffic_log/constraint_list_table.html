@@ -3,10 +3,11 @@
 <table cellpadding="5" cellspacing="0" border="1">
 <tr align="center"><td>*</td><td>Day</td><td>Hour</td><td>Slot</td></tr>
 {% for constraint in constraints %}
-<tr><td><a href="/traffic_log/spot_constraint/delete/{{constraint.key}}/spot/{{spot_key}}">Delete</a></
+<tr><td><a href="/traffic_log/spot_constraint/delete/{{constraint.key}}/spot/{{spot_key}}"><strong>Delete</strong>&nbsp;&nbsp;</a>
 <td>{{dow_dict|hash:constraint.dow}}</td>
 <td>{{constraint.hour|dd}}</td>
 <td>{{constraint.slot|dd}}</td>
+</tr>
 {% endfor %}
 </table>
 

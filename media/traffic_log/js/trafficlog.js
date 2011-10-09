@@ -56,6 +56,31 @@ $(document).ready(function() {
         var tr = $(anchor).parent().parent(); // a->td->tr
         ns.handle_finish_spot(anchor, tr);
     });
+    $('.filter-button').click(function(){
+        var interval = $(this).attr('id');
+        var selector = '#id_hour_list option';
+        var _reset = function() {
+            $(selector).attr('selected', false);
+        };
+        if(interval == 'reset') {
+            _reset();
+        } else if (interval == 'every-hour'){
+            _reset();
+            $(selector).attr('selected', true);
+        } else if (parseInt(interval, 10)){
+            _reset();
+            $(selector).attr('selected', true);
+            $.each($(selector), function(key,val){
+                if($(val).val() % parseInt(interval, 10)) {
+                    $(this).attr('selected', false);
+                }
+            });
+        } else {
+            _reset();
+            selector = selector + interval;
+            $(selector).attr('selected', true);
+        }
+    });
 });
 
 

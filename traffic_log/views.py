@@ -71,7 +71,6 @@ def index(request):
     today = now.date()
     
     hours_by_day = defaultdict(lambda: [])
-    
     current_hour = now.hour
     current_dow = today.isoweekday()
     hours_by_day[current_dow].append(current_hour)
@@ -95,9 +94,7 @@ def index(request):
     
     slotted_spots = []
     for dow in hours_by_day:
-        q = (models.SpotConstraint.all()
-                        .filter("dow =", dow)
-                        .filter("hour IN", hours_by_day[dow]))
+        q = models.SpotConstraint.all().filter("dow =", dow).filter("hour IN", hours_by_day[dow])
         for s in AutoRetry(q):
             slotted_spots.append(s)
     
@@ -105,7 +102,6 @@ def index(request):
         return hours_to_show.index(s.hour)
         
     slotted_spots.sort(key=hour_position)
-    
     return render_to_response('traffic_log/index.html', dict(
             date=today,
             slotted_spots=slotted_spots
@@ -354,19 +350,13 @@ def connectConstraintsAndSpot(constraint_keys,spot_key):
 
 def saveConstraint(constraint):
     dows = [ int(x) for x in constraint['dow_list'] ]
-    
+    hours = constraint['hour_list']
     keys = []
-    if constraint['hourbucket'] != "":
-        ## TODO(Kumar) I don't think this is such a good idea.  
-        ## use split(",") and int() instead.
-        hours = range(*eval(constraint['hourbucket']))
-    else:
-        hours = [int(constraint['hour'])]
     slot = int(constraint['slot'])
     for d in dows:
         for h in hours:
             name = ":".join([constants.DOW_DICT[d],str(h), str(slot)])
-            obj  = AutoRetry(models.SpotConstraint).get_or_insert(name,dow=d,hour=h,slot=slot)
+            obj  = AutoRetry(models.SpotConstraint).get_or_insert(name,dow=d,hour=int(h),slot=slot)
             if not obj.is_saved():
                 AutoRetry(obj).put()
             keys.append(obj.key())
