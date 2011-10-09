@@ -59,11 +59,16 @@ $(document).ready(function() {
     $('.filter-button').click(function(){
         var interval = $(this).attr('id');
         var selector = '#id_hour_list option';
-        if(interval == 'reset') {
+        var _reset = function() {
             $(selector).attr('selected', false);
+        };
+        if(interval == 'reset') {
+            _reset();
         } else if (interval == 'every-hour'){
+            _reset();
             $(selector).attr('selected', true);
         } else if (parseInt(interval, 10)){
+            _reset();
             $(selector).attr('selected', true);
             $.each($(selector), function(key,val){
                 if($(val).val() % parseInt(interval, 10)) {
@@ -71,6 +76,7 @@ $(document).ready(function() {
                 }
             });
         } else {
+            _reset();
             selector = selector + interval;
             $(selector).attr('selected', true);
         }
