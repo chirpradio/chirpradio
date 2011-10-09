@@ -158,7 +158,7 @@ $(document).ready(function() {
     });
     
     $('#lookup-in-djdb').click(function(e) {
-        var url = '/djdb/'
+        var url = '/djdb/';
         var artist = $('#id_artist').val();
         var album = $('#id_album').val();
         var song = $('#id_song').val();
