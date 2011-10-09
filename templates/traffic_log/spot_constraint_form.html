@@ -1,23 +1,26 @@
 
-<table width="100%" border="1" cellpadding="3" cellspacing="0">
+<table width="100%" border="1" cellpadding="3" cellspacing="0" id="spot-constraint">
   <tr align="center">
-	<td >
-	    {{ constraint_form.dow_list.errors }}
-	    {{ constraint_form.dow_list }}</td>
 	<td>
-      <p>
+	    <p id="dow-select">
+	        {{ constraint_form.dow_list.errors }}
+	        {{ constraint_form.dow_list }}
+	    </p>
+	</td>
+	<td>
+      <p id="quick-buttons">
           <input type="button" class="filter-button" id="every-hour" value="Every Hour" />
           <input type="button" class="filter-button" id=":even" value="All Even Hours" />
           <input type="button" class="filter-button" id=":odd" value="All Odd Hours" />
           <input type="button" class="filter-button" id="3" value="Every Three Hours" />
           <input type="button" class="filter-button" id="6" value="Every Six Hours" />
       </p>
-      <p>
+      <p id="hour-select">
           {{ constraint_form.hour_list.errors }}
           {{ constraint_form.hour_list.label }}
           {{ constraint_form.hour_list }}
       </p>
-      <p>
+      <p id="reset-button">
           <input type="button" class="filter-button" id="reset" value="Reset" />
       </p>
 	

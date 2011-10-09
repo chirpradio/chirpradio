@@ -85,3 +85,28 @@ radius:10px; -moz-border-radius:10px; border-radius:10px; box-shadow: 0px 0px 35
 .report-loading {
     background: transparent url('/media/common/img/progress-bar.gif') no-repeat;
 }
+
+/* Spot Constraint form */
+#spot-constraint p#quick-buttons, #spot-constraint p#hour-select {
+    float: left;
+    width: 150px;
+}
+
+#spot-constraint p#quick-buttons input {
+    margin-top: 16px;
+    float: left;
+    clear: left;
+    width: 110px;
+}
+
+#spot-constraint p#reset-button {
+    float: left;
+    clear: both;
+    width: 150px;
+}
+
+#spot-constraint p#hour-select select, #spot-constraint p#dow-select select {
+    margin-top: 16px;
+    width: 150px;
+    height: 200px;
+}
