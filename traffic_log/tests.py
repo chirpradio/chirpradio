@@ -148,11 +148,11 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         context = resp.context[0]
         spots = [c.title for c in context['spots']]
         self.assertEqual(spots, ['Legal ID'])
-    
-    @fudge.patch('common.time_util')
-    def test_create_irregular_spot(self, time_util):
-        from common.time_util import convert_utc_to_chicago
-        chicago_now = time_util.provides('chicago_now').returns(convert_utc_to_chicago(datetime.datetime.strptime('2011-09-13 09:55', '%Y-%m-%d %H:%M')))
+        
+    @fudge.patch('traffic_log.views.time_util', 'common.time_util')
+    def test_create_irregular_spot(self, time_util, global_time_util):
+        for obj in [time_util, global_time_util]:
+            obj.provides('chicago_now').returns(datetime.datetime.strptime('2011-09-14 05:10', '%Y-%m-%d %H:%M'))
         resp = self.client.post(reverse('traffic_log.createSpot'),{
             'title' : 'Legal ID',
             'type' : 'Station ID',
@@ -172,7 +172,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         self.assertEqual(dow,set([1L,3L,7L]))
         self.assertEqual(hours,set([2L,5L,7L,13L,23L]))
 
-        # Check with Tuesday at 5:24am
+        # Check with Wednesday at 5:24am
         author = User(email='test')
         author.put()
         spot_copy = models.SpotCopy(body='body',
@@ -181,7 +181,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot_copy.put()
         spot.random_spot_copies = [spot_copy.key()]
         spot.save()
-
+        
         self.assertEqual(constraint_map[(3L, 5L, 24L)].url_to_finish_spot(spot),
             "/traffic_log/spot-copy/%s/finish?hour=5&dow=3&slot=24" % spot_copy.key())
 
@@ -191,11 +191,10 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         # spot shows up in DJ view:
         resp = self.client.get(reverse('traffic_log.index'))
         context = resp.context[0]
-        print context['chicago_now']
-        print 'DJ view Slotted Spots: %s' % str(context['slotted_spots'])
         slotted_spots = [c for c in context['slotted_spots']]
         spots = [s.title for s in slotted_spots[0].iter_spots()]
-        self.assertEqual(spots[0], spot.title)
+        for s in spots:
+            self.assertEqual(s, 'Legal ID')
 
         # spot shows up in admin view:
         resp = self.client.get(reverse('traffic_log.listSpots'))

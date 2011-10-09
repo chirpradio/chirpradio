@@ -71,7 +71,6 @@ def index(request):
     today = now.date()
     
     hours_by_day = defaultdict(lambda: [])
-    
     current_hour = now.hour
     current_dow = today.isoweekday()
     hours_by_day[current_dow].append(current_hour)
@@ -95,9 +94,7 @@ def index(request):
     
     slotted_spots = []
     for dow in hours_by_day:
-        q = (models.SpotConstraint.all()
-                        .filter("dow =", dow)
-                        .filter("hour IN", hours_by_day[dow]))
+        q = models.SpotConstraint.all().filter("dow =", dow).filter("hour IN", hours_by_day[dow])
         for s in AutoRetry(q):
             slotted_spots.append(s)
     
@@ -105,7 +102,6 @@ def index(request):
         return hours_to_show.index(s.hour)
         
     slotted_spots.sort(key=hour_position)
-    
     return render_to_response('traffic_log/index.html', dict(
             date=today,
             slotted_spots=slotted_spots
