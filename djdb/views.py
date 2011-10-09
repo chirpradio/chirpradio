@@ -429,16 +429,24 @@ def artist_info_page(request, artist_name, ctx_vars=None):
 
     ctx_vars["title"] = title
     ctx_vars["artist"] = artist
+    revoked_items = False
     if include_revoked:
-        ctx_vars["albums"] = artist.sorted_albums_all
+        albums = artist.sorted_albums_all
+        for album in albums:
+            if album.revoked:
+                revoked_items = True
+                break
+        ctx_vars["albums"] = albums
     else:
         ctx_vars["albums"] = artist.sorted_albums
     ctx_vars["categories"] = models.ALBUM_CATEGORIES
+    ctx_vars["revoked_items"] = revoked_items
 
     if request.user.is_music_director:
         artist_form = None
         if request.method == "GET":
             artist_form = forms.PartialArtistForm({'pronunciation': artist.pronunciation})
+            show_revoked = request.GET.get("show_revoked") == 'True'
         else:
             artist_form = forms.PartialArtistForm(request.POST)
             if artist_form.is_valid() and "update_artist" in request.POST:
@@ -446,7 +454,9 @@ def artist_info_page(request, artist_name, ctx_vars=None):
                 idx = search.Indexer(artist.parent_key())
                 idx.update_artist(artist, {"pronunciation" : artist_form.cleaned_data["pronunciation"]})
                 idx.save()
+            show_revoked = request.POST.get("show_revoked") == 'True'
         ctx_vars["artist_form"] = artist_form
+        ctx_vars["show_revoked"] = show_revoked
 
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
@@ -669,7 +679,7 @@ def artist_revoke(request, artist_name):
     ctx_vars = {}    
     response_page = request.GET.get('response_page')
     if response_page == 'landing':
-        return http.HttpResponseRedirect('/djdb?query=%s' % request.GET.get('query'))
+        return http.HttpResponseRedirect('/djdb/?query=%s' % request.GET.get('query'))
     elif response_page == 'browse':
         start_char = request.GET.get('start_char')
         page_size = request.GET.get('page_size')
@@ -705,7 +715,7 @@ def artist_unrevoke(request, artist_name):
     ctx_vars = {}    
     response_page = request.GET.get('response_page')
     if response_page == 'landing':
-        return http.HttpResponseRedirect('/djdb?query=%s' % request.GET.get('query'))
+        return http.HttpResponseRedirect('/djdb/?query=%s' % request.GET.get('query'))
     elif response_page == 'browse':
         start_char = request.GET.get('start_char')
         page_size = request.GET.get('page_size')
@@ -830,7 +840,7 @@ def update_tracks(request, album_id_str):
     for name in request.POST.keys() :
         if re.match('checkbox_', name) :
             type, num = name.split('_')
-            track = album.sorted_tracks[int(num) - 1]
+            track = album.sorted_tracks_all[int(num) - 1]
             if mark_as == 'explicit' :
                 if models.EXPLICIT_TAG in models.TagEdit.fetch_and_merge(track) :
                     tag_util.remove_tag_and_save(request.user, track, models.EXPLICIT_TAG)
@@ -848,6 +858,8 @@ def update_tracks(request, album_id_str):
                         tag_util.add_tag_and_save(request.user, track, models.RECOMMENDED_TAG)
     ctx_vars['error'] = error
     
+    ctx_vars['show_revoked'] = request.POST.get('show_revoked') == 'True'
+
     request.method = 'GET'            
     return album_info_page(request, album_id_str, ctx_vars)
 
@@ -862,8 +874,9 @@ def track_revoke(request, track_key):
     
     ctx_vars = {}    
     response_page = request.GET.get('response_page')
+    show_revoked = request.GET.get('show_revoked')
     if response_page == 'landing':
-        return http.HttpResponseRedirect('/djdb?query=%s' % request.GET.get('query'))
+        return http.HttpResponseRedirect('/djdb/?query=%s' % request.GET.get('query'))
     elif response_page == 'browse':
         start_char = request.GET.get('start_char')
         page_size = request.GET.get('page_size')
@@ -878,7 +891,7 @@ def track_revoke(request, track_key):
             url += '&bookmark=%s' % bookmark
         return http.HttpResponseRedirect(url)
     else:
-        return http.HttpResponseRedirect('/djdb/album/%s/info' % track.album.album_id)
+        return http.HttpResponseRedirect('/djdb/album/%s/info?show_revoked=%s' % (track.album.album_id, show_revoked))
 
 @require_role(roles.MUSIC_DIRECTOR)
 def track_unrevoke(request, track_key):
@@ -891,8 +904,9 @@ def track_unrevoke(request, track_key):
     
     ctx_vars = {}    
     response_page = request.GET.get('response_page')
+    show_revoked = request.GET.get('show_revoked')
     if response_page == 'landing':
-        return http.HttpResponseRedirect('/djdb?query=%s' % request.GET.get('query'))
+        return http.HttpResponseRedirect('/djdb/?query=%s' % request.GET.get('query'))
     elif response_page == 'browse':
         start_char = request.GET.get('start_char')
         page_size = request.GET.get('page_size')
@@ -907,7 +921,7 @@ def track_unrevoke(request, track_key):
             url += '&bookmark=%s' % bookmark
         return http.HttpResponseRedirect(url)
     else:
-        return http.HttpResponseRedirect('/djdb/album/%s/info' % track.album.album_id)
+        return http.HttpResponseRedirect('/djdb/album/%s/info?show_revoked=%s' % (track.album.album_id, show_revoked))
 
 def browse_page(request, entity_kind, start_char, ctx_vars=None):
     allowed = map(chr, range(65, 91))
@@ -1032,9 +1046,77 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
 
     ctx = RequestContext(request, ctx_vars)
     return http.HttpResponse(template.render(ctx))
+
+def new_browse_page(request):
+    ctx_vars = {}
+
+    entity_kind = 'album'
+    start_char = 'F'
+    category = None
+    reviewed = None
+    field = 'title'
+    page_size = 10
+    bookmark = None
+    query = pager.PagerQuery(models.Album)
+    if start_char == '0':
+        query.filter("%s >=" % field, "0")
+        query.filter("%s <" % field, u"9" + u"\uffff")
+    elif start_char == 'other':
+        query.filter("%s >=" % field, u"\u0021")
+        query.filter("%s <" % field, u"\u0030")
+    elif start_char != 'all':
+        query.filter("%s >=" % field, start_char)
+        query.filter("%s <" % field, start_char + u"\uffff")
+    if category is not None:
+        query.filter("current_tags =", category)
+    if reviewed is not None:
+        query.filter("is_reviewed =", True)
+    if not request.user.is_music_director:
+        query.filter("revoked =", False)
+    query.order(field)
+    prev, items, next = query.fetch(page_size, bookmark)
+
+    album = items[0]
+    try:
+        lastfm = pylast.get_lastfm_network(api_key='c2dedca7961e64bd318894ae80d161b7')
+        lastfm_album = lastfm.get_album('PJ Harvey', 'Dry')
+        ctx_vars["album_cover_m"] = lastfm_album.get_cover_image(pylast.COVER_MEDIUM)
+        ctx_vars["album_cover_xl"] = lastfm_album.get_cover_image(pylast.COVER_EXTRA_LARGE)
+    except:
+        ctx_vars["album_cover_m"] = "/media/common/img/no_cover_art.png"
+        ctx_vars["album_cover_xl"] = "/media/common/img/no_cover_art.png"
+        pass
+
+    ctx_vars["album"] = album
+    ctx_vars["album_tags"] = []
+    for tag in models.Tag.all().order('name'):
+        if tag.name not in album.current_tags:
+            ctx_vars["album_tags"].append(tag.name)
+    if request.user.is_music_director:
+        ctx_vars["tracks"] = album.sorted_tracks_all
+    else:
+        ctx_vars["tracks"] = album.sorted_tracks + album.sorted_tracks + album.sorted_tracks
+    ctx_vars["user"] = request.user
+
+    ctx_vars["entity_kind"] = entity_kind
+    ctx_vars["start_char"] = start_char
+    ctx_vars["categories"] = models.ALBUM_CATEGORIES
+    ctx_vars["bookmark"] = bookmark
+    ctx_vars["items"] = items
+    ctx_vars["prev"] = prev
+    ctx_vars["next"] = next
+    ctx_vars["page_size"] = page_size
+    ctx_vars["page_sizes"] = [10, 25, 50, 100]
+    ctx_vars["reviewed"] = reviewed
+    ctx_vars["category"] = category
+
+    # Display page.
+    ctx = RequestContext(request, ctx_vars)
+    template = loader.get_template('djdb/new_browse_slide_page.html')
+    return http.HttpResponse(template.render(ctx))
     
 def category_page(request, category):
-    query = models.Album.all().filter("category =", category)
+    query = models.Album.all().filter("current_tags =", category)
     albums = AutoRetry(query).fetch(AutoRetry(query).count())
     template = loader.get_template("djdb/category_page.html")
     ctx_vars = { "category": category,
@@ -1132,11 +1214,18 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     for tag in models.Tag.all().order('name'):
         if tag.name not in album.current_tags:
             ctx_vars["album_tags"].append(tag.name)
+    revoked_items = False
     if request.user.is_music_director:
-        ctx_vars["tracks"] = album.sorted_tracks_all
+        tracks = album.sorted_tracks_all
+        for track in tracks:
+            if track.revoked:
+                revoked_items = True
+                break
+        ctx_vars["tracks"] = tracks
     else:
         ctx_vars["tracks"] = album.sorted_tracks
     ctx_vars["user"] = request.user
+    ctx_vars["revoked_items"] = revoked_items
             
     if request.user.is_music_director:
         album_form = None
@@ -1149,6 +1238,7 @@ def album_info_page(request, album_id_str, ctx_vars=None):
                                                  'is_light_rotation': album.has_tag(models.LIGHT_ROTATION_TAG),
                                                  'is_local_classic': album.has_tag(models.LOCAL_CLASSIC_TAG),
                                                  'is_local_current': album.has_tag(models.LOCAL_CURRENT_TAG)})
+            show_revoked = request.GET.get('show_revoked') == 'True'
         else:
             album_form = forms.PartialAlbumForm(request.POST)
             if album_form.is_valid() and "update_album" in request.POST:
@@ -1169,7 +1259,10 @@ def album_info_page(request, album_id_str, ctx_vars=None):
                 if album_form.cleaned_data["is_local_current"] != album.has_tag(models.LOCAL_CURRENT_TAG):
                     _update_category(album, models.LOCAL_CURRENT_TAG, request.user)
                 AutoRetry(db).put(album)
+            show_revoked = request.POST.get('show_revoked') == 'True'
         ctx_vars["album_form"] = album_form
+        if 'show_revoked' not in ctx_vars:
+            ctx_vars["show_revoked"] = show_revoked
     
     label = album.label
     if label is None:
@@ -1214,10 +1307,11 @@ def album_revoke(request, album_id_str):
 
     ctx_vars = {}    
     response_page = request.GET.get('response_page')
+    show_revoked = request.GET.get('show_revoked')
     if response_page == 'landing':
-        return http.HttpResponseRedirect('/djdb?query=%s' % request.GET.get('query'))
+        return http.HttpResponseRedirect('/djdb/?query=%s' % request.GET.get('query'))
     elif response_page == 'artist':
-        return http.HttpResponseRedirect('/djdb/artist/%s/info/' % album.album_artist.name)
+        return http.HttpResponseRedirect('/djdb/artist/%s/info/?show_revoked=%s' % (album.album_artist.name, show_revoked))
     elif response_page == 'browse':
         start_char = request.GET.get('start_char')
         page_size = request.GET.get('page_size')
@@ -1247,10 +1341,11 @@ def album_unrevoke(request, album_id_str):
 
     ctx_vars = {}    
     response_page = request.GET.get('response_page')
+    show_revoked = request.GET.get('show_revoked')
     if response_page == 'landing':
-        return http.HttpResponseRedirect('/djdb?query=%s' % request.GET.get('query'))
+        return http.HttpResponseRedirect('/djdb/?query=%s' % request.GET.get('query'))
     elif response_page == 'artist':
-        return http.HttpResponseRedirect('/djdb/artist/%s/info/' % album.album_artist.name)
+        return http.HttpResponseRedirect('/djdb/artist/%s/info/?show_revoked=%s' % (album.album_artist.name, show_revoked))
     elif response_page == 'browse':
         start_char = request.GET.get('start_char')
         page_size = request.GET.get('page_size')

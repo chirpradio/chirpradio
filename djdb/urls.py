@@ -104,7 +104,8 @@ urlpatterns = patterns(
     
     # Browse the database.
     (r'browse/(.+)/(.+)', 'djdb.views.browse_page'),
-    
+    (r'new_browse', 'djdb.views.new_browse_page'),
+
     # Album category page.
     (r'category/(.*)', 'djdb.views.category_page'),
     

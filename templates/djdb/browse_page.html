@@ -38,12 +38,6 @@ Track
 <a href="/djdb/browse/track/{{ start_char }}?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">Track</a>
 {% endifequal %}
 ]
-{% ifequal reviewed None %}
-<input class="reviewed_checkbox" type="checkbox"/>
-{% else %}
-<input class="reviewed_checkbox" type="checkbox" checked="true"/>
-{% endifequal %}
-Reviewed
 <br/>
 
 Category: [

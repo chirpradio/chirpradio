@@ -5,6 +5,9 @@
 
 {% block breadcrumbs %}
 <a href="/">chipradio home</a>
+  {% if query_str %}
+/ <a href="/djdb/">DJ Database home</a>
+  {% endif %}
 {% endblock %}
 
 {% block content %}

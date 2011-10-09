@@ -63,16 +63,26 @@ Mark/Unmark selected as:
   <input type="hidden" name="mark_as"/>
   <input type="hidden" name="response_page" value="artist"/>
   <input type="hidden" name="artist_name" value="{{ artist.name }}"/>
+  <input type="hidden" name="show_revoked" value="{{ show_revoked }}"/>
+
+  {% if revoked_items %}
+    {% if show_revoked %}
+<a href="{{ artist.url }}?show_revoked=False">Hide revoked albums.</a>
+    {% else %}
+<a href="{{ artist.url }}?show_revoked=True">Show revoked albums.</a>
+    {% endif %}
+  {% endif %}
 {% endif %}
 
 <table>
 {% for album in albums %}
-  {% if album.revoked %}
+  {% if not album.revoked or show_revoked %}
+    {% if album.revoked %}
   <tr class="revoked">
-  {% else %}
+    {% else %}
   <tr>
-  {% endif %}
-  {% if user.is_music_director %}
+    {% endif %}
+    {% if user.is_music_director %}
     <td>
       <input type="checkbox" class="checkbox 
     {% for tag in album.current_tags %}
@@ -83,52 +93,53 @@ Mark/Unmark selected as:
              name="checkbox_{{ forloop.counter }}"/>
       <input type="hidden" name="album_key_{{ forloop.counter }}" value="{{ album.key }}"/>
     </td>
-  {% endif %}
-    <td>
-  {% for tag in album.current_tags %}
-    {% if tag in categories %}
-      <div class="track_{{ tag }}">{{ tag|replace:"/_/ "|capfirst }}</div>
     {% endif %}
-  {% endfor %}
+    <td>
+    {% for tag in album.current_tags %}
+      {% if tag in categories %}
+      <div class="track_{{ tag }}">{{ tag|replace:"/_/ "|capfirst }}</div>
+      {% endif %}
+    {% endfor %}
     </td>
     <td><a href="{{ album.url }}">{{ album }}</a></td>
     <td>
-  {% ifnotequal album.label None %}
+    {% ifnotequal album.label None %}
       {{ album.label }}
-  {% endifnotequal %}
+    {% endifnotequal %}
     </td>
     <td>
-  {% ifnotequal album.year None %}
+    {% ifnotequal album.year None %}
       {{ album.year }}
-  {% endifnotequal %}
+    {% endifnotequal %}
     </td>
     <td>
       {{ album.num_tracks }} track{{ album.num_tracks|pluralize }}
     </td>
     <td>
-  {% if album.num_reviews %}
+    {% if album.num_reviews %}
     {{ album.num_reviews }} review{{ album.num_reviews|pluralize }}
-  {% endif %}
-    </td>
-    <td>
-  {% ifincrate user album %}
-      <a href="/djdb/crate/remove_item?response_page=artist&user_key={{ user.key }}&item_key={{ album.key }}"><img src="/media/common/img/remove.png" alt="Remove Album from Crate" title="Remove from Crate"/></a>
-  {% else %}
-      <a href="/djdb/crate/add_item?response_page=artist&user_key={{ user.key }}&item_key={{ album.key }}"><img src="/media/common/img/add.png" alt="Add Album to Crate" title="Add to Crate"/></a>
-  {% endifincrate %}
-    </td>
-  {% if user.is_music_director %}
-    <td>
-    {% if not artist.revoked %}
-      {% if album.revoked %}
-      <a href="/djdb/album/{{ album.album_id }}/unrevoke?response_page=artist" title="Unrevoke album"> <img src="/media/common/img/unrevoke_icon.png" alt="Unrevoke album"/></a>
-      {% else %}
-      <a href="/djdb/album/{{ album.album_id }}/revoke?response_page=artist" title="Revoke album"> <img src="/media/common/img/revoke_icon.png" alt="Revoke album"/></a>
-      {% endif %}
     {% endif %}
     </td>
-  {% endif %}
+    <td>
+    {% ifincrate user album %}
+      <a href="/djdb/crate/remove_item?response_page=artist&user_key={{ user.key }}&item_key={{ album.key }}&show_revoked={{ show_revoked }}"><img src="/media/common/img/remove.png" alt="Remove Album from Crate" title="Remove from Crate"/></a>
+    {% else %}
+      <a href="/djdb/crate/add_item?response_page=artist&user_key={{ user.key }}&item_key={{ album.key }}&show_revoked={{ show_revoked }}"><img src="/media/common/img/add.png" alt="Add Album to Crate" title="Add to Crate"/></a>
+    {% endifincrate %}
+    </td>
+    {% if user.is_music_director %}
+    <td>
+      {% if not artist.revoked %}
+        {% if album.revoked %}
+      <a href="/djdb/album/{{ album.album_id }}/unrevoke?response_page=artist&show_revoked={{ show_revoked }}" title="Unrevoke album"> <img src="/media/common/img/unrevoke_icon.png" alt="Unrevoke album"/></a>
+        {% else %}
+      <a href="/djdb/album/{{ album.album_id }}/revoke?response_page=artist&show_revoked={{ show_revoked }}" title="Revoke album"> <img src="/media/common/img/revoke_icon.png" alt="Revoke album"/></a>
+        {% endif %}
+      {% endif %}
+    </td>
+    {% endif %}
   </tr>
+  {% endif %}
 {% endfor %}
 </table>
 {% if user.is_music_director %}

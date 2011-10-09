@@ -156,6 +156,18 @@ $(document).ready(function() {
     $("#id_song").change(function() {
         $("#id_song_key").attr("value", "");
     });
+    
+    $('#lookup-in-djdb').click(function(e) {
+        var url = '/djdb/'
+        var artist = $('#id_artist').val();
+        var album = $('#id_album').val();
+        var song = $('#id_song').val();
+        if ( !artist ) {
+            e.preventDefault();
+            return;
+        }
+        this.href = url + '?query=' + escape(artist + " " + album + " " + song);
+    });
 
     $('#lookup-on-musicbrainz').click(function(e) {
         var url = 'http://musicbrainz.org/search/textsearch.html';
