@@ -63,10 +63,10 @@ $(document).ready(function() {
             $(selector).attr('selected', false);
         } else if (interval == 'every-hour'){
             $(selector).attr('selected', true);
-        } else if (parseInt(interval)){
+        } else if (parseInt(interval, 10)){
             $(selector).attr('selected', true);
             $.each($(selector), function(key,val){
-                if($(val).val()%parseInt(interval)) {
+                if($(val).val() % parseInt(interval, 10)) {
                     $(this).attr('selected', false);
                 }
             });
