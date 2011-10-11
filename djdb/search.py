@@ -763,7 +763,7 @@ def simple_music_search(query_str, max_num_results=None, entity_kind=None,
     # Allow search on the tag field for tracks.
     keys_to_fetch = []
     for key, fields in all_matches.iteritems():
-        if key.kind() != "Track" or "title" in fields or "tag" in fields:
+        if key.kind() != "Track" or "title" in fields or "tag" in fields or "track_artist" in fields:
             keys_to_fetch.append(key)
 
     # Fetch all of the specified keys from the datastore and construct a
