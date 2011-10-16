@@ -140,6 +140,13 @@ indexes:
   properties:
   - name: current_tags
   - name: is_reviewed
+  - name: revoked
+  - name: title
+
+- kind: Album
+  properties:
+  - name: current_tags
+  - name: is_reviewed
   - name: title
 
 - kind: Album
@@ -157,6 +164,12 @@ indexes:
   - name: is_reviewed
   - name: album_id
     direction: desc
+
+- kind: Album
+  properties:
+  - name: is_reviewed
+  - name: revoked
+  - name: title
 
 - kind: Album
   properties:
@@ -214,6 +227,12 @@ indexes:
 
 - kind: Artist
   properties:
+  - name: current_tags
+  - name: revoked
+  - name: name
+
+- kind: Artist
+  properties:
   - name: doctype
   - name: name
     direction: desc
@@ -221,6 +240,12 @@ indexes:
 - kind: Artist
   properties:
   - name: is_reviewed
+  - name: name
+
+- kind: Artist
+  properties:
+  - name: is_reviewed
+  - name: revoked
   - name: name
 
 - kind: Artist
@@ -482,11 +507,24 @@ indexes:
   properties:
   - name: current_tags
   - name: is_reviewed
+  - name: revoked
   - name: title
 
 - kind: Track
   properties:
   - name: current_tags
+  - name: is_reviewed
+  - name: title
+
+- kind: Track
+  properties:
+  - name: current_tags
+  - name: title
+
+- kind: Track
+  properties:
+  - name: is_reviewed
+  - name: revoked
   - name: title
 
 - kind: Track

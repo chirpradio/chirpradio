@@ -939,11 +939,13 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
     page_size = 10
     if request.method == "GET":
         reviewed = request.GET.get('reviewed')
+        not_reviewed = request.GET.get('not_reviewed')
         bookmark = request.GET.get('bookmark')
         category = request.GET.get('category')
         form = forms.BrowseForm(request.GET, entity_kind=entity_kind)
     else:
         reviewed = request.POST.get('reviewed')
+        not_reviewed = request.POST.get('not_reviewed')
         bookmark = request.POST.get('bookmark')
         category = request.POST.get('category')
         form = forms.BrowseForm(request.POST, entity_kind=entity_kind)
@@ -959,6 +961,8 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
             url += "&category=%s" % category
         if reviewed is not None:
             url += "&reviewed=true"
+        elif not_reviewed is not None:
+            url += "&not_reviewed=true"
         return http.HttpResponseRedirect(url)
     
     if category is not None and category not in models.ALBUM_CATEGORIES:
@@ -981,6 +985,8 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
         query = models.Album.all().order('album_id')
         if reviewed is not None:
             query.filter('is_reviewed =', True)
+        elif not_reviewed is not None:
+            query.filter('is_reviewed =', False)        
         if category is not None:
             query.filter("current_tags =", category)
         alb = query.fetch(1)
@@ -990,6 +996,8 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
             query = models.Album.all().order('-album_id')
             if reviewed is not None:
                 query.filter('is_reviewed =', True)
+            elif not_reviewed is not None:
+                query.filter('is_reviewed =', False)
             if category is not None:
                 query.filter("current_tags =", category)
             alb = query.fetch(1)
@@ -1029,6 +1037,8 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
             query.filter("current_tags =", category)
         if reviewed is not None:
             query.filter("is_reviewed =", True)
+        elif not_reviewed is not None:
+            query.filter("is_reviewed =", False)
         if not request.user.is_music_director:
             query.filter("revoked =", False)
         query.order(field)
@@ -1042,6 +1052,7 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
     ctx_vars["page_size"] = page_size
     ctx_vars["page_sizes"] = [10, 25, 50, 100]
     ctx_vars["reviewed"] = reviewed
+    ctx_vars["not_reviewed"] = not_reviewed
     ctx_vars["category"] = category
 
     ctx = RequestContext(request, ctx_vars)

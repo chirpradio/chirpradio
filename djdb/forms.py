@@ -141,6 +141,7 @@ class CrateItemsForm(forms.Form):
 class BrowseForm(forms.Form):
     page_size = forms.ChoiceField(required=False, choices=PAGE_SIZE_CHOICES)
     reviewed = forms.BooleanField(required=False)
+    not_reviewed = forms.BooleanField(required=False)
 #    order = forms.ChoiceField(required=False)
 
     def __init__(self, *args, **kwargs):

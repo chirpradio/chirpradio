@@ -23,19 +23,19 @@ By: [
 {% ifequal entity_kind "artist" %}
 Artist
 {% else %}
-<a href="/djdb/browse/artist/{{ start_char }}?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">Artist</a>
+<a href="/djdb/browse/artist/{{ start_char }}?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}{% ifnotequal not_reviewed None %}&amp;not_reviewed=true{% endifnotequal %}">Artist</a>
 {% endifequal %}
 |
 {% ifequal entity_kind "album" %}
 Album
 {% else %}
-<a href="/djdb/browse/album/{{ start_char }}?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">Album</a>
+<a href="/djdb/browse/album/{{ start_char }}?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}{% ifnotequal not_reviewed None %}&amp;not_reviewed=true{% endifnotequal %}">Album</a>
 {% endifequal %}
 |
 {% ifequal entity_kind "track" %}
 Track
 {% else %}
-<a href="/djdb/browse/track/{{ start_char }}?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">Track</a>
+<a href="/djdb/browse/track/{{ start_char }}?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}{% ifnotequal not_reviewed None %}&amp;not_reviewed=true{% endifnotequal %}">Track</a>
 {% endifequal %}
 ]
 <br/>
@@ -44,7 +44,7 @@ Category: [
 {% ifequal category None %}
 All
 {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/{{ start_char }}?page_size={{ page_size }}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">All</a>
+<a href="/djdb/browse/{{ entity_kind }}/{{ start_char }}?page_size={{ page_size }}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}{% ifnotequal not_reviewed None %}&amp;not_reviewed=true{% endifnotequal %}">All</a>
 {% endifequal %}
 |
 {% for cat in categories %}
@@ -52,7 +52,7 @@ All
   {% ifequal category cat %}
 {{ cat|replace:"/_/ "|capfirst }}
   {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/{{ start_char }}?page_size={{ page_size }}&category={{ cat }}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">{{ cat|replace:"/_/ "|capfirst }}</a>
+<a href="/djdb/browse/{{ entity_kind }}/{{ start_char }}?page_size={{ page_size }}&category={{ cat }}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}{% ifnotequal not_reviewed None %}&amp;not_reviewed=true{% endifnotequal %}">{{ cat|replace:"/_/ "|capfirst }}</a>
   {% endifequal %}
 {% endfor %}
 ]
@@ -62,34 +62,34 @@ Starts with: [
   {% ifequal start_char "all" %}
 All
   {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/all?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">All</a>
+<a href="/djdb/browse/{{ entity_kind }}/all?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}{% ifnotequal not_reviewed None %}&amp;not_reviewed=true{% endifnotequal %}">All</a>
   {% endifequal %}
 |
   {% ifequal start_char "0" %}
 0-9
   {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/0?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">0-9</a>
+<a href="/djdb/browse/{{ entity_kind }}/0?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}{% ifnotequal not_reviewed None %}&amp;not_reviewed=true{% endifnotequal %}">0-9</a>
   {% endifequal %}
 |
   {% for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
     {% ifequal letter start_char %}
 {{ letter }}
     {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/{{ letter }}?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">{{ letter }}</a>
+<a href="/djdb/browse/{{ entity_kind }}/{{ letter }}?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}{% ifnotequal not_reviewed None %}&amp;not_reviewed=true{% endifnotequal %}">{{ letter }}</a>
     {% endifequal %}
 |
   {% endfor %}
   {% ifequal start_char "other" %}
 Other
   {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/other?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">Other</a>
+<a href="/djdb/browse/{{ entity_kind }}/other?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}{% ifnotequal not_reviewed None %}&amp;not_reviewed=true{% endifnotequal %}">Other</a>
   {% endifequal %}
   {% ifequal entity_kind "album" %}
 |
     {% ifequal start_char "random" %}
 Random
     {% else %}
-<a href="/djdb/browse/{{ entity_kind }}/random?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}">Random</a>
+<a href="/djdb/browse/{{ entity_kind }}/random?page_size={{ page_size }}{% ifnotequal category None %}&category={{ category }}{% endifnotequal %}{% ifnotequal reviewed None %}&reviewed=true{% endifnotequal %}{% ifnotequal not_reviewed None %}&amp;not_reviewed=true{% endifnotequal %}">Random</a>
     {% endifequal %}
   {% endifequal %}
 ]

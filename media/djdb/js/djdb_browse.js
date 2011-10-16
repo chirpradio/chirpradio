@@ -30,4 +30,16 @@ $(document).ready(function() {
         }
         window.location = url;
     });
+    
+    $('#id_reviewed').click(function(e) {
+        if ($(this).is(':checked')) {
+            $('#id_not_reviewed').attr('checked', false);
+        }
+    });
+    $('#id_not_reviewed').click(function(e) {
+        if ($(this).is(':checked')) {
+            $('#id_reviewed').attr('checked', false);
+        }
+    });
+
 });
