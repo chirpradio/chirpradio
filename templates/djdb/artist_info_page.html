@@ -43,7 +43,7 @@
 
 <h3>Albums</h3>
 
-{% if user.is_music_director %}
+{% if user.is_music_director or user.is_reviewer %}
 <form method="post" name="djdbForm" action="update">
   <p>
     Select:
@@ -64,7 +64,9 @@ Mark/Unmark selected as:
   <input type="hidden" name="response_page" value="artist"/>
   <input type="hidden" name="artist_name" value="{{ artist.name }}"/>
   <input type="hidden" name="show_revoked" value="{{ show_revoked }}"/>
+{% endif %}
 
+{% if user.is_music_director %}
   {% if revoked_items %}
     {% if show_revoked %}
 <a href="{{ artist.url }}?show_revoked=False">Hide revoked albums.</a>
@@ -82,7 +84,7 @@ Mark/Unmark selected as:
     {% else %}
   <tr>
     {% endif %}
-    {% if user.is_music_director %}
+    {% if user.is_music_director or user.is_reviewer %}
     <td>
       <input type="checkbox" class="checkbox 
     {% for tag in album.current_tags %}

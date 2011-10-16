@@ -631,7 +631,7 @@ def _update_category(item, category, user):
                                           [models.LIGHT_ROTATION_TAG],
                                           [models.HEAVY_ROTATION_TAG])
 
-@require_role(roles.MUSIC_DIRECTOR)
+@require_role([roles.MUSIC_DIRECTOR, roles.REVIEWER])
 def update_albums(request) :
     mark_as = request.POST.get('mark_as')
     for name in request.POST.keys() :
@@ -1214,6 +1214,9 @@ def album_info_page(request, album_id_str, ctx_vars=None):
     for tag in models.Tag.all().order('name'):
         if tag.name not in album.current_tags:
             ctx_vars["album_tags"].append(tag.name)
+    ctx_vars["not_track_tags"] = models.ALBUM_CATEGORIES \
+                                 + [models.EXPLICIT_TAG, models.RECOMMENDED_TAG]
+
     revoked_items = False
     if request.user.is_music_director:
         tracks = album.sorted_tracks_all
@@ -1224,10 +1227,11 @@ def album_info_page(request, album_id_str, ctx_vars=None):
         ctx_vars["tracks"] = tracks
     else:
         ctx_vars["tracks"] = album.sorted_tracks
-    ctx_vars["user"] = request.user
     ctx_vars["revoked_items"] = revoked_items
+
+    ctx_vars["user"] = request.user
             
-    if request.user.is_music_director:
+    if request.user.is_music_director or request.user.is_reviewer:
         album_form = None
         if request.method == "GET":
             album_form = forms.PartialAlbumForm({'pronunciation': album.pronunciation,
@@ -1238,7 +1242,8 @@ def album_info_page(request, album_id_str, ctx_vars=None):
                                                  'is_light_rotation': album.has_tag(models.LIGHT_ROTATION_TAG),
                                                  'is_local_classic': album.has_tag(models.LOCAL_CLASSIC_TAG),
                                                  'is_local_current': album.has_tag(models.LOCAL_CURRENT_TAG)})
-            show_revoked = request.GET.get('show_revoked') == 'True'
+            if request.user.is_music_director:
+                show_revoked = request.GET.get('show_revoked') == 'True'
         else:
             album_form = forms.PartialAlbumForm(request.POST)
             if album_form.is_valid() and "update_album" in request.POST:
@@ -1261,7 +1266,8 @@ def album_info_page(request, album_id_str, ctx_vars=None):
                 AutoRetry(db).put(album)
             show_revoked = request.POST.get('show_revoked') == 'True'
         ctx_vars["album_form"] = album_form
-        if 'show_revoked' not in ctx_vars:
+
+        if request.user.is_music_director and 'show_revoked' not in ctx_vars:
             ctx_vars["show_revoked"] = show_revoked
     
     label = album.label
@@ -1273,13 +1279,13 @@ def album_info_page(request, album_id_str, ctx_vars=None):
 
     title = u'<a href="%s">%s</a> / %s / %s / %s' \
       % (album.artist_url, album.artist_name, album, label, str(year))
-    if request.user.is_music_director:
+    if request.user.is_music_director or request.user.is_reviewer:
         title += ' <a href="" class="edit_album"><img src="/media/common/img/page_white_edit.png"/></a>'
-        if not album.is_compilation and not album.album_artist.revoked:
-            if album.revoked:
-                title += ' <a href="/djdb/album/%s/unrevoke" title="Unrevoke album"><img src="/media/common/img/unrevoke_icon.png" alt="Unrevoke album"/></a>' % album.album_id
-            else:
-                title += ' <a href="/djdb/album/%s/revoke" title="Revoke album"><img src="/media/common/img/revoke_icon.png" alt="Revoke album"/></a>' % album.album_id
+    if request.user.is_music_director and not album.is_compilation and not album.album_artist.revoked:
+        if album.revoked:
+            title += ' <a href="/djdb/album/%s/unrevoke" title="Unrevoke album"><img src="/media/common/img/unrevoke_icon.png" alt="Unrevoke album"/></a>' % album.album_id
+        else:
+            title += ' <a href="/djdb/album/%s/revoke" title="Revoke album"><img src="/media/common/img/revoke_icon.png" alt="Revoke album"/></a>' % album.album_id
     ctx_vars["title"] = title
     ctx_vars["show_reviews"] = album.reviews or request.user.is_music_director or request.user.is_reviewer
     ctx_vars["show_review_link"] = request.user.is_music_director or request.user.is_reviewer

@@ -314,7 +314,7 @@ class UpdateAlbumViewsTestCase(TestCase):
 
         idx.save()
 
-    def test_update_album(self):
+    def test_update_album_music_director(self):
         vars = {'pronunciation': 'pronunciation',
                 'label': 'New Label',
                 'year': 2009,
@@ -345,6 +345,36 @@ class UpdateAlbumViewsTestCase(TestCase):
         self.assertEqual(album.year, 2009)
         self.assertEqual(album.is_compilation, True)
 
+    def test_update_album_reviewer(self):
+        vars = {'pronunciation': 'pronunciation',
+                'label': 'New Label',
+                'year': 2009,
+                'is_compilation': True,
+                'update_album': 'Update Album'}
+        response = self.client.post(
+            '/djdb/album/%d/info' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 200)
+        album = db.get(self.album.key())
+        self.assertEqual(self.album.pronunciation, None)
+        self.assertEqual(self.album.label, 'Label')
+        self.assertEqual(self.album.year, 2010)
+        self.assertEqual(self.album.is_compilation, False)
+
+        self.user.roles.append(roles.REVIEWER)
+        self.user.save()
+        vars = {'pronunciation': 'pronunciation',
+                'label': 'New Label',
+                'year': 2009,
+                'is_compilation': True, 
+                'update_album': 'Update Album'}
+        response = self.client.post(
+            '/djdb/album/%d/info' % self.album.album_id, vars)
+        self.assertEqual(response.status_code, 200)
+        album = db.get(self.album.key())
+        self.assertEqual(album.pronunciation, 'pronunciation')
+        self.assertEqual(album.label, 'New Label')
+        self.assertEqual(album.year, 2009)
+        self.assertEqual(album.is_compilation, True)
 
 class ReviewViewsTestCase(TestCase):
     def setUp(self):
@@ -763,7 +793,7 @@ class  AlbumCategoryViewsTestCase(TestCase):
         response = self.client.post('/djdb/update_albums', vars)
         self.assertEqual(response.status_code, 403)
         
-    def test_update_albums(self):
+    def test_update_albums_music_director(self):
         self.user.roles.append(roles.MUSIC_DIRECTOR)
         self.user.save()
         
@@ -781,6 +811,23 @@ class  AlbumCategoryViewsTestCase(TestCase):
         self.assertEqual(models.ALBUM_CATEGORIES[1] in albums[1].current_tags, False)
         self.assertEqual(models.ALBUM_CATEGORIES[1] in albums[2].current_tags, True)
 
+    def test_update_albums_reviewer(self):
+        self.user.roles.append(roles.REVIEWER)
+        self.user.save()
+        
+        albums = self.artist.sorted_albums
+        vars = {'checkbox_1': 'on',
+                'checkbox_3': 'on',
+                'album_key_1': albums[0].key(),
+                'album_key_3': albums[2].key(),
+                'mark_as': models.ALBUM_CATEGORIES[1]}
+        response = self.client.post('/djdb/update_albums', vars)
+        self.assertEqual(response.status_code, 200)
+        
+        albums = self.artist.sorted_albums
+        self.assertEqual(models.ALBUM_CATEGORIES[1] in albums[0].current_tags, True)
+        self.assertEqual(models.ALBUM_CATEGORIES[1] in albums[1].current_tags, False)
+        self.assertEqual(models.ALBUM_CATEGORIES[1] in albums[2].current_tags, True)
 
 class TrackViewsTestCase(TestCase):
 

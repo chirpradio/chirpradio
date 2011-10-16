@@ -27,8 +27,12 @@ class require_role(object):
 
     If 'role' is None, this check is pass for any signed-in user.
     """
-    def __init__(self, role):
-        self._role = role
+    def __init__(self, role, logic=0):
+        if role is None or type(role) is list:
+            self._role = role
+        else:
+            self._role = [role]
+        self._logic = logic
 
     def __call__(self, func):
         def wrapper(request, *args, **kwargs):
@@ -36,16 +40,38 @@ class require_role(object):
             if not request.user:
                 return http.HttpResponseRedirect(
                     auth.create_login_url(request.path))
-            # If the user is signed in and has the required role,
+            # If the user is signed in and has the required role(s),
             # satisfy the request.
-            if (request.user and
-                (self._role is None
-                 or self._role in request.user.roles
-                 or request.user.is_superuser)):
+            allow = False
+            if self._role is None or (request.user and
+                                      request.user.is_superuser):
+                allow = True
+            if not allow:
+                for role in self._role:
+                    if role in request.user.roles:
+                        if self._logic == 0:
+                            allow = True
+                            break
+                        else:
+                            allow = True
+                    elif self._logic == 1:
+                        allow = False
+                        break
+            if allow:
                 return func(request, *args, **kwargs)
-            # Othewise return a 403.
-            return http.HttpResponseForbidden(
-                'Page requires role "%s"' % self._role)
+            else:
+                # Return a 403.
+                s = 'Page requires '
+                if len(self._role) > 1:
+                    if self._logic == 0:
+                        s += 'any '
+                    else:
+                        s += 'all '
+                    s += 'roles '
+                else:
+                    s += 'role '
+                s += '"%s"' % '", "'.join(self._role)
+                return http.HttpResponseForbidden(s)
         return wrapper
 
 
