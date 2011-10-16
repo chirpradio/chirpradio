@@ -125,6 +125,12 @@ Random
   {% ifnotequal category None %}
   <input type="hidden" name="category" value="{{ category }}"/>
   {% endifnotequal %}
+  {% ifnotequal reviewed None %}
+  <input type="hidden" name="reviewed" value="{{ reviewed }}"/>
+  {% endifnotequal %}
+  {% ifnotequal not_reviewed None %}
+  <input type="hidden" name="not_reviewed" value="{{ not_reviewed }}"/>
+  {% endifnotequal %}
 </form>
 
 <table>
