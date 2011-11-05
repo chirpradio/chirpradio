@@ -52,8 +52,6 @@ def get_appid():
   return value.strip()
 
 def start_server(root_path=ROOT_PATH, port=PORT):
-  dev_appserver.ApplicationLoggingHandler.InitializeTemplates(
-      'HEADER', 'SCRIPT', 'MIDDLE', 'FOOTER')
   dev_appserver.SetupStubs(get_appid(),
                            login_url=LOGIN_URL,
                            datastore_path='/dev/null',
