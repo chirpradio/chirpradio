@@ -34,5 +34,5 @@ def base(request):
         'settings': settings,
         'MEDIA_URL': settings.MEDIA_URL,
         'chicago_now': time_util.chicago_now(),
-        'request': request
+        'request': request,
         }

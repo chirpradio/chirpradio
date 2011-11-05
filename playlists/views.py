@@ -49,7 +49,8 @@ dbconfig = DBConfig()
 log = logging.getLogger()
 
 common_context = {
-    'title': 'CHIRPradio.org DJ Playlist Tracker'
+    'title': 'CHIRPradio.org DJ Playlist Tracker',
+    'page': 'playlists'
 }
 
 class PlaylistEventView(object):

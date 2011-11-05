@@ -47,6 +47,17 @@ from traffic_log import models, forms, constants
 
 log = logging.getLogger()
 
+
+def context(*args, **kw):
+    if len(args):
+        new_ctx = args[0]
+    else:
+        new_ctx = kw
+    ctx = dict(page='traffic_log')
+    ctx.update(new_ctx)
+    return ctx
+
+
 def add_hour(base_hour, dow):
     """Adds an hour to base_hour and ensures it's in range.
     Sets the day ahead if necessary.
@@ -102,7 +113,7 @@ def index(request):
         return hours_to_show.index(s.hour)
         
     slotted_spots.sort(key=hour_position)
-    return render_to_response('traffic_log/index.html', dict(
+    return render_to_response('traffic_log/index.html', context(
             date=today,
             slotted_spots=slotted_spots
         ), context_instance=RequestContext(request))
@@ -121,7 +132,7 @@ def spotTextForReading(request, spot_key=None):
         url = reverse('traffic_log.finishReadingSpotCopy', args=(spot_copy.key(),))
         url = "%s?hour=%d&dow=%d&slot=%d" % (url, hour, dow, slot)
 
-    return render_to_response('traffic_log/spot_detail_for_reading.html', dict(
+    return render_to_response('traffic_log/spot_detail_for_reading.html', context(
             spot_copy=spot_copy,
             url_to_finish_spot=url
         ), context_instance=RequestContext(request))
@@ -207,11 +218,11 @@ def createSpot(request):
         return HttpResponseRedirect(reverse('traffic_log.listSpots'))
 
     return render_to_response('traffic_log/create_edit_spot.html', 
-                  dict(spot=spot_form,
-                       constraint_form=constraint_form,
-                       Author=user,
-                       formaction="/traffic_log/spot/create/"
-                       ), context_instance=RequestContext(request))
+                  context(spot=spot_form,
+                          constraint_form=constraint_form,
+                          Author=user,
+                          formaction="/traffic_log/spot/create/"
+                          ), context_instance=RequestContext(request))
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def createEditSpotCopy(request, spot_copy_key=None, spot_key=None):
@@ -253,9 +264,9 @@ def createEditSpotCopy(request, spot_copy_key=None, spot_key=None):
         spot_copy_form = forms.SpotCopyForm(initial={'spot_key':spot_key}, instance=spot_copy)
 
     return render_to_response('traffic_log/create_edit_spot_copy.html', 
-                  dict(spot_copy=spot_copy_form,
-                       formaction=formaction
-                       ), context_instance=RequestContext(request))
+                  context(spot_copy=spot_copy_form,
+                          formaction=formaction
+                          ), context_instance=RequestContext(request))
 
 @require_role(TRAFFIC_LOG_ADMIN)
 def deleteSpotCopy(request, spot_copy_key=None):
@@ -287,14 +298,14 @@ def editSpot(request, spot_key=None):
         return HttpResponseRedirect('/traffic_log/spot/%s'%spot.key())
     else:
         return render_to_response('traffic_log/create_edit_spot.html', 
-                      dict(spot=forms.SpotForm(instance=spot),
-                           spot_key=spot_key,
-                           constraints=spot.constraints,
-                           constraint_form=forms.SpotConstraintForm(),
-                           edit=True,
-                           dow_dict=constants.DOW_DICT,
-                           formaction="/traffic_log/spot/edit/%s"%spot.key()
-                           ), context_instance=RequestContext(request))
+                      context(spot=forms.SpotForm(instance=spot),
+                              spot_key=spot_key,
+                              constraints=spot.constraints,
+                              constraint_form=forms.SpotConstraintForm(),
+                              edit=True,
+                              dow_dict=constants.DOW_DICT,
+                              formaction="/traffic_log/spot/edit/%s"%spot.key()
+                              ), context_instance=RequestContext(request))
 
 
 @require_role(TRAFFIC_LOG_ADMIN)
@@ -320,11 +331,11 @@ def spotDetail(request, spot_key=None):
     spot = AutoRetry(models.Spot).get(spot_key)
     constraints = [forms.SpotConstraintForm(instance=x) for x in AutoRetry(spot.constraints)]
     form = forms.SpotForm(instance=spot)
-    return render_to_response('traffic_log/spot_detail.html', {
+    return render_to_response('traffic_log/spot_detail.html', context({
             'spot':spot,
             'constraints':constraints,
             'dow_dict':constants.DOW_DICT
-        }, context_instance=RequestContext(request))
+        }), context_instance=RequestContext(request))
 
 
 @require_role(DJ)
@@ -336,7 +347,7 @@ def listSpots(request):
             continue
         spots.append(spot)
     return render_to_response('traffic_log/spot_list.html', 
-        {'spots':spots}, 
+        context({'spots':spots}), 
         context_instance=RequestContext(request))
 
 
@@ -453,7 +464,7 @@ def traffic_log(request, date):
     ## if none are found
     spots_for_date = TrafficLog.gql("where log_date=%s order by hour, slot"%date)
     return render_to_response('traffic_log/spot_list.html', 
-        dict(spots=spots_for_date), 
+        context(spots=spots_for_date), 
         context_instance=RequestContext(request))
 
 
@@ -537,7 +548,7 @@ def report(request):
     report_form = forms.ReportForm({'start_date': start_date,
                                     'end_date': end_date})
     return render_to_response('traffic_log/report.html', 
-                              {'form': report_form},
+                              context({'form': report_form}),
                               context_instance=RequestContext(request))
 
 def report_entry_to_csv_dict(entry):

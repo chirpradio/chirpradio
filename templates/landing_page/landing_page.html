@@ -12,15 +12,15 @@ You have been granted the role "{{ r }}".<br>
 </p>
 
 <p>
-There isn't much here yet.  Things you can do:
+Things you can do:
 <ul>
 {% if user.is_dj %}
-<li> <a href="/djdb/">DJ Database</a>
-<li> <a href="/playlists/">Playlist Tracker</a>
-<li> <a href="/traffic_log/">Traffic Log</a>
+<li> <a href="{% url djdb.landing_page %}">DJ Database</a>
+<li> <a href="{% url playlists_landing_page %}">Playlist Tracker</a>
+<li> <a href="{% url traffic_log.index %}">Traffic Log</a>
 {% endif %}
 {% if user.is_volunteer_coordinator %}
-<li> <a href="/auth/">User Management</a>
+<li> <a href="{% url auth.landing_page %}">User Management</a>
 {% endif %}
 {% if user.is_music_director %}
 <li> <a href="/playlists/report">Playlist Tracker Report</a>

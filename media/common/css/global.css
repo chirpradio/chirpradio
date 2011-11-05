@@ -1,6 +1,19 @@
 /* This file is based on a CSS file from Django 1.0.2's admin interface. */
 
-body { margin:0 0 25px; padding:0; font-size:12px; font-family:"Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif; color:#333; background:#e9e9e9 url(../img/gradient-black-large.png) left top repeat-x; }
+* {
+	/*  -- NOTE: This is a global reset for all styles. --*/
+    padding: 0px;
+	margin: 0px;
+}
+
+body {
+    margin:0 0 25px;
+    padding:0;
+    font-size:12px;
+    font-family: "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Arial, Sans-serif, Verdana;
+    color:#333;
+/*    background:#e9e9e9 url(../img/gradient-black-large.png) left top repeat-x;*/
+}
 
 /* LINKS */
 a { outline: none; }
@@ -13,7 +26,7 @@ a.section:link, a.section:visited { color: white; text-decoration:none; }
 p, ol, ul, dl { margin:.2em 0 .8em 0; }
 p { padding:0; line-height:140%; }
 
-h1,h2,h3,h4,h5 { font-weight:bold; font-family: "Helvetica Neue",Helvetica,Arial,sans-serif; }
+h1,h2,h3,h4,h5 { font-weight:bold; }
 h1 { font-size:18px; color:#666; padding:0 6px 0 0; margin:0 0 .2em 0; }
 h2 { font-size:16px; margin:1em 0 .5em 0; }
 h2.subhead { font-weight:normal;margin-top:0; }
@@ -21,6 +34,9 @@ h3 { font-size:14px; margin:.8em 0 .3em 0; color:#666; font-weight:bold; }
 h4 { font-size:12px; margin:1em 0 .8em 0; padding-bottom:3px; }
 h5 { font-size:10px; margin:1.5em 0 .5em 0; color:#666; text-transform:uppercase; letter-spacing:1px; }
 
+ul {
+    margin-left: 2em;
+}
 ul li { list-style-type:square; padding:1px 0; }
 ul.plainlist { margin-left:0 !important; }
 ul.plainlist li { list-style-type:none; }
@@ -58,7 +74,7 @@ p img, h1 img, h2 img, h3 img, h4 img, td img { vertical-align:middle; }
 
 /* TABLES */
 table { border-collapse:collapse; border-color:#ccc; }
-td, th { font-size:11px; line-height:13px; border-bottom:1px solid #eee; vertical-align:top; padding:5px; font-family:"Lucida Grande", Verdana, Arial, sans-serif; }
+td, th { font-size:11px; line-height:13px; border-bottom:1px solid #eee; vertical-align:top; padding:5px; }
 th { text-align:left; font-size:12px; font-weight:bold; }
 thead th, 
 tfoot td { color:#666; padding:2px 5px; font-size:11px; background:#e1e1e1 url(../img/nav-bg.gif) top left repeat-x; border-left:1px solid #ddd; border-bottom:1px solid #ddd; }
@@ -145,7 +161,7 @@ a.deletelink:link, a.deletelink:visited { color:#CC3434; }
 a.deletelink:hover { color:#993333; }
 
 /* OBJECT TOOLS */
-.object-tools { font-size:10px; font-weight:bold; font-family:Arial,Helvetica,sans-serif; padding-left:0; float:right; position:relative; margin-top:-2.4em; margin-bottom:-2em; }
+.object-tools { font-size:10px; font-weight:bold; padding-left:0; float:right; position:relative; margin-top:-2.4em; margin-bottom:-2em; }
 .form-row .object-tools { margin-top:5px; margin-bottom:5px; float:none; height:2em; padding-left:3.5em; }
 .object-tools li { display:block; float:left; background:url(../img/tool-left.gif) 0 0 no-repeat; padding:0 0 0 8px; margin-left:2px; height:16px; }
 .object-tools li:hover { background:url(../img/tool-left_over.gif) 0 0 no-repeat; }
@@ -159,3 +175,115 @@ a.deletelink:hover { color:#993333; }
 /* OBJECT HISTORY */
 table#change-history { width:100%; }
 table#change-history tbody th { width:16em; }
+
+
+/*
+
+CHIRP Colors:
+
+Pink: #ec0083
+Blue: #5ed4f3
+Yellow: #fcfc77
+Grey dk: #333333
+Grey med: #5a5a5a
+Grey lt: #6d6d6d
+
+*/
+
+/* HEADER */
+#header{
+	background-color: #333333;
+    border-top: 2px #000000 solid;
+	border-bottom: 2px #000000 solid;
+	margin-top: 1px;
+	margin-bottom: 1px;
+	height: 66px;
+}
+
+#branding, #user_controls, #app_controls{
+	float: left;
+}
+
+#branding{
+
+}
+
+#user_controls{
+	margin-left: 20px;
+}
+
+#user_controls h1{
+	font-size: 13px;
+	color: #ffffff;
+	font-weight: bold;
+	margin-top: 16px;
+	margin-bottom: 0px;
+}
+
+#user_controls ul{
+	margin: 0px;
+	padding: 0px;
+}
+
+#user_controls li{
+	float: left;
+	list-style: none;
+	color: #ffffff;
+	margin-right: 4px;
+}
+
+#user_controls li a{
+	color: #fcfc77;
+	font-size: 10px;
+	text-decoration: none;
+}
+
+#app_controls{
+	position: absolute;
+	right: 0px;
+}
+
+#app_controls ul{
+    margin: 0;
+    padding: 0;
+}
+
+#app_controls li{
+    margin: 0;
+    padding: 0;
+	list-style: none;
+	float: left;
+	border-left: 2px solid #ffffff;
+	border-top: 2px solid #ffffff;
+	border-bottom: 2px solid #ffffff;
+}
+
+#app_controls li a{
+    font-size: 1.1em;
+	display: block;
+	height: 62px;
+	width: 62px;
+	color: #FFFFFF;
+	text-decoration: none;
+	padding: 0px;
+	padding-left: 5px;
+}
+
+#app_controls li:last-child {
+	border-right: 2px solid #FFFFFF;
+}
+
+#app_controls li.inactive a {
+	background-color: #ec0083;
+	color: #ffffff;
+}
+
+#app_controls li.inactive a:hover {
+	background-color: #5ed4f3;
+	color: #5a5a5a;
+}
+
+#app_controls li.active a {
+	background-color: #5ed4f3;
+	color: #ffffff;
+}

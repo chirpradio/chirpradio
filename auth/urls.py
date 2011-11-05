@@ -18,7 +18,7 @@
 """URLs for the auth system."""
 
 from django.conf import settings
-from django.conf.urls.defaults import patterns
+from django.conf.urls.defaults import patterns, url
 
 urlpatterns = patterns(
     '',
@@ -33,7 +33,7 @@ urlpatterns = patterns(
     # Reset a forgotten password.
     (r'^reset_password/?', 'auth.views.reset_password'),
     # Main user management page.
-    (r'^/?$', 'auth.views.main_page'),
+    url(r'^/?$', 'auth.views.main_page', name='auth.landing_page'),
     # Edit a user.
     (r'^edit_user/?', 'auth.views.edit_user'),
     # Add a user.

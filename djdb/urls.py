@@ -30,7 +30,7 @@ IMAGE_URL_PATTERN = '^' + models.DjDbImage.URL_PREFIX[6:]
 urlpatterns = patterns(
     '',
     # Landing page
-    (r'^/?$', 'djdb.views.landing_page'),
+    url(r'^/?$', 'djdb.views.landing_page', name='djdb.landing_page'),
     
     # Activity page
     (r'activity', 'djdb.views.activity_page'),

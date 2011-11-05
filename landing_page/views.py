@@ -32,7 +32,7 @@ mobile_app_urls = {
 def landing_page(request):
     template = loader.get_template('landing_page/landing_page.html')
     ctx = RequestContext(request, {
-            'title': 'Welcome to chirpradio',
+            'title': 'Welcome to chirpradio'
             })
     return http.HttpResponse(template.render(ctx))
 

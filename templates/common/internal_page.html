@@ -1,28 +1,49 @@
 {% extends "common/base.html" %}
 
 {% block page_content %}
-  <div id="header">
-    <a href="/">
-      <img src="/media/common/img/chirpradio-logo-small.png" style="float:left;margin-right:10px;" width="255px" height="55px">
-    </a>
-    <h1>CHIRP Radio internal applications</h1>
-      <!-- <small>(Know HTML and CSS?  Have good taste?  If so, 
-      please volunteer to make this page look better!)</small> -->
-    <div id="auth">
-      {% if user %}
-      {{ user }} <a href="{{ logout_url }}">Sign Out</a>
-      {% else %}
-      <a href="{{ login_url }}">Sign In</a>
-      {% endif %}
-    </div> {# end of auth #}
-    <div class="breadcrumbs"><strong>App Trail:</strong> {% block breadcrumbs %}{% endblock %}</div>
-    <div class="bugreport"><a href="http://code.google.com/p/chirpradio/issues/entry?template=Defect%20report%20from%20user">file a bug report</a></div>
-    <div class="clear"></div>
-  </div> {# end of header #}
+<div id="header">
+	<!-- This is the area that holds the CHIRP logo -->
+	<div id="branding">
+		<a href="/"><img src="{{ MEDIA_URL }}common/img/chirpradio-logo-small.png" /></a>
+	</div>
 
-  <div id="content">
-    {% if title %}<h1>{{ title }}</h1>{% endif %}
-    {% block content %}{% endblock %}
-  </div> {# end of content #}
+	<!-- User controls, and login credentials -->
+	<div id="user_controls">
+    {% if user %}
+    <h1>Welcome {{ user }}</h1>
+    {% endif %}
+		<ul>
+      {% if user %}
+      <li><a href="{{ logout_url }}">Sign Out</a> | </li>
+      {% else %}
+      <li><a href="{{ login_url }}">Sign In</a> | </li>
+      {% endif %}
+      <!-- <li><a href="#">Account Settings</a> | </li> -->
+			<li><a href="http://code.google.com/p/chirpradio/issues/entry?template=Defect%20report%20from%20user">Report a Bug</a></li>
+		</ul>
+
+	</div>
+
+	<!-- Links to the other apps -->
+	<div id="app_controls">
+		<ul>
+			<li class="{% if page == 'playlists' %}active{% else %}inactive{% endif %}">
+			  <a href="{% url playlists_landing_page %}">Playlist Tracker</a></li>
+			<li class="{% if page == 'traffic_log' %}active{% else %}inactive{% endif %}">
+			  <a href="{% url traffic_log.index %}">Traffic Log</a></li>
+			<li class="{% if page == 'djdb' %}active{% else %}inactive{% endif %}">
+			  <a href="{% url djdb.landing_page %}">DJ Database</a></li>
+		</ul>
+	</div>
+
+</div>
+{% block subheader %}{% endblock %}
+
+{% block content_container %}
+<div id="content">
+  {% if title %}<h1>{{ title }}</h1>{% endif %}
+  {% block content %}{% endblock %}
+</div>
+{% endblock %}
 
 {% endblock %}

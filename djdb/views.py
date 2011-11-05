@@ -52,6 +52,17 @@ LAST_PLAYED_SECONDS = LAST_PLAYED_HOURS * 3600
 
 log = logging.getLogger(__name__)
 
+
+def context(*args, **kw):
+    if len(args):
+        new_ctx = args[0]
+    else:
+        new_ctx = kw
+    ctx = dict(page='djdb')
+    ctx.update(new_ctx)
+    return ctx
+
+
 def fetch_activity(num=None, start_dt=None, days=None):
     default_num = 10
     activity = []
@@ -217,7 +228,7 @@ def landing_page(request, ctx_vars=None):
 
     # Add categories.
     ctx_vars["categories"] = models.ALBUM_CATEGORIES
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     return http.HttpResponse(template.render(ctx))
 
 def activity_page(request, ctx_vars=None):
@@ -259,7 +270,7 @@ def activity_page(request, ctx_vars=None):
     ctx_vars['start_dt'] = start_dt
     ctx_vars['recent_activity'] = fetch_activity(start_dt=start_dt, days=1)
             
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     return http.HttpResponse(template.render(ctx))
 
 def reviews_page(request, ctx_vars=None): 
@@ -298,7 +309,7 @@ def reviews_page(request, ctx_vars=None):
     ctx_vars["author_key"] = author_key
     ctx_vars["page_size"] = page_size
     ctx_vars["order"] = order
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     return http.HttpResponse(template.render(ctx))
 
 def get_played_tracks(events):
@@ -358,7 +369,7 @@ def user_info_page(request, user_id, ctx_vars=None):
 
     # Return rendered page.
     template = loader.get_template('djdb/user_info_page.html')
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     return http.HttpResponse(template.render(ctx))
 
 def tracks_played_page(request, user_id, ctx_vars=None): 
@@ -404,7 +415,7 @@ def tracks_played_page(request, user_id, ctx_vars=None):
     ctx_vars["dj"] = user
 
     # Display page.
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     template = loader.get_template('djdb/tracks_played.html')
     return http.HttpResponse(template.render(ctx))
 
@@ -458,7 +469,7 @@ def artist_info_page(request, artist_name, ctx_vars=None):
         ctx_vars["artist_form"] = artist_form
         ctx_vars["show_revoked"] = show_revoked
 
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     return http.HttpResponse(template.render(ctx))
 
 def artist_search_for_autocomplete(request):
@@ -745,7 +756,7 @@ def _get_tag_or_404(tag_name):
 def list_tags(request, tag_name=None):
     ctx_vars = {'title': 'Tags',
                 'tags': models.Tag.all().order('name')}    
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     template = loader.get_template('djdb/tags.html')
     return http.HttpResponse(template.render(ctx))
 
@@ -771,7 +782,7 @@ def new_tag(request):
                 AutoRetry(db).put(tag)
                 return http.HttpResponseRedirect('/djdb/tags')
         
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     return http.HttpResponse(template.render(ctx))
 
 @require_role(roles.MUSIC_DIRECTOR)
@@ -796,7 +807,7 @@ def edit_tag(request, tag_name):
             AutoRetry(tag).save()
             return http.HttpResponseRedirect('/djdb/tags')
         
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     return http.HttpResponse(template.render(ctx))
 
 def album_add_tag(request, album_id_str):
@@ -1055,7 +1066,7 @@ def browse_page(request, entity_kind, start_char, ctx_vars=None):
     ctx_vars["not_reviewed"] = not_reviewed
     ctx_vars["category"] = category
 
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     return http.HttpResponse(template.render(ctx))
 
 def new_browse_page(request):
@@ -1122,7 +1133,7 @@ def new_browse_page(request):
     ctx_vars["category"] = category
 
     # Display page.
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     template = loader.get_template('djdb/new_browse_slide_page.html')
     return http.HttpResponse(template.render(ctx))
     
@@ -1133,7 +1144,7 @@ def category_page(request, category):
     ctx_vars = { "category": category,
                  "user": request.user,
                  "albums": albums }
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     return http.HttpResponse(template.render(ctx))
 
 def track_search_for_autocomplete(request):
@@ -1308,7 +1319,7 @@ def album_info_page(request, album_id_str, ctx_vars=None):
             ctx_vars["has_category"] = True
             break
 
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     return http.HttpResponse(template.render(ctx))
 
 @require_role(roles.MUSIC_DIRECTOR)
@@ -1486,7 +1497,7 @@ def album_edit_review(request, album_id_str, review_key=None):
                 # Redirect back to the album info page.
                 return http.HttpResponseRedirect(album.url)
     ctx_vars["form"] = form
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     return http.HttpResponse(template.render(ctx))
 
 @require_role(roles.MUSIC_DIRECTOR)
@@ -1554,7 +1565,7 @@ def album_edit_comment(request, album_id_str, comment_key=None):
                 # Redirect back to the album info page.
                 return http.HttpResponseRedirect(album.url)
     ctx_vars["form"] = form
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     return http.HttpResponse(template.render(ctx))
 
 @require_role(roles.MUSIC_DIRECTOR)
@@ -1745,7 +1756,7 @@ def crate_page(request, crate_key=None, ctx_vars=None):
     ctx_vars["crate"] = crate
     ctx_vars["crate_items"] = crate_items
 
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     template = loader.get_template("djdb/crate_page.html")
     return http.HttpResponse(template.render(ctx))
 
@@ -1960,7 +1971,7 @@ def artists_bulk_add(request):
         ctx_vars["num_artists_added"] = len(artists_to_add)
             
     ctx_vars[mode] = True
-    ctx = RequestContext(request, ctx_vars)
+    ctx = RequestContext(request, context(ctx_vars))
     return http.HttpResponse(tmpl.render(ctx))
 
 def _copy_created(request):
