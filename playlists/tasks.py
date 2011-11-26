@@ -110,8 +110,7 @@ class Live365Listener(PlaylistEventListener):
         Album title
         """
         taskqueue.add(url=reverse('playlists.send_track_to_live365'),
-                      params={'id':str(track.key())},
-                      headers={'X-AppEngine-FailFast': 1})
+                      params={'id':str(track.key())})
     
     def delete(self, track_key):
         """The key of this PlaylistEvent was deleted.
@@ -164,8 +163,7 @@ def url_track_delete(key):
     else:
         taskqueue.add(url=reverse('playlists.delete_track_from_live_site'),
                       queue_name='live-site-playlists',
-                      params={'id':key},
-                      headers={'X-AppEngine-FailFast': 1})
+                      params={'id':key})
 
 
 
