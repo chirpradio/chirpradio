@@ -89,7 +89,8 @@ class CurrentPlaylist(CachedApiHandler):
             if not track['lastfm_urls']['_processed']:
                 try:
                     taskqueue.add(url='/api/_check_lastfm_links',
-                                  params={'id': track['id']})
+                                  params={'id': track['id']},
+                                  headers={'X-AppEngine-FailFast': 1})
                 except:
                     log.exception('IGNORED while adding task')
 

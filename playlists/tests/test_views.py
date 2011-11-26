@@ -272,7 +272,8 @@ class TestPlaylistViews(PlaylistViewsTest):
                                 .expects('add')
                                 .with_args(
                                     url=reverse('playlists.send_track_to_live365'),
-                                    params={'id': arg.any_value()}
+                                    params={'id': arg.any_value()},
+                                    headers=arg.any_value()
                                 ))
         patches = [
             fudge.patch_object(playlists.tasks.urllib2, "urlopen", fake_urlopen),
