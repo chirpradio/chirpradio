@@ -22,7 +22,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.template import loader
 from django import forms
 from djdb.models import Artist, Album, Track
-from playlists.models import Playlist, PlaylistTrack, ChirpBroadcast
+from playlists.models import Playlist, PlaylistTrack, chirp_playlist_key
 from common.autoretry import AutoRetry
 
 class PlaylistTrackForm(forms.Form):
@@ -64,7 +64,7 @@ class PlaylistTrackForm(forms.Form):
 
     def __init__(self, data=None, current_user=None, playlist=None):
         self.current_user = current_user
-        self.playlist = playlist or ChirpBroadcast()
+        self.playlist = playlist or chirp_playlist_key()
         super(PlaylistTrackForm, self).__init__(data=data)
 
     def save(self):

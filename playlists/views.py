@@ -32,7 +32,8 @@ import auth
 from auth import roles
 from djdb.models import Album, HEAVY_ROTATION_TAG, LIGHT_ROTATION_TAG
 from playlists.forms import PlaylistTrackForm
-from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast
+from playlists.models import (PlaylistTrack, PlaylistEvent, PlaylistBreak,
+                              chirp_playlist_key, ChirpBroadcast)
 from playlists.tasks import playlist_event_listeners
 from common.utilities import as_encoded_str, http_send_csv_file
 from common.autoretry import AutoRetry
@@ -99,8 +100,6 @@ def get_vars(request):
     else:
         form = PlaylistTrackForm()
     form.current_user = current_user
-    form.playlist = ChirpBroadcast()
-
 
     vars = {
         'form': form,
@@ -199,7 +198,7 @@ def delete_event(request, event_key):
 def filter_tracks_by_date_range(from_date, to_date):
     fd = datetime(from_date.year, from_date.month, from_date.day, 0, 0, 0)
     td = datetime(to_date.year, to_date.month, to_date.day, 23, 59, 59)
-    playlist = ChirpBroadcast()
+    playlist = chirp_playlist_key()
     pl = PlaylistTrack.all().filter('playlist =', playlist)
     pl = pl.filter('established >=', fd)
     pl = pl.filter('established <=', td)
@@ -292,7 +291,6 @@ def bootstrap(request):
         return HttpResponse(status=404)
 
     playlist = ChirpBroadcast()
-    playlist.put()
 
     minutes = 0
     tracks = Track.all().fetch(100)

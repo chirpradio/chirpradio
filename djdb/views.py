@@ -39,7 +39,7 @@ from djdb import review
 from djdb import comment
 from djdb import forms
 from djdb.models import Album
-from playlists.models import ChirpBroadcast, PlaylistEvent, PlaylistTrack
+from playlists.models import chirp_playlist_key, PlaylistEvent, PlaylistTrack
 from playlists.views import PlaylistEventView
 from datetime import datetime, timedelta
 import djdb.pylast as pylast
@@ -351,7 +351,7 @@ def user_info_page(request, user_id, ctx_vars=None):
             return http.HttpResponse(status=404)
 
     if user is not None:
-        query = PlaylistEvent.all().filter("playlist =", ChirpBroadcast()) \
+        query = PlaylistEvent.all().filter("playlist =", chirp_playlist_key()) \
                                    .filter("selector =", user).order("-established")
         ctx_vars["playlist_events"] = get_played_tracks(query.fetch(10))
 
@@ -403,7 +403,7 @@ def tracks_played_page(request, user_id, ctx_vars=None):
             order = request.POST.get('order')
             bookmark = request.POST.get('bookmark')
     dt = datetime(from_year, from_month, from_day, 0, 0, 0)
-    query = pager.PagerQuery(PlaylistEvent).filter('playlist =', ChirpBroadcast()) \
+    query = pager.PagerQuery(PlaylistEvent).filter('playlist =', chirp_playlist_key()) \
                                            .filter('selector =', user.key()) \
                                            .filter('established >=', dt)
     query.order("-established")
@@ -480,7 +480,7 @@ def artist_search_for_autocomplete(request):
     start_dt = datetime.now() - timedelta(seconds=LAST_PLAYED_SECONDS)
     for ent in matching_entities:
         # Check if track played recently. 
-        query = PlaylistTrack.all().filter('playlist =', ChirpBroadcast()) \
+        query = PlaylistTrack.all().filter('playlist =', chirp_playlist_key()) \
                                    .filter('established >=', start_dt) \
                                    .filter('artist =', ent.key())
         if query.count() > 0:
@@ -499,7 +499,7 @@ def album_search_for_autocomplete(request):
     start_dt = datetime.now() - timedelta(seconds=LAST_PLAYED_SECONDS)
     for ent in matching_entities:
         # Check if track played recently. 
-        query = PlaylistTrack.all().filter('playlist =', ChirpBroadcast()) \
+        query = PlaylistTrack.all().filter('playlist =', chirp_playlist_key()) \
                                    .filter('established >=', start_dt) \
                                    .filter('album =', ent.key())
         if query.count() > 0:
@@ -1172,7 +1172,7 @@ def track_search_for_autocomplete(request):
                     continue
 
         # Check if track played recently. 
-        query = PlaylistTrack.all().filter('playlist =', ChirpBroadcast()) \
+        query = PlaylistTrack.all().filter('playlist =', chirp_playlist_key()) \
                                    .filter('established >=', start_dt) \
                                    .filter('track =', track.key())
         if query.count() > 0:
@@ -1922,19 +1922,19 @@ def send_to_playlist(request, key):
     error = ''
     start_dt = datetime.now() - timedelta(seconds=LAST_PLAYED_SECONDS)
     if track_key != '':
-        query = PlaylistTrack.all().filter('playlist =', ChirpBroadcast()) \
+        query = PlaylistTrack.all().filter('playlist =', chirp_playlist_key()) \
                                    .filter('established >=', start_dt) \
                                    .filter('track =', track_key)
         if query.count() > 0:
             error = "Track already played within the last %d hours." % LAST_PLAYED_HOURS
     if error == '' and album_key != '':
-        query = PlaylistTrack.all().filter('playlist =', ChirpBroadcast()) \
+        query = PlaylistTrack.all().filter('playlist =', chirp_playlist_key()) \
                                    .filter('established >=', start_dt) \
                                    .filter('album =', album_key)
         if query.count() > 0:
             error = "Track from album already played within the last %d hours." % LAST_PLAYED_HOURS
     if error == '' and artist_key != '':
-        query = PlaylistTrack.all().filter('playlist =', ChirpBroadcast()) \
+        query = PlaylistTrack.all().filter('playlist =', chirp_playlist_key()) \
                                    .filter('established >=', start_dt) \
                                    .filter('artist =', artist_key)
         if query.count() > 0:

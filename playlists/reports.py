@@ -33,7 +33,7 @@ from common.utilities import (as_encoded_str, http_send_csv_file,
 from djdb.models import HEAVY_ROTATION_TAG, LIGHT_ROTATION_TAG
 from playlists.forms import PlaylistTrackForm, PlaylistReportForm
 from playlists.views import query_group_by_track_key, filter_tracks_by_date_range
-from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak, ChirpBroadcast
+from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak
 
 
 log = logging.getLogger()
