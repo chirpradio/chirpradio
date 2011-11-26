@@ -30,7 +30,7 @@ from google.appengine.api import memcache, taskqueue
 from google.appengine.ext.webapp.util import run_wsgi_app
 import simplejson
 
-from playlists.models import ChirpBroadcast, PlaylistTrack
+from playlists.models import chirp_playlist_key, PlaylistTrack
 from djdb import pylast
 from common import dbconfig
 
@@ -112,9 +112,9 @@ class CurrentPlaylist(CachedApiHandler):
         }
 
     def get_json(self):
-        broadcast = ChirpBroadcast()
+        playlist_key = chirp_playlist_key()
         recent_tracks = list(PlaylistTrack.all()
-                                .filter('playlist =', broadcast)
+                                .filter('playlist =', playlist_key)
                                 .order('-established')
                                 .fetch(6))
         return {

@@ -16,15 +16,18 @@
 ###
 
 import datetime
+import time
 import unittest
+
+from google.appengine.api import memcache
+from google.appengine.api.datastore_errors import BadValueError
+
+import auth.roles
+from auth.models import User
 from djdb.models import Artist, Album, Track
 from playlists.models import (
         Playlist, DJPlaylist, BroadcastPlaylist, PlaylistTrack, 
-        PlaylistBreak, ChirpBroadcast)
-import auth.roles
-from auth.models import User
-from google.appengine.api.datastore_errors import BadValueError
-import time
+        PlaylistBreak, ChirpBroadcast, chirp_playlist_key)
 
 __all__ = ['TestPlaylist', 'TestPlaylistTrack', 'TestPlaylistBreak']
 
@@ -38,6 +41,11 @@ class TestPlaylist(unittest.TestCase):
     
     def setUp(self):
         for obj in User.all():
+            obj.delete()
+
+    def tearDown(self):
+        assert memcache.flush_all()
+        for obj in Playlist.all():
             obj.delete()
     
     def test_non_dj_cannot_create_playlist(self):
@@ -91,6 +99,25 @@ class TestPlaylist(unittest.TestCase):
         self.assertEqual(
             playlist.modified_display.timetuple()[0:2],
             datetime.datetime.now().timetuple()[0:2])
+
+    def test_chirp_playlist_key(self):
+        playlist_key = chirp_playlist_key()
+
+        track = PlaylistTrack(
+            selector=create_dj(),
+            playlist=playlist_key,
+            freeform_artist_name="Stevie Wonder",
+            freeform_album_title="Talking Book",
+            freeform_track_title='You Are The Sunshine Of My Life',
+            freeform_label='Warner Bros.',
+        )
+        track.put()
+
+        trk = PlaylistTrack.all().filter('playlist =', playlist_key)
+        self.assertEqual(trk[0].artist_name, 'Stevie Wonder')
+        playlist_key = chirp_playlist_key()  # from cache
+        trk = PlaylistTrack.all().filter('playlist =', playlist_key)
+        self.assertEqual(trk[0].artist_name, 'Stevie Wonder')
 
 class PlaylistEventTest(unittest.TestCase):
     
@@ -271,4 +298,3 @@ class TestPlaylistBreak(PlaylistEventTest):
         self.assertEqual(
             [type(e) for e in playlist.recent_events],
             [PlaylistBreak, PlaylistTrack])
-        

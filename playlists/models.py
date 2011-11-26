@@ -109,7 +109,16 @@ def ChirpBroadcast():
         AutoRetry(playlist).put()
     
     return playlist
-    
+
+def chirp_playlist_key():
+    """Datastore key for the continuous CHIRP broadcast"""
+    key_str = memcache.get('chirp_playlist')
+    if not key_str:
+        playlist = ChirpBroadcast()
+        key_str = str(playlist.key())
+        memcache.set('chirp_playlist', key_str)
+    return db.Key(key_str)
+
 class PlaylistEvent(polymodel.PolyModel):
     """An event that occurs in a Playlist."""
     # The playlist this event belongs to
