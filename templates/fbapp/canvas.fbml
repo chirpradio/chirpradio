@@ -1,5 +1,10 @@
 <div id="fb-root" data-app-id="{{ app_id }}"
                   data-channel-url="{{ channel_url }}">
+<div id="ch-app"
+     {% if not in_page_tab %}
+     class="ch-app-canvas"
+     {% endif %}
+      >
 <style type="text/css">
 /*
 http://devtacular.com/articles/bkonrad/how-to-style-an-application-like-facebook
@@ -12,7 +17,6 @@ http://webdesign.tutsplus.com/tutorials/htmlcss-tutorials/design-and-code-an-int
 body {
     font-family: "lucida grande", tahoma, verdana, arial, sans-serif;
     color: #333333;
-    margin: 1em;
 }
 a {
     cursor: pointer;
@@ -35,6 +39,7 @@ h3 {
     margin-bottom:5px;
 }
 h4 {
+    font-size: 14px;
     margin-bottom: 0.5em;
 }
 ul {
@@ -94,26 +99,28 @@ button:hover {
 #ch-player {
     margin-bottom: 1em;
 }
-#fb-root {
-    width: 600px;
-}
 #chirp-banner {
     display: block;
     text-decoration: none;
     float: right;
     height: 50px;
     width: 50px;
-    background: transparent url({{ MEDIA_URL }}fbapp/img/Icon-50.png) no-repeat right top;
+/*    background: transparent url({{ MEDIA_URL }}fbapp/img/Icon-50.png) no-repeat right top;*/
     outline: 0;
 }
 #chirp-banner span {
     visibility: hidden;
 }
+#ch-app {
+    width: 520px;
+}
+.ch-app-canvas {
+    margin: 10px;
+}
 </style>
 <script type="text/javascript" src="/media/common/js/jquery/jquery-1.6.4.js"></script>
 <script type="text/javascript" src="/media/fbapp/js/fbapp.js?{{ cache_stub }}"></script>
-<!-- <script src="http://connect.facebook.net/en_US/all.js"></script> -->
-<a id="chirp-banner" href="http://chirpradio.org/" target="_blank" title="CHIRPradio.org"><span>CHIRPradio.org</span></a>
+<!-- <a id="chirp-banner" href="http://chirpradio.org/" target="_blank" title="CHIRPradio.org"><span>CHIRPradio.org</span></a> -->
 <div id="ch-player">
   <script language="JavaScript" type="text/javascript">
   	AC_FL_RunContent(
@@ -149,5 +156,6 @@ button:hover {
   <ul class="box"></ul>
 </div>
 <div class="fb-live-stream" data-event-app-id="{{ app_id }}"
-     data-width="600" data-height="500" data-always-post-to-friends="false"></div>
+     data-width="520" data-height="500" data-always-post-to-friends="false"></div>
+</div>
 </div>

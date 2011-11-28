@@ -18,12 +18,28 @@ log = logging.getLogger()
 
 def canvas(request):
     app_id = dbconfig['FACEBOOK_APP_ID']
+    payload = None
+    if (request.POST.get('signed_request') and
+        '.' in request.POST['signed_request']):
+        signature, b64blob = request.POST['signed_request'].split('.')[:2]
+        if len(b64blob) % 4 != 0:
+            # Python requires padding for 4 byte chunks.
+            # http://stackoverflow.com/questions/3302946/how-to-base64-url-decode-in-python
+            b64blob = '%s==' % b64blob
+        try:
+            payload = simplejson.loads(base64.b64decode(b64blob))
+        except (TypeError, ValueError), exc:
+            log.exception('Invalid payload:')
+        # TODO(Kumar) validate payload w/ signature
+
+    in_page_tab = payload and 'page' in payload  # otherwise in app canvas
     # Bust javascript cache when developing:
     cache_stub = settings.DEBUG and str(time.time()) or ''
     channel_url = settings.SITE_URL + reverse('fbapp.channel')
     response = render_to_response('fbapp/canvas.fbml',
                                   dict(cache_stub=cache_stub, app_id=app_id,
-                                       channel_url=channel_url),
+                                       channel_url=channel_url,
+                                       in_page_tab=in_page_tab),
                                   context_instance=RequestContext(request))
     if not settings.DEBUG:
         hours = 5
