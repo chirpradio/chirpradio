@@ -17,7 +17,7 @@ log = logging.getLogger()
 
 
 def canvas(request):
-    app_id = dbconfig['FACEBOOK_APP_ID']
+    app_id = dbconfig['facebook.app_key']
     payload = None
     if (request.POST.get('signed_request') and
         '.' in request.POST['signed_request']):
