@@ -67,7 +67,7 @@ function formatTime(hour, min) {
 		hour = hour - 12;
 		md = 'pm';
 	} else if (hour == 12) {
-		md = 'pm'
+		md = 'pm';
 	}
 	if (min < 10) {
 		min = '0' + min.toString();
