@@ -52,6 +52,9 @@ urlpatterns = patterns(
     
     ('^errors/', include('errors.urls')),
 
+    # Facebook app.
+    ('^fbapp/', include('fbapp.urls')),
+
     (r'^m', 'landing_page.views.go_mobile'),
     
     ('^_ah/warmup/?', 'common.views.appengine_warmup'),

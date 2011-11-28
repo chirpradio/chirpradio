@@ -53,6 +53,10 @@ LANGUAGE_CODE = 'en-us'
 
 SITE_ID = 1
 
+# The full site URL, used for external redirects.
+SITE_URL = (IN_DEV and 'http://localhost:8000'
+            or 'https://chirpradio.appspot.com')
+
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
 USE_I18N = False
@@ -73,6 +77,7 @@ MEDIA_URL = '/media/'
 # (internal Task Queue user)
 PUBLIC_TOP_LEVEL_URLS = ['/playlists/task',
                          '/_ah/warmup',
+                         '/fbapp',  # facebook app
                          '/m'  # go_mobile()
                          ]
 

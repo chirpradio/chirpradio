@@ -28,7 +28,7 @@ def base(request):
     # make it easier to switch users (like on the playlist tracker)
     logout_url = "%s?redirect=%s" % (auth.LOGOUT_URL, request.path)
     return {
-        'user': request.user,
+        'user': hasattr(request, 'user') and request.user or None,
         'login_url': auth.create_login_url('/'),
         'logout_url': logout_url,
         'settings': settings,
