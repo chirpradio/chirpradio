@@ -23,12 +23,16 @@
 import main
 
 
+from datetime import datetime, timedelta
 import logging
 
 from google.appengine.ext import webapp
 from google.appengine.api import memcache, taskqueue
 from google.appengine.ext.webapp.util import run_wsgi_app
-import simplejson
+try:
+    import json as simplejson
+except ImportError:
+    import simplejson
 
 from playlists.models import chirp_playlist_key, PlaylistTrack
 from djdb import pylast
@@ -43,7 +47,6 @@ class ApiHandler(webapp.RequestHandler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'application/json'
-        self.response.headers['Cache-Control'] = 'public, max-age=30'
         if not self.use_cache:
             data = self.get_json()
         else:
@@ -59,6 +62,16 @@ class ApiHandler(webapp.RequestHandler):
         if self.request.str_GET.get('jsonp'):
             self.response.headers['Content-Type'] = 'application/x-javascript'
             js = '%s(%s);' % (self.request.str_GET['jsonp'], js)
+
+        # Clients shouldn't poll more than 15 seconds but we want to make
+        # sure they don't miss new tracks so the cache here is low.
+        cache_for_secs = 10
+        expires = ((datetime.utcnow() + timedelta(seconds=cache_for_secs))
+                   .strftime("%a, %d %b %Y %H:%M:%S +0000"))
+        self.response.headers['Expires'] = expires
+        self.response.headers['Cache-Control'] = \
+                                'public, max-age=%s' % cache_for_secs
+
         self.response.out.write(js)
 
     def check_data(self, data):

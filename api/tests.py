@@ -113,6 +113,11 @@ class TestTrackPlayingNow(APITest):
             self.playlist_track.established_display.strftime('%Y-%m-%d'))
         assert 'id' in current
 
+    def test_headers(self):
+        rs = self.client.get('/api/current_playlist')
+        assert 'Expires' in rs.headers, ('Unexpected: %s' % rs.headers)
+        assert 'Cache-Control' in rs.headers, ('Unexpected: %s' % rs.headers)
+
     def test_allow_post(self):
         # support for _ah/warmup ?
         r = self.client.post('/api/current_playlist', {})
