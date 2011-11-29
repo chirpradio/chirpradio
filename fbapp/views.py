@@ -31,6 +31,7 @@ def canvas(request):
         except (TypeError, ValueError), exc:
             log.exception('Invalid payload:')
         # TODO(Kumar) validate payload w/ signature
+    log.debug(payload)
 
     in_page_tab = payload and 'page' in payload  # otherwise in app canvas
     # Bust javascript cache when developing:
