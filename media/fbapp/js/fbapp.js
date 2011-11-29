@@ -107,7 +107,8 @@ function postTrackToWall(trackId) {
 		method: 'feed',
 		display: 'popup',
 		link: 'http://chirpradio.org/playlists',  // direct link?
-		picture: trk.lastfm_urls.med_image,  // might be null
+		// This might be null:
+		picture: (trk.lastfm_urls.large_image || trk.lastfm_urls.med_image),
 		name: trk.artist + ': ' + trk.track + ' from ' + trk.release,
 		caption: 'heard on CHIRPradio.org',
 		description: trk.artist + ': ' + trk.track + ' from ' + trk.release + ' (' + trk.label + ')'
