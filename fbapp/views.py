@@ -35,10 +35,13 @@ def canvas(request, in_page_tab=False):
     # Bust javascript cache when developing:
     cache_stub = settings.DEBUG and str(time.time()) or ''
     channel_url = settings.SITE_URL + reverse('fbapp.channel')
+    chirp_icon_url = '%s%sfbapp/img/Icon-50.png' % (settings.SITE_URL,
+                                                    settings.MEDIA_URL)
     response = render_to_response('fbapp/canvas.fbml',
                                   dict(cache_stub=cache_stub, app_id=app_id,
                                        channel_url=channel_url,
-                                       in_page_tab=in_page_tab),
+                                       in_page_tab=in_page_tab,
+                                       chirp_icon_url=chirp_icon_url),
                                   context_instance=RequestContext(request))
     if not settings.DEBUG:
         hours = 5

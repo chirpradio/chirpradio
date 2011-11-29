@@ -1,6 +1,7 @@
 <div id="fb-root" data-app-id="{{ app_id }}"
                   data-channel-url="{{ channel_url }}"
-                  data-blank-album-cover="{{ MEDIA_URL }}fbapp/img/blank-album-cover.jpg">
+                  data-blank-album-cover="{{ MEDIA_URL }}fbapp/img/blank-album-cover.jpg"
+                  data-chirp-icon-url="{{ chirp_icon_url }}">
 <div id="ch-app"
      {% if not in_page_tab %}
      class="ch-app-canvas"

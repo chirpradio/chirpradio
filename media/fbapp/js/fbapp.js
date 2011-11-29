@@ -4,10 +4,12 @@
 var trackCache = {},
     currentTrackId,
     blankAlbumCover,
+    chirpIconUrl,
     _localOffset;
 
 $(function() {
     blankAlbumCover = $('#fb-root').attr('data-blank-album-cover');
+    chirpIconUrl = $('#fb-root').attr('data-chirp-icon-url');
     fetchTracks();
     window.setInterval(fetchTracks, 15000);
     $('.track-list').delegate('.post', 'click', function(evt) {
@@ -115,8 +117,7 @@ function postTrackToWall(trackId) {
         method: 'feed',
         display: 'popup',
         link: 'http://apps.facebook.com/chirpradio/?ref=feed',  // direct link?
-        // This might be null:
-        picture: (trk.lastfm_urls.large_image || trk.lastfm_urls.med_image),
+        picture: (trk.lastfm_urls.large_image || trk.lastfm_urls.med_image || chirpIconUrl),
         name: trk.artist + ': ' + trk.track + ' from ' + trk.release,
         caption: 'heard on CHIRPradio.org',
         description: trk.artist + ': ' + trk.track + ' from ' + trk.release + ' (' + trk.label + ')'
