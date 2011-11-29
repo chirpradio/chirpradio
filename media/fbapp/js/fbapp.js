@@ -3,9 +3,11 @@
 
 var trackCache = {},
 	currentTrackId,
+	blankAlbumCover,
 	_localOffset;
 
 $(function() {
+	blankAlbumCover = $('#fb-root').attr('data-blank-album-cover');
 	fetchTracks();
 	window.setInterval(fetchTracks, 15000);
 	$('.track-list').delegate('.post', 'click', function(evt) {
@@ -90,10 +92,16 @@ function pushTrack($ctx, trk) {
 	var localTime = new Date(convertedMs);
 	var fmtTime = formatTime(localTime.getHours(), localTime.getMinutes());
 	$ctx.append(
-		'<li><span class="time">' + fmtTime + '</span> ' +
-		'<span class="artist">' + trk.artist + '</span> ' + trk.track +
-		' from <span class="release">' + trk.release + '</span> ' +
-	    ' (' + trk.label + ')' +
+		'<li id="track-' + trk.id + '">' +
+		'<div class="time">' + fmtTime +
+			'<img src="' + blankAlbumCover + '" height="32" width="32">' +
+		'</div> ' +
+		'<div class="track-info">' +
+			'<span class="artist">' + trk.artist + '</span> ' +
+			'<span class="track">' + trk.track + '</span> ' +
+			'<span class="release">from ' + trk.release + '</span> ' +
+	    	'<span class="label">(' + trk.label + ')</span>' +
+		'</div>' +
 		' <button class="post" data-track-id="' + trk.id + '">Share</button>' +
 		'<div class="cleared"></div></li>');
 }
@@ -123,11 +131,13 @@ function fetchTracks() {
 		    dataType: 'json',
 			'type': 'GET',
 			success: function(data) {
-				updateTrackCache(data);  // in case we have new images
+				updateTrackCache(data);  // in case we have new images for popups
 				if (data.now_playing.id == currentTrackId) {
-					// nothing to update.
+					// nothing to update except artwork
+					updateAlbumArt(data);
 					return;
 				}
+				currentTrackId = data.now_playing.id;
 				var $now = $('.ch-now-playing ul'),
 					$recent = $('.ch-recently-played ul');
 				$('.ch-current-dj').text('(' + data.now_playing.dj + ')');
@@ -137,6 +147,7 @@ function fetchTracks() {
 				$.each(data.recently_played, function(i, trk) {
 					pushTrack($recent, trk);
 				});
+				updateAlbumArt(data);
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				if (typeof console !== 'undefined') {
@@ -144,6 +155,16 @@ function fetchTracks() {
 				}
 			}});
 
+}
+
+function updateAlbumArt(data) {
+	var tracks = [data.now_playing];
+	tracks = tracks.concat(data.recently_played);
+	$.each(tracks, function(i, trk) {
+		if (trk.lastfm_urls.sm_image) {
+			$('#track-' + trk.id + ' img').attr('src', trk.lastfm_urls.sm_image);
+		}
+	});
 }
 
 function updateTrackCache(data) {

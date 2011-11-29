@@ -1,5 +1,6 @@
 <div id="fb-root" data-app-id="{{ app_id }}"
-                  data-channel-url="{{ channel_url }}">
+                  data-channel-url="{{ channel_url }}"
+                  data-blank-album-cover="{{ MEDIA_URL }}fbapp/img/blank-album-cover.jpg">
 <div id="ch-app"
      {% if not in_page_tab %}
      class="ch-app-canvas"
@@ -84,6 +85,20 @@ button:hover {
 }
 .track-list .time {
     color: #999999;
+    float: left;
+    font-size: 11px;
+    width: 50px;
+    padding-right: 4px;
+}
+.track-list .time img {
+    margin: 8px 0 0 0;
+    border: 1px solid #000;
+}
+.track-list .track-info {
+    float: left;
+    width: 395px;
+    font-size: 13px;
+    line-height: 20px;
 }
 .box {
     background-color: #fff9d7;
@@ -92,6 +107,9 @@ button:hover {
 /*    padding: 10px;*/
     font-size: 13px;
     margin-bottom: 1em;
+}
+.ch-recently-played .box {
+    margin-bottom: 10px;
 }
 .cleared {
     clear: both;
@@ -116,6 +134,15 @@ button:hover {
 }
 .ch-app-canvas {
     margin: 10px;
+}
+.last-fm {
+    padding: 0 0 10px 0;
+    text-align: right;
+    color: #695A5C;
+    font-size: 10px;
+}
+.last-fm a, .last-fm img {
+    outline: 0;
 }
 </style>
 <script type="text/javascript" src="/media/common/js/jquery/jquery-1.6.4.js"></script>
@@ -154,6 +181,12 @@ button:hover {
 <div class="track-list ch-recently-played">
   <h4>Recently Played</h4>
   <ul class="box"></ul>
+</div>
+<div class="last-fm">
+  Album artwork courtesy of
+  <a target="_blank" href="http://www.last.fm/">
+    <img src="{{ MEDIA_URL }}fbapp/img/lastfm.jpg" height="13" width="54" alt="last.fm">
+  </a>
 </div>
 <div class="fb-live-stream" data-event-app-id="{{ app_id }}"
      data-width="520" data-height="500" data-always-post-to-friends="false"></div>
