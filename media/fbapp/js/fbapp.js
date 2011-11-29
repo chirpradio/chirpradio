@@ -122,6 +122,7 @@ function fetchTracks() {
 		    dataType: 'json',
 			'type': 'GET',
 			success: function(data) {
+				updateTrackCache(data);  // in case we have new images
 				if (data.now_playing.id == currentTrackId) {
 					// nothing to update.
 					return;
@@ -131,13 +132,10 @@ function fetchTracks() {
 				$('.ch-current-dj').text('(' + data.now_playing.dj + ')');
 				$now.empty();
 				pushTrack($now, data.now_playing);
-				trackCache[data.now_playing.id] = data.now_playing;
 				$recent.empty();
 				$.each(data.recently_played, function(i, trk) {
 					pushTrack($recent, trk);
-					trackCache[trk.id] = trk;
 				});
-				// TODO(Kumar) clean up trackCache here
 			},
 			error: function(xhr, ajaxOptions, thrownError) {
 				if (typeof console !== 'undefined') {
@@ -145,6 +143,14 @@ function fetchTracks() {
 				}
 			}});
 
+}
+
+function updateTrackCache(data) {
+	trackCache[data.now_playing.id] = data.now_playing;
+	$.each(data.recently_played, function(i, trk) {
+		trackCache[trk.id] = trk;
+	});
+	// TODO(Kumar) clean up trackCache here
 }
 
 })($);
