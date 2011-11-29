@@ -114,7 +114,7 @@ function postTrackToWall(trackId) {
     var params = {
         method: 'feed',
         display: 'popup',
-        link: 'http://chirpradio.org/playlists',  // direct link?
+        link: 'http://apps.facebook.com/chirpradio/?ref=feed',  // direct link?
         // This might be null:
         picture: (trk.lastfm_urls.large_image || trk.lastfm_urls.med_image),
         name: trk.artist + ': ' + trk.track + ' from ' + trk.release,
