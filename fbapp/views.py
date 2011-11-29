@@ -34,6 +34,13 @@ def canvas(request):
     log.debug(payload)
 
     in_page_tab = payload and 'page' in payload  # otherwise in app canvas
+    if not request.POST:
+        # Well, due to some SSL weirdness, page tabs sometimes do not
+        # get POST requests.  Look for:
+        # http://static.ak.facebook.com/platform/page_proxy.php
+        if 'page_proxy' in str(request.META.get('HTTP_REFERER', '')):
+            in_page_tab = True
+
     # Bust javascript cache when developing:
     cache_stub = settings.DEBUG and str(time.time()) or ''
     channel_url = settings.SITE_URL + reverse('fbapp.channel')
