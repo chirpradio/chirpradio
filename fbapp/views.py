@@ -16,7 +16,7 @@ from common import dbconfig
 log = logging.getLogger()
 
 
-def canvas(request):
+def canvas(request, in_page_tab=False):
     app_id = dbconfig['facebook.app_key']
     payload = None
     if (request.POST.get('signed_request') and
@@ -31,15 +31,6 @@ def canvas(request):
         except (TypeError, ValueError), exc:
             log.exception('Invalid payload:')
         # TODO(Kumar) validate payload w/ signature
-    log.debug(payload)
-
-    in_page_tab = payload and 'page' in payload  # otherwise in app canvas
-    if not request.POST:
-        # Well, due to some SSL weirdness, page tabs sometimes do not
-        # get POST requests.  Look for:
-        # http://static.ak.facebook.com/platform/page_proxy.php
-        if 'page_proxy' in str(request.META.get('HTTP_REFERER', '')):
-            in_page_tab = True
 
     # Bust javascript cache when developing:
     cache_stub = settings.DEBUG and str(time.time()) or ''
@@ -53,6 +44,10 @@ def canvas(request):
         hours = 5
         response['Cache-Control'] = 'public,max-age=%d' % int(3600 * hours)
     return response
+
+
+def page_tab(request):
+    return canvas(request, in_page_tab=True)
 
 
 def channel(request):
