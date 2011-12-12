@@ -37,7 +37,7 @@ def canvas(request, in_page_tab=False):
     channel_url = settings.SITE_URL + reverse('fbapp.channel')
     chirp_icon_url = '%s%sfbapp/img/Icon-50.png' % (settings.SITE_URL,
                                                     settings.MEDIA_URL)
-    response = render_to_response('fbapp/canvas.fbml',
+    response = render_to_response('fbapp/canvas.html',
                                   dict(cache_stub=cache_stub, app_id=app_id,
                                        channel_url=channel_url,
                                        in_page_tab=in_page_tab,
