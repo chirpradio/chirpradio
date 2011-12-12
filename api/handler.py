@@ -27,6 +27,7 @@ from datetime import datetime, timedelta
 import logging
 
 from google.appengine.ext import webapp
+# import webapp2 as webapp  # python2.7, multithreaded
 from google.appengine.api import memcache, taskqueue
 from google.appengine.ext.webapp.util import run_wsgi_app
 try:
