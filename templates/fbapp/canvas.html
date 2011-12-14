@@ -1,7 +1,9 @@
-<div id="fb-root" data-app-id="{{ app_id }}"
+<div id="{{ root_div_id }}" class="app-root" data-app-id="{{ app_id }}"
                   data-channel-url="{{ channel_url }}"
                   data-blank-album-cover="{{ MEDIA_URL }}fbapp/img/blank-album-cover.jpg"
-                  data-chirp-icon-url="{{ chirp_icon_url }}">
+                  data-chirp-icon-url="{{ chirp_icon_url }}"
+                  data-connect-to-facebook="{{ connect_to_facebook|lower }}"
+                  data-api-source="{{ api_source }}">
 <div id="ch-app"
      {% if not in_page_tab %}
      class="ch-app-canvas"
@@ -145,6 +147,9 @@ button:hover {
 .last-fm a, .last-fm img {
     outline: 0;
 }
+#owa-root .ch-app-canvas {
+    margin: 10px auto;
+}
 </style>
 <script type="text/javascript" src="/media/common/js/jquery/jquery-1.6.4.js"></script>
 <script type="text/javascript" src="/media/fbapp/js/fbapp.js?{{ cache_stub }}"></script>
@@ -189,7 +194,9 @@ button:hover {
     <img src="{{ MEDIA_URL }}fbapp/img/lastfm.jpg" height="13" width="54" alt="last.fm">
   </a>
 </div>
+{% if show_live_fb %}
 <div class="fb-live-stream" data-event-app-id="{{ app_id }}"
      data-width="520" data-height="500" data-always-post-to-friends="false"></div>
 </div>
+{% endif %}
 </div>

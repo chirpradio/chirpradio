@@ -5,40 +5,47 @@ var trackCache = {},
     currentTrackId,
     blankAlbumCover,
     chirpIconUrl,
+    connectToFacebook,
+    apiSource,
+    $appRoot,
     _localOffset;
 
 $(function() {
-    blankAlbumCover = $('#fb-root').attr('data-blank-album-cover');
-    chirpIconUrl = $('#fb-root').attr('data-chirp-icon-url');
+    $appRoot = $('.app-root');
+    blankAlbumCover = $appRoot.attr('data-blank-album-cover');
+    chirpIconUrl = $appRoot.attr('data-chirp-icon-url');
+    connectToFacebook = $appRoot.attr('connect-to-facebook') == 'true';
+    apiSource = $appRoot.attr('data-api-source');
     fetchTracks();
     window.setInterval(fetchTracks, 15000);
     $('.track-list').delegate('.post', 'click', function(evt) {
         evt.preventDefault();
         postTrackToWall($(this).attr('data-track-id'));
     });
+    if (connectToFacebook) {
+        // Load the SDK Asynchronously
+        (function(d){
+            var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
+            js = d.createElement('script'); js.id = id; js.async = true;
+            js.src = "//connect.facebook.net/en_US/all.js";
+            d.getElementsByTagName('head')[0].appendChild(js);
+        }(document));
+    }
 });
 
 window.fbAsyncInit = function() {
     $(function() {
         FB.init({
-            appId: $('#fb-root').attr('data-app-id'),
+            appId: $appRoot.attr('data-app-id'),
             status: false, // check login status
             cookie: true, // enable cookies to allow the server to access the session
             xfbml: true, // parse XFBML
-            channelURL: $('#fb-root').attr('data-channel-url')
+            channelURL: $appRoot.attr('data-channel-url')
         });
         // FB.Canvas.setAutoResize();
         FB.Canvas.setAutoGrow();
     });
 };
-
-// Load the SDK Asynchronously
-(function(d){
-    var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
-    js = d.createElement('script'); js.id = id; js.async = true;
-    js.src = "//connect.facebook.net/en_US/all.js";
-    d.getElementsByTagName('head')[0].appendChild(js);
-}(document));
 
 /**
  * Date.parse with progressive enhancement for ISO-8601, version 2
@@ -128,7 +135,7 @@ function postTrackToWall(trackId) {
 }
 
 function fetchTracks() {
-    $.ajax({url: '/api/current_playlist?src=facebook',
+    $.ajax({url: '/api/current_playlist?src=' + apiSource,
             dataType: 'json',
             'type': 'GET',
             success: function(data) {

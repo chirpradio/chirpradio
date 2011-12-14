@@ -16,7 +16,8 @@ from common import dbconfig
 log = logging.getLogger()
 
 
-def canvas(request, in_page_tab=False):
+def canvas(request, template='fbapp/canvas.html', context={}):
+    context = context.copy()
     app_id = dbconfig['facebook.app_key']
     payload = None
     if (request.POST.get('signed_request') and
@@ -37,11 +38,15 @@ def canvas(request, in_page_tab=False):
     channel_url = settings.SITE_URL + reverse('fbapp.channel')
     chirp_icon_url = '%s%sfbapp/img/Icon-50.png' % (settings.SITE_URL,
                                                     settings.MEDIA_URL)
-    response = render_to_response('fbapp/canvas.html',
-                                  dict(cache_stub=cache_stub, app_id=app_id,
-                                       channel_url=channel_url,
-                                       in_page_tab=in_page_tab,
-                                       chirp_icon_url=chirp_icon_url),
+    context.update(dict(cache_stub=cache_stub, app_id=app_id,
+                        channel_url=channel_url,
+                        chirp_icon_url=chirp_icon_url))
+    context.setdefault('show_live_fb', True)
+    context.setdefault('in_page_tab', False)
+    context.setdefault('root_div_id', 'fb-root')
+    context.setdefault('connect_to_facebook', True)
+    context.setdefault('api_source', 'facebook')
+    response = render_to_response(template, context,
                                   context_instance=RequestContext(request))
     if not settings.DEBUG:
         hours = 5
@@ -50,7 +55,25 @@ def canvas(request, in_page_tab=False):
 
 
 def page_tab(request):
-    return canvas(request, in_page_tab=True)
+    return canvas(request, context={'in_page_tab': True})
+
+
+def open_web_app(request):
+    return canvas(request, context={'show_live_fb': False,
+                                    'root_div_id': 'owa-root',
+                                    'connect_to_facebook': False,
+                                    'api_source': 'openwebapp'},
+                  template='owa/app.html')
+
+
+def open_web_app_manifest(request):
+    response = render_to_response('owa/chirpradio.webapp', {},
+                                  context_instance=RequestContext(request))
+    response['Content-Type'] = 'application/x-web-app-manifest+json'
+    if not settings.DEBUG:
+        hours = 5
+        response['Cache-Control'] = 'public,max-age=%d' % int(3600 * hours)
+    return response
 
 
 def channel(request):
