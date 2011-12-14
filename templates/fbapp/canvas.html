@@ -9,191 +9,56 @@
      class="ch-app-canvas"
      {% endif %}
       >
-<style type="text/css">
-/*
-http://devtacular.com/articles/bkonrad/how-to-style-an-application-like-facebook
-http://webdesign.tutsplus.com/tutorials/htmlcss-tutorials/design-and-code-an-integrated-facebook-app-html-css/
-*/
-* {
-    margin: 0;
-    padding: 0;
-}
-body {
-    font-family: "lucida grande", tahoma, verdana, arial, sans-serif;
-    color: #333333;
-}
-a {
-    cursor: pointer;
-    color: #3B5998;
-    text-decoration: none;
-}
-a:hover {
-    text-decoration: underline;
-}
-strong {
-    font-weight:bold;
-}
-em {
-    font-style:italic;
-}
-h3 {
-    font-size: 16px;
-    font-weight:bold;
-    line-height: 1.1em;
-    margin-bottom:5px;
-}
-h4 {
-    font-size: 14px;
-    margin-bottom: 0.5em;
-}
-ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-ul li {
-    padding: 0 8px 8px 8px;
-    margin: 0;
-}
-ul li:first-child {
-    padding-top: 8px;
-}
-ul li:hover {
-    color: #7A6A11;
-}
-object, embed {
-    outline: 0;
-}
-button {
-    -moz-border-radius: 4px;
-    -webkit-border-radius: 4px;
-    border-radius: 4px;
-    border:  1px solid #CAD4E7;
-    background-color: #ECEEF5;
-    color: #3B5998;
-    padding: 3px;
-}
-button:hover {
-    border-color: #A2ABB9;
-}
-.track-list button {
-    display: block;
-    float: right;
-}
-.track-list .artist {
-    font-weight: bold;
-}
-.track-list .release {
-    font-style: italic;
-}
-.track-list .time {
-    color: #999999;
-    float: left;
-    font-size: 11px;
-    width: 50px;
-    padding-right: 4px;
-}
-.track-list .time img {
-    margin: 8px 0 0 0;
-    border: 1px solid #000;
-}
-.track-list .track-info {
-    float: left;
-    width: 395px;
-    font-size: 13px;
-    line-height: 20px;
-}
-.box {
-    background-color: #fff9d7;
-    border: 1px solid #e2c822;
-    color: #333333;
-/*    padding: 10px;*/
-    font-size: 13px;
-    margin-bottom: 1em;
-}
-.ch-recently-played .box {
-    margin-bottom: 10px;
-}
-.cleared {
-    clear: both;
-}
-#ch-player {
-    margin-bottom: 1em;
-}
-#chirp-banner {
-    display: block;
-    text-decoration: none;
-    float: right;
-    height: 50px;
-    width: 50px;
-/*    background: transparent url({{ MEDIA_URL }}fbapp/img/Icon-50.png) no-repeat right top;*/
-    outline: 0;
-}
-#chirp-banner span {
-    visibility: hidden;
-}
-#ch-app {
-    width: 520px;
-}
-.ch-app-canvas {
-    margin: 10px;
-}
-.last-fm {
-    padding: 0 0 10px 0;
-    text-align: right;
-    color: #695A5C;
-    font-size: 10px;
-}
-.last-fm a, .last-fm img {
-    outline: 0;
-}
-#owa-root .ch-app-canvas {
-    margin: 10px auto;
-}
-</style>
-<script type="text/javascript" src="/media/common/js/jquery/jquery-1.6.4.js"></script>
-<script type="text/javascript" src="/media/fbapp/js/fbapp.js?{{ cache_stub }}"></script>
-<!-- <a id="chirp-banner" href="http://chirpradio.org/" target="_blank" title="CHIRPradio.org"><span>CHIRPradio.org</span></a> -->
-<div id="ch-player">
-  <script language="JavaScript" type="text/javascript">
-  	AC_FL_RunContent(
-  		'codebase', 'http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0',
-  		'width', '478',
-  		'height', '32',
-  		'src', '{{ MEDIA_URL }}fbapp/flash-player/_player',
-  		'quality', 'high',
-  		'pluginspage', 'http://www.adobe.com/go/getflashplayer',
-  		'align', 'middle',
-  		'play', 'true',
-  		'loop', 'true',
-  		'scale', 'showall',
-  		'wmode', 'opaque',
-  		'devicefont', 'false',
-  		'id', 'player',
-  		'bgcolor', 'white',
-  		'name', 'player',
-  		'menu', 'true',
-  		'allowFullScreen', 'false',
-  		'allowScriptAccess','sameDomain',
-  		'movie', '{{ MEDIA_URL }}fbapp/flash-player/_player',
-  		'salign', ''
-  		); //end AC code
-  </script>
-</div>
-<div class="track-list ch-now-playing">
-  <h4>Now Playing <span class="ch-current-dj"></span></h4>
-  <ul class="box"></ul>
-</div>
-<div class="track-list ch-recently-played">
-  <h4>Recently Played</h4>
-  <ul class="box"></ul>
-</div>
-<div class="last-fm">
-  Album artwork courtesy of
-  <a target="_blank" href="http://www.last.fm/">
-    <img src="{{ MEDIA_URL }}fbapp/img/lastfm.jpg" height="13" width="54" alt="last.fm">
-  </a>
-</div>
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}fbapp/css/app.css">
+<script type="text/javascript" src="{{ MEDIA_URL }}common/js/jquery/jquery-1.6.4.js"></script>
+<script type="text/javascript" src="{{ MEDIA_URL }}fbapp/js/fbapp.js?{{ cache_stub }}"></script>
+{% if in_openwebapp %}
+<section id="header">
+  <a id="chirp-banner" href="http://chirpradio.org/" target="_blank"><span>CHIRPradio.org</span></a>
+</section>
+{% endif %}
+<section id="content">
+  <div id="ch-player">
+    <script language="JavaScript" type="text/javascript">
+    	AC_FL_RunContent(
+    		'codebase', 'http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0',
+    		'width', '478',
+    		'height', '32',
+    		'src', '{{ MEDIA_URL }}fbapp/flash-player/_player',
+    		'quality', 'high',
+    		'pluginspage', 'http://www.adobe.com/go/getflashplayer',
+    		'align', 'middle',
+    		'play', 'true',
+    		'loop', 'true',
+    		'scale', 'showall',
+    		'wmode', 'opaque',
+    		'devicefont', 'false',
+    		'id', 'player',
+    		'bgcolor', 'white',
+    		'name', 'player',
+    		'menu', 'true',
+    		'allowFullScreen', 'false',
+    		'allowScriptAccess','sameDomain',
+    		'movie', '{{ MEDIA_URL }}fbapp/flash-player/_player',
+    		'salign', ''
+    		); //end AC code
+    </script>
+  </div>
+  <div class="track-list ch-now-playing">
+    <h4>Now Playing <span class="ch-current-dj"></span></h4>
+    <ul class="box"></ul>
+  </div>
+  <div class="track-list ch-recently-played">
+    <h4>Recently Played</h4>
+    <ul class="box"></ul>
+  </div>
+  <div class="last-fm">
+    Album artwork courtesy of
+    <a target="_blank" href="http://www.last.fm/">
+      <img src="{{ MEDIA_URL }}fbapp/img/lastfm.jpg" height="13" width="54" alt="last.fm">
+    </a>
+  </div>
+</section>
 {% if show_live_fb %}
 <div class="fb-live-stream" data-event-app-id="{{ app_id }}"
      data-width="520" data-height="500" data-always-post-to-friends="false"></div>

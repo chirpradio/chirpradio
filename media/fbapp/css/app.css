@@ -1,0 +1,186 @@
+/*
+http://devtacular.com/articles/bkonrad/how-to-style-an-application-like-facebook
+http://webdesign.tutsplus.com/tutorials/htmlcss-tutorials/design-and-code-an-integrated-facebook-app-html-css/
+*/
+* {
+    margin: 0;
+    padding: 0;
+}
+body {
+    font-family: "lucida grande", tahoma, verdana, arial, sans-serif;
+    color: #333333;
+}
+a {
+    cursor: pointer;
+    color: #3B5998;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+strong {
+    font-weight:bold;
+}
+em {
+    font-style:italic;
+}
+h3 {
+    font-size: 16px;
+    font-weight:bold;
+    line-height: 1.1em;
+    margin-bottom:5px;
+}
+h4 {
+    font-size: 14px;
+    margin-bottom: 0.5em;
+}
+ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+ul li {
+    padding: 0 8px 8px 8px;
+    margin: 0;
+}
+ul li:first-child {
+    padding-top: 8px;
+}
+ul li:hover {
+    color: #7A6A11;
+}
+object, embed {
+    outline: 0;
+}
+button {
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    border-radius: 4px;
+    border:  1px solid #CAD4E7;
+    background-color: #ECEEF5;
+    color: #3B5998;
+    padding: 3px;
+}
+button:hover {
+    border-color: #A2ABB9;
+}
+.track-list button {
+    display: block;
+    float: right;
+}
+.track-list .artist {
+    font-weight: bold;
+}
+.track-list .release {
+    font-style: italic;
+}
+.track-list .time {
+    color: #999999;
+    float: left;
+    font-size: 11px;
+    width: 50px;
+    padding-right: 4px;
+}
+.track-list .time img {
+    margin: 8px 0 0 0;
+    border: 1px solid #000;
+}
+.track-list .track-info {
+    float: left;
+    width: 395px;
+    font-size: 13px;
+    line-height: 20px;
+}
+.box {
+    background-color: #fff9d7;
+    border: 1px solid #e2c822;
+    color: #333333;
+/*    padding: 10px;*/
+    font-size: 13px;
+    margin-bottom: 1em;
+}
+.ch-recently-played .box {
+    margin-bottom: 10px;
+}
+.cleared {
+    clear: both;
+}
+#ch-player {
+    margin-bottom: 1em;
+}
+#chirp-banner span {
+    visibility: hidden;
+}
+#ch-app {
+    width: 520px;
+}
+.ch-app-canvas {
+    margin: 10px;
+}
+.last-fm {
+    padding: 0 0 10px 0;
+    text-align: right;
+    color: #695A5C;
+    font-size: 10px;
+}
+.last-fm a, .last-fm img {
+    outline: 0;
+}
+body.openwebapp {
+    background-color: #c3c3c3;
+}
+#owa-root section#header {
+    background: #000;
+    padding: 2px 0 2px 0;
+}
+#owa-root #chirp-banner {
+    display: block;
+    text-decoration: none;
+    height: 50px;
+    width: 243px;
+    background: transparent url(../img/app-hdr-logo.jpg) no-repeat left top;
+    outline: 0;
+}
+#owa-root #chirp-banner span {
+    visibility: none;
+}
+
+#owa-root .ch-app-canvas {
+    margin: 0px auto;
+}
+#owa-root section#content {
+    padding: 10px;
+}
+#owa-root #ch-app {
+    background: #ffffff url(../img/app-bg.jpg) repeat-x bottom left;
+    padding-bottom: 190px;
+    border: 1px solid #000;
+    border-top: none;
+}
+#owa-root .box {
+    background-color: rgba(0,0,0,.7);
+    border: 1px solid #000;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    color: #fff;
+}
+#owa-root .ch-current-dj {
+    color: #000;
+}
+#owa-root .track-list .track-info {
+    width: auto;
+}
+#owa-root .track-list li:hover {
+    color: #fff;
+}
+#owa-root .track-list .artist,
+#owa-root .track-list .release {
+    color: #fcfc77;
+}
+#owa-root .track-list .time {
+    color: #c3c3c3;
+}
+#owa-root h4 {
+    color: #999;
+}

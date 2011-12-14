@@ -43,6 +43,7 @@ def canvas(request, template='fbapp/canvas.html', context={}):
                         chirp_icon_url=chirp_icon_url))
     context.setdefault('show_live_fb', True)
     context.setdefault('in_page_tab', False)
+    context.setdefault('in_openwebapp', False)
     context.setdefault('root_div_id', 'fb-root')
     context.setdefault('connect_to_facebook', True)
     context.setdefault('api_source', 'facebook')
@@ -61,6 +62,7 @@ def page_tab(request):
 def open_web_app(request):
     return canvas(request, context={'show_live_fb': False,
                                     'root_div_id': 'owa-root',
+                                    'in_openwebapp': True,
                                     'connect_to_facebook': False,
                                     'api_source': 'openwebapp'},
                   template='owa/app.html')
