@@ -30,11 +30,6 @@ urlpatterns = patterns(
     # landing page.
     ('^$', 'landing_page.views.landing_page'),
 
-    # A hack to serve the favicon, which we store in common.
-    (r'^favicon.ico$', 'django.views.static.serve',
-     {'document_root': 'common', 'path': 'favicon.ico',
-      }),
-
     # The site authentication system.
     ('^auth/?', include('auth.urls')),
 
