@@ -168,9 +168,6 @@ body.openwebapp {
 #owa-root .ch-current-dj {
     color: #000;
 }
-#owa-root .track-list .track-info {
-    width: auto;
-}
 #owa-root .track-list li:hover {
     color: #fff;
 }
