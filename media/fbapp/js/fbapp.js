@@ -14,7 +14,7 @@ $(function() {
     $appRoot = $('.app-root');
     blankAlbumCover = $appRoot.attr('data-blank-album-cover');
     chirpIconUrl = $appRoot.attr('data-chirp-icon-url');
-    connectToFacebook = $appRoot.attr('connect-to-facebook') == 'true';
+    connectToFacebook = $appRoot.attr('data-connect-to-facebook') == 'true';
     apiSource = $appRoot.attr('data-api-source');
     fetchTracks();
     window.setInterval(fetchTracks, 15000);
@@ -100,8 +100,8 @@ function pushTrack($ctx, trk) {
     var convertedMs = dt.getTime() - getLocalOffset();
     var localTime = new Date(convertedMs);
     var fmtTime = formatTime(localTime.getHours(), localTime.getMinutes());
-    $ctx.append(
-        '<li id="track-' + trk.id + '">' +
+    var trkStr;
+    trkStr = '<li id="track-' + trk.id + '">' +
         '<div class="time">' + fmtTime +
             '<img src="' + blankAlbumCover + '" height="32" width="32">' +
         '</div> ' +
@@ -110,9 +110,12 @@ function pushTrack($ctx, trk) {
             '<span class="track">' + trk.track + '</span> ' +
             '<span class="release">from ' + trk.release + '</span> ' +
             '<span class="label">(' + trk.label + ')</span>' +
-        '</div>' +
-        ' <button class="post" data-track-id="' + trk.id + '">Share</button>' +
-        '<div class="cleared"></div></li>');
+        '</div>';
+    if (connectToFacebook) {
+        trkStr += ' <button class="post" data-track-id="' + trk.id + '">Share</button>';
+    }
+    trkStr += '<div class="cleared"></div></li>';
+    $ctx.append(trkStr);
 }
 
 function postTrackToWall(trackId) {
