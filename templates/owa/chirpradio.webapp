@@ -1,0 +1,12 @@
+{"name": "CHIRP Radio",
+ "description": "CHIRP is a radio station in Chicago that focuses on independent music and the local community",
+ "version": "1.0",
+ "developer": {"name": "Kumar McMillan",
+               "url": "http://farmdev.com/"},
+ "launch_path": "{% url fbapp.open_web_app %}",
+ "icons": {"50": "{{ MEDIA_URL }}fbapp/img/Icon-50.png"},
+ "default_locale":"en",
+ {% comment %}"widget": {"height": 100,
+            "path": "/webapp_widget",
+            "width": 200},{% endcomment %}
+ "installs_allowed_from": ["*"]}
