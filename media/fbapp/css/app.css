@@ -105,6 +105,20 @@ button:hover {
 .cleared {
     clear: both;
 }
+#chirp-banner {
+    display: block;
+    text-decoration: none;
+    height: 50px;
+    width: 243px;
+    background: transparent url(../img/app-hdr-logo-fb-ltblu.jpg) no-repeat left top;
+    outline: 0;
+}
+#header {
+/*    background-color: #ec0035; */
+    background-color: #c4cde0;
+    padding: 2px 0 2px 0;
+    margin-bottom: 10px;
+}
 #ch-player {
     margin-bottom: 1em;
 }
@@ -129,17 +143,12 @@ button:hover {
 body.openwebapp {
     background-color: #c3c3c3;
 }
-#owa-root section#header {
-    background: #000;
-    padding: 2px 0 2px 0;
+#owa-root #header {
+    background-color: #000;
+    margin: 0;
 }
 #owa-root #chirp-banner {
-    display: block;
-    text-decoration: none;
-    height: 50px;
-    width: 243px;
     background: transparent url(../img/app-hdr-logo.jpg) no-repeat left top;
-    outline: 0;
 }
 #owa-root #chirp-banner span {
     visibility: none;
@@ -148,7 +157,7 @@ body.openwebapp {
 #owa-root .ch-app-canvas {
     margin: 0px auto;
 }
-#owa-root section#content {
+#owa-root #content {
     padding: 10px;
 }
 #owa-root #ch-app {

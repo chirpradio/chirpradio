@@ -12,12 +12,10 @@
 <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}fbapp/css/app.css">
 <script type="text/javascript" src="{{ MEDIA_URL }}common/js/jquery/jquery-1.6.4.js"></script>
 <script type="text/javascript" src="{{ MEDIA_URL }}fbapp/js/fbapp.js?{{ cache_stub }}"></script>
-{% if in_openwebapp %}
-<section id="header">
+<div id="header">
   <a id="chirp-banner" href="http://chirpradio.org/" target="_blank"><span>CHIRPradio.org</span></a>
-</section>
-{% endif %}
-<section id="content">
+</div>
+<div id="content">
   <div id="ch-player">
     <script language="JavaScript" type="text/javascript">
     	AC_FL_RunContent(
@@ -58,7 +56,7 @@
       <img src="{{ MEDIA_URL }}fbapp/img/lastfm.jpg" height="13" width="54" alt="last.fm">
     </a>
   </div>
-</section>
+</div>
 {% if show_live_fb %}
 <div class="fb-live-stream" data-event-app-id="{{ app_id }}"
      data-width="520" data-height="500" data-always-post-to-friends="false"></div>
