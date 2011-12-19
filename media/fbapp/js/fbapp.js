@@ -55,6 +55,9 @@ function formatTime(hour, min) {
     } else if (hour == 12) {
         md = 'pm';
     }
+    if (hour == 0) {
+        hour = 12;
+    }
     if (min < 10) {
         min = '0' + min.toString();
     }
