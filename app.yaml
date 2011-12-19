@@ -26,11 +26,12 @@ handlers:
   # script: google.appengine.ext.remote_api.handler
   login: admin
 
-# Serve static media with a 2 hour TTL.  Note that everything under
-# media is world-readable!
+# Serve static media.  Note that everything under media is world-readable!
+# Making cache expiration more agressive until CDN pushes is fixed:
+# http://code.google.com/p/googleappengine/issues/detail?id=6549
 - url: /media
   static_dir: media
-  expiration: 2h
+  expiration: 30m
 
 # restrict public access to task queue URL handlers
 - url: /playlists/task/.*
