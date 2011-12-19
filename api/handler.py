@@ -110,8 +110,8 @@ class CurrentPlaylist(CachedApiHandler):
                     log.exception('IGNORED while adding task')
 
     def track_as_data(self, track):
-        # Create Unix timestamps. Why is a GMT timestamp this difficult?
-        played_g = time.gmtime(time.mktime(track.established.utctimetuple()))
+        # Create Unix timestamps.
+        played_g = track.established.utctimetuple()
         played_local = time.mktime(track.established_display.timetuple())
         return {
             'id': str(track.key()),
