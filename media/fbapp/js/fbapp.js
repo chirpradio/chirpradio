@@ -61,19 +61,10 @@ function formatTime(hour, min) {
     return hour.toString() + ':' + min.toString() + md;
 }
 
-function getLocalOffset() {
-    var local;
-    if (!_localOffset) {
-        local = new Date();
-        _localOffset = local.getTimezoneOffset() * 60000;
-    }
-    return _localOffset;
-}
-
 function pushTrack($ctx, trk) {
-    var dt = new Date(parseInt(trk.played_at_gmt_ts, 10) * 1000);
-    var convertedMs = dt.getTime() - getLocalOffset();
-    var localTime = new Date(convertedMs);
+    // It appears that instantiating a JavaScript Date object with a UTC
+    // timestamp will put it in the local time zone.
+    var localTime = new Date(parseInt(trk.played_at_gmt_ts, 10) * 1000);
     var fmtTime = formatTime(localTime.getHours(), localTime.getMinutes());
     var trkStr;
     trkStr = '<li id="track-' + trk.id + '">' +
