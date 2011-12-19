@@ -47,6 +47,7 @@ def canvas(request, template='fbapp/canvas.html', context={}):
     context.setdefault('root_div_id', 'fb-root')
     context.setdefault('connect_to_facebook', True)
     context.setdefault('api_source', 'facebook')
+    context.setdefault('api_url', reverse('fbapp.canvas'))
     response = render_to_response(template, context,
                                   context_instance=RequestContext(request))
     if not settings.DEBUG:
@@ -64,7 +65,8 @@ def open_web_app(request):
                                     'root_div_id': 'owa-root',
                                     'in_openwebapp': True,
                                     'connect_to_facebook': False,
-                                    'api_source': 'openwebapp'},
+                                    'api_source': 'openwebapp',
+                                    'app_url': reverse('fbapp.open_web_app')},
                   template='owa/app.html')
 
 

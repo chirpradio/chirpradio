@@ -60,6 +60,7 @@ button {
     background-color: #ECEEF5;
     color: #3B5998;
     padding: 3px;
+    cursor: pointer;
 }
 button:hover {
     border-color: #A2ABB9;
@@ -118,6 +119,11 @@ button:hover {
     background-color: #c4cde0;
     padding: 2px 0 2px 0;
     margin-bottom: 10px;
+}
+#header button {
+    float: right;
+    margin: 5px 7px 7px 7px;
+    border-color: #A2ABB9;
 }
 #ch-player {
     margin-bottom: 1em;

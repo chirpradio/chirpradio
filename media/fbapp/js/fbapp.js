@@ -7,12 +7,14 @@ var trackCache = {},
     chirpIconUrl,
     connectToFacebook,
     apiSource,
+    appUrl,
     $appRoot,
     _localOffset;
 
 $(function() {
     $appRoot = $('.app-root');
     blankAlbumCover = $appRoot.attr('data-blank-album-cover');
+    appUrl = $appRoot.attr('data-app-url');
     chirpIconUrl = $appRoot.attr('data-chirp-icon-url');
     connectToFacebook = $appRoot.attr('data-connect-to-facebook') == 'true';
     apiSource = $appRoot.attr('data-api-source');
@@ -21,6 +23,11 @@ $(function() {
     $('.track-list').delegate('.post', 'click', function(evt) {
         evt.preventDefault();
         postTrackToWall($(this).attr('data-track-id'));
+    });
+    $('.add-to-page').click(function(evt) {
+        evt.preventDefault();
+        var params = {method: 'pagetab', redirect_uri: appUrl};
+        FB.ui(params);
     });
     if (connectToFacebook) {
         // Load the SDK Asynchronously

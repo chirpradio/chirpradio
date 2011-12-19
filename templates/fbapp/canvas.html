@@ -3,7 +3,8 @@
                   data-blank-album-cover="{{ MEDIA_URL }}fbapp/img/blank-album-cover.jpg"
                   data-chirp-icon-url="{{ chirp_icon_url }}"
                   data-connect-to-facebook="{{ connect_to_facebook|lower }}"
-                  data-api-source="{{ api_source }}">
+                  data-api-source="{{ api_source }}"
+                  data-app-url="{{ app_url }}">
 <div id="ch-app"
      {% if not in_page_tab %}
      class="ch-app-canvas"
@@ -13,6 +14,9 @@
 <script type="text/javascript" src="{{ MEDIA_URL }}common/js/jquery/jquery-1.6.4.js"></script>
 <script type="text/javascript" src="{{ MEDIA_URL }}fbapp/js/fbapp.js?{{ cache_stub }}"></script>
 <div id="header">
+  {% if connect_to_facebook %}
+  <button class="add-to-page">Add to page</button>
+  {% endif %}
   <a id="chirp-banner" href="http://chirpradio.org/" target="_blank"><span>CHIRPradio.org</span></a>
 </div>
 <div id="content">
