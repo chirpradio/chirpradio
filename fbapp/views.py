@@ -16,6 +16,10 @@ from common import dbconfig
 log = logging.getLogger()
 
 
+def absolutify(url):
+    return '%s%s' % (settings.SITE_URL, url)
+
+
 def canvas(request, template='fbapp/canvas.html', context={}):
     context = context.copy()
     app_id = dbconfig['facebook.app_key']
@@ -35,7 +39,7 @@ def canvas(request, template='fbapp/canvas.html', context={}):
 
     # Bust javascript cache when developing:
     cache_stub = settings.DEBUG and str(time.time()) or ''
-    channel_url = settings.SITE_URL + reverse('fbapp.channel')
+    channel_url = absolutify(reverse('fbapp.channel'))
     chirp_icon_url = '%s%sfbapp/img/Icon-50.png' % (settings.SITE_URL,
                                                     settings.MEDIA_URL)
     context.update(dict(cache_stub=cache_stub, app_id=app_id,
@@ -47,7 +51,7 @@ def canvas(request, template='fbapp/canvas.html', context={}):
     context.setdefault('root_div_id', 'fb-root')
     context.setdefault('connect_to_facebook', True)
     context.setdefault('api_source', 'facebook')
-    context.setdefault('api_url', reverse('fbapp.canvas'))
+    context.setdefault('api_url', absolutify(reverse('fbapp.canvas')))
     response = render_to_response(template, context,
                                   context_instance=RequestContext(request))
     if not settings.DEBUG:
@@ -61,12 +65,13 @@ def page_tab(request):
 
 
 def open_web_app(request):
+    app_url = absolutify(reverse('fbapp.open_web_app'))
     return canvas(request, context={'show_live_fb': False,
                                     'root_div_id': 'owa-root',
                                     'in_openwebapp': True,
                                     'connect_to_facebook': False,
                                     'api_source': 'openwebapp',
-                                    'app_url': reverse('fbapp.open_web_app')},
+                                    'app_url': app_url},
                   template='owa/app.html')
 
 
