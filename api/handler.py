@@ -23,8 +23,10 @@
 import main
 
 
+import calendar
 from datetime import datetime, timedelta
 import logging
+import time
 
 from google.appengine.ext import webapp
 # import webapp2 as webapp  # python2.7, multithreaded
@@ -108,6 +110,9 @@ class CurrentPlaylist(CachedApiHandler):
                     log.exception('IGNORED while adding task')
 
     def track_as_data(self, track):
+        # Create Unix timestamps. Why is a GMT timestamp this difficult?
+        played_g = time.gmtime(time.mktime(track.established.utctimetuple()))
+        played_local = time.mktime(track.established_display.timetuple())
         return {
             'id': str(track.key()),
             'artist': track.artist_name,
@@ -116,7 +121,9 @@ class CurrentPlaylist(CachedApiHandler):
             'label': track.label_display,
             'dj': track.selector.effective_dj_name,
             'played_at_gmt': track.established.isoformat(),
+            'played_at_gmt_ts': calendar.timegm(played_g),
             'played_at_local': track.established_display.isoformat(),
+            'played_at_local_ts': played_local,
             'lastfm_urls': {
                 'sm_image': track.lastfm_url_sm_image,
                 'med_image': track.lastfm_url_med_image,

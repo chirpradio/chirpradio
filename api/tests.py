@@ -17,6 +17,7 @@
 ###
 
 from __future__ import with_statement
+from datetime import datetime
 import urllib
 import unittest
 
@@ -107,10 +108,19 @@ class TestTrackPlayingNow(APITest):
         eq_(current['track'], 'You Are The Sunshine Of My Life')
         eq_(current['release'], 'Talking Book')
         eq_(current['dj'], 'DJ Night Moves')
+
         eq_(current['played_at_gmt'].split('T')[0],
             self.playlist_track.established.strftime('%Y-%m-%d'))
+        dt = (datetime.utcfromtimestamp(current['played_at_gmt_ts'])
+                                                .strftime('%Y-%m-%d %H:%M'))
+        eq_(dt, self.playlist_track.established.strftime('%Y-%m-%d %H:%M'))
+
         eq_(current['played_at_local'].split('T')[0],
             self.playlist_track.established_display.strftime('%Y-%m-%d'))
+        dt = (datetime.utcfromtimestamp(current['played_at_local_ts'])
+                                                .strftime('%Y-%m-%d %H:%M'))
+        eq_(dt, (self.playlist_track.established_display
+                                                .strftime('%Y-%m-%d %H:%M')))
         assert 'id' in current
 
     def test_headers(self):
