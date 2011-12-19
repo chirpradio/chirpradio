@@ -51,7 +51,7 @@ def canvas(request, template='fbapp/canvas.html', context={}):
     context.setdefault('root_div_id', 'fb-root')
     context.setdefault('connect_to_facebook', True)
     context.setdefault('api_source', 'facebook')
-    context.setdefault('api_url', absolutify(reverse('fbapp.canvas')))
+    context.setdefault('app_url', absolutify(reverse('fbapp.canvas')))
     response = render_to_response(template, context,
                                   context_instance=RequestContext(request))
     if not settings.DEBUG:
