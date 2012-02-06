@@ -1738,8 +1738,14 @@ def crate_page(request, crate_key=None, ctx_vars=None):
     crate_items = []
     if crate.items:
         for pos in crate.order:
-            new_crate_items.append(crate.items[pos-1])
-            crate_items.append(AutoRetry(db).get(crate.items[pos-1]))
+            try:
+                item = crate.items[pos-1]
+            except IndexError:
+                log.error('Crate %r for user %r does not have position %s'
+                          % (crate, request.user, pos))
+            else:
+                new_crate_items.append(item)
+                crate_items.append(AutoRetry(db).get(item))
     crate.items = new_crate_items
     crate.order = range(1, len(crate.items)+1)
     crate.save()
