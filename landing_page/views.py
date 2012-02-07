@@ -23,7 +23,7 @@ from django.template import RequestContext, loader
 
 mobile_app_urls = {
     'iphone': 'http://itunes.apple.com/us/app/chirp-radio/id373395037?mt=8',
-    'android': 'http://chirpradio.org/phones#1055',
+    'android': 'https://market.android.com/details?id=org.chirpradio.mobile',
     'blackberry': 'http://chirpradio.org/phones#19480',
     '__default__': 'http://chirpradio.org/phones'
 }
