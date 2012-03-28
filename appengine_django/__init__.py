@@ -131,7 +131,8 @@ def LoadSdk():
         os.path.join(SDK_PATH, 'lib', 'antlr3'),
         os.path.join(SDK_PATH, 'lib', 'django'),
         os.path.join(SDK_PATH, 'lib', 'ipaddr'),
-        os.path.join(SDK_PATH, 'lib', 'webob'),
+        os.path.join(SDK_PATH, 'lib', 'webob'),  # old SDK
+        os.path.join(SDK_PATH, 'lib', 'webob_1_1_1'),  # SDK >= 16.4
         os.path.join(SDK_PATH, 'lib', 'yaml', 'lib'),
         os.path.join(SDK_PATH, 'lib', 'fancy_urllib'),
         os.path.join(SDK_PATH, 'lib', 'simplejson'),
