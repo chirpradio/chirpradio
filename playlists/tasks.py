@@ -111,7 +111,7 @@ class Live365Listener(PlaylistEventListener):
         """
         taskqueue.add(url=reverse('playlists.send_track_to_live365'),
                       params={'id':str(track.key())})
-    
+
     def delete(self, track_key):
         """The key of this PlaylistEvent was deleted.
 
@@ -133,7 +133,8 @@ class PlaylistEventDispatcher(object):
             listener.delete(*args, **kw)
 
 playlist_event_listeners = PlaylistEventDispatcher([
-    LiveSiteListener(),
+    # Disabling this on 6/9/2012 while the new site comes online.
+    #LiveSiteListener(),
     Live365Listener()
 ])
 
@@ -293,43 +294,43 @@ def delete_track_from_live_site(request):
 
 def send_track_to_live365(request):
     """Background Task URL to send playlist to Live 365 service.
-    
+
     This view expects POST parameters:
-    
+
     **id**
     The Datastore key of the playlist entry
-    
+
     When POSTing to Live 365 here are the parameters:
-    
+
     **member_name**
     Live365 member name
-    
+
     **password**
     Live365 password
-    
+
     **sessionid**
     Unused.  This is an alternative to user password and looks like
     membername:sessionkey as returned by api_login.cgi
-    
+
     **version**
     Version of API request.  Currently this must be 2
-    
+
     **filename**
-    I think we can leave this blank because Live365 docs say they 
+    I think we can leave this blank because Live365 docs say they
     will use it to guess song and artist info if none was sent.
-    
+
     **seconds**
-    Length of the track in seconds.  Live365 uses this to refresh its 
-    popup player window thing.  So really we should probably set this to 60 or 120 
-    because DJs might be submitting playlist entries out of sync with when 
+    Length of the track in seconds.  Live365 uses this to refresh its
+    popup player window thing.  So really we should probably set this to 60 or 120
+    because DJs might be submitting playlist entries out of sync with when
     they are actually playing the songs.
-    
+
     **title**
     Song title
-    
+
     **artist**
     Artist name
-    
+
     **album**
     Album title
     """
@@ -338,9 +339,9 @@ def send_track_to_live365(request):
         log.warning("Requested to create a non-existant track of ID %r" % request.POST['id'])
         # this is not an error (malicious POST, etc), so make sure the task succeeds:
         return task_response({'success':True})
-        
+
     log.info("Live365 create track %s" % track.key())
-    
+
     qs = {
         'member_name': dbconfig['live365.member_name'],
         'password': dbconfig['live365.password'],

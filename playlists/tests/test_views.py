@@ -194,22 +194,12 @@ class TestPlaylistViews(PlaylistViewsTest):
             assert 'track_id' in qs
             return True
 
-        fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
-                                .with_args(arg.passes_test(inspect_request)))
-
-        fake_response = (fake_urlopen
-                                .returns_fake()
-                                .has_attr(code='200')
-                                .provides('read')
-                                .returns("<service response>"))
-
-        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):
-            resp = self.client.post(reverse('playlists_add_event'), {
-                'artist': "Squarepusher",
-                'song': "Port Rhombus",
-                "album": "Port Rhombus EP",
-                "label": "Warp Records"
-            })
+        resp = self.client.post(reverse('playlists_add_event'), {
+            'artist': "Squarepusher",
+            'song': "Port Rhombus",
+            "album": "Port Rhombus EP",
+            "label": "Warp Records"
+        })
         self.assertNoFormErrors(resp)
         self.assertRedirects(resp, reverse('playlists_landing_page'))
         # simulate the redirect:
@@ -223,7 +213,6 @@ class TestPlaylistViews(PlaylistViewsTest):
 
         # when this user has created the entry she gets a link to delete it
         assert '[delete]' in resp.content
-        fudge.verify()
 
     def test_remote_api_errors_are_logged(self):
 
@@ -259,15 +248,6 @@ class TestPlaylistViews(PlaylistViewsTest):
             assert 'track_id' in qs
             return True
 
-        fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
-                                .with_args(arg.passes_test(inspect_request)))
-
-        fake_response = (fake_urlopen
-                                .returns_fake()
-                                .has_attr(code='200')
-                                .provides('read')
-                                .returns("<service response>"))
-
         fake_taskqueue = (fudge.Fake('taskqueue')
                                 .expects('add')
                                 .with_args(
@@ -275,7 +255,6 @@ class TestPlaylistViews(PlaylistViewsTest):
                                     params={'id': arg.any_value()}
                                 ))
         patches = [
-            fudge.patch_object(playlists.tasks.urllib2, "urlopen", fake_urlopen),
             fudge.patch_object(playlists.tasks, "taskqueue", fake_taskqueue)
         ]
         try:
@@ -640,7 +619,7 @@ class TestLiveSitePlaylistTasks(TaskTest, TestCase):
             })
 
         fudge.verify()
-    
+
     def test_create_non_existant_track(self):
         key = self.track.key()
         self.track.delete() # make it non-existant
@@ -648,7 +627,7 @@ class TestLiveSitePlaylistTasks(TaskTest, TestCase):
             'id': key
         })
         self.assertEqual(resp.status_code, 200)
-    
+
     def test_create_failure(self):
 
         fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
@@ -811,7 +790,7 @@ class TestLive365PlaylistTasks(TaskTest, TestCase):
             })
 
         fudge.verify()
-    
+
     def test_create_non_existant_track(self):
         key = self.track.key()
         self.track.delete() # make it non-existant
