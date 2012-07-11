@@ -6,6 +6,19 @@ queue:
   bucket_size: 10
   max_concurrent_requests: 10
   retry_parameters:
+    task_retry_limit: 15
+    task_age_limit: 4h
+    min_backoff_seconds: 10
+    max_backoff_seconds: 300
+    max_doublings: 0
+
+- name: lastfm
+  rate: 5/s
+  bucket_size: 10
+  max_concurrent_requests: 10
+  retry_parameters:
+    task_retry_limit: 5
+    task_age_limit: 1h
     min_backoff_seconds: 10
     max_backoff_seconds: 300
     max_doublings: 0
@@ -16,6 +29,8 @@ queue:
   bucket_size: 50
   max_concurrent_requests: 20
   retry_parameters:
+    task_retry_limit: 25
+    task_age_limit: 1d
     min_backoff_seconds: 5
     max_backoff_seconds: 100
     max_doublings: 0
