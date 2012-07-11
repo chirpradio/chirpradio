@@ -5,6 +5,7 @@ index.yaml
 .DS_Store
 *~
 *.pyc
+*.swp
 #*#
 .svn
 .project
