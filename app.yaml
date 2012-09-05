@@ -1,4 +1,4 @@
-application: chirpradio
+application: chirpradio-hrd
 version: 1
 runtime: python
 # runtime: python27
@@ -6,7 +6,7 @@ api_version: 1
 # threadsafe: true
 
 handlers:
-    
+
 - url: /api/.*
   script: api/handler.py
   # script: api.handler.application
