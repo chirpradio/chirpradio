@@ -19,12 +19,14 @@ handlers:
   static_files: media/common/img/favicon.ico
   upload: media/common/img/favicon\.ico
 
+# Disabling remote_api here because it's in builtins section now.
+
 # Support for remote datastore access.  For more information, please see
 # http://code.google.com/appengine/articles/remote_api.html
-- url: /remote_api
-  script: $PYTHON_LIB/google/appengine/ext/remote_api/handler.py
-  # script: google.appengine.ext.remote_api.handler
-  login: admin
+#- url: /remote_api
+#  script: $PYTHON_LIB/google/appengine/ext/remote_api/handler.py
+#  # script: google.appengine.ext.remote_api.handler
+#  login: admin
 
 # Serve static media.  Note that everything under media is world-readable!
 # Making cache expiration more agressive until CDN pushes is fixed:
