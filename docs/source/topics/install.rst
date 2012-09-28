@@ -5,40 +5,23 @@ Installing
 .. contents::
       :local:
 
-Using Mercurial
-===============
+Using Git
+=========
 
-To create a new local repository:
-
-.. code-block:: bash
-
-  hg clone http://chirpradio.googlecode.com/hg/ chirpradio
-
-To pull updates into your local repository:
+To create a new local repository. Go to
+https://github.com/chirpradio/chirpradio
+and fork the repository to your own *username* account.
+Check out your clone at a URL like this:
 
 .. code-block:: bash
 
-  hg pull
+  git clone git@github.com:username/chirpradio.git
 
-To push your changes into the master repository:
+You can use your local fork to create topic branches
+and make pull requests into the main repo.
+Here is a guide on `working with topic branches`_.
 
-.. code-block:: bash
-
-  hg push https://<your username>@chirpradio.googlecode.com/hg/
-
-To get your GoogleCode.com password (needed to push changes):
-http://code.google.com/hosting/settings
-
-To push your changes to a temporary location so that other 
-developers can review them before they get pushed into the master,
-make yourself a clone.  When you're on the main source code page of 
-the project, you'll see a link to Clones and under that there is a link 
-to create your own clone.  This creates an isolated repository that you 
-can safely push your changes to during development.  When your changes 
-are ready, someone can easily pull them into the master repository.
-
-For more information about Mercurial, see
-`Mercurial: The Definitive Guide <http://hgbook.red-bean.com/>`_, by Bryan O'Sullivan.
+.. _`working with topic branches`: https://blog.mozilla.org/webdev/2011/11/21/git-using-topic-branches-and-interactive-rebasing-effectively/
 
 
 Prerequisites
@@ -48,7 +31,7 @@ Everything should run in Python 2.5 or greater
 http://python.org/download/
 
 Note: Recent Ubuntu Linux versions (at least after Jaunty) ship with Python 2.6.
-Many have reported problems running the Google App Engine SDK with a non-2.5.* 
+Many have reported problems running the Google App Engine SDK with a non-2.5.*
 version of Python.  To install Python 2.5 without breaking the default Python
 install, you can use this command:
 
@@ -59,10 +42,10 @@ install, you can use this command:
 Install the Google App Engine SDK from
 http://code.google.com/appengine/downloads.html
 
-If on Mac OS X be sure to start up the launcher once 
+If on Mac OS X be sure to start up the launcher once
 so that it prompts you to create symbolic links in /usr/local/google_appengine
 
-Unlike the Google App Engine Python SDK for Mac OS X/Windows, the Linux version 
+Unlike the Google App Engine Python SDK for Mac OS X/Windows, the Linux version
 comes as a zip archive rather than an installer.  To install, just unpack the
 archive into /usr/local/google_appengine.  Or you can unpack it to your home directory
 and create a symlink in /usr/local/google_appengine.
@@ -82,7 +65,7 @@ On Mac OS X you need to grab the `PyCrypto`_ source and run:
 
   sudo python setup.py install
 
-To run the JavaScript lint tests (which will fail otherwise) 
+To run the JavaScript lint tests (which will fail otherwise)
 you will need the jsl command line tool, aka javascript-lint.
 
 On a Mac OS X system *with* `homebrew`_, type:
@@ -96,10 +79,10 @@ On a Mac OS X system *with* `homebrew`_, type:
 Running The Development Server
 ==============================
 
-.. note:: 
+.. note::
   The Google App Engine SDK currently does not run inside a virtualenv.
   This is a known bug.
-	
+
 To start up a local server, run
 
 .. code-block:: bash
