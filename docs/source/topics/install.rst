@@ -8,7 +8,7 @@ Installing
 Using Git
 =========
 
-To create a new local repository. Go to
+To create a new local repository go to
 https://github.com/chirpradio/chirpradio
 and fork the repository to your own *username* account.
 Check out your clone at a URL like this:
