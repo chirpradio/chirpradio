@@ -9,7 +9,7 @@ the Apache License, see:
 http://www.apache.org/licenses/LICENSE-2.0.html
 
 For the chirpradio developer dashboard, go to:
-http://appengine.google.com/dashboard?&app_id=chirpradio
+http://appengine.google.com/dashboard?&app_id=chirpradio-hrd
 
 For the end-user landing page, go to:
 http://chirpradio.appspot.com/
@@ -22,7 +22,7 @@ Helpful external documentation:
 * App Engine Python API
   http://code.google.com/appengine/docs/python/
 
-* Django 1.0: 
+* Django 1.0:
   http://www.djangobook.com/en/2.0/
   Be sure you are looking at the right version of the book!  We are using
   version 1.0 of Django, which is covered by (confusing enough) version 2.0
@@ -35,7 +35,8 @@ Helpful external documentation:
 OVERVIEW OF THE TREE
 ====================
 
-There are part of the common infrastructure.
+There are part of the common infrastructure.::
+
   docs/
     Documentation.
   djzango.zip
@@ -44,7 +45,7 @@ There are part of the common infrastructure.
     From google-app-engine-django, AppEngine helper & glue code.
   common/
     Code & data shared by all apps.
-  django-extras/   
+  django-extras/
     A tree that is merged into the django namespace.  We put our own
     glue code here.  This should be kept small and simple.
   __init__.py
@@ -67,17 +68,20 @@ There are part of the common infrastructure.
     CHIRP-related JavaScripts that are common to multiple applications.
   media/common/js/[package_name]
     Common external JavaScript packages (like JQuery) would go here.
-    Note that since jQuery plugins are generally external to jQuery itself 
+    Note that since jQuery plugins are generally external to jQuery itself
     they should live in their own subdirectory.
 
-These are places where all applications store data.
+These are places where all applications store data.::
+
   media/[application name]/{js, css, img}/
   templates/[application name]/
 
-These are applications that are running in production.
+These are applications that are running in production.::
+
   (None so far)
 
-These are applications that are under development.
+These are applications that are under development.::
+
   landing_page/
     Where you end up when you go to "/".  Currently a test page.
 
@@ -94,7 +98,7 @@ google-app-engine-django Subversion repository.
 * Django
 
 All files in django.zip are taken from Django 1.0.2-final.  It was
-constructed by running the following commands:
+constructed by running the following commands::
 
   zip -r django.zip django/__init__.py django/bin django/core \
                     django/db django/dispatch django/forms \
