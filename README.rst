@@ -1,3 +1,9 @@
+CHIRP Radio is a non-profit organization that runs a community radio station in Chicago
+focused on new music and the arts.
+
+Get started by reading the `development guide`_.
+
+.. _`development guide`: http://chirpradio.readthedocs.org/en/latest/index.html
 
 This is the code for CHIRP's internal web applications.  The apps run
 on Google App Engine, under the 'chirpradio' project.  The source code is
