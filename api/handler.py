@@ -114,17 +114,24 @@ class CurrentPlaylist(CachedApiHandler):
         # Create Unix timestamps.
         played_g = track.established.utctimetuple()
         played_local = time.mktime(track.established_display.timetuple())
+        played_local_expire = time.mktime((track.established_display +
+                                           timedelta(days=6 * 31)).timetuple())
         return {
             'id': str(track.key()),
             'artist': track.artist_name,
+            'artist_is_local': bool(any(ct in track.categories
+                                        for ct in ('local_current',
+                                                   'local_classic'))),
             'track': track.track_title,
             'release': track.album_title,
             'label': track.label_display,
+            'notes': track.notes,
             'dj': track.selector.effective_dj_name,
             'played_at_gmt': track.established.isoformat(),
             'played_at_gmt_ts': calendar.timegm(played_g),
             'played_at_local': track.established_display.isoformat(),
             'played_at_local_ts': played_local,
+            'played_at_local_ts_expire': played_local_expire,
             'lastfm_urls': {
                 'sm_image': track.lastfm_url_sm_image,
                 'med_image': track.lastfm_url_med_image,

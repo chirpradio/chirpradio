@@ -17,7 +17,7 @@
 ###
 
 from __future__ import with_statement
-from datetime import datetime
+from datetime import datetime, timedelta
 import urllib
 import unittest
 
@@ -73,8 +73,10 @@ class APITest(unittest.TestCase):
                 artist=self.stevie,
                 album=self.talking_book,
                 track=self.tracks[song_name],
+                notes='from 1972!',
                 freeform_label='Motown')
         self.playlist_track.save()
+        return self.playlist_track
 
     def request(self, url):
         r = self.client.get(url)
@@ -108,6 +110,7 @@ class TestTrackPlayingNow(APITest):
         eq_(current['track'], 'You Are The Sunshine Of My Life')
         eq_(current['release'], 'Talking Book')
         eq_(current['dj'], 'DJ Night Moves')
+        eq_(current['notes'], 'from 1972!')
 
         eq_(current['played_at_gmt'].split('T')[0],
             self.playlist_track.established.strftime('%Y-%m-%d'))
@@ -121,7 +124,33 @@ class TestTrackPlayingNow(APITest):
                                                 .strftime('%Y-%m-%d %H:%M'))
         eq_(dt, (self.playlist_track.established_display
                                                 .strftime('%Y-%m-%d %H:%M')))
+        dt = (datetime.utcfromtimestamp(current['played_at_local_ts_expire'])
+                                                .strftime('%Y-%m-%d %H:%M'))
+        pl = self.playlist_track.established_display + timedelta(days=6 * 31)
+        eq_(dt, pl.strftime('%Y-%m-%d %H:%M'))
+
         assert 'id' in current
+
+    def test_artist_is_local(self):
+        data = self.request('/api/current_playlist')
+        current = data['now_playing']
+        eq_(current['artist_is_local'], False)
+
+        # For local current.
+        trk = self.play_stevie_song('Maybe Your Baby')
+        trk.categories.append('local_current')
+        trk.save()
+        data = self.request('/api/current_playlist')
+        current = data['now_playing']
+        eq_(current['artist_is_local'], True)
+
+        # For local classic.
+        trk = self.play_stevie_song('Tuesday Heartbreak')
+        trk.categories.append('local_classic')
+        trk.save()
+        data = self.request('/api/current_playlist')
+        current = data['now_playing']
+        eq_(current['artist_is_local'], True)
 
     def test_headers(self):
         rs = self.client.get('/api/current_playlist')
