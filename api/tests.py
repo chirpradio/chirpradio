@@ -98,7 +98,7 @@ class TestTrackPlayingNow(APITest):
 
     def setUp(self):
         super(TestTrackPlayingNow, self).setUp()
-        self.play_stevie_song('You Are The Sunshine Of My Life')
+        self.track = self.play_stevie_song('You Are The Sunshine Of My Life')
 
     def tearDown(self):
         super(TestTrackPlayingNow, self).tearDown()
@@ -124,12 +124,19 @@ class TestTrackPlayingNow(APITest):
                                                 .strftime('%Y-%m-%d %H:%M'))
         eq_(dt, (self.playlist_track.established_display
                                                 .strftime('%Y-%m-%d %H:%M')))
-        dt = (datetime.utcfromtimestamp(current['played_at_local_ts_expire'])
-                                                .strftime('%Y-%m-%d %H:%M'))
+
         pl = self.playlist_track.established_display + timedelta(days=6 * 31)
-        eq_(dt, pl.strftime('%Y-%m-%d %H:%M'))
+        eq_(current['played_at_local_expire'].split('T')[0],
+            pl.strftime('%Y-%m-%d'))
 
         assert 'id' in current
+
+    def test_empty_notes(self):
+        self.track.notes = None
+        self.track.save()
+        data = self.request('/api/current_playlist')
+        current = data['now_playing']
+        eq_(current['notes'], '')
 
     def test_artist_is_local(self):
         data = self.request('/api/current_playlist')
