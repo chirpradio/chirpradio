@@ -121,7 +121,6 @@ class PlaylistEventDispatcher(object):
 
 
 playlist_event_listeners = PlaylistEventDispatcher([
-    # Disabling this on 6/9/2012 while the new site comes online.
     LiveSiteListener(),
     Live365Listener()
 ])
