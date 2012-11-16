@@ -36,31 +36,31 @@ log = logging.getLogger()
 class Playlist(polymodel.PolyModel):
     """A playlist of songs.
     """
-    # The date this playlist was established 
+    # The date this playlist was established
     # (automatically set to now upon creation)
     established = db.DateTimeProperty(auto_now_add=True)
     # The date this playlist was last modified (automatically set to now)
     modified = db.DateTimeProperty(auto_now=True)
-    
+
     @property
     def established_display(self):
         return time_util.convert_utc_to_chicago(self.established)
-        
+
     @property
     def modified_display(self):
         return time_util.convert_utc_to_chicago(self.modified)
-    
+
     @property
     def recent_tracks(self):
         """Generates a list of recently played tracks in this playlist"""
         q = PlaylistTrack.all().filter('playlist =', self).order('-established')
         for track in q.fetch(1000):
             yield track
-    
+
     @property
     def recent_events(self):
         """Generates a list of recent events in this playlist.
-        
+
         This is like self.recent_tracks but also includes breaks.
         """
         q = PlaylistEvent.all().filter('playlist =', self).order('-established')
@@ -69,7 +69,7 @@ class Playlist(polymodel.PolyModel):
 
 class DJPlaylist(Playlist):
     """A playlist created by a DJ.
-    
+
     This might be in preparation for a show or just for organizational purposes.
     """
     # A name to identify this playlist by
@@ -79,13 +79,13 @@ class DJPlaylist(Playlist):
     # Number of tracks contained in this playlist.
     # TODO(kumar) this is not currently used.
     track_count = db.IntegerProperty(default=0, required=True)
-    
+
     def validate(self):
         """Validate this instance before putting it to the datastore."""
         if not self.created_by_dj.is_dj:
             raise ValueError("User %r must be a DJ (user is: %r)" % (
                                 self.created_by_dj, self.created_by_dj.roles))
-    
+
     def put(self, *args, **kwargs):
         self.validate()
         super(DJPlaylist, self).put(*args, **kwargs)
@@ -97,17 +97,17 @@ class BroadcastPlaylist(Playlist):
 
 def ChirpBroadcast():
     """The continuous CHIRP broadcast"""
-    
+
     # There is only one persistant live-stream stream.
     # If it doesn't exist, create it once for all time
-    
+
     query = BroadcastPlaylist.all().filter('channel =', 'CHIRP')
     if AutoRetry(query).count(1):
         playlist = AutoRetry(query)[0]
     else:
         playlist = BroadcastPlaylist(channel='CHIRP')
         AutoRetry(playlist).put()
-    
+
     return playlist
 
 def chirp_playlist_key():
@@ -123,25 +123,25 @@ class PlaylistEvent(polymodel.PolyModel):
     """An event that occurs in a Playlist."""
     # The playlist this event belongs to
     playlist = db.ReferenceProperty(Playlist, required=True)
-    # The date this playlist event was established 
+    # The date this playlist event was established
     # (automatically set to now upon creation)
     established = db.DateTimeProperty(auto_now_add=True)
     # The date this playlist event was last modified (automatically set to now)
     modified = db.DateTimeProperty(auto_now=True)
-    
+
     @property
     def established_display(self):
         return time_util.convert_utc_to_chicago(self.established)
-        
+
     @property
     def modified_display(self):
         return time_util.convert_utc_to_chicago(self.modified)
 
 class PlaylistBreak(PlaylistEvent):
     """A break in a playlist.
-    
-    Typically this is what a DJ will use to indicate that it's time 
-    to talk over the air.  The DJ would glance at the playlist and read 
+
+    Typically this is what a DJ will use to indicate that it's time
+    to talk over the air.  The DJ would glance at the playlist and read
     aloud the four or five songs that were played since the last break
     """
     # this doesn't have any special fields
@@ -178,7 +178,7 @@ class PlaylistTrack(PlaylistEvent):
     lastfm_url_med_image = db.StringProperty(required=False)
     # LastFM URL to large album image
     lastfm_url_large_image = db.StringProperty(required=False)
-    
+
     @property
     def artist_name(self):
         # validate() should enforce that one of these is available:
@@ -186,7 +186,7 @@ class PlaylistTrack(PlaylistEvent):
             return self.artist.name
         else:
             return self.freeform_artist_name
-    
+
     @property
     def track_title(self):
         # validate() should enforce that one of these is available:
@@ -194,7 +194,7 @@ class PlaylistTrack(PlaylistEvent):
             return self.track.title
         else:
             return self.freeform_track_title
-    
+
     @property
     def album_title(self):
         if self.album:
@@ -203,7 +203,7 @@ class PlaylistTrack(PlaylistEvent):
             return self.freeform_album_title
         else:
             return None
-    
+
     @property
     def album_title_display(self):
         txt = self.album_title
@@ -211,16 +211,16 @@ class PlaylistTrack(PlaylistEvent):
             return txt
         else:
             return u"[Unknown Album]"
-    
+
     @property
     def label(self):
-        # TODO(kumar) when a Label entity exists in the 
+        # TODO(kumar) when a Label entity exists in the
         # the DJDB then we should provide a way to fetch by reference
         if self.freeform_label:
             return self.freeform_label
         else:
             return None
-    
+
     @property
     def label_display(self):
         txt = self.label
@@ -228,10 +228,10 @@ class PlaylistTrack(PlaylistEvent):
             return txt
         else:
             return u"[Unknown Label]"
-    
+
     def validate(self):
         """Validate this instance before putting it to the datastore.
-        
+
         A track must have at least artist name and track title
         """
         if not self.track_title and not self.track:
@@ -241,7 +241,7 @@ class PlaylistTrack(PlaylistEvent):
         if not self.selector.is_dj:
             raise ValueError("User %r must be a DJ (user is: %r)" % (
                                 self.selector, self.selector.roles))
-    
+
     def put(self, *args, **kwargs):
         self.validate()
         super(PlaylistTrack, self).put(*args, **kwargs)
