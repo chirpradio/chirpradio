@@ -249,7 +249,15 @@ class PlaylistTrack(PlaylistEvent):
             memcache.delete('api.current_track')
         except:
             log.exception('IGNORED while saving playlist:')
-    
+
     def save(self, *args, **kwargs):
         return self.put(*args, **kwargs)
 
+
+class PlayCount(db.Model):
+    """A log of how many times each artist/track was played."""
+    play_count = db.IntegerProperty(default=0)
+    artist_name = db.StringProperty()
+    album_title = db.StringProperty()
+    established = db.DateTimeProperty(auto_now_add=True)
+    modified = db.DateTimeProperty(auto_now=True)

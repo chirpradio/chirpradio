@@ -39,7 +39,8 @@ from auth import roles
 from auth.models import User
 import playlists.tasks
 from playlists import views as playlists_views
-from playlists.models import Playlist, PlaylistTrack, PlaylistBreak, ChirpBroadcast
+from playlists.models import (Playlist, PlaylistTrack, PlaylistBreak,
+                              ChirpBroadcast, PlayCount)
 from djdb.models import Artist, Album, Track
 
 import time
@@ -64,6 +65,8 @@ def clear_data():
         for track in PlaylistTrack.all().filter('playlist =', pl):
             track.delete()
         pl.delete()
+    for ob in PlayCount.all():
+        ob.delete()
 
 def create_stevie_wonder_album_data():
     stevie = Artist.create(name="Stevie Wonder")
@@ -205,6 +208,11 @@ class TestPlaylistViews(PlaylistViewsTest):
                 .next_call()
                 .with_args(
                     url=reverse('playlists.send_track_to_live365'),
+                    params={'id': arg.any_value()}
+                )
+                .next_call()
+                .with_args(
+                    url=reverse('playlists.play_count'),
                     params={'id': arg.any_value()}
                 ))
 
@@ -533,6 +541,51 @@ class TestLiveSitePlaylistTasks(TaskTest, TestCase):
             'id': self.track.key()
         })
         eq_(resp.status_code, 500)
+
+
+class TestPlayCountTask(TaskTest, TestCase):
+
+    def setUp(self):
+        super(TestPlayCountTask, self).setUp()
+
+    def count(self, track_key=None):
+        if not track_key:
+            track_key = self.track.key()
+        return self.client.post(reverse('playlists.play_count'), {
+            'id': track_key
+        })
+
+    def test_count(self):
+        self.count()
+        # Copy the same artist/track into a new track.
+        new_trk = PlaylistTrack(
+            playlist=self.track.playlist,
+            selector=self.track.selector,
+            freeform_artist_name=self.track.freeform_artist_name,
+            freeform_album_title=self.track.freeform_album_title,
+            freeform_track_title=self.track.freeform_track_title)
+        new_trk.put()
+        self.count()
+        count = PlayCount.all()[0]
+        eq_(count.artist_name, self.track.freeform_artist_name)
+        eq_(count.album_title, self.track.freeform_album_title)
+        eq_(count.play_count, 2)
+
+    def test_count_different_track(self):
+        self.count()
+        # Copy the same artist/track into a new track.
+        new_trk = PlaylistTrack(
+            playlist=self.track.playlist,
+            selector=self.track.selector,
+            freeform_artist_name=self.track.freeform_artist_name,
+            freeform_album_title=self.track.freeform_album_title,
+            freeform_track_title='Another track from the album')
+        new_trk.put()
+        self.count()
+        count = PlayCount.all()[0]
+        eq_(count.artist_name, self.track.freeform_artist_name)
+        eq_(count.album_title, self.track.freeform_album_title)
+        eq_(count.play_count, 2)
 
 
 class TestLive365PlaylistTasks(TaskTest, TestCase):

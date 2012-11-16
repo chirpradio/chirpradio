@@ -36,6 +36,8 @@ urlpatterns += patterns('playlists.tasks',
         name='playlists.send_track_to_live_site'),
     url(r'^task/send_track_to_live365$', 'send_track_to_live365',
         name='playlists.send_track_to_live365'),
+    url(r'^task/play_count$', 'play_count',
+        name='playlists.play_count'),
 )
 
 

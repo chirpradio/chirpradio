@@ -22,13 +22,14 @@ import wsgiref.handlers
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 
+from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.api import taskqueue, urlfetch
 
 from common import dbconfig, in_dev
 from common.utilities import as_encoded_str
 from common.autoretry import AutoRetry
-from playlists.models import PlaylistEvent
+from playlists.models import PlaylistEvent, PlayCount
 
 log = logging.getLogger()
 
@@ -106,6 +107,18 @@ class Live365Listener(PlaylistEventListener):
         pass
 
 
+class PlayCountListener(PlaylistEventListener):
+    """Keep track of how many times a track was played."""
+
+    def create(self, track):
+        """This instance of PlaylistEvent was created."""
+        taskqueue.add(url=reverse('playlists.play_count'),
+                      params={'id': str(track.key())})
+
+    def delete(self, track_key):
+        """The key of this PlaylistEvent was deleted."""
+
+
 class PlaylistEventDispatcher(object):
 
     def __init__(self, listeners):
@@ -122,7 +135,8 @@ class PlaylistEventDispatcher(object):
 
 playlist_event_listeners = PlaylistEventDispatcher([
     LiveSiteListener(),
-    Live365Listener()
+    Live365Listener(),
+    PlayCountListener(),
 ])
 
 
@@ -153,6 +167,34 @@ def _push_notify(url_key):
         log.error(resp.content)
 
     return resp.status_code == 200
+
+
+def play_count(request):
+    """View for keeping track of play counts"""
+    track_key = request.POST['id']
+    track = PlaylistEvent.get(track_key)
+
+    qs = (PlayCount.all()
+          .filter('artist_name =', track.artist_name)
+          .filter('album_title =', track.album_title))
+    if qs.count(1):
+        count = qs.get()
+    else:
+        count = PlayCount(artist_name=track.artist_name,
+                          album_title=track.album_title)
+        count.put()
+
+    @db.transactional
+    def increment(key):
+        ob = db.get(key)
+        ob.play_count += 1
+        ob.put()
+
+    increment(count.key())
+
+    # See also:
+    # https://developers.google.com/appengine/articles/sharding_counters
+    return HttpResponse("OK")
 
 
 def send_track_to_live365(request):
