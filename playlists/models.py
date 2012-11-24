@@ -16,6 +16,7 @@
 ###
 
 """Datastore model for DJ Playlists."""
+import hashlib
 import logging
 
 from google.appengine.ext.db import polymodel
@@ -262,3 +263,28 @@ class PlayCount(db.Model):
     label = db.StringProperty()
     established = db.DateTimeProperty(auto_now_add=True)
     modified = db.DateTimeProperty(auto_now=True)
+
+
+class WeeklyPlayCount(db.Model):
+    """Weekly snapshot of top 40 play count."""
+    established = db.DateTimeProperty(auto_now_add=True)
+    # A unique hash of the artist and album name.
+    track_id = db.StringProperty()
+    play_count = db.IntegerProperty(default=0)
+    artist_name = db.StringProperty()
+    album_title = db.StringProperty()
+    label = db.StringProperty()
+
+    @classmethod
+    def create_from_count(cls, count):
+        weekly = cls()
+        weekly.play_count = count.play_count
+        weekly.artist_name = count.artist_name
+        weekly.album_title = count.album_title
+        weekly.label = count.label
+        id = hashlib.md5()
+        id.update(count.artist_name.lower().encode('utf8', 'replace'))
+        id.update(count.album_title.lower().encode('utf8', 'replace'))
+        weekly.track_id = id.hexdigest()
+        weekly.save()
+        return weekly

@@ -6,3 +6,6 @@ cron:
 - description: play count expunger
   url: /playlists/task/expunge_play_count
   schedule: every 24 hours
+- description: weekly play count
+  url: /playlists/task/weekly_play_count
+  schedule: every monday 00:00

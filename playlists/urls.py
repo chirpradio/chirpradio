@@ -40,6 +40,6 @@ urlpatterns += patterns('playlists.tasks',
         name='playlists.play_count'),
     url(r'^task/expunge_play_count?$', 'expunge_play_count',
         name='playlists.expunge_play_count'),
+    url(r'^task/weekly_play_count?$', 'weekly_play_count',
+        name='playlists.weekly_play_count'),
 )
-
-

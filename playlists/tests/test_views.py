@@ -40,7 +40,7 @@ from auth.models import User
 import playlists.tasks
 from playlists import views as playlists_views
 from playlists.models import (Playlist, PlaylistTrack, PlaylistBreak,
-                              ChirpBroadcast, PlayCount)
+                              ChirpBroadcast, PlayCount, WeeklyPlayCount)
 from djdb.models import Artist, Album, Track
 
 import time
@@ -561,6 +561,11 @@ class TestPlayCountTask(TaskTest, TestCase):
         return self.client.post(reverse('playlists.expunge_play_count'),
                                 **headers)
 
+    def weekly_count(self):
+        headers = {'X-Appengine-Cron': 'true'}
+        return self.client.post(reverse('playlists.weekly_play_count'),
+                                **headers)
+
     def test_count(self):
         self.count()
         # Copy the same artist/track into a new track.
@@ -620,6 +625,30 @@ class TestPlayCountTask(TaskTest, TestCase):
         res = self.expunge()
         eq_(res.status_code, 200)
         eq_(PlayCount.all().count(1), 1)
+
+    def test_weekly_count(self):
+        self.count()
+        self.count()
+        res = self.weekly_count()
+        eq_(res.status_code, 200)
+        weekly = WeeklyPlayCount.all()[0]
+        eq_(weekly.established.strftime('%Y-%m-%d'),
+            datetime.datetime.now().strftime('%Y-%m-%d'))
+        eq_(weekly.play_count, 2)
+        eq_(weekly.artist_name, self.track.artist_name)
+        eq_(weekly.album_title, self.track.album_title)
+        eq_(weekly.label, self.track.label)
+
+    def test_weekly_count_track_ids(self):
+        self.count()
+        self.count()
+        res = self.weekly_count()
+        res = self.weekly_count()  # second run
+        track_ids = [w.track_id for w in WeeklyPlayCount.all()]
+        # For the same track name and album, the IDs should be the same.
+        eq_(track_ids[0], track_ids[1])
+        assert track_ids[0] is not None
+        assert track_ids[1] is not None
 
 
 class TestLive365PlaylistTasks(TaskTest, TestCase):

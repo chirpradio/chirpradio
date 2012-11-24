@@ -30,7 +30,7 @@ from google.appengine.api import taskqueue, urlfetch
 from common import dbconfig, in_dev
 from common.utilities import as_encoded_str
 from common.autoretry import AutoRetry
-from playlists.models import PlaylistEvent, PlayCount
+from playlists.models import PlaylistEvent, PlayCount, WeeklyPlayCount
 
 log = logging.getLogger()
 
@@ -213,6 +213,20 @@ def expunge_play_count(request):
         ob.delete()
         num += 1
     log.info('Deleted %s old play count entries' % num)
+    return HttpResponse("OK")
+
+
+def weekly_play_count(request):
+    """Cron view to create a weekly play count (top 40)."""
+    if not request.META.get('X-Appengine-Cron'):
+        log.info('Not a request from cron')
+        return HttpResponseBadRequest()
+
+    qs = PlayCount.all().order('-play_count')
+    for count in qs.fetch(40):
+        WeeklyPlayCount.create_from_count(count)
+    log.info('Created weekly play count')
+
     return HttpResponse("OK")
 
 
