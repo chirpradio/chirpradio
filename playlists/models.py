@@ -305,5 +305,4 @@ class PlayCountSnapshot(db.Model):
         snap.album_title = count.album_title
         snap.label = count.label
         snap.track_id = str(count.key())
-        snap.save()
-        return snap
+        return db.put_async(snap)

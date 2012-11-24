@@ -218,8 +218,11 @@ def play_count_snapshot(request):
         return HttpResponseBadRequest()
 
     qs = PlayCount.all().order('-play_count')
+    results = []
     for count in qs.fetch(40):
-        PlayCountSnapshot.create_from_count(count)
+        results.append(PlayCountSnapshot.create_from_count(count))
+    for res in results:
+        res.get_result()  # wait for result
     log.info('Created play count snapshot')
 
     return HttpResponse("OK")
