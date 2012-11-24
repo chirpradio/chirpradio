@@ -287,8 +287,8 @@ class PlayCount(db.Model):
         return id.hexdigest()
 
 
-class WeeklyPlayCount(db.Model):
-    """Weekly snapshot of top 40 play count."""
+class PlayCountSnapshot(db.Model):
+    """Snapshot of top 40 play count."""
     established = db.DateTimeProperty(auto_now_add=True)
     # A unique hash of the artist and album name.
     track_id = db.StringProperty()
@@ -299,11 +299,11 @@ class WeeklyPlayCount(db.Model):
 
     @classmethod
     def create_from_count(cls, count):
-        weekly = cls()
-        weekly.play_count = count.play_count
-        weekly.artist_name = count.artist_name
-        weekly.album_title = count.album_title
-        weekly.label = count.label
-        weekly.track_id = str(count.key())
-        weekly.save()
-        return weekly
+        snap = cls()
+        snap.play_count = count.play_count
+        snap.artist_name = count.artist_name
+        snap.album_title = count.album_title
+        snap.label = count.label
+        snap.track_id = str(count.key())
+        snap.save()
+        return snap

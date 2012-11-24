@@ -40,7 +40,7 @@ from auth.models import User
 import playlists.tasks
 from playlists import views as playlists_views
 from playlists.models import (Playlist, PlaylistTrack, PlaylistBreak,
-                              ChirpBroadcast, PlayCount, WeeklyPlayCount)
+                              ChirpBroadcast, PlayCount, PlayCountSnapshot)
 from djdb.models import Artist, Album, Track
 
 import time
@@ -561,9 +561,9 @@ class TestPlayCountTask(TaskTest, TestCase):
         return self.client.post(reverse('playlists.expunge_play_count'),
                                 **headers)
 
-    def weekly_count(self):
+    def snapshot(self):
         headers = {'X-Appengine-Cron': 'true'}
-        return self.client.post(reverse('playlists.weekly_play_count'),
+        return self.client.post(reverse('playlists.play_count_snapshot'),
                                 **headers)
 
     def test_count(self):
@@ -642,25 +642,25 @@ class TestPlayCountTask(TaskTest, TestCase):
         eq_(res.status_code, 200)
         eq_(PlayCount.all().count(1), 1)
 
-    def test_weekly_count(self):
+    def test_snapshot_count(self):
         self.count()
         self.count()
-        res = self.weekly_count()
+        res = self.snapshot()
         eq_(res.status_code, 200)
-        weekly = WeeklyPlayCount.all()[0]
-        eq_(weekly.established.strftime('%Y-%m-%d'),
+        snap = PlayCountSnapshot.all()[0]
+        eq_(snap.established.strftime('%Y-%m-%d'),
             datetime.datetime.now().strftime('%Y-%m-%d'))
-        eq_(weekly.play_count, 2)
-        eq_(weekly.artist_name, self.track.artist_name)
-        eq_(weekly.album_title, self.track.album_title)
-        eq_(weekly.label, self.track.label)
+        eq_(snap.play_count, 2)
+        eq_(snap.artist_name, self.track.artist_name)
+        eq_(snap.album_title, self.track.album_title)
+        eq_(snap.label, self.track.label)
 
-    def test_weekly_count_track_ids(self):
+    def test_snapshot_count_track_ids(self):
         self.count()
         self.count()
-        res = self.weekly_count()
-        res = self.weekly_count()  # second run
-        track_ids = [w.track_id for w in WeeklyPlayCount.all()]
+        res = self.snapshot()
+        res = self.snapshot()  # second run
+        track_ids = [w.track_id for w in PlayCountSnapshot.all()]
         # For the same track name and album, the IDs should be the same.
         eq_(track_ids[0], track_ids[1])
         assert track_ids[0] is not None
