@@ -3,3 +3,6 @@ cron:
   url: /traffic_log/generate
   schedule: every sunday 23:00
 #  timezone: America/Chicago
+- description: play count expunger
+  url: /playlists/task/expunge_play_count
+  schedule: every 24 hours

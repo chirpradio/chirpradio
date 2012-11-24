@@ -14,6 +14,7 @@
 ### See the License for the specific language governing permissions and
 ### limitations under the License.
 ###
+from datetime import datetime, timedelta
 import sys
 import logging
 import urllib, urllib2
@@ -195,6 +196,23 @@ def play_count(request):
 
     # See also:
     # https://developers.google.com/appengine/articles/sharding_counters
+    return HttpResponse("OK")
+
+
+def expunge_play_count(request):
+    """Cron view to expire old play counts."""
+    if not request.META.get('X-Appengine-Cron'):
+        log.info('Not a request from cron')
+        return HttpResponseBadRequest()
+
+    # Delete tracks that have not been incremented in the last week.
+    qs = PlayCount.all().filter('modified <',
+                                datetime.now() - timedelta(days=7))
+    num = 0
+    for ob in qs.fetch(1000):
+        ob.delete()
+        num += 1
+    log.info('Deleted %s old play count entries' % num)
     return HttpResponse("OK")
 
 

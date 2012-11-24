@@ -556,6 +556,11 @@ class TestPlayCountTask(TaskTest, TestCase):
             'id': track_key
         })
 
+    def expunge(self):
+        headers = {'X-Appengine-Cron': 'true'}
+        return self.client.post(reverse('playlists.expunge_play_count'),
+                                **headers)
+
     def test_count(self):
         self.count()
         # Copy the same artist/track into a new track.
@@ -588,6 +593,33 @@ class TestPlayCountTask(TaskTest, TestCase):
         eq_(count.artist_name, self.track.freeform_artist_name)
         eq_(count.album_title, self.track.freeform_album_title)
         eq_(count.play_count, 2)
+
+    def test_expunge(self):
+        self.count()
+        ob = PlayCount.all()[0]
+        old_ts = datetime.datetime.now() - timedelta(days=8)
+
+        @staticmethod
+        def now():
+            return old_ts
+
+        # Trick the data model into saving an auto-modified timestamp
+        # a week in the past.
+        p = fudge.patch_object(datetime.datetime, 'now', now)
+        try:
+            ob.save()
+        finally:
+            p.restore()
+
+        res = self.expunge()
+        eq_(res.status_code, 200)
+        eq_(PlayCount.all().count(1), 0)
+
+    def test_no_expunge(self):
+        self.count()
+        res = self.expunge()
+        eq_(res.status_code, 200)
+        eq_(PlayCount.all().count(1), 1)
 
 
 class TestLive365PlaylistTasks(TaskTest, TestCase):
