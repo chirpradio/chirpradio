@@ -504,7 +504,8 @@ class TaskTest(object):
                     selector=selector,
                     freeform_artist_name=u"Ivan Krsti\u0107",
                     freeform_album_title=u"Ivan Krsti\u0107 album",
-                    freeform_track_title=u"Ivan Krsti\u0107 song")
+                    freeform_track_title=u"Ivan Krsti\u0107 song",
+                    freeform_label='Some Label')
         self.track.put()
 
     def tearDown(self):
@@ -569,6 +570,7 @@ class TestPlayCountTask(TaskTest, TestCase):
         count = PlayCount.all()[0]
         eq_(count.artist_name, self.track.freeform_artist_name)
         eq_(count.album_title, self.track.freeform_album_title)
+        eq_(count.label, self.track.label)
         eq_(count.play_count, 2)
 
     def test_count_different_track(self):

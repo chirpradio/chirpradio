@@ -181,7 +181,8 @@ def play_count(request):
         count = qs.get()
     else:
         count = PlayCount(artist_name=track.artist_name,
-                          album_title=track.album_title)
+                          album_title=track.album_title,
+                          label=track.label)
         count.put()
 
     @db.transactional

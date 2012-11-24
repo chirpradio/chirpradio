@@ -259,5 +259,6 @@ class PlayCount(db.Model):
     play_count = db.IntegerProperty(default=0)
     artist_name = db.StringProperty()
     album_title = db.StringProperty()
+    label = db.StringProperty()
     established = db.DateTimeProperty(auto_now_add=True)
     modified = db.DateTimeProperty(auto_now=True)
