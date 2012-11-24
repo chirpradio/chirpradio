@@ -576,12 +576,27 @@ class TestPlayCountTask(TaskTest, TestCase):
             freeform_album_title=self.track.freeform_album_title,
             freeform_track_title=self.track.freeform_track_title)
         new_trk.put()
-        self.count()
+        self.count(track_key=new_trk.key())
         count = PlayCount.all()[0]
         eq_(count.artist_name, self.track.freeform_artist_name)
         eq_(count.album_title, self.track.freeform_album_title)
         eq_(count.label, self.track.label)
         eq_(count.play_count, 2)
+
+    def test_different_tracks(self):
+        self.count()
+        new_trk = PlaylistTrack(
+            playlist=self.track.playlist,
+            selector=self.track.selector,
+            freeform_artist_name='Prince',
+            freeform_album_title='Purple Rain',
+            freeform_track_title='When Doves Cry')
+        new_trk.put()
+        self.count(track_key=new_trk.key())
+        count = PlayCount.all()[0]
+        track_ids = [str(w.key()) for w in PlayCount.all()]
+        assert track_ids[0] != track_ids[1], (
+            'Different artist/albums cannot have the same key')
 
     def test_count_different_track(self):
         self.count()
@@ -593,10 +608,11 @@ class TestPlayCountTask(TaskTest, TestCase):
             freeform_album_title=self.track.freeform_album_title,
             freeform_track_title='Another track from the album')
         new_trk.put()
-        self.count()
+        self.count(track_key=new_trk.key())
         count = PlayCount.all()[0]
         eq_(count.artist_name, self.track.freeform_artist_name)
         eq_(count.album_title, self.track.freeform_album_title)
+        eq_(count.label, self.track.label)
         eq_(count.play_count, 2)
 
     def test_expunge(self):

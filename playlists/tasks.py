@@ -175,16 +175,11 @@ def play_count(request):
     track_key = request.POST['id']
     track = PlaylistEvent.get(track_key)
 
-    qs = (PlayCount.all()
-          .filter('artist_name =', track.artist_name)
-          .filter('album_title =', track.album_title))
-    if qs.count(1):
-        count = qs.get()
-    else:
-        count = PlayCount(artist_name=track.artist_name,
-                          album_title=track.album_title,
-                          label=track.label)
-        count.put()
+    count = PlayCount.query(track.artist_name, track.album_title)
+    if not count:
+        count = PlayCount.create_first(track.artist_name,
+                                       track.album_title,
+                                       track.label)
 
     @db.transactional
     def increment(key):

@@ -264,6 +264,28 @@ class PlayCount(db.Model):
     established = db.DateTimeProperty(auto_now_add=True)
     modified = db.DateTimeProperty(auto_now=True)
 
+    @classmethod
+    def query(cls, artist_name, album_title):
+        track_id = cls.make_track_id(artist_name, album_title)
+        return cls.get_by_key_name(track_id)
+
+    @classmethod
+    def create_first(cls, artist_name, album_title, label):
+        id = cls.make_track_id(artist_name, album_title)
+        count = cls(key_name=id)
+        count.artist_name = artist_name
+        count.album_title = album_title
+        count.label = label
+        count.put()
+        return count
+
+    @classmethod
+    def make_track_id(cls, artist_name, album_title):
+        id = hashlib.md5()
+        id.update(artist_name.lower().encode('utf8', 'replace'))
+        id.update(album_title.lower().encode('utf8', 'replace'))
+        return id.hexdigest()
+
 
 class WeeklyPlayCount(db.Model):
     """Weekly snapshot of top 40 play count."""
@@ -282,9 +304,6 @@ class WeeklyPlayCount(db.Model):
         weekly.artist_name = count.artist_name
         weekly.album_title = count.album_title
         weekly.label = count.label
-        id = hashlib.md5()
-        id.update(count.artist_name.lower().encode('utf8', 'replace'))
-        id.update(count.album_title.lower().encode('utf8', 'replace'))
-        weekly.track_id = id.hexdigest()
+        weekly.track_id = str(count.key())
         weekly.save()
         return weekly
