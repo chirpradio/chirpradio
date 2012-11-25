@@ -43,15 +43,15 @@ def as_json(handler):
                 'traceback': traceback.format_exc()
             }
             status = 500
-        return HttpResponse(simplejson.dumps(r), 
-                            mimetype='application/json', 
+        return HttpResponse(simplejson.dumps(r),
+                            mimetype='application/json',
                             status=status )
     return makejson
 
 
 def as_encoded_str(s, encoding='utf8', errors='strict'):
     """Ensures passed argument is always an encoded string if it's Unicode.
-    
+
     However, if it's not string-like then it is returned as is.
     """
     if isinstance(s, unicode):
