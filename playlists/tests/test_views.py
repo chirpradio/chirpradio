@@ -557,14 +557,12 @@ class TestPlayCountTask(TaskTest, TestCase):
         })
 
     def expunge(self):
-        headers = {'X-Appengine-Cron': 'true'}
         return self.client.post(reverse('playlists.expunge_play_count'),
-                                **headers)
+                                HTTP_X_APPENGINE_CRON='true')
 
     def snapshot(self):
-        headers = {'X-Appengine-Cron': 'true'}
         return self.client.post(reverse('playlists.play_count_snapshot'),
-                                **headers)
+                                HTTP_X_APPENGINE_CRON='true')
 
     def test_count(self):
         self.count()

@@ -29,7 +29,7 @@ from google.appengine.ext import webapp
 from google.appengine.api import taskqueue, urlfetch
 
 from common import dbconfig, in_dev
-from common.utilities import as_encoded_str
+from common.utilities import as_encoded_str, cronjob
 from common.autoretry import AutoRetry
 from playlists.models import PlaylistEvent, PlayCount, PlayCountSnapshot
 
@@ -195,12 +195,9 @@ def play_count(request):
     return HttpResponse("OK")
 
 
+@cronjob
 def expunge_play_count(request):
     """Cron view to expire old play counts."""
-    if not request.META.get('X-Appengine-Cron'):
-        log.info('Not a request from cron')
-        return http.HttpResponseBadRequest()
-
     # Delete tracks that have not been incremented in the last week.
     qs = PlayCount.all().filter('modified <',
                                 datetime.now() - timedelta(days=7))
@@ -212,12 +209,9 @@ def expunge_play_count(request):
     return HttpResponse("OK")
 
 
+@cronjob
 def play_count_snapshot(request):
     """Cron view to create a play count snapshot (top 40)."""
-    if not request.META.get('X-Appengine-Cron'):
-        log.info('Not a request from cron')
-        return http.HttpResponseBadRequest()
-
     qs = PlayCount.all().order('-play_count')
     results = []
     for count in qs.fetch(40):

@@ -14,7 +14,7 @@
 ### See the License for the specific language governing permissions and
 ### limitations under the License.
 ###
-
+import functools
 import traceback
 import logging
 
@@ -96,3 +96,20 @@ def restricted_job_worker(job_name, required_role):
 def restricted_job_product(job_name, required_role):
     return job_product(job_name,
                        pre_request=_access_restrictor(required_role))
+
+
+def cronjob(handler):
+    """
+    Wraps a view function that is a cron handler.
+
+    If the request does not contain the magic cron header
+    from Google App Engine, a 400 response is returned.
+    See: https://developers.google.com/appengine/docs/python/config/cron
+    """
+    @functools.wraps(handler)
+    def handle(request, *args, **kwargs):
+        if not request.META.get('HTTP_X_APPENGINE_CRON') == 'true':
+            log.error('Not a request from cron')
+            return http.HttpResponseBadRequest()
+        return handler(request, *args, **kwargs)
+    return handle
