@@ -5,7 +5,7 @@ cron:
 #  timezone: America/Chicago
 - description: play count expunger
   url: /playlists/task/expunge_play_count
-  schedule: every 24 hours
+  schedule: daily 07:00
 - description: play count snapshot
   url: /playlists/task/play_count_snapshot
-  schedule: every 24 hours
+  schedule: daily 07:30
