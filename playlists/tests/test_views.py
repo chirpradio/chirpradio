@@ -642,6 +642,10 @@ class TestPlayCountTask(TaskTest, TestCase):
         eq_(res.status_code, 200)
         eq_(PlayCount.all().count(1), 1)
 
+    def test_expunge_requires_cron(self):
+        res = self.client.post(reverse('playlists.expunge_play_count'))
+        eq_(res.status_code, 400)
+
     def test_snapshot_count(self):
         self.count()
         self.count()
@@ -665,6 +669,10 @@ class TestPlayCountTask(TaskTest, TestCase):
         eq_(track_ids[0], track_ids[1])
         assert track_ids[0] is not None
         assert track_ids[1] is not None
+
+    def test_snapshot_requires_cron(self):
+        res = self.client.post(reverse('playlists.play_count_snapshot'))
+        eq_(res.status_code, 400)
 
 
 class TestLive365PlaylistTasks(TaskTest, TestCase):

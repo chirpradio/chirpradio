@@ -20,6 +20,7 @@ import logging
 import urllib, urllib2
 import wsgiref.handlers
 
+from django import http
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 
@@ -198,7 +199,7 @@ def expunge_play_count(request):
     """Cron view to expire old play counts."""
     if not request.META.get('X-Appengine-Cron'):
         log.info('Not a request from cron')
-        return HttpResponseBadRequest()
+        return http.HttpResponseBadRequest()
 
     # Delete tracks that have not been incremented in the last week.
     qs = PlayCount.all().filter('modified <',
@@ -215,7 +216,7 @@ def play_count_snapshot(request):
     """Cron view to create a play count snapshot (top 40)."""
     if not request.META.get('X-Appengine-Cron'):
         log.info('Not a request from cron')
-        return HttpResponseBadRequest()
+        return http.HttpResponseBadRequest()
 
     qs = PlayCount.all().order('-play_count')
     results = []
