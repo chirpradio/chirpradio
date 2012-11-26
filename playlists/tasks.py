@@ -206,7 +206,6 @@ def expunge_play_count(request):
         ob.delete()
         num += 1
     log.info('Deleted %s old play count entries' % num)
-    return HttpResponse("OK")
 
 
 @cronjob
@@ -219,8 +218,6 @@ def play_count_snapshot(request):
     for res in results:
         res.get_result()  # wait for result
     log.info('Created play count snapshot')
-
-    return HttpResponse("OK")
 
 
 def send_track_to_live365(request):

@@ -104,6 +104,12 @@ def cronjob(handler):
 
     If the request does not contain the magic cron header
     from Google App Engine, a 400 response is returned.
+
+    If the view returns a response, the response is returned.
+
+    If the view does not return a response a basic 300 response
+    is returned.
+
     See: https://developers.google.com/appengine/docs/python/config/cron
     """
     @functools.wraps(handler)
@@ -111,5 +117,9 @@ def cronjob(handler):
         if not request.META.get('HTTP_X_APPENGINE_CRON') == 'true':
             log.error('Not a request from cron')
             return http.HttpResponseBadRequest()
-        return handler(request, *args, **kwargs)
+        res = handler(request, *args, **kwargs)
+        if isinstance(res, http.HttpResponse):
+            return res
+        else:
+            return http.HttpResponse('OK')
     return handle
