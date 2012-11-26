@@ -28,7 +28,7 @@ import logging
 ROOT = os.path.dirname(__file__)
 
 from appengine_django import InstallAppengineHelperForDjango
-InstallAppengineHelperForDjango('1.2')
+InstallAppengineHelperForDjango('1.3')
 
 # Import the part of Django that we use here.
 import django.core.handlers.wsgi

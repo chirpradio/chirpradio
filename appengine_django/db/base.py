@@ -107,7 +107,8 @@ class DatabaseWrapper(BaseDatabaseWrapper):
 
   def __init__(self, *args, **kwargs):
     super(DatabaseWrapper, self).__init__(*args, **kwargs)
-    self.features = DatabaseFeatures()
+    connection = None
+    self.features = DatabaseFeatures(connection)
     self.ops = DatabaseOperations()
     self.creation = DatabaseCreation(self)
     self.use_test_datastore = kwargs.get("use_test_datastore", False)
