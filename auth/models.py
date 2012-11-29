@@ -33,17 +33,19 @@ class User(db.Model):
     necessarily compatible.  We only keep basic information about the
     user here; essentially only things we need for "sysadmin-y" tasks.
     More detailed information should go in the volunteer tracker or
-    other 
+    other
     """
     email = db.EmailProperty(required=True)
     first_name = db.StringProperty()
     last_name = db.StringProperty()
+    # ID assigned by chirpradio.org via XML sync.
+    external_id = db.IntegerProperty()
 
     dj_name = db.StringProperty(required=False)
-    
+
     # This is an index of searchable terms for the user. Used by autocomplete.
     index = db.StringListProperty()
-    
+
     # This is the SHA1 hash of the user's password.
     password = db.StringProperty()
     # We omit Django's is_staff property.
@@ -63,7 +65,7 @@ class User(db.Model):
     # expressions are equivalent:
     #   roles.ROLE_NAME in user.roles
     #   user.is_role_name
-    # 
+    #
     # TODO(trow): Add validation that all roles are valid.
     roles = db.StringListProperty()
 
@@ -144,7 +146,7 @@ class KeyStorage(db.Model):
     """Models a single entity that contains crypto keys."""
     # Used to sign security tokens.
     hmac_key = db.StringProperty(required=True)
-    
+
     # Used to encrypt security tokens.
     aes_key = db.StringProperty(required=True)
 
@@ -165,6 +167,6 @@ class KeyStorage(db.Model):
                 logging.warn('Created new KeyStorage containing test keys')
             cls._cached = (ks, time.time())
         return ks
-            
-        
+
+
 

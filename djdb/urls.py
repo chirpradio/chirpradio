@@ -31,13 +31,13 @@ urlpatterns = patterns(
     '',
     # Landing page
     url(r'^/?$', 'djdb.views.landing_page', name='djdb.landing_page'),
-    
+
     # Activity page
     (r'activity', 'djdb.views.activity_page'),
-    
+
     # Reviews page
     (r'reviews', 'djdb.views.reviews_page'),
-    
+
     # DJ home pgae
     (r'user/?(.*)', 'djdb.views.user_info_page'),
 
@@ -61,7 +61,7 @@ urlpatterns = patterns(
     # More flexible autocomplete search
     url(r'track/search\.json', 'djdb.views.track_search',
         name='djdb.views.track_search'),
-    
+
     # Album information page
     (r'album/(.*)/info', 'djdb.views.album_info_page'),
 
@@ -83,7 +83,7 @@ urlpatterns = patterns(
     (r'album/(.*)/unhide_review/(.*)', 'djdb.views.album_hide_unhide_review'),
     (r'album/(.*)/delete_review/(.*)', 'djdb.views.album_delete_review'),
     (r'album/(.*)/delete_review', 'djdb.views.album_delete_review'),
-    
+
     # Album comments.
     (r'album/(.*)/new_comment', 'djdb.views.album_edit_comment'),
     (r'album/(.*)/edit_comment/(.*)', 'djdb.views.album_edit_comment'),
@@ -91,27 +91,27 @@ urlpatterns = patterns(
     (r'album/(.*)/unhide_comment/(.*)', 'djdb.views.album_hide_unhide_comment'),
     (r'album/(.*)/delete_comment/(.*)', 'djdb.views.album_delete_comment'),
     (r'album/(.*)/delete_comment', 'djdb.views.album_delete_comment'),
-    
+
     # Album tags.
     (r'tags$', 'djdb.views.list_tags'),
     (r'tags/new', 'djdb.views.new_tag'),
     (r'tag/(.*)', 'djdb.views.edit_tag'),
     (r'album/(.*)/add_tag', 'djdb.views.album_add_tag'),
     (r'album/(.*)/remove_tag', 'djdb.views.album_remove_tag'),
-    
+
     # Album search for jquery.autocomplete
     (r'album/search\.txt', 'djdb.views.album_search_for_autocomplete'),
-    
+
     # Browse the database.
     (r'browse/(.+)/(.+)', 'djdb.views.browse_page'),
     (r'new_browse', 'djdb.views.new_browse_page'),
 
     # Album category page.
     (r'category/(.*)', 'djdb.views.category_page'),
-    
+
     # Track search for jquery.autocomplete
     (r'track/search\.txt', 'djdb.views.track_search_for_autocomplete'),
-    
+
     # Label search for jquery.autocomplete
     (r'label/search\.txt', 'djdb.views.label_search_for_autocomplete'),
 
@@ -125,15 +125,15 @@ urlpatterns = patterns(
     (r'crate/(.+)/remove_item', 'djdb.views.remove_crate_item'),
     (r'crate/(.+)/reorder', 'djdb.views.reorder_crate_items'),
     (r'^crate/(.*)', 'djdb.views.crate_page'),
-    
+
     (r'update/artists/bulk_add', 'djdb.views.artists_bulk_add'),
-        
+
     # Images
     (IMAGE_URL_PATTERN, 'djdb.views.image'),
 
     # Bootstrap -- development only!
     (r'_bootstrap', 'djdb.bootstrap.bootstrap'),
-    
+
     (r'_copy_created', 'djdb.views._copy_created'),
 
     # Web hook for index optimization
