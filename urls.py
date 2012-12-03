@@ -31,27 +31,27 @@ urlpatterns = patterns(
     ('^$', 'landing_page.views.landing_page'),
 
     # The site authentication system.
-    ('^auth/?', include('auth.urls')),
+    ('^auth/', include('auth.urls')),
 
     # The DJ database.
     ('^djdb/', include('djdb.urls')),
-    
+
     # DJ Playlists.
     ('^playlists/', include('playlists.urls')),
 
-    (r'^traffic_log/', include('traffic_log.urls')),   
-    
+    (r'^traffic_log/', include('traffic_log.urls')),
+
     ('^common/', include('common.urls')),
-    
+
     ('^jobs/', include('jobs.urls')),
-    
+
     ('^errors/', include('errors.urls')),
 
     # Facebook app.
     ('^fbapp/', include('fbapp.urls')),
 
     (r'^m', 'landing_page.views.go_mobile'),
-    
+
     ('^_ah/warmup/?', 'common.views.appengine_warmup'),
 
     # A catch-all rule to generate a 404.

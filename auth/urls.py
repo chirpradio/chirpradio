@@ -42,9 +42,17 @@ urlpatterns = patterns(
     # User search for jquery.autocomplete
     (r'index_users', 'auth.views.index_users'),
     (r'search\.txt', 'auth.views.user_search_for_autocomplete'),
-    
+
     (r'^token', 'auth.views.token'),
 
     # Bootstrap a test account from a Google account.
     (r'^_bootstrap/?', 'auth.views.bootstrap'),
+
+    url(r'^cron/sync_users$', 'auth.cron.sync_users',
+        name='auth.cron.sync_users'),
+
+    url(r'^task/sync_user$', 'auth.tasks.sync_user',
+        name='auth.tasks.sync_user'),
+    url(r'^task/deactivate_user$', 'auth.tasks.deactivate_user',
+        name='auth.tasks.deactivate_user'),
 )

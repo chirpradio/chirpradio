@@ -128,6 +128,11 @@ for role in roles.ALL_ROLES:
     setattr(User, property_name, property(prop_fn))
 
 
+class UserSync(db.Model):
+    """A log to track when users were synced with the live site."""
+    last_sync = db.DateTimeProperty()
+
+
 #############################################################################
 
 # Test key used to HMAC-sign security tokens.

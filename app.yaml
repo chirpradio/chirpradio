@@ -35,10 +35,14 @@ handlers:
   static_dir: media
   expiration: 30m
 
-# restrict public access to task queue URL handlers
+# restrict public access to playlist task queue URL handlers
 - url: /playlists/task/.*
   script: main.py
-  # script: main.application
+  login: admin
+
+# restrict public access to auth task queue URL handlers
+- url: /auth/task/.*
+  script: main.py
   login: admin
 
 # For everything else, we always want to use HTTPS.

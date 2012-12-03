@@ -76,6 +76,8 @@ MEDIA_URL = '/media/'
 # this is necessary so they are executed by Admin user
 # (internal Task Queue user)
 PUBLIC_TOP_LEVEL_URLS = ['/playlists/task',
+                         '/auth/task',
+                         '/auth/cron',
                          '/_ah/warmup',
                          '/fbapp',  # facebook app
                          '/m'  # go_mobile()
