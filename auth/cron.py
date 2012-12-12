@@ -50,7 +50,7 @@ def sync_users(request):
 
     stats = {'synced': 0, 'deactivated': 0}
 
-    for vol in root.iterfind('current_volunteers/volunteer'):
+    for vol in root.findall('current_volunteers/volunteer'):
         user = {'name_first': vol.find('name/first').text,
                 'name_last': vol.find('name/last').text,
                 'nick': vol.find('name/nick').text,
@@ -60,7 +60,7 @@ def sync_users(request):
                       params={'user': json.dumps(user)})
         stats['synced'] += 1
 
-    for vol in root.iterfind('suspended_volunteers/volunteer'):
+    for vol in root.findall('suspended_volunteers/volunteer'):
         taskqueue.add(url=reverse('auth.tasks.deactivate_user'),
                       params={'external_id': vol.find('member_id').text})
         stats['deactivated'] += 1
