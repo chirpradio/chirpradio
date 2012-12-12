@@ -86,6 +86,15 @@ class TestSyncUser(TestCase):
         us = User.all().filter('__key__ =', us.key()).fetch(1)[0]
         eq_(set(us.roles), set((roles.DJ, roles.REVIEWER)))
 
+    def test_preserve_superuser(self):
+        us = User(email=self.user['email'],
+                  external_id=self.user['member_id'],
+                  is_superuser=True)
+        us.put()
+        self.sync()
+        us = User.all().filter('__key__ =', us.key()).fetch(1)[0]
+        eq_(us.is_superuser, True)
+
 
 class TestDeactivateUser(TestCase):
 

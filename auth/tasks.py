@@ -38,7 +38,6 @@ def sync_user(request):
         'email': user['email'],
         'dj_name': user['nick'],
         'external_id': user['member_id'],
-        'is_superuser': False,
         'is_active': True,
     }
     if not dj_user:
