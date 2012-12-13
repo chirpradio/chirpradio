@@ -25,6 +25,8 @@ from django.utils import simplejson
 from django.test import TestCase as DjangoTestCase
 from django.test.client import RequestFactory
 
+import fudge
+
 from auth import roles
 from common import utilities
 
@@ -98,7 +100,9 @@ class TestCronJob(TestCase):
         res = handler(request)
         self.assertEqual(res.status_code, 404)
 
-    def test_not_cron(self):
+    @fudge.patch('common.utilities.settings')
+    def test_not_cron(self, stg):
+        stg.IN_DEV = False
         request = self.factory.get('/')
 
         @utilities.cronjob

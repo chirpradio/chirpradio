@@ -640,7 +640,9 @@ class TestPlayCountTask(TaskTest, TestCase):
         eq_(res.status_code, 200)
         eq_(PlayCount.all().count(1), 1)
 
-    def test_expunge_requires_cron(self):
+    @fudge.patch('common.utilities.settings')
+    def test_expunge_requires_cron(self, stg):
+        stg.IN_DEV = False
         res = self.client.post(reverse('playlists.expunge_play_count'))
         eq_(res.status_code, 400)
 
@@ -668,7 +670,9 @@ class TestPlayCountTask(TaskTest, TestCase):
         assert track_ids[0] is not None
         assert track_ids[1] is not None
 
-    def test_snapshot_requires_cron(self):
+    @fudge.patch('common.utilities.settings')
+    def test_snapshot_requires_cron(self, stg):
+        stg.IN_DEV = False
         res = self.client.post(reverse('playlists.play_count_snapshot'))
         eq_(res.status_code, 400)
 
