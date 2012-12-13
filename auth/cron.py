@@ -67,5 +67,5 @@ def sync_users(request):
 
     sync.last_sync = last_update
     sync.put()
-    log.info('Sync finished. Sychronized: %s(synced)s; '
+    log.info('Sync finished. Sychronized: %(synced)s; '
              'deactivated: %(deactivated)s' % stats)
