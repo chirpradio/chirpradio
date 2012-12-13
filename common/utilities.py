@@ -18,9 +18,10 @@ import functools
 import traceback
 import logging
 
-from django.utils import simplejson
 from django import http
+from django.conf import settings
 from django.http import HttpResponse
+from django.utils import simplejson
 
 from jobs import job_worker, job_product
 
@@ -114,7 +115,8 @@ def cronjob(handler):
     """
     @functools.wraps(handler)
     def handle(request, *args, **kwargs):
-        if not request.META.get('HTTP_X_APPENGINE_CRON') == 'true':
+        if (not settings.IN_DEV and
+            not request.META.get('HTTP_X_APPENGINE_CRON') == 'true'):
             log.error('Not a request from cron')
             return http.HttpResponseBadRequest()
         res = handler(request, *args, **kwargs)

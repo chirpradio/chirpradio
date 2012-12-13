@@ -2,7 +2,7 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.utils import simplejson as json
 
-from nose.tools import eq_
+from nose.tools import eq_, raises
 
 from auth import roles
 from auth.models import User
@@ -38,6 +38,7 @@ class TestSyncUser(TestCase):
         eq_(us.is_superuser, False)
         eq_(us.is_active, True)
         eq_(us.roles, [roles.DJ])
+        assert us.index, 'User was not indexed'
 
     def test_sync_existing_with_id(self):
         us = User(email=self.user['email'],
@@ -53,6 +54,7 @@ class TestSyncUser(TestCase):
         eq_(us.is_superuser, False)
         eq_(us.is_active, True)
         eq_(us.roles, [roles.DJ])
+        assert us.index, 'User was not indexed'
 
     def test_sync_existing_without_id(self):
         us = User(email=self.user['email'])
@@ -67,6 +69,17 @@ class TestSyncUser(TestCase):
         eq_(us.is_superuser, False)
         eq_(us.is_active, True)
         eq_(us.roles, [roles.DJ])
+        eq_(User.all().filter('email =', self.user['email']).count(2), 1)
+
+    @raises(LookupError)
+    def test_collisions(self):
+        us = User(email=self.user['email'])
+        us.put()
+        # This might actually happen because some filtering caused
+        # bad data in production.
+        another = User(email=self.user['email'])  # same email
+        another.put()
+        self.sync()
 
     def test_sync_existing_with_roles(self):
         us = User(email=self.user['email'],

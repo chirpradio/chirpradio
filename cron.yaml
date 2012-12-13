@@ -9,6 +9,6 @@ cron:
 - description: play count snapshot
   url: /playlists/task/play_count_snapshot
   schedule: every day 07:30
-#- description: sync users from live site XML
-#  url: /auth/cron/sync_users
-#  schedule: every 2 hours
+- description: sync users from live site XML
+  url: /auth/cron/sync_users
+  schedule: every 2 hours

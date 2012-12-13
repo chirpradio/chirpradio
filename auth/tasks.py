@@ -5,6 +5,7 @@ from django.utils import simplejson as json
 
 from auth import roles
 from auth.models import User
+from auth.views import _reindex
 
 log = logging.getLogger()
 
@@ -24,8 +25,10 @@ def sync_user(request):
         # No previously sync'd user exists.
         # Let's check by email to see if an old
         # user exists with the same email.
-        qs = (User.all().filter('email =', user['email'])
-                        .filter('external_id =', None))
+        qs = User.all().filter('email =', user['email'])
+        if qs.count(2) == 2:
+            raise LookupError('More than one user for %s; '
+                              'aborting sync' % user['email'])
         users = qs.fetch(1)
         if len(users):
             log.info('Linking user %s to ID %s' %
@@ -48,6 +51,7 @@ def sync_user(request):
             setattr(dj_user, k, v)
         if roles.DJ not in dj_user.roles:
             dj_user.roles.append(roles.DJ)
+    _reindex(dj_user)
     dj_user.put()
 
     return http.HttpResponse('OK')
