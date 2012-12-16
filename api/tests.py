@@ -33,7 +33,8 @@ from api.handler import iter_tracks
 from api.handler import application
 import auth.roles
 from auth.models import User
-from playlists.models import Playlist, PlaylistTrack, ChirpBroadcast
+from playlists.models import (Playlist, PlaylistTrack, ChirpBroadcast,
+                              PlayCountSnapshot)
 from playlists.tests.test_views import create_stevie_wonder_album_data
 from common import dbconfig
 from djdb import pylast
@@ -46,13 +47,31 @@ def clear_data():
         pl.delete()
     for u in User.all():
         u.delete()
-
+    for ob in PlayCountSnapshot.all():
+        ob.delete()
 
 class APITest(unittest.TestCase):
 
     def setUp(self):
-        dbconfig['lastfm.api_key'] = 'SEKRET_LASTFM_KEY'
         self.client = TestApp(application)
+
+    def tearDown(self):
+        assert memcache.flush_all()
+        clear_data()
+
+    def request(self, url):
+        r = self.client.get(url)
+        eq_(r.status, '200 OK')
+        eq_(r.headers['content-type'], 'application/json')
+        data = simplejson.loads(r.body)
+        return data
+
+
+class PlaylistTest(APITest):
+
+    def setUp(self):
+        super(PlaylistTest, self).setUp()
+        dbconfig['lastfm.api_key'] = 'SEKRET_LASTFM_KEY'
         self.dj = User(dj_name='DJ Night Moves', first_name='Steve',
                        last_name='Dolfin', email='steve@dolfin.org',
                        roles=[auth.roles.DJ])
@@ -61,10 +80,6 @@ class APITest(unittest.TestCase):
         (self.stevie,
          self.talking_book,
          self.tracks) = create_stevie_wonder_album_data()
-
-    def tearDown(self):
-        assert memcache.flush_all()
-        clear_data()
 
     def play_stevie_song(self, song_name):
         self.playlist_track = PlaylistTrack(
@@ -78,23 +93,17 @@ class APITest(unittest.TestCase):
         self.playlist_track.save()
         return self.playlist_track
 
-    def request(self, url):
-        r = self.client.get(url)
-        eq_(r.status, '200 OK')
-        eq_(r.headers['content-type'], 'application/json')
-        data = simplejson.loads(r.body)
-        return data
 
-
-class TestServiceIndex(APITest):
+class TestServiceIndex(PlaylistTest):
 
     def test_index(self):
         eq_(sorted([s[0] for s in self.request('/api/')['services']]),
             ['/api/',
-             '/api/current_playlist'])
+             '/api/current_playlist',
+             '/api/stats'])
 
 
-class TestTrackPlayingNow(APITest):
+class TestTrackPlayingNow(PlaylistTest):
 
     def setUp(self):
         super(TestTrackPlayingNow, self).setUp()
@@ -259,7 +268,7 @@ class TestTrackPlayingNow(APITest):
                                             'Unexpected: %r' % body)
 
 
-class TestRecentlyPlayedTracks(APITest):
+class TestRecentlyPlayedTracks(PlaylistTest):
 
     def setUp(self):
         super(TestRecentlyPlayedTracks, self).setUp()
@@ -301,7 +310,7 @@ class TestRecentlyPlayedTracks(APITest):
              "Tuesday Heartbreak"])
 
 
-class TestCheckLastFMLinks(APITest):
+class TestCheckLastFMLinks(PlaylistTest):
 
     def setUp(self):
         super(TestCheckLastFMLinks, self).setUp()
@@ -388,3 +397,55 @@ class TestCheckLastFMLinks(APITest):
         r = self.client.post('/api/_check_lastfm_links', {'id': key})
         data = simplejson.loads(r.body)
         eq_(data['success'], False)
+
+
+class TestPlayStats(APITest):
+
+    def setUp(self):
+        super(TestPlayStats, self).setUp()
+        dbconfig['lastfm.api_key'] = 'SEKRET_LASTFM_KEY'
+        PlayCountSnapshot(
+            track_id='1',
+            play_count=5,
+            artist_name='Tame Impala',
+            album_title='Lonerism',
+            label='label1'
+        ).put()
+        PlayCountSnapshot(
+            track_id='1',
+            play_count=5,
+            artist_name='Tame Impala',
+            album_title='Lonerism',
+            label='label1'
+        ).put()
+        PlayCountSnapshot(
+            track_id='2',
+            play_count=20,
+            artist_name='Taken By Trees',
+            album_title='Dreams',
+            label='label2'
+        ).put()
+
+    def test_this_week(self):
+        p = PlayCountSnapshot(
+            track_id='3',
+            play_count=1,
+            artist_name='Ignore Me',
+            album_title='Inore This',
+            label='...',
+            # This was entered older than a week.
+            established=datetime.now() - timedelta(days=8)
+        )
+        p.put()
+        res = self.request('/api/stats')
+        weekly = res['this_week']['releases']
+        eq_(weekly[0]['artist'], 'Taken By Trees')
+        eq_(weekly[0]['release'], 'Dreams')
+        eq_(weekly[0]['label'], 'label2')
+        eq_(weekly[0]['play_count'], 20)
+        assert 'id' in weekly[0]
+        eq_(weekly[1]['artist'], 'Tame Impala')
+        eq_(weekly[1]['release'], 'Lonerism')
+        eq_(weekly[1]['label'], 'label1')
+        eq_(weekly[1]['play_count'], 5)
+        eq_(len(weekly), 2, weekly)

@@ -25,6 +25,7 @@ import main
 
 import calendar
 from datetime import datetime, timedelta
+import hashlib
 import logging
 import time
 
@@ -37,7 +38,8 @@ try:
 except ImportError:
     import simplejson
 
-from playlists.models import chirp_playlist_key, PlaylistTrack
+from playlists.models import (chirp_playlist_key, PlaylistTrack,
+                              PlayCountSnapshot)
 from djdb import pylast
 from common import dbconfig
 
@@ -47,6 +49,7 @@ log = logging.getLogger()
 
 class ApiHandler(webapp.RequestHandler):
     use_cache = False
+    memcache_ttl = 60  # seconds
 
     def get(self):
         self.response.headers['Content-Type'] = 'application/json'
@@ -58,7 +61,7 @@ class ApiHandler(webapp.RequestHandler):
             data = memcache.get(self.cache_key)
             if not data:
                 data = self.get_json()
-                memcache.set(self.cache_key, data, time=60)
+                memcache.set(self.cache_key, data, time=self.memcache_ttl)
         self.check_data(data)
         # Default encoding is UTF-8
         js = simplejson.dumps(data)
@@ -68,6 +71,8 @@ class ApiHandler(webapp.RequestHandler):
 
         # Clients shouldn't poll more than 15 seconds but we want to make
         # sure they don't miss new tracks so the cache here is low.
+        # Note that this cache time is just for clients, it does not affect
+        # memcache.
         cache_for_secs = 10
         expires = ((datetime.utcnow() + timedelta(seconds=cache_for_secs))
                    .strftime("%a, %d %b %Y %H:%M:%S +0000"))
@@ -208,8 +213,55 @@ class CheckLastFMLinks(webapp.RequestHandler):
         }))
 
 
+class Stats(CachedApiHandler):
+    """CHIRP Radio statistics for weekly plays, etc."""
+    cache_key = 'api.stats'
+    memcache_ttl = 60 * 60 * 4  # 4 hours
+
+    def get_json(self):
+        end = datetime.now()
+        start = end - timedelta(days=7)
+        qs = (PlayCountSnapshot.all()
+              .filter('established >=', start)
+              .filter('established <=', end))
+
+        # Collect the play counts.
+        weekly = {}
+        for count in qs.run():
+            id = count.track_id
+            weekly.setdefault(id, {'play_count': []})
+            weekly[id].update({'artist': count.artist_name,
+                               'release': count.album_title,
+                               'label': count.label,
+                               'id': id})
+            weekly[id]['play_count'].append(count.play_count)
+
+        for key, stat in weekly.iteritems():
+            pc = stat['play_count']
+            weekly[key].update({
+                # Average the play counts per release.
+                'play_count': int(round(sum(pc) / len(pc), 1)),
+                # Make this ID shorter so it's easier for clients.
+                'id': hashlib.sha1(stat['id']).hexdigest()
+            })
+
+        # Sort the releases in descending order of play count.
+        rel = sorted(weekly.values(),
+                     key=lambda c: c['play_count'],
+                     reverse=True)
+
+        return {
+            'this_week': {
+                'start': start.strftime('%Y-%m-%d'),
+                'end': end.strftime('%Y-%m-%d'),
+                'releases': rel
+            }
+        }
+
+
 services = [('/api/', Index),
             ('/api/current_playlist', CurrentPlaylist),
+            ('/api/stats', Stats),
             ('/api/_check_lastfm_links', CheckLastFMLinks)]
 debug = False
 application = webapp.WSGIApplication(services, debug=debug)
