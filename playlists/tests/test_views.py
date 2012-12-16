@@ -95,6 +95,7 @@ def create_stevie_wonder_album_data():
                     album=talking_book,
                     title=title,
                     sampling_rate_hz=44000,
+                    track_artist=stevie,
                     bit_rate_kbps=256,
                     channels='stereo',
                     duration_ms=60*60*3, # faux
@@ -675,6 +676,50 @@ class TestPlayCountTask(TaskTest, TestCase):
         stg.IN_DEV = False
         res = self.client.post(reverse('playlists.play_count_snapshot'))
         eq_(res.status_code, 400)
+
+    def test_compilation(self):
+        stevie, talking_book, tracks = create_stevie_wonder_album_data()
+        talking_book.is_compilation = True
+        talking_book.put()
+        for artist, track in (('Artist 1', 'Track 1'),
+                              ('Artist 2', 'Track 2')):
+            new_trk = PlaylistTrack(
+                playlist=self.track.playlist,
+                selector=self.track.selector,
+                album=talking_book,
+                freeform_artist_name=artist,
+                freeform_track_title=track,
+                freeform_label='...')
+            new_trk.put()
+            self.count(track_key=new_trk.key())
+        res = self.snapshot()
+        eq_(res.status_code, 200)
+        snap = PlayCountSnapshot.all()[0]
+        eq_(snap.play_count, 2)
+        eq_(snap.artist_name, 'Various')
+        eq_(snap.album_title, 'Talking Book')
+
+    def test_freeform_compilation(self):
+        stevie, talking_book, tracks = create_stevie_wonder_album_data()
+        talking_book.is_compilation = True
+        talking_book.put()
+        for artist, track in (('Stevie Wonder', 'Superstition'),
+                              ('Stevie Wonder', 'Big Brother')):
+            new_trk = PlaylistTrack(
+                playlist=self.track.playlist,
+                selector=self.track.selector,
+                freeform_album_title='Talking Book',
+                freeform_artist_name=artist,
+                freeform_track_title=track,
+                freeform_label='...')
+            new_trk.put()
+            self.count(track_key=new_trk.key())
+        res = self.snapshot()
+        eq_(res.status_code, 200)
+        snap = PlayCountSnapshot.all()[0]
+        eq_(snap.play_count, 2)
+        eq_(snap.artist_name, 'Various')
+        eq_(snap.album_title, 'Talking Book')
 
 
 class TestLive365PlaylistTasks(TaskTest, TestCase):

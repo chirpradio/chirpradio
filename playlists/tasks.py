@@ -31,6 +31,7 @@ from google.appengine.api import taskqueue, urlfetch
 from common import dbconfig, in_dev
 from common.utilities import as_encoded_str, cronjob
 from common.autoretry import AutoRetry
+from djdb.models import Track
 from playlists.models import PlaylistEvent, PlayCount, PlayCountSnapshot
 
 log = logging.getLogger()
@@ -175,10 +176,27 @@ def play_count(request):
     """View for keeping track of play counts"""
     track_key = request.POST['id']
     track = PlaylistEvent.get(track_key)
+    artist_name = track.artist_name
+    album = track.album
+    if not album:
+        # Try to find a compilation album based on track name.
+        qs = Track.all().filter('title =', track.track_title)
+        for candidate in qs.run():
+            if (candidate.track_artist and
+                candidate.album.title == track.album_title and
+                candidate.track_artist.name == track.artist_name):
+                album = candidate.album
+                break
+        if not album:
+            log.info('No album for %s / %s / %s'
+                     % (track.artist_name, track.track_title,
+                        track.album_title))
+    if album and album.is_compilation:
+        artist_name = 'Various'
 
-    count = PlayCount.query(track.artist_name, track.album_title)
+    count = PlayCount.query(artist_name, track.album_title)
     if not count:
-        count = PlayCount.create_first(track.artist_name,
+        count = PlayCount.create_first(artist_name,
                                        track.album_title,
                                        track.label)
 
