@@ -247,8 +247,10 @@ class Stats(CachedApiHandler):
 
         # Sort the releases in descending order of play count.
         rel = sorted(weekly.values(),
-                     key=lambda c: c['play_count'],
+                     key=lambda c: (c['play_count'], c['release']),
                      reverse=True)
+        # Limit to top 40.
+        rel = rel[0:40]
 
         return {
             'this_week': {
