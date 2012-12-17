@@ -30,6 +30,7 @@ from django.test import TestCase, Client
 from django.core.urlresolvers import reverse
 import fudge
 from fudge.inspector import arg
+from google.appengine.api import memcache
 from nose.tools import eq_
 
 from common.testutil import FormTestCaseHelper
@@ -114,6 +115,7 @@ class PlaylistViewsTest(FormTestCaseHelper, TestCase):
     def tearDown(self):
         clear_data()
         fudge.clear_expectations()
+        assert memcache.flush_all()
 
     def get_selector(self):
         return User.all().filter('email =', 'test@test.com')[0]
@@ -237,6 +239,39 @@ class TestPlaylistViews(PlaylistViewsTest):
         self.assertEquals(tracks[0].label, "Warp Records")
         self.assertEquals(tracks[0].notes,
                 "Dark melody. Really nice break down into half time.")
+
+    @fudge.patch('playlists.tasks.taskqueue')
+    def test_add_track_with_memcache(self, fake_tq):
+        selector = self.get_selector()
+        fake_tq.is_a_stub()
+
+        resp = self.client.post(reverse('playlists_add_event'), {
+            'artist': "Squarepusher",
+            'song': "Port Rhombus",
+            "album": "Port Rhombus EP",
+            "label": "Warp Records",
+            "song_notes": "Dark melody. Really nice break down into half time."
+        })
+
+        # Simulate HRD lag by deleting all data.
+        clear_data()
+
+        self.assertNoFormErrors(resp)
+        self.assertRedirects(resp, reverse('playlists_landing_page'))
+        # simulate the redirect:
+        resp = self.client.get(reverse('playlists_landing_page'))
+        context = resp.context[0]
+        tracks = [t for t in context['playlist_events']]
+        self.assertEquals(tracks[0].artist_name, "Squarepusher")
+        self.assertEquals(tracks[0].track_title, "Port Rhombus")
+        self.assertEquals(tracks[0].album_title_display, "Port Rhombus EP")
+        self.assertEquals(tracks[0].label_display, "Warp Records")
+        self.assertEquals(tracks[0].notes,
+                "Dark melody. Really nice break down into half time.")
+        self.assertEquals(str(tracks[0].selector.key()),
+                          str(selector.key()))
+        self.assertEquals(tracks[0].categories, [])
+        assert tracks[0].key()
 
     @fudge.patch('playlists.tasks.taskqueue')
     def test_add_tracks_to_existing_stream(self, fake_tq):

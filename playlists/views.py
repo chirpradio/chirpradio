@@ -24,8 +24,9 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import loader, RequestContext
 
-from google.appengine.api import datastore_errors
+from google.appengine.api import datastore_errors, memcache
 from google.appengine.api.datastore_errors import BadKeyError
+from google.appengine.ext.db import Key
 
 from auth.decorators import require_role
 import auth
@@ -37,6 +38,7 @@ from playlists.models import (PlaylistTrack, PlaylistEvent, PlaylistBreak,
 from playlists.tasks import playlist_event_listeners
 from common.utilities import as_encoded_str, http_send_csv_file
 from common.autoretry import AutoRetry
+from common import time_util
 from common.time_util import chicago_now
 from djdb.models import Track
 from common.models import DBConfig
@@ -77,6 +79,35 @@ class PlaylistEventView(object):
     def __getattr__(self, key):
         return getattr(self.playlist_event, key)
 
+
+class CachedSelector(object):
+
+    def __init__(self, key):
+        self._key = key
+
+    def key(self):
+        return Key(encoded=self._key)
+
+
+class CachedPlaylistEvent(object):
+
+    def __init__(self, data):
+        self._key = data['key']
+        self.artist_name = data['artist_name']
+        self.track_title = data['track_title']
+        self.album_title_display = data['album_title_display']
+        self.label_display = data['label_display']
+        self.notes = data['notes']
+        self.selector = CachedSelector(data['selector_key'])
+        self.categories = data['categories']
+        d = datetime(*data['established_display'])
+        d = time_util.convert_utc_to_chicago(d)
+        self.established_display = d
+
+    def key(self):
+        return Key(encoded=self._key)
+
+
 def iter_playlist_events_for_view(query):
     """Iterate a query of playlist event objects.
 
@@ -84,7 +115,14 @@ def iter_playlist_events_for_view(query):
     which contain some extra attributes for the view.
     """
     first_break = False
-    for playlist_event in AutoRetry(query):
+    events = list(query)
+    last_track = memcache.get('playlist.last_track')
+    if last_track:
+        # Prepend the last track from cache.
+        # Due to HRD lag, this may not be in the result set yet.
+        if not len(events) or last_track['id'] != str(events[0].key()):
+            events.insert(0, CachedPlaylistEvent(last_track))
+    for playlist_event in events:
         pl_view = PlaylistEventView(playlist_event)
         if pl_view.is_break:
             first_break = True
@@ -207,8 +245,8 @@ def filter_tracks_by_date_range(from_date, to_date):
 
 def _get_entity_attr(entity, attr, *getattr_args):
     """gets the value of an attribute on an entity.
-    
-    if the value is an orphaned reference then return 
+
+    if the value is an orphaned reference then return
     the string __bad_reference__ instead
     """
     try:
@@ -242,7 +280,7 @@ def query_group_by_track_key(from_date, to_date):
         key_parts = []
         for key in fields:
             stub = as_encoded_str(_get_entity_attr(item, key, ''))
-                    
+
             if stub is None:
                 # for existing None-type attributes
                 stub = ''

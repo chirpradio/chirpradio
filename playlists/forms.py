@@ -22,6 +22,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.template import loader
 from django import forms
 from djdb.models import Artist, Album, Track
+from google.appengine.api import memcache
 from playlists.models import Playlist, PlaylistTrack, chirp_playlist_key
 from common.autoretry import AutoRetry
 
@@ -100,6 +101,19 @@ class PlaylistTrackForm(forms.Form):
         if self.cleaned_data['is_local_classic']:
             playlist_track.categories.append('local_classic')
         AutoRetry(playlist_track).save()
+
+        trk = playlist_track
+        memcache.set('playlist.last_track', {
+            'artist_name': trk.artist_name,
+            'track_title': trk.track_title,
+            'album_title_display': trk.album_title_display,
+            'label_display': trk.label_display,
+            'notes': trk.notes,
+            'key': str(trk.key()),
+            'categories': list(trk.categories),
+            'selector_key': str(trk.selector.key()),
+            'established_display': trk.established.timetuple()[0:7]
+        }, 30)
 
         return playlist_track
 
