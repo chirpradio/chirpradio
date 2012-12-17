@@ -120,7 +120,7 @@ def iter_playlist_events_for_view(query):
     if last_track:
         # Prepend the last track from cache.
         # Due to HRD lag, this may not be in the result set yet.
-        if not len(events) or last_track['id'] != str(events[0].key()):
+        if not len(events) or last_track['key'] != str(events[0].key()):
             events.insert(0, CachedPlaylistEvent(last_track))
     for playlist_event in events:
         pl_view = PlaylistEventView(playlist_event)
