@@ -117,11 +117,19 @@ def iter_playlist_events_for_view(query):
     first_break = False
     events = list(query)
     last_track = memcache.get('playlist.last_track')
+
     if last_track:
-        # Prepend the last track from cache.
-        # Due to HRD lag, this may not be in the result set yet.
-        if not len(events) or last_track['key'] != str(events[0].key()):
+        do_insert = False
+        if len(events) and not type(events[0]) is PlaylistBreak:
+            do_insert = str(last_track['key']) != str(events[0].key())
+            if do_insert:
+                log.info('Inserting cached event. %r != %r' %
+                         (str(last_track['key']), str(events[0].key())))
+        if not len(events) or do_insert:
+            # Prepend the last track from cache.
+            # Due to HRD lag, it may not be in the result set yet.
             events.insert(0, CachedPlaylistEvent(last_track))
+
     for playlist_event in events:
         pl_view = PlaylistEventView(playlist_event)
         if pl_view.is_break:
@@ -228,6 +236,9 @@ def delete_event(request, event_key):
     else:
         if e and e.selector.key() == auth.get_current_user(request).key():
             e.delete()
+            # This avoids seeing dupes after deleting the last
+            # submitted track.
+            memcache.delete('playlist.last_track')
             playlist_event_listeners.delete(event_key)
 
     return HttpResponseRedirect(reverse('playlists_landing_page'))
