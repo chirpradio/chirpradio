@@ -129,6 +129,8 @@ def iter_playlist_events_for_view(query):
             # Prepend the last track from cache.
             # Due to HRD lag, it may not be in the result set yet.
             events.insert(0, CachedPlaylistEvent(last_track))
+    else:
+        log.info('playlist.last_track was not in memcache')
 
     for playlist_event in events:
         pl_view = PlaylistEventView(playlist_event)
