@@ -55,6 +55,10 @@ libraries:
   version: latest
 
 
+env_variables:
+  DJANGO_SETTINGS_MODULE: 'settings'
+
+
 skip_files:
 - ^(.*/)?app\.yaml
 - ^(.*/)?app\.yml
