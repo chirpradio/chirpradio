@@ -1,15 +1,13 @@
 application: chirpradio-hrd
 version: 1
-runtime: python
-# runtime: python27
+runtime: python27
 api_version: 1
-# threadsafe: true
+threadsafe: true
 
 handlers:
 
 - url: /api/.*
-  script: api/handler.py
-  # script: api.handler.application
+  script: api.handler.application
 
 # -----------------------------------------------------------------------
 # NOTE: see settings.PUBLIC_TOP_LEVEL_URLS for non-login protected pages.
@@ -18,15 +16,6 @@ handlers:
 - url: /favicon\.ico
   static_files: media/common/img/favicon.ico
   upload: media/common/img/favicon\.ico
-
-# Disabling remote_api here because it's in builtins section now.
-
-# Support for remote datastore access.  For more information, please see
-# http://code.google.com/appengine/articles/remote_api.html
-#- url: /remote_api
-#  script: $PYTHON_LIB/google/appengine/ext/remote_api/handler.py
-#  # script: google.appengine.ext.remote_api.handler
-#  login: admin
 
 # Serve static media.  Note that everything under media is world-readable!
 # Making cache expiration more agressive until CDN pushes is fixed:
@@ -37,19 +26,18 @@ handlers:
 
 # restrict public access to playlist task queue URL handlers
 - url: /playlists/task/.*
-  script: main.py
+  script: main.application
   login: admin
 
 # restrict public access to auth task queue URL handlers
 - url: /auth/task/.*
-  script: main.py
+  script: main.application
   login: admin
 
 # For everything else, we always want to use HTTPS.
 - url: /.*
   secure: always
-  script: main.py
-  # script: main.application
+  script: main.application
 
 
 inbound_services:
@@ -57,13 +45,14 @@ inbound_services:
 
 
 builtins:
-- datastore_admin: on
 - remote_api: on
 
 
-# libraries:
-# - name: django
-#   version: 1.2
+libraries:
+- name: django
+  version: "1.3"
+- name: webapp2
+  version: latest
 
 
 skip_files:

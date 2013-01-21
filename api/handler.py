@@ -29,10 +29,8 @@ import hashlib
 import logging
 import time
 
-from google.appengine.ext import webapp
-# import webapp2 as webapp  # python2.7, multithreaded
+import webapp2 as webapp
 from google.appengine.api import memcache, taskqueue
-from google.appengine.ext.webapp.util import run_wsgi_app
 try:
     import json as simplejson
 except ImportError:
@@ -266,10 +264,5 @@ services = [('/api/', Index),
             ('/api/stats', Stats),
             ('/api/_check_lastfm_links', CheckLastFMLinks)]
 debug = False
+
 application = webapp.WSGIApplication(services, debug=debug)
-
-def main():
-    run_wsgi_app(application)
-
-if __name__ == "__main__":
-    main()
