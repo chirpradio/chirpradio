@@ -612,22 +612,5 @@ def InstallAuthentication(settings):
 
 def InstallModelForm():
   """Replace Django ModelForm with the AppEngine ModelForm."""
-  # This MUST happen as early as possible, but after any auth model patching.
-  from google.appengine.ext.db import djangoforms as aeforms
-  try:
-    # pre 1.0
-    from django import newforms as forms
-  except ImportError:
-    from django import forms
-
-  forms.ModelForm = aeforms.ModelForm
-
-  # Extend ModelForm with support for EmailProperty
-  # TODO: This should be submitted to the main App Engine SDK.
-  from google.appengine.ext.db import EmailProperty
-  def get_form_field(self, **kwargs):
-    """Return a Django form field appropriate for an email property."""
-    defaults = {'form_class': forms.EmailField}
-    defaults.update(kwargs)
-    return super(EmailProperty, self).get_form_field(**defaults)
-  EmailProperty.get_form_field = get_form_field
+  # djangoforms is not supported anymore, removing this.
+  pass
