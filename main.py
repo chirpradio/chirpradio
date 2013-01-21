@@ -19,14 +19,9 @@ models.py, views.py.  And in fact, only 'settings' is referenced here
 directly -- everything else is controlled from there.
 
 """
-
-# Standard Python imports.
 import os
 
 ROOT = os.path.dirname(__file__)
-
-from appengine_django import InstallAppengineHelperForDjango
-InstallAppengineHelperForDjango('1.3')
 
 # Import the part of Django that we use here.
 import django.core.handlers.wsgi
