@@ -136,49 +136,6 @@ class CommandsTest(unittest.TestCase):
 
     return [t.strip() for t in parts[-1].split("\n") if t.strip()]
 
-  def testDiffSettings(self):
-    """Tests the diffsettings command."""
-    self.assertCommandSucceeds("diffsettings")
-
-  def testDumpData(self):
-    """Tests the dumpdata command."""
-    self.assertCommandSucceeds("dumpdata")
-
-  def testFlush(self):
-    """Tests the flush command."""
-    self.assertCommandSucceeds("flush")
-
-  def testLoadData(self):
-    """Tests the loaddata command."""
-    self.assertCommandSucceeds("loaddata")
-
-  def testLoadData(self):
-    """Tests the loaddata command."""
-    self.assertCommandSucceeds("loaddata")
-
-  def testReset(self):
-    """Tests the reste command."""
-    self.assertCommandSucceeds("reset", ["appengine_django"])
-
-  # Disabled due to flakiness - re-enable when it can be guaranteed to succeed
-  # reliably.
-  #def testRunserver(self):
-  #  """Tests the runserver command."""
-  #  self.assertCommandSucceeds("runserver", int_after=2.0)
-
-  def testShell(self):
-    """Tests the shell command."""
-    self.assertCommandSucceeds("shell", input="exit")
-
-  def testUpdate(self):
-    """Tests that the update command exists.
-
-    Cannot test that it works without mocking out parts of dev_appserver so for
-    now we just assume that if it is present it will work.
-    """
-    cmd_list = self.getCommands()
-    self.assert_("update" in cmd_list)
-
   def testZipCommandListFiltersCorrectly(self):
     """When running under a zipfile test that only valid commands are found."""
     cmd_list = self.getCommands()
