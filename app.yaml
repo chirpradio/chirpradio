@@ -54,7 +54,8 @@ libraries:
 - name: webapp2
   version: latest
 - name: pycrypto
-  version: latest
+  # This is an attempt to get closer to pycrypto from the 2.5 runtime.
+  version: 2.3
 
 
 env_variables:
