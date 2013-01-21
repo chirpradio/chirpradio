@@ -20,7 +20,7 @@
 import unittest
 
 from django.db import connection
-from django.db.backends.appengine.base import DatabaseWrapper
+from appengine_django.db.base import DatabaseWrapper
 
 from appengine_django import appid
 from appengine_django.db import base
