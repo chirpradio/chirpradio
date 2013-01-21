@@ -12,12 +12,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
 import sys
 
 # WARNING: This script is not run in production.
 # See main.py for that.
 
-# installs app engine django
+# manage.py is only used for testing.
+# This will set a flag so that main.py knows we are testing
+os.environ['IN_MANAGE'] = '1'
+
+# Install the old app engine *only* for testing.
+# This sets up datastore stubs and clears data.
+from appengine_django import InstallAppengineHelperForDjango
+InstallAppengineHelperForDjango('1.3')
+
+# Loads the production app.
 import main
 
 from django.core.management import execute_manager
@@ -34,5 +44,8 @@ if __name__ == "__main__":
     if 'test' in sys.argv:
         import devlib
         devlib.activate()
+    else:
+        raise NotImplementedError('Use dev_appserver.py for non-test '
+                                  'commands.')
 
     execute_manager(settings)

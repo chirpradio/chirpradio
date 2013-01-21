@@ -33,7 +33,10 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATABASES = {}
+# Tell Django to use the app engine helper DB.
+# This isn't really used anywhere except for testing (setup/teardown).
+# The google.appengine.db models are used directly instead.
+DATABASES = {'default': {'ENGINE': 'appengine_django.db'}}
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -112,6 +115,7 @@ TEMPLATE_DIRS = (
 )
 
 INSTALLED_APPS = (
+     'appengine_django',
      'auth',
      'common',
      'djdb',
