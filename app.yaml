@@ -53,6 +53,8 @@ libraries:
   version: "1.3"
 - name: webapp2
   version: latest
+- name: pycrypto
+  version: latest
 
 
 env_variables:
