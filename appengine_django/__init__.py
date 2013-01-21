@@ -129,26 +129,16 @@ def LoadSdk():
     EXTRA_PATHS = [
         SDK_PATH,
         os.path.join(SDK_PATH, 'lib', 'antlr3'),
-        os.path.join(SDK_PATH, 'lib', 'argparse'),
-        os.path.join(SDK_PATH, 'lib', 'cacerts'),
         os.path.join(SDK_PATH, 'lib', 'django'),
-        os.path.join(SDK_PATH, 'lib', 'enum'),
-        os.path.join(SDK_PATH, 'lib', 'fancy_urllib'),
-        os.path.join(SDK_PATH, 'lib', 'google-api-python-client'),
-        os.path.join(SDK_PATH, 'lib', 'graphy'),
-        os.path.join(SDK_PATH, 'lib', 'grizzled'),
         os.path.join(SDK_PATH, 'lib', 'ipaddr'),
-        os.path.join(SDK_PATH, 'lib', 'jinja2'),
-        os.path.join(SDK_PATH, 'lib', 'markupsafe'),
-        os.path.join(SDK_PATH, 'lib', 'oauth2'),
-        os.path.join(SDK_PATH, 'lib', 'prettytable'),
-        os.path.join(SDK_PATH, 'lib', 'protorpc'),
-        os.path.join(SDK_PATH, 'lib', 'python-gflags'),
-        os.path.join(SDK_PATH, 'lib', 'simplejson'),
-        os.path.join(SDK_PATH, 'lib', 'sqlcmd'),
-        os.path.join(SDK_PATH, 'lib', 'webapp2'),
-        os.path.join(SDK_PATH, 'lib', 'webob_1_1_1'),
+        os.path.join(SDK_PATH, 'lib', 'webob'),  # old SDK
+        os.path.join(SDK_PATH, 'lib', 'webob_1_1_1'),  # SDK >= 16.4
         os.path.join(SDK_PATH, 'lib', 'yaml', 'lib'),
+        os.path.join(SDK_PATH, 'lib', 'fancy_urllib'),
+        os.path.join(SDK_PATH, 'lib', 'simplejson'),
+        os.path.join(SDK_PATH, 'lib', 'whoosh'),
+        os.path.join(SDK_PATH, 'lib', 'protorpc'),
+        os.path.join(SDK_PATH, 'lib', 'graphy'),
     ]
     # Add SDK paths at the start of sys.path, but after the local directory which
     # was added to the start of sys.path on line 50 above. The local directory
@@ -441,7 +431,7 @@ def ModifyAvailableCommands():
   management.get_commands()
   # Replace startapp command which is set by previous call to get_commands().
   from appengine_django.management.commands.startapp import ProjectCommand
-  management._commands['startapp'] = ProjectCommand(project_directory)
+  management._commands['startapp'] = ProjectCommand(project_directory) 
   RemoveCommands(management._commands)
   logging.debug("Removed incompatible Django manage.py commands")
 

@@ -22,6 +22,8 @@ directly -- everything else is controlled from there.
 
 # Standard Python imports.
 import os
+import sys
+import logging
 
 ROOT = os.path.dirname(__file__)
 
@@ -39,5 +41,15 @@ django.__path__.append(os.path.join(ROOT, 'django-extras'))
 # Pull in CHIRP's monkey-patching of Django
 from django import _monkey_patch
 
+# Google App Engine imports.
+from google.appengine.ext.webapp import util
+
 # Create a Django application for WSGI.
 application = django.core.handlers.wsgi.WSGIHandler()
+
+def main():
+    # Run the WSGI CGI handler with that application.
+    util.run_wsgi_app(application)
+
+if __name__ == '__main__':
+    main()
