@@ -20,8 +20,17 @@ directly -- everything else is controlled from there.
 
 """
 import os
+import sys
 
 ROOT = os.path.dirname(__file__)
+
+if not os.environ.get('IN_MANAGE'):
+    # manage.py is only used for testing.
+    # When not testing (i.e. production) this configures
+    # app engine helper so that it doesn't try to set up the
+    # datastore for testing.
+    import appengine_django
+    appengine_django.have_appserver = True
 
 # Import the part of Django that we use here.
 import django.core.handlers.wsgi
