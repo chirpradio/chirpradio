@@ -44,7 +44,7 @@ if __name__ == "__main__":
     if 'test' in sys.argv:
         import devlib
         devlib.activate()
-    else:
+    elif 'shell' not in sys.argv:
         raise NotImplementedError('Use dev_appserver.py for non-test '
                                   'commands.')
 
