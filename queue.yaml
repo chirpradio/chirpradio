@@ -27,10 +27,10 @@ queue:
 - name: live-site-playlists
   rate: 20/s
   bucket_size: 50
-  max_concurrent_requests: 20
+  max_concurrent_requests: 10
   retry_parameters:
-    task_retry_limit: 25
-    task_age_limit: 1d
+    task_retry_limit: 5
+    task_age_limit: 15m
     min_backoff_seconds: 5
-    max_backoff_seconds: 100
-    max_doublings: 0
+    max_backoff_seconds: 120
+    max_doublings: 2
