@@ -560,9 +560,11 @@ class TestLiveSitePlaylistTasks(TaskTest, TestCase):
 
     @fudge.patch('playlists.tasks.urlfetch.fetch')
     def test_create(self, fetch):
-        recent = fetch.expects_call().with_args(self.recent_url)
+        recent = fetch.expects_call().with_args(self.recent_url,
+                                                deadline=arg.any())
         recent.returns_fake().has_attr(status_code=200)
-        now = recent.next_call().with_args(self.now_url)
+        now = recent.next_call().with_args(self.now_url,
+                                           deadline=arg.any())
         now.returns_fake().has_attr(status_code=200)
 
         resp = self.client.post(reverse('playlists.send_track_to_live_site'), {

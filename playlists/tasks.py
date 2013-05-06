@@ -164,7 +164,10 @@ def _push_notify(url_key):
         else:
             raise ValueError(msg)
 
-    resp = urlfetch.fetch(url)
+    # A task has 10 minutes to execute. This tells urlfetch to time out after 8
+    # minutes.
+    deadline = 60 * 8
+    resp = urlfetch.fetch(url, deadline=deadline)
     log.info('Push response from %r: %s' % (url, resp.status_code))
     if resp.status_code != 200:
         log.error(resp.content)
