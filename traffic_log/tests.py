@@ -50,13 +50,13 @@ def clear_data():
         c.delete()
 
 class TestTrafficLogViews(DjangoTestCase):
-    
+
     def setUp(self):
         assert self.client.login(email="test@test.com", roles=[roles.DJ])
-    
+
     def tearDown(self):
         clear_data()
-    
+
     def test_landing_page_shows_spots(self):
         user = User(email='test')
         user.save()
@@ -67,12 +67,12 @@ class TestTrafficLogViews(DjangoTestCase):
         # assign it to every day of the week at the top of the hour:
         constraint_keys = views.saveConstraint(dict(hour_list=range(0,24), dow_list=range(1,8), slot=0))
         views.connectConstraintsAndSpot(constraint_keys, spot_key)
-        
+
         spot_copy = models.SpotCopy(body='body',
                                     spot=spot,
                                     author=user)
         spot_copy.put()
-        
+
         resp = self.client.get(reverse('traffic_log.index'))
         context = resp.context[0]
         spot_map = {}
@@ -80,26 +80,26 @@ class TestTrafficLogViews(DjangoTestCase):
         for c in context['slotted_spots']:
             spot_map[c.hour] = list(c.iter_spots())[0]
             constraint_map[c.hour] = c
-        
+
         now = time_util.chicago_now()
-        
+
         # first hour:
         self.assertEqual(spot_map[now.hour].title, 'Legal ID')
         # second hour:
-        self.assertEqual(spot_map[(now + datetime.timedelta(hours=1)).hour].title, 
+        self.assertEqual(spot_map[(now + datetime.timedelta(hours=1)).hour].title,
                 'Legal ID')
         # thir hour (not shown anymore):
-        # self.assertEqual(spot_map[(now + datetime.timedelta(hours=2)).hour].title, 
+        # self.assertEqual(spot_map[(now + datetime.timedelta(hours=2)).hour].title,
         #         'Legal ID')
 
 class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
-    
+
     def setUp(self):
         assert self.client.login(email="test@test.com", roles=[roles.TRAFFIC_LOG_ADMIN, roles.DJ])
-    
+
     def tearDown(self):
         clear_data()
-    
+
     def test_create_spot(self):
         resp = self.client.post(reverse('traffic_log.createSpot'), {
             'title': 'Legal ID',
@@ -119,7 +119,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             constraint_map[(constraint.dow, constraint.hour, constraint.slot)] = constraint
         self.assertEqual(sorted(dow), range(1,8))
         self.assertEqual(sorted(hours), range(0,24))
-        
+
         # check with Sunday 12:00pm
         author = User(email='test')
         author.put()
@@ -130,25 +130,25 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot.random_spot_copies = [spot_copy.key()]
         spot.save()
 
-        self.assertEqual(constraint_map[(1L, 12L, 0L)].url_to_finish_spot(spot), 
+        self.assertEqual(constraint_map[(1L, 12L, 0L)].url_to_finish_spot(spot),
             "/traffic_log/spot-copy/%s/finish?hour=12&dow=1&slot=0" % spot_copy.key())
-            
-        self.assertEqual(constraint_map[(1L, 12L, 0L)].as_query_string(), 
+
+        self.assertEqual(constraint_map[(1L, 12L, 0L)].as_query_string(),
             "hour=12&dow=1&slot=0")
-        
+
         # spot shows up in DJ view:
         resp = self.client.get(reverse('traffic_log.index'))
         context = resp.context[0]
         slotted_spots = [c for c in context['slotted_spots']]
         spots = [s.title for s in slotted_spots[0].iter_spots()]
         self.assertEqual(spots[0], spot.title)
-        
+
         # spot shows up in admin view:
         resp = self.client.get(reverse('traffic_log.listSpots'))
         context = resp.context[0]
         spots = [c.title for c in context['spots']]
         self.assertEqual(spots, ['Legal ID'])
-        
+
     @fudge.patch('traffic_log.views.time_util', 'common.time_util')
     def test_create_irregular_spot(self, time_util, global_time_util):
         for obj in [time_util, global_time_util]:
@@ -181,7 +181,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot_copy.put()
         spot.random_spot_copies = [spot_copy.key()]
         spot.save()
-        
+
         self.assertEqual(constraint_map[(3L, 5L, 24L)].url_to_finish_spot(spot),
             "/traffic_log/spot-copy/%s/finish?hour=5&dow=3&slot=24" % spot_copy.key())
 
@@ -213,7 +213,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         })
         self.assertNoFormErrors(resp)
         spot = models.Spot.all().filter("title =", "Legal ID").fetch(1)[0]
-        
+
         resp = self.client.post(reverse('traffic_log.createSpotCopy'), {
             'spot_key': spot.key(),
             'body': 'You are listening to chirprario.odg',
@@ -222,65 +222,65 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             'expire_on': ''
         })
         self.assertNoFormErrors(resp)
-        
+
         # spot shows up in DJ view:
         resp = self.client.get(reverse('traffic_log.index'))
         context = resp.context[0]
         slotted_spots = [c for c in context['slotted_spots']]
         spots = [s.title for s in slotted_spots[0].iter_spots()]
         self.assertEqual(spots[0], spot.title)
-        
+
         # make the copy expire:
         spot_copy = spot.all_spot_copy()[0]
         spot_copy.expire_on = datetime.datetime.now()
         spot_copy.save()
-        
+
         # it should be hidden now:
         resp = self.client.get(reverse('traffic_log.index'))
         context = resp.context[0]
         spots = []
         for slotted_spot in context['slotted_spots']:
             spots.append([s.title for s in slotted_spot.iter_spots()])
-            
+
         self.assertEqual(spots, [[], []]) # ensure 2 hours of spots have expired
-    
+
     def test_delete_spot(self):
         spot = models.Spot(
                         title='Legal ID',
                         type='Station ID')
         spot.put()
         self.assertEqual(spot.active, True)
-        
+
         author = User(email='test')
         author.put()
         spot_copy = models.SpotCopy(body='body',
                                     spot=spot,
                                     author=author)
         spot_copy.put()
-        
+
         # assign it to every day of the week at the top of the hour:
         constraint_keys = views.saveConstraint(dict(hour_list=range(0,24), dow_list=range(1,8), slot=0))
         views.connectConstraintsAndSpot(constraint_keys, spot.key())
-        
+
         resp = self.client.get(reverse('traffic_log.index'))
         context = resp.context[0]
         slotted_spots = [c for c in context['slotted_spots']]
         spots = [s.title for s in slotted_spots[0].iter_spots()]
         self.assertEqual(spots[0], spot.title)
-                            
+
         resp = self.client.get(reverse('traffic_log.deleteSpot', args=[spot.key()]))
-        
+
         # datastore was cleaned up:
         saved_spot = models.Spot.get(spot.key())
         self.assertEqual(saved_spot.active, False)
-        
+
         saved_constaints = [s for s in models.SpotConstraint.get(constraint_keys)]
         active_spots = []
         for constraint in saved_constaints:
             for spot in constraint.iter_spots():
                 active_spots.append(spot)
         self.assertEqual(len(active_spots), 0)
-        
+
         # spot is hidden from landing page:
         resp = self.client.get(reverse('traffic_log.index'))
         context = resp.context[0]
@@ -290,13 +290,13 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             for spot in slot.iter_spots_at_constraint():
                 active_spots.append(spot)
         self.assertEqual(active_spots, [])
-        
+
         # spot is hidden from admin view:
         resp = self.client.get(reverse('traffic_log.listSpots'))
         context = resp.context[0]
         spots = [c.title for c in context['spots']]
         self.assertEqual(spots, [])
-    
+
     def test_create_spot_copy(self):
         dow = 1
         hour = 0
@@ -307,7 +307,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot.put()
         constraint = models.SpotConstraint(dow=dow, hour=hour, slot=slot, spots=[spot.key()])
         constraint.put()
-        
+
         resp = self.client.post(reverse('traffic_log.createSpotCopy'), {
             'spot_key': spot.key(),
             'body': 'You are listening to chirprario.odg',
@@ -315,12 +315,12 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             'expire_on': ''
         })
         self.assertNoFormErrors(resp)
-        
+
         spot_copy, is_logged = spot.get_spot_copy(dow, hour, slot)
         self.assertEqual(spot_copy.body, 'You are listening to chirprario.odg')
         self.assertEqual(spot_copy.underwriter, 'pretend this is an underwriter')
         self.assertEqual(spot_copy.author.email, 'test@test.com')
-    
+
     def test_edit_spot_copy(self):
         spot = models.Spot(
                         title='Legal ID',
@@ -328,7 +328,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot.put()
         constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
         constraint.put()
-        
+
         author = User(email='test')
         author.put()
         spot_copy = models.SpotCopy(
@@ -341,7 +341,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
                         spot=spot,
                         author=author)
         spot_copy2.put()
-        
+
         # now edit the second one:
         resp = self.client.post(reverse('traffic_log.editSpotCopy', args=(spot_copy2.key(),)), {
             'spot_key': spot.key(),
@@ -374,23 +374,23 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
                         spot=spot,
                         author=author)
         spot_copy.put()
-        
+
         self.assertEqual(spot.get_spot_copy(dow, hour, slot)[0].body, "First")
-        
+
         # now edit the second one:
         resp = self.client.get(reverse('traffic_log.deleteSpotCopy', args=(spot_copy.key(),)))
-        
+
         self.assertEqual([c for c in spot.all_spot_copy()], [])
-        
+
         self.assertEqual(spot.get_spot_copy(dow, hour, slot), (None, False))
-    
+
     def test_move_spot_copy_to_another_spot(self):
-        
+
         # See http://code.google.com/p/chirpradio/issues/detail?id=124
-        dow=1 
+        dow=1
         hour=0
         slot=0
-        
+
         spot1 = models.Spot(
                         title='First Spot',
                         type='Station ID')
@@ -398,14 +398,14 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot1_key = spot1.key()
         constraint = models.SpotConstraint(dow=dow, hour=hour, slot=slot, spots=[spot1.key()])
         constraint.put()
-        
+
         spot2 = models.Spot(
                         title='Second Spot',
                         type='Station ID')
         spot2.put()
         constraint = models.SpotConstraint(dow=dow, hour=hour, slot=slot, spots=[spot2.key()])
         constraint.put()
-        
+
         # assign it to the first one:
         author = User(email='test')
         author.put()
@@ -414,9 +414,9 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
                         spot=spot1,
                         author=author)
         spot_copy.put()
-        
+
         self.assertEqual(spot1.get_spot_copy(dow, hour, slot)[0].body, "First")
-        
+
         # now move it to the second spot:
         resp = self.client.post(reverse('traffic_log.editSpotCopy', args=(spot_copy.key(),)), {
             'spot_key': spot2.key(),
@@ -425,12 +425,12 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             'expire_on': ''
         })
         self.assertNoFormErrors(resp)
-        
+
         self.assertEqual(spot2.get_spot_copy(dow, hour, slot)[0].body, "Second")
-        
+
         spot1 = models.Spot.get(spot1_key)
         self.assertEqual(spot1.get_spot_copy(dow, hour, slot)[0], None)
-    
+
     def test_random_spot_copy_during_creation_and_after_finishing(self):
         author = User(email='test')
         author.save()
@@ -442,7 +442,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         first_constraint.put()
         second_constraint = models.SpotConstraint(dow=1, hour=1, slot=0, spots=[spot.key()])
         second_constraint.put()
-        
+
         psa_copy = ['check out our store', 'turn off the stream', 'sharkula is the greatest']
         for body in psa_copy:
             resp = self.client.post(spot.get_add_copy_url(), {
@@ -453,7 +453,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             })
             self.assertNoFormErrors(resp)
             self.assertEqual(resp.status_code, 302)
-        
+
         def get_read_context(constraint):
             resp = self.client.get(reverse('traffic_log.spotTextForReading', args=(spot.key(),)), {
                 'hour': constraint.hour,
@@ -463,29 +463,29 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             self.assertEqual(resp.status_code, 200)
             context = resp.context
             return context
-        
+
         first_random_copy = get_read_context(first_constraint)['spot_copy'].body
         assert first_random_copy in psa_copy
         # each subsequent reading should show the same:
         self.assertEqual(get_read_context(first_constraint)['spot_copy'].body, first_random_copy)
         self.assertEqual(get_read_context(first_constraint)['spot_copy'].body, first_random_copy)
-        
+
         resp = self.client.get(get_read_context(first_constraint)['url_to_finish_spot'])
         self.assertEqual(resp.status_code, 200)
         logged = models.TrafficLogEntry.all().fetch(1)[0]
         self.assertEqual(logged.spot.key(), spot.key())
-        
+
         # after finishing, copy should be the same for the first slot:
         next_random_copy = get_read_context(first_constraint)['spot_copy'].body
         self.assertEqual(next_random_copy, first_random_copy)
         # but cannot be finished:
         self.assertEqual(get_read_context(first_constraint)['url_to_finish_spot'], None)
-        
+
         # after finishing, copy should be DIFFERENT for the next slot:
         next_random_copy = get_read_context(second_constraint)['spot_copy'].body
         self.assertNotEqual(next_random_copy, first_random_copy)
         self.assertNotEqual(get_read_context(second_constraint)['url_to_finish_spot'], None)
-    
+
     def test_make_spot_copy_expire(self):
         spot = models.Spot(
                         title='Legal ID',
@@ -493,7 +493,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot.put()
         constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
         constraint.put()
-        
+
         author = User(email='test')
         author.put()
         spot_copy = models.SpotCopy(
@@ -501,7 +501,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
                         spot=spot,
                         author=author)
         spot_copy.put()
-        
+
         resp = self.client.post(reverse('traffic_log.editSpotCopy', args=(spot_copy.key(),)), {
             'spot_key': spot.key(),
             'body': 'Something else entirely',
@@ -509,10 +509,10 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             'expire_on': '2/5/2010' # any date in the past
         })
         self.assertNoFormErrors(resp)
-        
+
         spot_copy = [c for c in spot.all_spot_copy()]
         self.assertEqual(spot_copy, [])
-    
+
     def test_create_edit_spot_copy_expiry(self):
         dow = 1
         hour = 0
@@ -523,7 +523,7 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot.put()
         constraint = models.SpotConstraint(dow=dow, hour=hour, slot=slot, spots=[spot.key()])
         constraint.put()
-        
+
         now = time_util.chicago_now() + datetime.timedelta(hours=2)
         resp = self.client.post(reverse('traffic_log.views.addCopyForSpot', args=(spot.key(),)), {
             'spot_key': spot.key(),
@@ -532,11 +532,11 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             'expire_on': now.strftime("%m/%d/%Y %H:%M:%S") # no timezone info
         })
         self.assertNoFormErrors(resp)
-        
+
         spot_copy, is_logged = spot.get_spot_copy(dow, hour, slot)
         converted_expire_on = time_util.convert_utc_to_chicago(spot_copy.expire_on)
         self.assertEqual(converted_expire_on.timetuple(), now.timetuple())
-        
+
         resp = self.client.post(reverse('traffic_log.editSpotCopy', args=(spot_copy.key(),)), {
             'spot_key': spot.key(),
             'body': 'You are listening to chirprario.odg',
@@ -544,13 +544,13 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             'expire_on': spot_copy.expire_on.strftime("%m/%d/%Y %H:%M:%S") # no timezone info
         })
         self.assertNoFormErrors(resp)
-        
+
         spot_copy, is_logged = spot.get_spot_copy(dow, hour, slot)
         converted_expire_on = time_util.convert_utc_to_chicago(spot_copy.expire_on)
         self.assertEqual(converted_expire_on.timetuple(), now.timetuple())
 
 class TestObjects(DjangoTestCase):
-    
+
     def test_spot_copy(self):
         author = User(email='test')
         author.save()
@@ -558,12 +558,12 @@ class TestObjects(DjangoTestCase):
                         title='Legal ID',
                         type='Station ID')
         spot.put()
-        self.assertEqual(spot.get_add_copy_url(), 
+        self.assertEqual(spot.get_add_copy_url(),
                             reverse('traffic_log.views.addCopyForSpot', args=(spot.key(),)))
-        
+
         constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
         constraint.put()
-        
+
         spot_copy = models.SpotCopy(
                         body=(
                             'You are now and forever listening to a killer '
@@ -571,21 +571,21 @@ class TestObjects(DjangoTestCase):
                         spot=spot,
                         author=author)
         spot_copy.put()
-        
+
         self.assertEqual(str(spot_copy), "You are now and forever listening to a killer radio...")
-        self.assertEqual(spot_copy.get_edit_url(), 
+        self.assertEqual(spot_copy.get_edit_url(),
                             reverse('traffic_log.editSpotCopy', args=(spot_copy.key(),)))
-        self.assertEqual(spot_copy.get_delete_url(), 
+        self.assertEqual(spot_copy.get_delete_url(),
                             reverse('traffic_log.deleteSpotCopy', args=(spot_copy.key(),)))
 
 class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
-    
+
     def setUp(self):
         assert self.client.login(email="dj-test@test.com", roles=[roles.DJ])
-    
+
     def tearDown(self):
         clear_data()
-    
+
     def test_view_spot_for_reading_basic(self):
         author = User(email='test')
         author.save()
@@ -595,13 +595,13 @@ class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
         spot.put()
         constraint = models.SpotConstraint(dow=1, hour=0, slot=0, spots=[spot.key()])
         constraint.put()
-        
+
         spot_copy = models.SpotCopy(
                         body='You are listening to chirpradio.org',
                         spot=spot,
                         author=author)
         spot_copy.put()
-        
+
         resp = self.client.get(reverse('traffic_log.spotTextForReading', args=(spot.key(),)), {
             'hour': constraint.hour,
             'dow': constraint.dow,
@@ -609,20 +609,20 @@ class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
         })
         context = resp.context
         self.assertEqual(context['spot_copy'].body, 'You are listening to chirpradio.org')
-        self.assertEqual(context['url_to_finish_spot'], 
+        self.assertEqual(context['url_to_finish_spot'],
             "/traffic_log/spot-copy/%s/finish?hour=0&dow=1&slot=0" % spot_copy.key())
 
     def test_finish_spot(self):
         self.assertEqual(list(models.TrafficLogEntry.all().fetch(5)), [])
-        
+
         author = User(email='test')
         author.save()
         spot = models.Spot(
                         title='Legal ID',
-                        type='Station ID', 
+                        type='Station ID',
                         author=author)
         spot.put()
-        
+
         # make a constraint closest to now:
         now = time_util.chicago_now()
         today = now.date()
@@ -630,20 +630,20 @@ class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
         constraint = models.SpotConstraint(
             dow=today.isoweekday(), hour=current_hour, slot=0, spots=[spot.key()])
         constraint.put()
-        
+
         spot_copy = models.SpotCopy(
                         body='You are listening to chirpradio.org',
                         spot=spot,
                         author=author)
         spot_copy.put()
-        
+
         spot.random_spot_copies = [spot_copy.key()]
         spot.save()
-        
+
         resp = self.client.get(reverse('traffic_log.index'))
         # unfinished spot should have been marked in static HTML:
         assert '<tr class="new">' in resp.content
-        
+
         resp = self.client.get(reverse('traffic_log.finishReadingSpotCopy', args=(spot_copy.key(),)), {
             'hour': constraint.hour,
             'dow': constraint.dow,
@@ -658,11 +658,11 @@ class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
         self.assertEqual(logged.scheduled.key(), constraint.key())
         self.assertEqual(logged.hour, constraint.hour)
         self.assertEqual(logged.dow, constraint.dow)
-        
+
         resp = self.client.get(reverse('traffic_log.index'))
         # finished spot should have been marked in static HTML:
         assert '<tr class="finished">' in resp.content
-        
+
         resp = self.client.get(reverse('traffic_log.spotTextForReading', args=(spot.key(),)), {
             'hour': constraint.hour,
             'dow': constraint.dow,
@@ -672,13 +672,13 @@ class TestTrafficLogDJViews(FormTestCaseHelper, DjangoTestCase):
         # already finished, no need for finish URL:
         self.assertEqual(context['url_to_finish_spot'], None)
         assert '(already finished)' in resp.content
-    
+
 class TrafficLogTestCase(unittest.TestCase):
-    
+
     def setUp(self):
         self.admin_u = User(email='test')
         self.admin_u.roles.append(roles.TRAFFIC_LOG_ADMIN)
-    
+
         self.dj_u = User(email='test2')
         self.dj_u.roles.append(roles.DJ)
 
@@ -700,44 +700,44 @@ class TrafficLogTestCase(unittest.TestCase):
 
     def test_traffic_log_generate(self):
         pass
-    
+
     def test_spot_constraint_delete(self):
         pass
 
-    
+
 class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
-    
+
     def add_spot_to_constraint(self, spot):
         # make a constraint closest to now:
         today = self.now.date()
         current_hour = self.now.hour
-        
+
         hour = current_hour
         slot = 0
-        
+
         constraint = models.SpotConstraint(
             dow=self.dow, hour=hour, slot=slot, spots=[spot.key()])
         constraint.put()
         return constraint
-    
+
     def setUp(self):
         assert self.client.login(email="test@test.com",
                                  roles=[roles.TRAFFIC_LOG_ADMIN])
-        
+
         author = User(email='test')
         author.save()
         self.author = author
         spot = models.Spot(
                         title='Legal ID',
-                        type='Station ID', 
+                        type='Station ID',
                         author=author)
         self.spot = spot
         spot.put()
-        
+
         self.now = time_util.chicago_now()
         self.today = self.now.date()
         self.dow = self.today.isoweekday()
-        
+
         constraint = self.add_spot_to_constraint(spot)
         self.constraint = constraint
         spot_copy = models.SpotCopy(
@@ -748,7 +748,7 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
         spot_copy.put()
         spot.random_spot_copies = [spot_copy.key()]
         spot.save()
-        
+
         logged_spot = models.TrafficLogEntry(
             log_date = self.today,
             spot = spot_copy.spot,
@@ -757,11 +757,11 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
             hour = self.now.hour,
             slot = 0,
             scheduled = constraint,
-            readtime = time_util.chicago_now(), 
+            readtime = time_util.chicago_now(),
             reader = author
         )
         logged_spot.put()
-    
+
     def test_only_admin_can_access(self):
         self.client.logout()
         assert self.client.login(email="dj@test.com",
@@ -777,11 +777,11 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
         eq_(r.status_code, 403)
         r = self.client.post(reverse('jobs.product', args=[str(job.key())]))
         eq_(r.status_code, 403)
-    
+
     def test_download_report_of_all_spots(self):
         from_date = datetime.date.today() - timedelta(days=1)
         to_date = datetime.date.today() + timedelta(days=1)
-        
+
         params = {'start_date': from_date.strftime("%Y-%m-%d"),
                   'end_date': to_date.strftime("%Y-%m-%d"),
                   # all types:
@@ -790,24 +790,24 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
                   'download': 'Download'}
         response = self.get_job_product('build-trafficlog-report', params)
         self.assertEquals(response['Content-Type'], 'text/csv; charset=utf-8')
-        
+
         report = csv.reader(StringIO(response.content))
         self.assertEquals(
             ['readtime', 'dow', 'slot_time', 'underwriter',
              'title', 'type', 'excerpt'],
             report.next())
         row = report.next()
-        
+
         self.assertEquals(row[1], constants.DOW_DICT[self.dow])
         self.assertEquals(row[4], self.spot.title)
         self.assertEquals(row[5], self.spot.type)
         self.assertEquals(row[6], self.spot_copy.body)
-    
+
     def test_filter_by_type(self):
         # Make another type of spot:
         spot = models.Spot(
                         title='PSA',
-                        type='Live Read PSA', 
+                        type='Live Read PSA',
                         author=self.author)
         spot.put()
         constraint = self.add_spot_to_constraint(spot)
@@ -816,11 +816,11 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
                     spot=spot,
                     author=self.author)
         spot_copy.put()
-        
+
         today = self.now.date()
         current_hour = self.now.hour
         hour = current_hour
-        
+
         logged_spot = models.TrafficLogEntry(
             log_date = self.today,
             spot = spot_copy.spot,
@@ -829,14 +829,14 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
             hour = self.now.hour,
             slot = 0,
             scheduled = constraint,
-            readtime = time_util.chicago_now(), 
+            readtime = time_util.chicago_now(),
             reader = self.author
         )
         logged_spot.put()
-        
+
         from_date = datetime.date.today() - timedelta(days=1)
         to_date = datetime.date.today() + timedelta(days=1)
-        
+
         params = {'start_date': from_date.strftime("%Y-%m-%d"),
                   'end_date': to_date.strftime("%Y-%m-%d"),
                   # Live Read PSA:
@@ -850,12 +850,12 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
         self.assertEquals(row[4], spot.title)
         self.assertEquals(row[5], spot.type)
         self.assertEquals(row[6], spot_copy.body)
-    
+
     def test_filter_by_underwriter(self):
         # Make another type of spot:
         spot = models.Spot(
                         title='PSA',
-                        type='Live Read PSA', 
+                        type='Live Read PSA',
                         author=self.author)
         spot.put()
         constraint = self.add_spot_to_constraint(spot)
@@ -865,11 +865,11 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
             author=self.author,
             underwriter='reckless')
         spot_copy.put()
-        
+
         today = self.now.date()
         current_hour = self.now.hour
         hour = current_hour
-        
+
         logged_spot = models.TrafficLogEntry(
             log_date = self.today,
             spot = spot_copy.spot,
@@ -878,14 +878,14 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
             hour = self.now.hour,
             slot = 0,
             scheduled = constraint,
-            readtime = time_util.chicago_now(), 
+            readtime = time_util.chicago_now(),
             reader = self.author
         )
         logged_spot.put()
-        
+
         from_date = datetime.date.today() - timedelta(days=1)
         to_date = datetime.date.today() + timedelta(days=1)
-        
+
         params = {'start_date': from_date.strftime("%Y-%m-%d"),
                   'end_date': to_date.strftime("%Y-%m-%d"),
                   # All:
@@ -897,7 +897,7 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
         header = report.next()
         underwriters = set([row[3] for row in report])
         self.assertEquals(underwriters, set(['reckless']))
-    
+
     def test_many_spots(self):
         copy = []
         for i in range(65):
@@ -916,14 +916,14 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
                 hour = self.now.hour,
                 slot = 0,
                 scheduled = self.constraint,
-                readtime = time_util.chicago_now() - timedelta(days=1), 
+                readtime = time_util.chicago_now() - timedelta(days=1),
                 reader = self.author
             )
             logged_spot.put()
 
         from_date = datetime.date.today() - timedelta(days=30)
         to_date = datetime.date.today()
-        
+
         params = {'start_date': from_date.strftime("%Y-%m-%d"),
                   'end_date': to_date.strftime("%Y-%m-%d"),
                   # All:
@@ -938,15 +938,15 @@ class TestTrafficLogReport(FormTestCaseHelper, JobTestCase, DjangoTestCase):
 
 
 class TestAddHour(unittest.TestCase):
-    
+
     def test_12am_on_sunday_becomes_1am(self):
         self.assertEqual(views.add_hour(0, 0), (1, 0))
-        
+
     def test_1am_on_sunday_becomes_2am(self):
         self.assertEqual(views.add_hour(1, 0), (2, 0))
-        
+
     def test_11pm_on_monday_becomes_12am_tuesday(self):
         self.assertEqual(views.add_hour(23, 1), (0, 2))
-        
+
     def test_11pm_on_sunday_becomes_12am_monday(self):
         self.assertEqual(views.add_hour(23, 7), (0, 1))
