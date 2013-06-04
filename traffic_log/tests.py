@@ -350,23 +350,23 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
             'expire_on': ''
         })
         self.assertNoFormErrors(resp)
-        
+
         spot_copy = [c for c in spot.all_spot_copy()]
-        self.assertEqual([c.body for c in spot_copy], ['First','Something else entirely'])
-        self.assertEqual([c.underwriter for c in spot_copy], [None, 'another underwriter'])
-        self.assertEqual([c.author.email for c in spot_copy], ['test', 'test@test.com'])
-    
+        self.assertEqual(sorted([c.body for c in spot_copy]), ['First','Something else entirely'])
+        self.assertEqual(sorted([c.underwriter for c in spot_copy]), [None, 'another underwriter'])
+        self.assertEqual(sorted([c.author.email for c in spot_copy]), ['test', 'test@test.com'])
+
     def test_delete_spot_copy(self):
         spot = models.Spot(
                         title='Legal ID',
                         type='Station ID')
         spot.put()
-        dow=1 
+        dow=1
         hour=0
         slot=0
         constraint = models.SpotConstraint(dow=dow, hour=hour, slot=slot, spots=[spot.key()])
         constraint.put()
-        
+
         author = User(email='test')
         author.put()
         spot_copy = models.SpotCopy(
