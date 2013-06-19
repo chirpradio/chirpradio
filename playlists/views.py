@@ -36,6 +36,7 @@ from playlists.forms import PlaylistTrackForm
 from playlists.models import (PlaylistTrack, PlaylistEvent, PlaylistBreak,
                               chirp_playlist_key, ChirpBroadcast)
 from playlists.tasks import playlist_event_listeners
+from common.time_util import convert_utc_to_chicago
 from common.utilities import as_encoded_str, http_send_csv_file
 from common.autoretry import AutoRetry
 from common import time_util
@@ -314,6 +315,72 @@ def query_group_by_track_key(from_date, to_date):
         d['heavy_rotation'] = int(bool(HEAVY_ROTATION_TAG in item.categories))
         d['light_rotation'] = int(bool(LIGHT_ROTATION_TAG in item.categories))
 
+        return d
+
+    # unique list of tracks with order
+    items = []
+
+    # hash of seen keys
+    seen = {}
+
+    for item in AutoRetry(query):
+        key = item_key(item)
+
+        if not seen.has_key(key):
+            x = item2hash(item)
+            seen[key] = x
+            items.append(x)
+
+        # inc counter
+        seen[key][key_counter] += 1
+
+    return items
+
+
+def export_query_group_by_track_key(from_date, to_date):
+    ''' app engine Query and GqlQuery do not support SQL group by
+    manually count each record and group them by some unique key
+    '''
+
+    query = filter_tracks_by_date_range(from_date, to_date)
+    fields = ['album_title', 'artist_name', 'label']
+
+    #
+    key_item = 'group_by_key'
+    key_counter = 'play_count'
+
+    # group by key/fields
+    def item_key(item):
+        key_parts = []
+        for key in fields:
+            stub = as_encoded_str(_get_entity_attr(item, key, ''))
+
+            if stub is None:
+                # for existing None-type attributes
+                stub = ''
+            stub = stub.lower()
+            key_parts.append(stub)
+        return ','.join(key_parts)
+
+    # dict version of db rec
+    def item2hash(item):
+        d = {}
+        for key in fields:
+            d[key] = _get_entity_attr(item, key, None)
+
+        # init additional props
+        d[key_counter] = 0
+        d['from_date'] = from_date
+        d['to_date'] = to_date
+        d['channel'] = _get_entity_attr(item.playlist, 'channel') 
+        d['track_title'] = _get_entity_attr(item.track, 'title') 
+        established = convert_utc_to_chicago(_get_entity_attr(item, 'established'))
+        d['date'] = established.strftime("%m/%d/%y")
+        d['start_time'] = established.strftime("%H:%M:%S")
+        t = datetime.strptime(_get_entity_attr(item.track, 'duration'), "%M:%S")
+        delta = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
+        d['end_time'] = (established + delta).strftime("%H:%M:%S")
+        
         return d
 
     # unique list of tracks with order

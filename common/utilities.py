@@ -80,6 +80,26 @@ def http_send_csv_file(fname, fields, items):
     return response
 
 
+def http_send_tab_delim_txt_file(fname, fields, items):
+    import csv
+
+    # dump item using key fields
+    def item2row(i):
+        return [as_encoded_str(i[key], encoding='utf8') for key in fields]
+
+    # use response obj to set filename of downloaded file
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = "attachment; filename=%s.txt" % (fname)
+
+    # write data out
+    out = csv.writer(response, delimiter='\t')
+    out.writerow(fields)
+    for item in items:
+        out.writerow(item2row(item))
+    #
+    return response
+
+
 def _access_restrictor(role):
     def restrict_access(request):
         if (role not in request.user.roles and

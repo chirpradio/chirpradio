@@ -28,11 +28,13 @@ from google.appengine.api import datastore_errors
 from auth.decorators import require_role
 import auth
 from auth import roles
-from common.utilities import (as_encoded_str, http_send_csv_file,
+from common.utilities import (as_encoded_str, http_send_csv_file, 
+                              http_send_tab_delim_txt_file,
                               restricted_job_worker, restricted_job_product)
 from djdb.models import HEAVY_ROTATION_TAG, LIGHT_ROTATION_TAG
 from playlists.forms import PlaylistTrackForm, PlaylistReportForm
 from playlists.views import query_group_by_track_key, filter_tracks_by_date_range
+from playlists.views import export_query_group_by_track_key
 from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak
 
 
@@ -42,6 +44,8 @@ log = logging.getLogger()
 REPORT_FIELDS = ['from_date', 'to_date', 'album_title', 'artist_name',
                  'label', 'play_count', 'heavy_rotation', 'light_rotation']
 
+EXPORT_REPORT_FIELDS = ['channel', 'date', 'start_time', 'end_time', 'artist_name',
+                        'track_title', 'album_title', 'label']
 
 @require_role(roles.MUSIC_DIRECTOR)
 def report_playlist(request, template='playlists/reports.html'):
@@ -78,6 +82,49 @@ def report_playlist(request, template='playlists/reports.html'):
             # generate report from date range
             if request.POST.get('search') == 'Search':
                 items = query_group_by_track_key(from_date, to_date)
+
+    # template vars
+    vars['form'] = form
+
+    return render_to_response(template, vars,
+            context_instance=RequestContext(request))
+
+
+@require_role(roles.MUSIC_DIRECTOR)
+def report_export_playlist(request, template='playlists/export_reports.html'):
+    vars = {}
+
+    # report vars
+    items = None
+    fields = EXPORT_REPORT_FIELDS
+
+    # default report
+    if request.method == 'GET':
+        to_date = datetime.now().date()
+        from_date = to_date - timedelta(days=1)
+        items = export_query_group_by_track_key(from_date, to_date)
+
+        # default form
+        form = PlaylistReportForm({'from_date':from_date, 'to_date':to_date})
+
+    # check form data post
+    elif request.method == 'POST':
+
+        # generic search form
+        form = PlaylistReportForm(data=request.POST)
+        if form.is_valid():
+            from_date = form.cleaned_data['from_date']
+            to_date = form.cleaned_data['to_date']
+
+
+            # special case to download report
+            if request.POST.get('download') == 'Download':
+                fname = "chirp-export-report_%s_%s" % (from_date, to_date)
+                return http_send_tab_delim_txt_file(fname, fields, export_query_group_by_track_key(from_date, to_date))
+
+            # generate report from date range
+            if request.POST.get('search') == 'Search':
+                items = export_query_group_by_track_key(from_date, to_date)
 
     # template vars
     vars['form'] = form

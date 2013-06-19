@@ -1,0 +1,44 @@
+{% extends "common/base.html" %}
+{% load playlists_extras %}
+
+{% block extrastyle %}
+<link rel="stylesheet" href="/media/playlists/playlists.css"/>
+<style type="text/css">
+body { background: none; font-size: 100%; font-weight: normal; color: black; } /* reset playlists.css.body */
+
+/* local css to be moved to playlists.css once finalize gui */
+.report-form { font-weight: normal; color: black; }
+.search_label { font-style: normal }
+.date_label { font-weight:bold; font-style: italic }
+.date_label_error { font-weight:bold; font-style: italic; color: red; }
+.date_format { font-style: italic; font-size:75%; }
+
+</style>
+{% endblock %}
+
+{% block extrahead %}
+<script type="text/javascript" 
+    src="/media/common/js/jquery/jquery-1.3.1.js"></script>
+<script type="text/javascript" 
+    src="/media/common/js/jquery-autocomplete/jquery.autocomplete.js"></script>
+<script type="text/javascript" 
+    src="/media/common/js/chirp/chirp.js"></script>
+<script type="text/javascript" 
+    src="/media/playlists/js/playlists.js"></script>
+{% endblock %}
+
+
+{% block page_content %}
+
+<div class="report-form">
+<form method="post" id="playlist-report-form" action="{% url playlists_export_report %}">
+<span class="search_label">Search date range:</span>
+<span class="date_label{%if form.from_date.errors %}_error{%endif%}">from</span> {{ form.from_date }}
+<span class="date_label{%if form.to_date.errors %}_error{%endif%}">to</span> {{ form.to_date }}
+<span class="date_format"> (YYYY-MM-DD)</span>
+<input type="submit" name="search" value="Search">
+<input type="submit" name="download" value="Download">
+</form>
+</div>
+
+{% endblock %}

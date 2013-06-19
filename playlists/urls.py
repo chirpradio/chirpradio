@@ -26,6 +26,7 @@ urlpatterns = patterns('playlists',
     # TODO(Kumar) replace old URL with this when it's ready:
     url(r'^report/new$', 'reports.report_playlist_new', name="playlists_report_new"),
     url(r'^report$', 'reports.report_playlist', name="playlists_report"),
+    url(r'^export_report$', 'reports.report_export_playlist', name="playlists_export_report"),
     url(r'^/?$', 'views.landing_page', name="playlists_landing_page"),
     url(r'^on-air/?$', 'views.on_air', name="playlists.on_air"),
     url(r'_bootstrap', 'views.bootstrap')
