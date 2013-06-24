@@ -332,6 +332,29 @@ $(document).ready(function() {
             }
         });
     });
+    
+    $("#incremental-export-report-form #generate").click(function(event) {
+        event.preventDefault();
+        $("#ready-link").html('Please wait while the report generates...');
+        $("#ready-link").addClass('report-loading');
+        var values = {};
+        $.each($('#incremental-export-report-form form').serializeArray(), function(i, field) {
+            values[field.name] = field.value;
+        });
+
+        chirp.request({
+            type: 'POST',
+            url: '/jobs/start',
+            data: {
+                'job_name': 'build-export-playlist-report'
+            },
+            dataType: 'json',
+            success: function(result, textStatus) {
+                job_key = result.job_key;
+                work(job_key, values);
+            }
+        });
+    });
 
     var work = function(job_key, form_values) {
         chirp.request({

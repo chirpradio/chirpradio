@@ -24,21 +24,25 @@ body { background: none; font-size: 100%; font-weight: normal; color: black; } /
 <script type="text/javascript" 
     src="/media/common/js/chirp/chirp.js"></script>
 <script type="text/javascript" 
+    src="/media/common/js/json2.js"></script>
+<script type="text/javascript" 
     src="/media/playlists/js/playlists.js"></script>
 {% endblock %}
 
 
 {% block page_content %}
 
-<div class="report-form">
-<form method="post" id="playlist-report-form" action="{% url playlists_export_report %}">
+<div id="incremental-export-report-form" class="report-form">
+<form method="post" id="playlist-report-form" action="{% url playlists_report_new %}">
 <span class="search_label">Search date range:</span>
 <span class="date_label{%if form.from_date.errors %}_error{%endif%}">from</span> {{ form.from_date }}
 <span class="date_label{%if form.to_date.errors %}_error{%endif%}">to</span> {{ form.to_date }}
 <span class="date_format"> (YYYY-MM-DD)</span>
-<input type="submit" name="search" value="Search">
-<input type="submit" name="download" value="Download">
+<button id="generate">Generate</button>
 </form>
+
+<div id="ready-link">Click Generate to build the report</div>
+
 </div>
 
 {% endblock %}

@@ -175,23 +175,6 @@ class TestPlaylistReport(PlaylistViewsTest):
             'Talking Book', 'Stevie Wonder', 'Motown', '1', '1', '0'],
             report.next())
     
-    def test_report_tab_delim_csv(self):
-        from_date = datetime.date.today() - timedelta(days=1)
-        to_date = datetime.date.today() + timedelta(days=1)
-
-        response = self.client.post(reverse('playlists_export_report'), {
-            'from_date': from_date,
-            'to_date': to_date,
-            'download': 'Download'
-        })
-        
-        self.assertEquals(response['Content-Type'], 'text/csv; charset=utf-8')
-        
-        report = csv.reader(StringIO(response.content), delimiter='\t')
-        self.assertEquals(
-            ['channel', 'date', 'start_time', 'end_time', 'artist_name',
-             'track_title', 'album_title', 'label'],
-            report.next())
     
     def test_report_ignores_reference_errors(self):
         selector = self.get_selector()
