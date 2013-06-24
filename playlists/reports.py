@@ -186,6 +186,7 @@ def playlist_export_report_worker(results, request_params):
     for entry in all_entries:
         play_key = play_count_key(entry)
         established = convert_utc_to_chicago(_get_entity_attr(entry, 'established'))
+      
         if entry.track:
             t = datetime.strptime(_get_entity_attr(entry.track, 'duration'), "%M:%S")
             delta = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
@@ -193,7 +194,8 @@ def playlist_export_report_worker(results, request_params):
             track_title = as_encoded_str(_get_entity_attr(entry.track, 'title'))
         else: 
             end_time = None
-            track_title = None
+            track_title = as_encoded_str(_get_entity_attr(entry, 
+                                                            'freeform_album_title'))
        
         results['items'][play_key] = {
             'channel': as_encoded_str(_get_entity_attr(entry.playlist, 'channel')),
