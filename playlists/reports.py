@@ -30,10 +30,10 @@ import auth
 from auth import roles
 from common.utilities import (as_encoded_str, http_send_csv_file, 
                               restricted_job_worker, restricted_job_product)
-from common.time_util import convert_utc_to_chicago
 from djdb.models import HEAVY_ROTATION_TAG, LIGHT_ROTATION_TAG
 from playlists.forms import PlaylistTrackForm, PlaylistReportForm
-from playlists.views import query_group_by_track_key, filter_tracks_by_date_range
+from playlists.views import (query_group_by_track_key, filter_tracks_by_date_range,
+                             filter_playlist_events_by_date_range)
 from playlists.models import PlaylistTrack, PlaylistEvent, PlaylistBreak
 
 
@@ -95,8 +95,13 @@ def report_playlist_new(request):
 
 
 @require_role(roles.MUSIC_DIRECTOR)
-def report_export_playlist(request):
-    return report_playlist(request, template='playlists/export_reports.html')
+def report_export_playlist(request, template='playlists/export_reports.html'):
+    to_date = datetime.now().date()
+    from_date = to_date - timedelta(days=1)
+    form = PlaylistReportForm({'from_date': from_date, 'to_date': to_date})
+    vars = {'form': form}
+    return render_to_response(template, vars,
+            context_instance=RequestContext(request))
 
 
 @restricted_job_worker('build-playlist-report', roles.MUSIC_DIRECTOR)
@@ -164,9 +169,8 @@ def playlist_export_report_worker(results, request_params):
     if results is None:
         # when starting the job, init file lines with the header row...
         results = {
-            'items': {},  # items keyed by play key
+            'items': {},  # items keyed by datetime established
             'last_offset': 0,
-            #'play_counts': {},  # play keys to number of plays
             'from_date': str(from_date),
             'to_date': str(to_date),
         }
@@ -175,7 +179,7 @@ def playlist_export_report_worker(results, request_params):
     last_offset = offset+50
     results['last_offset'] = last_offset
 
-    query = filter_tracks_by_date_range(from_date, to_date)
+    query = filter_playlist_events_by_date_range(from_date, to_date)
     all_entries = query[ offset: last_offset ]
 
     if len(all_entries) == 0:
@@ -184,31 +188,32 @@ def playlist_export_report_worker(results, request_params):
         finished = False
 
     for entry in all_entries:
-        play_key = play_count_key(entry)
-        established = convert_utc_to_chicago(_get_entity_attr(entry, 'established'))
+        established = _get_entity_attr(entry, 'established_display')
+        report_key = as_encoded_str(str(established))
       
-        if entry.track:
-            t = datetime.strptime(_get_entity_attr(entry.track, 'duration'), "%M:%S")
-            delta = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
-            end_time = (established + delta).strftime("%H:%M:%S")
-            track_title = as_encoded_str(_get_entity_attr(entry.track, 'title'))
-        else: 
-            end_time = None
-            track_title = as_encoded_str(_get_entity_attr(entry, 
-                                                            'freeform_album_title'))
+        if type(entry) == PlaylistBreak:
+            results['items'][report_key] = {
+                'established': as_encoded_str(established.strftime('%Y-%m-%d %H:%M:%S')),
+                'is_break': True
+            }
+            continue
        
-        results['items'][play_key] = {
-            'channel': as_encoded_str(_get_entity_attr(entry.playlist, 'channel')),
+        playlist = _get_entity_attr(entry, 'playlist') 
+        track = _get_entity_attr(entry, 'track')
+        results['items'][report_key] = {
+            'channel': as_encoded_str(_get_entity_attr(playlist, 'channel')),
             'date': as_encoded_str(established.strftime("%m/%d/%y")),
-            'start_time': as_encoded_str(established.strftime("%H:%M:%S")),
-            'end_time': end_time,
+            'duration_ms': as_encoded_str(_get_entity_attr(track, 
+                                                           'duration_ms', 0)),
+            'established': as_encoded_str(established.strftime('%Y-%m-%d %H:%M:%S')),
             'artist_name': as_encoded_str(_get_entity_attr(entry,
                                                            'artist_name')),
-            'track_title': track_title,
+            'track_title': as_encoded_str(_get_entity_attr(entry,
+                                                            'track_title')),
             'album_title': as_encoded_str(_get_entity_attr(entry, 
-                                                           'album_title')),
-
-            'label': as_encoded_str(_get_entity_attr(entry, 'label')),
+                                                           'album_title_display')),
+            'label': as_encoded_str(_get_entity_attr(entry, 'label_display')),
+            'is_break': False
         }
 
     return finished, results
@@ -267,14 +272,36 @@ def playlist_report_product(results):
 
 
 @restricted_job_product('build-export-playlist-report', roles.MUSIC_DIRECTOR)
-def playlist_report_product(results):
+def playlist_report_export_product(results):
     fname = "chirp-export-report_%s_%s" % (results['from_date'],
                                            results['to_date'])
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = "attachment; filename=%s.txt" % (fname)
     writer = csv.writer(response, EXPORT_REPORT_FIELDS, delimiter='\t')
     writer.writerow(EXPORT_REPORT_FIELDS)
-    for play_key, item in results['items'].iteritems():
+    # sort on date and time
+    sorted_keys = sorted(results['items'], reverse=True)
+    # construct start and end times
+    prev_established = None
+    for key in sorted_keys:
+        item = results['items'][key]
+        established = datetime.strptime(item['established'], '%Y-%m-%d %H:%M:%S')
+        if item['is_break']: 
+            prev_established = established
+            continue
+        item['start_time'] = established.strftime('%H:%M:%S')
+        # calculate end times
+        if prev_established and prev_established.date() == established.date():
+            item['end_time'] = (prev_established - timedelta(seconds=1)).strftime('%H:%M:%S')
+        else:
+            # track is last played for the day
+            if item['duration_ms']:
+                delta = timedelta(milliseconds=item['duration_ms'])
+                item['end_time'] = (established + delta).strftime('%H:%M:%S')
+            else:
+                # no track duration, default to 4 minutes
+                item['end_time'] = (established + timedelta(minutes=4)).strftime('%H:%M:%S')
+        prev_established = established
         writer.writerow([as_encoded_str(item[k], errors='replace')
                          for k in EXPORT_REPORT_FIELDS])
     return response

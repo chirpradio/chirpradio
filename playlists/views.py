@@ -256,6 +256,18 @@ def filter_tracks_by_date_range(from_date, to_date):
     pl = pl.order('-established')
     return pl
 
+# TODO: move following funcs to models
+def filter_playlist_events_by_date_range(from_date, to_date):
+    fd = datetime(from_date.year, from_date.month, from_date.day, 0, 0, 0)
+    td = datetime(to_date.year, to_date.month, to_date.day, 23, 59, 59)
+    playlist = chirp_playlist_key()
+    pl = PlaylistEvent.all().filter('playlist =', playlist)
+    pl = pl.filter('established >=', fd)
+    pl = pl.filter('established <=', td)
+    pl = pl.order('-established')
+    return pl
+
+
 def _get_entity_attr(entity, attr, *getattr_args):
     """gets the value of an attribute on an entity.
 
