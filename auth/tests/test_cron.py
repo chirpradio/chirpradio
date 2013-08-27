@@ -24,7 +24,7 @@ XML = """
         <nick>DJ Krsti\xc4\x87</nick>
       </name>
       <member_id>1</member_id>
-      <email>person@chirpradio.org</email>
+      <email>Person@chirpradio.org</email>
       <phone>
         <home></home>
         <cell></cell>

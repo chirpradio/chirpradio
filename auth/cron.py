@@ -55,7 +55,9 @@ def sync_users(request):
                 'name_last': vol.find('name/last').text,
                 'nick': vol.find('name/nick').text,
                 'member_id': int(vol.find('member_id').text),
-                'email': vol.find('email').text}
+                # The email must be lower case otherwise reset-password
+                # and other features won't work.
+                'email': vol.find('email').text.lower()}
         taskqueue.add(url=reverse('auth.tasks.sync_user'),
                       params={'user': json.dumps(user)})
         stats['synced'] += 1
