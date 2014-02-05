@@ -92,6 +92,7 @@ class TestTrafficLogViews(DjangoTestCase):
         # thir hour (not shown anymore):
         # self.assertEqual(spot_map[(now + datetime.timedelta(hours=2)).hour].title,
         #         'Legal ID')
+        
 
 class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
 
@@ -549,6 +550,80 @@ class TestTrafficLogAdminViews(FormTestCaseHelper, DjangoTestCase):
         spot_copy, is_logged = spot.get_spot_copy(dow, hour, slot)
         converted_expire_on = time_util.convert_utc_to_chicago(spot_copy.expire_on)
         self.assertEqual(converted_expire_on.timetuple(), now.timetuple())
+    
+    def test_landing_page_no_show_unstarted_spot_copy(self):
+        # make a regular spot:
+        resp = self.client.post(reverse('traffic_log.createSpot'), {
+            'title': 'Legal ID',
+            'type': 'Station ID',
+            'hour_list': [str(d) for d in range(0,24)],
+            'dow_list': [str(d) for d in range(1,8)],
+            'slot': '0'
+        })
+        self.assertNoFormErrors(resp)
+        spot = models.Spot.all().filter("title =", "Legal ID").fetch(1)[0]
+
+        resp = self.client.post(reverse('traffic_log.createSpotCopy'), {
+            'spot_key': spot.key(),
+            'body': 'You are listening to chirprario.odg',
+            'underwriter': 'pretend this is an underwriter',
+            # null start date
+            'start_on': ''
+        })
+        self.assertNoFormErrors(resp)
+
+        # spot shows up in DJ view:
+        resp = self.client.get(reverse('traffic_log.index'))
+        context = resp.context[0]
+        slotted_spots = [c for c in context['slotted_spots']]
+        spots = [s.title for s in slotted_spots[0].iter_spots()]
+        self.assertEqual(spots[0], spot.title)
+
+        # make the start date a week from now
+        spot_copy = spot.all_spot_copy()[0]
+        spot_copy.start_on = datetime.datetime.now() + datetime.timedelta(days=7)
+        spot_copy.save()
+        
+        self.assertEqual(spot_copy.has_started(), False)
+
+        # it should be hidden now:
+        resp = self.client.get(reverse('traffic_log.index'))
+        context = resp.context[0]
+        spots = []
+        for slotted_spot in context['slotted_spots']:
+            spots.append([s.title for s in slotted_spot.iter_spots()])
+
+        self.assertEqual(spots, [[], []]) # ensure 2 hours of spots aren't shown
+    
+    def test_admin_page_show_unstarted_spot_copy(self):
+        # make a regular spot:
+        resp = self.client.post(reverse('traffic_log.createSpot'), {
+            'title': 'Legal ID',
+            'type': 'Station ID',
+            'hour_list': [str(d) for d in range(0,24)],
+            'dow_list': [str(d) for d in range(1,8)],
+            'slot': '0'
+        })
+        self.assertNoFormErrors(resp)
+        spot = models.Spot.all().filter("title =", "Legal ID").fetch(1)[0]
+
+        resp = self.client.post(reverse('traffic_log.createSpotCopy'), {
+            'spot_key': spot.key(),
+            'body': 'You are listening to chirprario.odg',
+            'underwriter': 'pretend this is an underwriter',
+            # null start date for now:
+            'start_on': ''
+        })
+        self.assertNoFormErrors(resp)
+
+        # push start date forward
+        spot_copy = spot.all_spot_copy()[0]
+        spot_copy.start_on = datetime.datetime.now() + datetime.timedelta(days=7)
+        spot_copy.save()
+
+        # spot copy should still be shown in admin view
+        spot_copy = [c.body for c in spot.all_spot_copy()]
+        self.assertEqual(spot_copy, ['You are listening to chirprario.odg'])
 
 class TestObjects(DjangoTestCase):
 

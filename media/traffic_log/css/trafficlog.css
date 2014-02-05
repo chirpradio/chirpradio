@@ -7,6 +7,10 @@
     line-height: 1.1em;
 }
 
+.not_started_warning {
+	color: #FF6600;
+}
+
 #facebox .body {
     width: 750px;
 }
