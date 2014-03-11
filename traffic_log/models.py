@@ -110,27 +110,18 @@ class Spot(db.Model):
     updated   = db.DateTimeProperty(auto_now=True)
     random_spot_copies = db.ListProperty(db.Key)
 
-    def all_spot_copy(self):
-        # two queries (since there is no OR statement).  
-        # One for copy that does not expire and one for not-yet-expired copy
-        q = SpotCopy.all().filter("spot =", self).filter("expire_on =", None)
-        active_spots = [c for c in AutoRetry(q)]
-        q = SpotCopy.all().filter("spot =", self).filter("expire_on >", datetime.datetime.now())
-        for c in AutoRetry(q):
-            active_spots.append(c)
-        return active_spots
-    
-    def current_spot_copy(self):
+    def all_spot_copy(self, check_start_date=False):
         # two queries (since there is no OR statement).  
         # One for copy that does not expire and one for not-yet-expired copy
         active_spots = []
-        q = SpotCopy.all().filter("spot =", self).filter("expire_on =", None).filter("start_on <=", datetime.datetime.now())
+        q = SpotCopy.all().filter("spot =", self).filter("expire_on =", None)
         for c in AutoRetry(q):
-            if c.has_started():
+            if not check_start_date or c.has_started():
                 active_spots.append(c)
+        active_spots = [c for c in AutoRetry(q)]
         q = SpotCopy.all().filter("spot =", self).filter("expire_on >", datetime.datetime.now())
         for c in AutoRetry(q):
-            if c.has_started():
+            if not check_start_date or c.has_started():
                 active_spots.append(c)
         return active_spots
 
@@ -184,7 +175,7 @@ class Spot(db.Model):
 
     def shuffle_spot_copies(self, prev_spot_copy=None):
         """Shuffle list of spot copy keys associated with this spot."""
-        spot_copies = [spot_copy.key() for spot_copy in self.current_spot_copy()]
+        spot_copies = [spot_copy.key() for spot_copy in self.all_spot_copy(True)]
         random.shuffle(spot_copies)
 
         # Get spot copies that have been read in the last period (two hours).
