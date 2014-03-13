@@ -7,9 +7,15 @@
 <td>
 {% for copy in spot.all_spot_copy %}
 <p>
+{% if not copy.has_started %}
+<div class="not_started_warning">
+{% endif %}
 {{ copy }}
 <a href="{{copy.get_edit_url}}">[Edit]</a>
 <a href="{{copy.get_delete_url}}">[Delete]</a>
+{% if not copy.has_started %}
+(Not Started)</div>
+{% endif %}
 </p>
 {% endfor %}
 <p><a href="{{spot.get_add_copy_url}}">[Add spot copy]</a></p>

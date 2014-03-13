@@ -525,6 +525,12 @@ indexes:
 
 - kind: SpotCopy
   properties:
+  - name: expire_on
+  - name: spot
+  - name: start_on
+
+- kind: SpotCopy
+  properties:
   - name: spot
   - name: expire_on
 

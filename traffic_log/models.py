@@ -110,14 +110,23 @@ class Spot(db.Model):
     updated   = db.DateTimeProperty(auto_now=True)
     random_spot_copies = db.ListProperty(db.Key)
 
-    def all_spot_copy(self):
+    def all_spot_copy(self, check_start_date=False):
+		""" Returns all spot copies assigned to this spot.
+			If check_start_date is true, will only return
+			spot copies that have started.
+		"""
         # two queries (since there is no OR statement).  
         # One for copy that does not expire and one for not-yet-expired copy
+        active_spots = []
         q = SpotCopy.all().filter("spot =", self).filter("expire_on =", None)
+        for c in AutoRetry(q):
+            if not check_start_date or c.has_started():
+                active_spots.append(c)
         active_spots = [c for c in AutoRetry(q)]
         q = SpotCopy.all().filter("spot =", self).filter("expire_on >", datetime.datetime.now())
         for c in AutoRetry(q):
-            active_spots.append(c)
+            if not check_start_date or c.has_started():
+                active_spots.append(c)
         return active_spots
 
     def add_spot_copy(self, spot_copy):
@@ -147,10 +156,30 @@ class Spot(db.Model):
             # only save if we have to since expunging will be rare
             self.random_spot_copies = random_spot_copies
             AutoRetry(self).save()
+            
+    def _expunge_unstarted_spot_copies(self, random_spot_copies):
+        one_unstarted = False
+        q = SpotCopy.all().filter("spot =", self)
+        q = q.filter("__key__ in", random_spot_copies)
+        
+        unstarted_spot_copy_keys = []
+        for copy in q:
+            if not copy.has_started():
+                unstarted_spot_copy_keys.append(copy.key())
+        
+        for unstarted_key in unstarted_spot_copy_keys:
+            for k in random_spot_copies:
+                one_unstarted = True
+                if str(k) == str(unstarted_key):
+                    random_spot_copies.remove(k)
+        if one_unstarted:
+            # only save if we have to since expunging will be rare
+            self.random_spot_copies = random_spot_copies
+            AutoRetry(self).save()
 
     def shuffle_spot_copies(self, prev_spot_copy=None):
         """Shuffle list of spot copy keys associated with this spot."""
-        spot_copies = [spot_copy.key() for spot_copy in self.all_spot_copy()]
+        spot_copies = [spot_copy.key() for spot_copy in self.all_spot_copy(True)]
         random.shuffle(spot_copies)
 
         # Get spot copies that have been read in the last period (two hours).
@@ -183,6 +212,7 @@ class Spot(db.Model):
             AutoRetry(self).save()
         
         self._expunge_expired_spot_copies(self.random_spot_copies)
+        self._expunge_unstarted_spot_copies(self.random_spot_copies)
         
         # if spot copies exist and none have expired...
         if len(self.random_spot_copies) > 0:
@@ -235,6 +265,7 @@ class SpotCopy(db.Model):
     spot        = db.ReferenceProperty(Spot)
     underwriter = db.TextProperty(required=False)
     body        = db.TextProperty(verbose_name="Spot Copy",  required=True)
+    start_on   = db.DateTimeProperty(verbose_name="Start Date", required=False, default=None)
     expire_on   = db.DateTimeProperty(verbose_name="Expire Date", required=False, default=None)
     author      = db.ReferenceProperty(User)
     created     = db.DateTimeProperty(auto_now_add=True)
@@ -262,6 +293,12 @@ class SpotCopy(db.Model):
 
     def get_edit_url(self):
         return reverse('traffic_log.editSpotCopy', args=(self.key(),))
+    
+    def has_started(self):
+        if self.start_on == None or self.start_on <= datetime.datetime.now():
+            return True
+        else:
+            return False
 
 ## there can only be one entry per date, hour, slot
 class TrafficLogEntry(db.Model):
