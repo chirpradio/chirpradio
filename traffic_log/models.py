@@ -111,10 +111,10 @@ class Spot(db.Model):
     random_spot_copies = db.ListProperty(db.Key)
 
     def all_spot_copy(self, check_start_date=False):
-		""" Returns all spot copies assigned to this spot.
-			If check_start_date is true, will only return
-			spot copies that have started.
-		"""
+        """ Returns all spot copies assigned to this spot.
+            If check_start_date is true, will only return
+            spot copies that have started.
+        """
         # two queries (since there is no OR statement).  
         # One for copy that does not expire and one for not-yet-expired copy
         active_spots = []
@@ -188,7 +188,7 @@ class Spot(db.Model):
         recent_spot_copies = []
         for entry in query:
             recent_spot_copies.append(entry.spot_copy.key())
-		
+        
         # Iterate through list, moving spot copies that have been read in the past period to the
         # end of the list.
         for i in range(len(spot_copies)):
