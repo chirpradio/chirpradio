@@ -111,6 +111,10 @@ class Spot(db.Model):
     random_spot_copies = db.ListProperty(db.Key)
 
     def all_spot_copy(self, check_start_date=False):
+		""" Returns all spot copies assigned to this spot.
+			If check_start_date is true, will only return
+			spot copies that have started.
+		"""
         # two queries (since there is no OR statement).  
         # One for copy that does not expire and one for not-yet-expired copy
         active_spots = []
