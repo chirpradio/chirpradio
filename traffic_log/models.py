@@ -122,7 +122,7 @@ class Spot(db.Model):
         for c in AutoRetry(q):
             if not check_start_date or c.has_started():
                 active_spots.append(c)
-        active_spots = [c for c in AutoRetry(q)]
+        
         q = SpotCopy.all().filter("spot =", self).filter("expire_on >", datetime.datetime.now())
         for c in AutoRetry(q):
             if not check_start_date or c.has_started():
@@ -179,7 +179,7 @@ class Spot(db.Model):
 
     def shuffle_spot_copies(self, prev_spot_copy=None):
         """Shuffle list of spot copy keys associated with this spot."""
-        spot_copies = [spot_copy.key() for spot_copy in self.all_spot_copy(True)]
+        spot_copies = [spot_copy.key() for spot_copy in self.all_spot_copy(check_start_date=True)]
         random.shuffle(spot_copies)
 
         # Get spot copies that have been read in the last period (two hours).
