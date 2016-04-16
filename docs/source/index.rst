@@ -37,6 +37,7 @@ Here's how to get started developing `CHIRP Radio DJ applications`_.
 
    topics/install
    topics/bootstrapping
+   topics/test-instance
    topics/users-and-auth
    topics/applications
    topics/style-guide
