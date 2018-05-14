@@ -147,7 +147,8 @@ def send_track_to_live_site(request):
     """View for task queue that tells chirpradio.org a new track was entered"""
     log.info('Pushing notifications for track %r' % request.POST['id'])
     success = [_push_notify('chirpradio.push.recently-played'),
-               _push_notify('chirpradio.push.now-playing')]
+               _push_notify('chirpradio.push.now-playing'),
+               _push_notify('chirpradio.push.tweet-now-playing')]  # this calls a Google Cloud Function
     if all(success):
         return HttpResponse("OK")
     else:
