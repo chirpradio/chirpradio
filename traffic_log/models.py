@@ -180,25 +180,25 @@ class Spot(db.Model):
     def shuffle_spot_copies(self, prev_spot_copy=None):
         """Shuffle list of spot copy keys associated with this spot."""
         spot_copies = [spot_copy.key() for spot_copy in self.all_spot_copy(check_start_date=True)]
-        random.shuffle(spot_copies)
-
-        # Get spot copies that have been read in the last period (two hours).
-        date = datetime.datetime.now().date() - datetime.timedelta(hours=2)
-        query = TrafficLogEntry.all().filter('log_date >=', date)
-        recent_spot_copies = []
-        for entry in query:
-            recent_spot_copies.append(entry.spot_copy.key())
-        
-        # Iterate through list, moving spot copies that have been read in the past period to the
-        # end of the list.
-        for i in range(len(spot_copies)):
-            if spot_copies[0] in recent_spot_copies:
-                spot_copies.append(spot_copies.pop(0))
-        
-        # If all spot copies were read in the last period, the first item in the new shuffled list
-        # may by chance be the last one read. If so, move to the end.
-        if prev_spot_copy and spot_copies[0] == prev_spot_copy:
-            spot_copies.append(spot_copies.pop(0))
+#        random.shuffle(spot_copies)
+#
+#        # Get spot copies that have been read in the last period (two hours).
+#        date = datetime.datetime.now().date() - datetime.timedelta(hours=2)
+#        query = TrafficLogEntry.all().filter('log_date >=', date)
+#        recent_spot_copies = []
+#        for entry in query:
+#            recent_spot_copies.append(entry.spot_copy.key())
+#        
+#        # Iterate through list, moving spot copies that have been read in the past period to the
+#        # end of the list.
+#        for i in range(len(spot_copies)):
+#            if spot_copies[0] in recent_spot_copies:
+#                spot_copies.append(spot_copies.pop(0))
+#        
+#        # If all spot copies were read in the last period, the first item in the new shuffled list
+#        # may by chance be the last one read. If so, move to the end.
+#        if prev_spot_copy and spot_copies[0] == prev_spot_copy:
+#            spot_copies.append(spot_copies.pop(0))
             
         self.random_spot_copies = spot_copies
 
