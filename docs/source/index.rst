@@ -41,6 +41,7 @@ Here's how to get started developing `CHIRP Radio DJ applications`_.
    topics/users-and-auth
    topics/applications
    topics/style-guide
+   topics/deployment
 
 The CHIRP API
 =============
