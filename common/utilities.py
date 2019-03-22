@@ -22,11 +22,18 @@ from django import http
 from django.conf import settings
 from django.http import HttpResponse
 from django.utils import simplejson
-
+from google.appengine.api.datastore import MAX_ALLOWABLE_QUERIES
 from jobs import job_worker, job_product
 
 
 log = logging.getLogger()
+
+# Split a list "l" into sublists of length "n" or shorter.
+# This is used to shorten the length of lists used with GAE's
+# "IN" filter. Thanks https://www.geeksforgeeks.org/break-list-chunks-size-n-python/
+def split_list(l, n=MAX_ALLOWABLE_QUERIES):
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
 
 
 def as_json(handler):

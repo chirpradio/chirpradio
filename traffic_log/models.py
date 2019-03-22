@@ -25,6 +25,7 @@ from django.core.urlresolvers import reverse
 from auth.models import User
 from traffic_log import constants
 from common.autoretry import AutoRetry
+from common.utilities import split_list
 from common import time_util
 
 log = logging.getLogger()
@@ -138,44 +139,54 @@ class Spot(db.Model):
         
         if so, expunge them and save the spot with a new list.
         """
-        one_expired = False
         q = SpotCopy.all().filter("spot =", self)
-        q = q.filter("__key__ in", random_spot_copies)
+
+        # GAE sets a maximum length on lists given to the "in" filter
+        # as below, so split "random_spot_copies" into sublists whose
+        # length is this maximum, then operate on the sublists.  Note
+        # that we send a copy of "random_spot_copies" to "split_list"
+        # because we will be mutating random_spot_copies as we work.
+        for sublist in split_list(random_spot_copies[:]):
+            one_expired = False
+            q = q.filter("__key__ in", sublist)
+   
+            expired_spot_copy_keys = []
+            for copy in q:
+                if copy.expire_on and copy.expire_on <= datetime.datetime.now():
+                    expired_spot_copy_keys.append(copy.key())
         
-        expired_spot_copy_keys = []
-        for copy in q:
-            if copy.expire_on and copy.expire_on <= datetime.datetime.now():
-                expired_spot_copy_keys.append(copy.key())
-        
-        for expired_key in expired_spot_copy_keys:
-            for k in random_spot_copies:
-                one_expired = True
-                if str(k) == str(expired_key):
-                    random_spot_copies.remove(k)
-        if one_expired:
-            # only save if we have to since expunging will be rare
-            self.random_spot_copies = random_spot_copies
-            AutoRetry(self).save()
+            for expired_key in expired_spot_copy_keys:
+                for k in random_spot_copies:
+                    one_expired = True
+                    if str(k) == str(expired_key) and k in random_spot_copies:
+                        random_spot_copies.remove(k)
+            if one_expired:
+                # only save if we have to since expunging will be rare
+                self.random_spot_copies = random_spot_copies
+                AutoRetry(self).save()
             
     def _expunge_unstarted_spot_copies(self, random_spot_copies):
-        one_unstarted = False
         q = SpotCopy.all().filter("spot =", self)
-        q = q.filter("__key__ in", random_spot_copies)
+
+        # See note above on splitting the "random_spot_copies" list.
+        for sublist in split_list(random_spot_copies[:]):
+            one_unstarted = False
+            q = q.filter("__key__ in", sublist)
+
+            unstarted_spot_copy_keys = []
+            for copy in q:
+                if not copy.has_started():
+                    unstarted_spot_copy_keys.append(copy.key())
         
-        unstarted_spot_copy_keys = []
-        for copy in q:
-            if not copy.has_started():
-                unstarted_spot_copy_keys.append(copy.key())
-        
-        for unstarted_key in unstarted_spot_copy_keys:
-            for k in random_spot_copies:
-                one_unstarted = True
-                if str(k) == str(unstarted_key):
-                    random_spot_copies.remove(k)
-        if one_unstarted:
-            # only save if we have to since expunging will be rare
-            self.random_spot_copies = random_spot_copies
-            AutoRetry(self).save()
+            for unstarted_key in unstarted_spot_copy_keys:
+                for k in random_spot_copies:
+                    one_unstarted = True
+                    if str(k) == str(unstarted_key) and k in random_spot_copies:
+                        random_spot_copies.remove(k)
+            if one_unstarted:
+                # only save if we have to since expunging will be rare
+                self.random_spot_copies = random_spot_copies
+                AutoRetry(self).save()
 
     def shuffle_spot_copies(self, prev_spot_copy=None):
         """Shuffle list of spot copy keys associated with this spot."""
