@@ -138,7 +138,6 @@ class PlaylistEventDispatcher(object):
 
 playlist_event_listeners = PlaylistEventDispatcher([
     LiveSiteListener(),
-    Live365Listener(),
     PlayCountListener(),
 ])
 
