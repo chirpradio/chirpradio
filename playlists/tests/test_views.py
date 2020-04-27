@@ -47,8 +47,7 @@ from djdb.models import Artist, Album, Track
 import time
 
 __all__ = ['TestPlaylistViews', 'TestPlaylistViewsWithLibrary',
-           'TestDeleteTrackFromPlaylist', 'TestLiveSitePlaylistTasks',
-           'TestLive365PlaylistTasks']
+           'TestDeleteTrackFromPlaylist', 'TestLiveSitePlaylistTasks']
 
 # stub that does nothing to handle tests
 # that don't need to make assertions about URL fetches
@@ -57,9 +56,6 @@ stub_fetch_url = fudge.Fake('_fetch_url', callable=True)
 def setup_dbconfig():
     dbconfig['chirpapi.url.create'] = 'http://testapi/playlist/create'
     dbconfig['chirpapi.url.delete'] = 'http://testapi/playlist/delete'
-    dbconfig['live365.service_url'] = 'http://__dummylive365service__/cgi-bin/add_song.cgi'
-    dbconfig['live365.member_name'] = 'dummy_member'
-    dbconfig['live365.password'] = 'dummy_password'
 
 def clear_data():
     for pl in Playlist.all():
@@ -207,11 +203,6 @@ class TestPlaylistViews(PlaylistViewsTest):
                     url=reverse('playlists.send_track_to_live_site'),
                     params={'id': arg.any_value()},
                     queue_name='live-site-playlists'
-                )
-                .next_call()
-                .with_args(
-                    url=reverse('playlists.send_track_to_live365'),
-                    params={'id': arg.any_value()}
                 )
                 .next_call()
                 .with_args(
@@ -762,132 +753,6 @@ class TestPlayCountTask(TaskTest, TestCase):
         eq_(snap.artist_name, 'Various')
         eq_(snap.album_title, 'Talking Book')
 
-
-class TestLive365PlaylistTasks(TaskTest, TestCase):
-
-    def test_create_not_latin_chars(self):
-
-        def inspect_request(r):
-            # NOTE: due to URL fetching, you can only raise
-            # AssertionError here
-            self.assertEqual(r.get_full_url(), 'http://__dummylive365service__/cgi-bin/add_song.cgi')
-            qs = dict(cgi.parse_qsl(r.data))
-            self.assertEqual(qs['member_name'], "dummy_member")
-            self.assertEqual(qs['password'], "dummy_password")
-            self.assertEqual(qs['seconds'], '30')
-            # c should be replaced because latin-1 can't encode that and Live365 likes latin-1
-            self.assertEqual(qs['title'], 'Ivan Krsti song')
-            self.assertEqual(qs['album'], 'Ivan Krsti album')
-            self.assertEqual(qs['artist'], 'Ivan Krsti')
-            return True
-
-        fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
-                                .with_args(arg.passes_test(inspect_request)))
-
-        fake_response = (fake_urlopen
-                                .returns_fake()
-                                .has_attr(code='200')
-                                .provides('read')
-                                .returns("<service response>"))
-
-        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):
-            resp = self.client.post(reverse('playlists.send_track_to_live365'), {
-                'id': self.track.key()
-            })
-
-        fudge.verify()
-
-    def test_create_latin_chars(self):
-
-        self.playlist = ChirpBroadcast()
-        selector = self.get_selector()
-        self.track = PlaylistTrack(
-                    playlist=self.playlist,
-                    selector=selector,
-                    freeform_artist_name=u'Bj\xf6rk',
-                    freeform_album_title=u'Bj\xf6rk album',
-                    freeform_track_title=u'Bj\xf6rk song')
-        self.track.put()
-
-        def inspect_request(r):
-            # NOTE: due to URL fetching, you can only raise
-            # AssertionError here
-            self.assertEqual(r.get_full_url(), 'http://__dummylive365service__/cgi-bin/add_song.cgi')
-            qs = dict(cgi.parse_qsl(r.data))
-            self.assertEqual(qs['member_name'], "dummy_member")
-            self.assertEqual(qs['password'], "dummy_password")
-            self.assertEqual(qs['seconds'], '30')
-            # c should be replaced because latin-1 can't encode that and Live365 likes latin-1
-            self.assertEqual(qs['title'], 'Bj\xf6rk song')
-            self.assertEqual(qs['album'], 'Bj\xf6rk album')
-            self.assertEqual(qs['artist'], 'Bj\xf6rk')
-            return True
-
-        fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
-                                .with_args(arg.passes_test(inspect_request)))
-
-        fake_response = (fake_urlopen
-                                .returns_fake()
-                                .has_attr(code='200')
-                                .provides('read')
-                                .returns("<service response>"))
-
-        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):
-            resp = self.client.post(reverse('playlists.send_track_to_live365'), {
-                'id': self.track.key()
-            })
-
-        fudge.verify()
-
-    def test_create_ascii_chars(self):
-
-        self.playlist = ChirpBroadcast()
-        selector = self.get_selector()
-        self.track = PlaylistTrack(
-                    playlist=self.playlist,
-                    selector=selector,
-                    freeform_artist_name=u'artist',
-                    freeform_album_title=u'album',
-                    freeform_track_title=u'song')
-        self.track.put()
-
-        def inspect_request(r):
-            # NOTE: due to URL fetching, you can only raise
-            # AssertionError here
-            self.assertEqual(r.get_full_url(), 'http://__dummylive365service__/cgi-bin/add_song.cgi')
-            qs = dict(cgi.parse_qsl(r.data))
-            self.assertEqual(qs['member_name'], "dummy_member")
-            self.assertEqual(qs['password'], "dummy_password")
-            self.assertEqual(qs['seconds'], '30')
-            # c should be replaced because latin-1 can't encode that and Live365 likes latin-1
-            self.assertEqual(qs['title'], 'song')
-            self.assertEqual(qs['album'], 'album')
-            self.assertEqual(qs['artist'], 'artist')
-            return True
-
-        fake_urlopen = (fudge.Fake('urlopen', expect_call=True)
-                                .with_args(arg.passes_test(inspect_request)))
-
-        fake_response = (fake_urlopen
-                                .returns_fake()
-                                .has_attr(code='200')
-                                .provides('read')
-                                .returns("<service response>"))
-
-        with fudge.patched_context(playlists.tasks.urllib2, "urlopen", fake_urlopen):
-            resp = self.client.post(reverse('playlists.send_track_to_live365'), {
-                'id': self.track.key()
-            })
-
-        fudge.verify()
-
-    def test_create_non_existant_track(self):
-        key = self.track.key()
-        self.track.delete() # make it non-existant
-        resp = self.client.post(reverse('playlists.send_track_to_live365'), {
-            'id': key
-        })
-        self.assertEqual(resp.status_code, 200)
 
 class IsFromStudioTests(TestCase):
     """Test the FromStudioMiddleware playlists middleware."""
