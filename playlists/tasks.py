@@ -99,6 +99,7 @@ def send_track_to_live_site(request):
     log.info('Pushing notifications for track %r' % request.POST['id'])
     success = [_push_notify('chirpradio.push.now-playing'),
                _push_notify('chirpradio.push.tweet-now-playing'),  # this calls a Google Cloud Function
+               _push_notify('chirpradio.push.update-playlist-storage'),  # this calls a Google Cloud Function
                _push_notify('chirpradio.push.recently-played')]
     if all(success):
         return HttpResponse("OK")

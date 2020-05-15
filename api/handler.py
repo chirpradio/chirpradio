@@ -31,6 +31,7 @@ except ImportError:
 
 from playlists.models import (chirp_playlist_key, PlaylistTrack,
                               PlayCountSnapshot)
+from playlists.tasks import _push_notify
 from djdb import pylast
 from common import dbconfig
 
@@ -198,6 +199,7 @@ class CheckLastFMLinks(webapp.RequestHandler):
         track.lastfm_urls_processed = True  # Even on error
         track.save()
         memcache.delete(CurrentPlaylist.cache_key)
+        _push_notify('chirpradio.push.update-playlist-storage')
         self.response.out.write(simplejson.dumps({
             'success': True,
             'links_fetched': links_fetched
