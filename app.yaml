@@ -59,6 +59,11 @@ libraries:
 env_variables:
   DJANGO_SETTINGS_MODULE: 'settings'
 
+automatic_scaling:
+  min_idle_instances: automatic
+  max_idle_instances: 1
+  min_pending_latency: 0.100s
+  max_pending_latency: 0.250s
 
 skip_files:
 - ^(.*/)?app\.yaml
