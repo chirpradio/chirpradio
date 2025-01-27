@@ -366,7 +366,7 @@ class PagerQuery(object):
                 if isinstance(prop, db.ReferenceProperty):
                     values[prop_name] = str(value.key())
                 else:
-                    values[prop_name] = str(value)
+                    values[prop_name] = value.encode('ascii', 'ignore')
 
         if self._first_result:
             values['_'] = str(self._first_result)
